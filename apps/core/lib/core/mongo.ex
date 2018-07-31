@@ -100,7 +100,14 @@ defmodule Core.Mongo do
     execute(:insert_one, binding())
   end
 
-  def insert_one!(coll, doc, opts \\ []) do
+  def insert_one!(%{__meta__: metadata} = doc, opts \\ []) do
+    case Vex.errors(doc) do
+      [] -> insert_one!(to_string(metadata.collection), doc |> Jason.encode!() |> Jason.decode!(), opts)
+      errors -> {:error, errors}
+    end
+  end
+
+  def insert_one!(coll, doc, opts) do
     execute(:insert_one!, binding())
   end
 

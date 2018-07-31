@@ -3,9 +3,9 @@ defmodule Core.Patient do
 
   use Core.Schema
 
-  @primary_key :id
+  @primary_key :_id
   schema :patients do
-    field(:id, uuid: true)
+    field(:_id, uuid: true)
     field(:visits)
     field(:episodes)
 

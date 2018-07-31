@@ -20,7 +20,7 @@ defmodule Core.Factories do
     visits = Enum.reduce(visits, %{}, fn %{id: id} = visit, acc -> Map.put(acc, id, visit) end)
 
     %Patient{
-      id: id,
+      _id: id,
       visits: visits,
       # episodes: build_list(2, :episode),
       inserted_at: DateTime.utc_now(),
