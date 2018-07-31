@@ -34,14 +34,8 @@ defmodule Core.MixProject do
 
   defp aliases do
     [
-      reset: [
-        "xandra.drop",
-        "xandra.create",
-        "xandra.migrate"
-      ],
       test: [
-        "xandra.create",
-        "xandra.migrate",
+        "drop",
         "test"
       ]
     ]
@@ -50,10 +44,10 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto, "~> 2.1"},
-      {:mongodb_ecto, "~> 0.2.0"},
+      {:vex, "~> 0.8.0"},
+      {:elixir_uuid, "~> 1.2"},
+      {:mongodb, "~> 0.4.6"},
       {:poolboy, "~> 1.5"},
-      {:ecto_logger_json, git: "https://github.com/edenlabllc/ecto_logger_json.git", branch: "query_params"},
       {:plug_logger_json, "~> 0.6.0"},
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},

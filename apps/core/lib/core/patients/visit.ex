@@ -1,15 +1,19 @@
 defmodule Core.Visit do
   @moduledoc false
 
-  # defstruct [:id, :inserted_at, :updated_at, :inserted_by, :updated_by, :period]
+  use Core.Schema
 
-  use Ecto.Schema
+  @derive Jason.Encoder
 
-  alias Core.Period
+  defstruct [:id, :inserted_at, :updated_at, :inserted_by, :updated_by, :period]
 
-  embedded_schema do
-    embeds_one(:period, Period)
+  # use Ecto.Schema
 
-    timestamps()
-  end
+  # alias Core.Period
+
+  # embedded_schema do
+  #   embeds_one(:period, Period)
+
+  #   timestamps()
+  # end
 end

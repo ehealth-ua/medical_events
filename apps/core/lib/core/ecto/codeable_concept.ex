@@ -1,13 +1,13 @@
 defmodule Core.CodeableConcept do
   @moduledoc false
 
-  use Ecto.Schema
+  # use Ecto.Schema
 
-  alias Core.Coding
+  # alias Core.Coding
 
-  @primary_key false
-  embedded_schema do
-    embeds_one(:coding, Coding)
-    field(:text)
-  end
+  # @primary_key false
+  # embedded_schema do
+  #   embeds_one(:coding, Coding)
+  #   field(:text)
+  # end
 end

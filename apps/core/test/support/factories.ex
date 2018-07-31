@@ -1,32 +1,55 @@
 defmodule Core.Factories do
   @moduledoc false
 
-  # use ExMachina
+  use ExMachina
 
-  # alias Ecto.UUID
   # alias Core.CodeableConcept
   # alias Core.Coding
   # alias Core.Episode
-  # alias Core.Period
+  alias Core.Period
   # alias Core.StatusHistory
-  # alias Core.Visit
-  use Core.Factories.Patient
-  use Core.Factories.Period
+  alias Core.Visit
+  alias Core.Patient
+  # use Core.Factories.Patient
+  # use Core.Factories.Period
 
-  def insert(type, params \\ []) do
-    apply(__MODULE__, String.to_atom("save_#{type}_factory"), [params]) |> IO.inspect()
+  def patient_factory do
+    id = UUID.uuid4()
+    user_id = UUID.uuid4()
+    visits = build_list(2, :visit)
+    visits = Enum.reduce(visits, %{}, fn %{id: id} = visit, acc -> Map.put(acc, id, visit) end)
+
+    %Patient{
+      id: id,
+      visits: visits,
+      # episodes: build_list(2, :episode),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now(),
+      inserted_by: id,
+      updated_by: id
+    }
   end
 
-  def build(type, params \\ []) do
-    apply(__MODULE__, String.to_atom("#{type}_factory"), [params])
+  def visit_factory do
+    id = UUID.uuid4()
+    user_id = UUID.uuid4()
+
+    %Visit{
+      id: id,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now(),
+      inserted_by: id,
+      updated_by: id,
+      period: build(:period)
+    }
   end
 
-  # def period_factory do
-  #   %Period{
-  #     start: NaiveDateTime.utc_now(),
-  #     end: NaiveDateTime.utc_now()
-  #   }
-  # end
+  def period_factory do
+    %Period{
+      start: DateTime.utc_now(),
+      end: DateTime.utc_now()
+    }
+  end
 
   # def episode_factory do
   #   %Episode{

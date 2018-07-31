@@ -1,15 +1,15 @@
 defmodule Core.StatusHistory do
   @moduledoc false
 
-  use Ecto.Schema
+  # use Ecto.Schema
 
-  alias Core.Period
+  # alias Core.Period
 
-  @primary_key false
-  embedded_schema do
-    field(:status)
-    embeds_one(:period, Period)
+  # @primary_key false
+  # embedded_schema do
+  #   field(:status)
+  #   embeds_one(:period, Period)
 
-    timestamps()
-  end
+  #   timestamps()
+  # end
 end

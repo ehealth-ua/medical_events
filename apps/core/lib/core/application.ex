@@ -11,7 +11,7 @@ defmodule Core.Application do
 
     # List all child processes to be supervised
     children = [
-      supervisor(Repo, [])
+      worker(Mongo, [[name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy]])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

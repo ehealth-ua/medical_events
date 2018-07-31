@@ -14,7 +14,6 @@ defmodule Core.ModelCase do
   """
 
   use ExUnit.CaseTemplate, async: true
-  alias Core.Repo
 
   using do
     quote do

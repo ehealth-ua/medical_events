@@ -1,16 +1,13 @@
 defmodule Core.Patient do
   @moduledoc false
 
-  use Ecto.Schema
+  use Core.Schema
 
-  alias Core.Episode
-  alias Core.Visit
-  import Core.Ecto.ChangedBy
-
-  @primary_key {:id, :binary_id, autogenerate: true}
-  schema "patients" do
-    embeds_many(:visits, Visit)
-    embeds_many(:episodes, Episode)
+  @primary_key :id
+  schema :patients do
+    field(:id, uuid: true)
+    field(:visits)
+    field(:episodes)
 
     timestamps()
     changed_by()

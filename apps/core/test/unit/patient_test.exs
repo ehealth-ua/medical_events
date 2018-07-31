@@ -5,7 +5,10 @@ defmodule Core.PatientTest do
 
   describe "test create patient" do
     test "success create patient" do
-      insert(:patient)
+      patient = build(:patient)
+
+      Core.Mongo.insert_one(patient)
+      |> IO.inspect()
     end
   end
 end

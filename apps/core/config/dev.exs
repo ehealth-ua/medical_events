@@ -10,8 +10,4 @@ use Mix.Config
 # with brunch.io to recompile .js and .css sources.
 # Configure your database
 
-config :core, Core.Repo,
-  adapter: Mongo.Ecto,
-  database: "medical_data",
-  hostname: "localhost",
-  pool_size: 10
+config :core, :mongo, url: "mongodb://localhost:27017/medical_data"
