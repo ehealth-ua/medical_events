@@ -4,6 +4,8 @@ defmodule Api.Web.VisitController do
   use ApiWeb, :controller
   alias Core.Patients
 
+  action_fallback(Api.Web.FallbackController)
+
   def create(conn, params) do
     with {:ok, visit} <- Patients.create_visit(params) do
       render(conn, "create.json", visit: visit)

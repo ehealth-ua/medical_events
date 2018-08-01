@@ -19,7 +19,7 @@ defmodule ApiWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: ApiWeb
+      use Phoenix.Controller, namespace: Api.Web
       import Plug.Conn
       import ApiWeb.Router.Helpers
     end

@@ -13,7 +13,10 @@ config :api,
 config :api, ApiWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "ihMJQLMR8bqvos75NHg26kHyXVlsfJ+OQpS+zl+ElGtHPQOxMXd28ZQsvZoR5xvd",
-  render_errors: [view: ApiWeb.ErrorView, accepts: ~w(json)],
+  render_errors: [
+    view: EView.Views.PhoenixError,
+    accepts: ~w(json)
+  ],
   pubsub: [name: Api.PubSub, adapter: Phoenix.PubSub.PG2]
 
 config :phoenix, :format_encoders, json: Jason

@@ -11,6 +11,7 @@ defmodule Core.Application do
 
     # List all child processes to be supervised
     children = [
+      worker(Core.Validators.Cache, []),
       worker(Mongo, [[name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy]])
     ]
 

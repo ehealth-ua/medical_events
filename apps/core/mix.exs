@@ -44,12 +44,14 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:httpoison, "~> 1.2"},
       {:vex, "~> 0.8.0"},
       {:elixir_uuid, "~> 1.2"},
       {:mongodb, "~> 0.4.6"},
       {:poolboy, "~> 1.5"},
-      {:plug_logger_json, "~> 0.6.0"},
+      {:jvalid, "~> 0.7.0"},
       {:jason, "~> 1.1"},
+      {:mox, "~> 0.4.0"},
       {:confex, "~> 3.3"},
       {:ex_machina, "~> 2.2"}
     ]

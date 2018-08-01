@@ -8,6 +8,8 @@ defmodule Core.Patient do
     field(:_id, uuid: true)
     field(:visits)
     field(:episodes)
+    field(:immunizations)
+    field(:allergy_intolerances)
 
     timestamps()
     changed_by()

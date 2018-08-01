@@ -21,6 +21,22 @@ use Mix.Config
 #     config :logger, level: :info
 #
 
+config :core,
+  microservices: [
+    il: Core.Microservices.Il
+  ],
+  cache: [
+    validators: Core.Validators.Cache
+  ]
+
+config :core, Core.Microservices.Il,
+  endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
+  hackney_options: [
+    connect_timeout: 30_000,
+    recv_timeout: 30_000,
+    timeout: 30_000
+  ]
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ]
+    },
+    "episodes": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "period"
+  ]
+}

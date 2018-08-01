@@ -36,12 +36,14 @@ defmodule Api.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:plug_logger_json, "~> 0.6.0"},
       {:phoenix, "~> 1.3.3"},
       {:phoenix_pubsub, "~> 1.0"},
       {:cowboy, "~> 1.1"},
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},
-      {:eview, "~> 0.14.0"}
+      {:eview, "~> 0.14.0"},
+      {:core, in_umbrella: true}
     ]
   end
 end
