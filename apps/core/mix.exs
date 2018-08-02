@@ -36,6 +36,7 @@ defmodule Core.MixProject do
     [
       test: [
         "drop",
+        "migrate",
         "test"
       ]
     ]
@@ -44,6 +45,7 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:kafka_ex, "~> 0.8.3"},
       {:httpoison, "~> 1.2"},
       {:vex, "~> 0.8.0"},
       {:elixir_uuid, "~> 1.2"},

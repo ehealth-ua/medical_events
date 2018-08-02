@@ -3,8 +3,6 @@ defmodule Core.Schema do
 
   defmacro __using__(_) do
     quote do
-      @derive {Jason.Encoder, except: [:__meta__]}
-
       import Core.Schema
     end
   end
@@ -39,6 +37,8 @@ defmodule Core.Schema do
           Map.get(map, name)
         end
       end
+
+      def metadata, do: @__metadata__
     end
   end
 
@@ -74,5 +74,10 @@ end
 
 defimpl Vex.Blank, for: DateTime do
   def blank?(%DateTime{}), do: false
+  def blank?(value), do: true
+end
+
+defimpl Vex.Blank, for: BSON.ObjectId do
+  def blank?(%BSON.ObjectId{}), do: false
   def blank?(value), do: true
 end
