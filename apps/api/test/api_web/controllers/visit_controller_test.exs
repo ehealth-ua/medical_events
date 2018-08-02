@@ -39,6 +39,15 @@ defmodule Api.Web.VisitControllerTest do
         })
 
       assert response = json_response(conn, 201)
+
+      assert %{
+               "data" => %{
+                 "id" => _,
+                 "inserted_at" => _,
+                 "status" => "processing",
+                 "updated_at" => _
+               }
+             } = response
     end
   end
 end

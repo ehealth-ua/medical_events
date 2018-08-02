@@ -16,5 +16,7 @@ defmodule Core.Request do
     field(:_id)
     field(:status, presence: true)
     field(:response)
+
+    timestamps()
   end
 end
