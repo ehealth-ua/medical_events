@@ -7,6 +7,7 @@ defmodule Core.Validators.JsonSchema do
   alias Core.Validators.SchemaMapper
 
   use_schema(:visit_create, "json_schemas/visits/visit_create.json")
+  use_schema(:visit_create_signed_content, "json_schemas/visits/visit_create_signed_content.json")
 
   def validate(schema, attrs) do
     @schemas

@@ -8,9 +8,9 @@ defmodule Api.Web.VisitController do
   action_fallback(Api.Web.FallbackController)
 
   def create(conn, params) do
-    with {:ok, request} <- Patients.create_visit(params) do
+    with {:ok, request} <- Patients.produce_create_visit(params) do
       conn
-      |> put_status(:created)
+      |> put_status(202)
       |> put_view(RequestView)
       |> render("create.json", request: request)
     end

@@ -50,6 +50,7 @@ defmodule Core.MixProject do
       {:vex, "~> 0.8.0"},
       {:elixir_uuid, "~> 1.2"},
       {:mongodb, "~> 0.4.6"},
+      {:redix, "~> 0.7.1"},
       {:poolboy, "~> 1.5"},
       {:jvalid, "~> 0.7.0"},
       {:jason, "~> 1.1"},

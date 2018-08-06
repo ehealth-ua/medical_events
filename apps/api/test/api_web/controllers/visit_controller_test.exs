@@ -33,18 +33,20 @@ defmodule Api.Web.VisitControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
       conn =
         post(conn, visit_path(conn, :create), %{
           "signed_data" => [%{"id" => UUID.uuid4(), "signed_content" => Base.encode64(Jason.encode!(%{}))}]
         })
 
-      assert response = json_response(conn, 201)
+      assert response = json_response(conn, 202)
 
       assert %{
                "data" => %{
                  "id" => _,
                  "inserted_at" => _,
-                 "status" => "processing",
+                 "status" => "pending",
                  "updated_at" => _
                }
              } = response

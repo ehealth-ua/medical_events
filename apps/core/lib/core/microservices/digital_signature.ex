@@ -4,7 +4,7 @@ defmodule Core.Microservices.DigitalSignature do
   use Core.Microservices
   import Core.Headers
 
-  @behaviour Core.Microservices.DigitalSignatureBehaviour
+  @behaviour Core.Behaviours.DigitalSignatureBehaviour
 
   def decode(signed_content, headers) do
     if config()[:enabled] do

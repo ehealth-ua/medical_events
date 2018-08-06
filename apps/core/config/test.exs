@@ -10,6 +10,9 @@ config :core,
   ],
   cache: [
     validators: Core.Validators.CacheTest
+  ],
+  kafka: [
+    producer: KafkaMock
   ]
 
 config :core, :mongo, url: "mongodb://localhost:27017/medical_data_test"

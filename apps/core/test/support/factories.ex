@@ -6,12 +6,11 @@ defmodule Core.Factories do
   # alias Core.CodeableConcept
   # alias Core.Coding
   # alias Core.Episode
+  alias Core.Patient
   alias Core.Period
   # alias Core.StatusHistory
+  alias Core.Request
   alias Core.Visit
-  alias Core.Patient
-  # use Core.Factories.Patient
-  # use Core.Factories.Period
 
   def patient_factory do
     id = UUID.uuid4()
@@ -49,6 +48,18 @@ defmodule Core.Factories do
       start: DateTime.utc_now(),
       end: DateTime.utc_now()
     }
+  end
+
+  def request_factory do
+    id = UUID.uuid4()
+
+    Request.encode_response(%Request{
+      _id: id,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now(),
+      status: Request.status(:pending),
+      response: ""
+    })
   end
 
   # def episode_factory do

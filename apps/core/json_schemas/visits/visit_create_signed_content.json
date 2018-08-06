@@ -1,0 +1,385 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/identifier"
+        }
+      }
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "code": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "description": "Dictionary TBD"
+          },
+          "code": {
+            "type": "string",
+            "description": "Symbol in syntax defined by the system"
+          },
+          "display": {
+            "type": "string",
+            "description": "Representation defined by the system"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    },
+    "class": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        },
+        "display": {
+          "type": "string",
+          "description": "Representation defined by the system"
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/code"
+            }
+          },
+          "description": "Description of identifier"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ]
+    },
+    "role": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/code"
+        }
+      },
+      "description": "Role that this diagnosis has within the episode of care"
+    },
+    "body_site": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/code"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/code"
+        }
+      }
+    },
+    "reason": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/code"
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "coding": {
+                "$ref": "#/definitions/code"
+              }
+            }
+          }
+        },
+        "detail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "identifier": {
+                "$ref": "#/definitions/identifier"
+              }
+            }
+          }
+        }
+      }
+    },
+    "diagnosis": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          },
+          "description": "should be filled one of: condition or condition_id"
+        },
+        "role": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/code"
+            }
+          },
+          "description": "Role that this diagnosis has within the episode of care"
+        },
+        "rank": {
+          "type": "number",
+          "description": "Ranking of the diagnosis (for each role type)"
+        }
+      },
+      "required": [
+        "role"
+      ]
+    },
+    "condition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "patient": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/code"
+            }
+          }
+        },
+        "clinical_status": {
+          "type": "string",
+          "description": "Dictionary TBD"
+        },
+        "verification_status": {
+          "type": "string",
+          "description": "Dictionary TBD"
+        },
+        "severity ": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/code"
+            }
+          }
+        },
+        "body_sites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/body_site"
+          }
+        },
+        "onset_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "stage": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "$ref": "#/definitions/code"
+                }
+              }
+            }
+          },
+          "required": [
+            "summary"
+          ]
+        },
+        "evidences": {
+          "$ref": "#/definitions/evidence"
+        }
+      },
+      "required": [
+        "id",
+        "patient",
+        "context",
+        "code",
+        "clinical_status",
+        "verification_status",
+        "onset_date"
+      ]
+    },
+    "encounter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string"
+        },
+        "patient": {
+          "$ref": "#/definitions/patient"
+        },
+        "episode": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "period": {
+          "$ref": "#/definitions/period"
+        },
+        "class": {
+          "#ref": "#/definitions/class"
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/code"
+            }
+          }
+        },
+        "incoming_referrals": {
+          "type": "string"
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/reason"
+          }
+        },
+        "diagnoses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/diagnosis"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/action"
+          }
+        },
+        "division": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "patient",
+        "episode",
+        "context",
+        "period",
+        "class",
+        "type",
+        "reasons",
+        "diagnosis",
+        "actions",
+        "division"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "encounters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/encounter"
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/condition"
+      }
+    },
+    "observations": {},
+    "allergy_intolerances": {},
+    "immunizations": {}
+  },
+  "required": [
+    "encounters",
+    "conditions"
+  ]
+}
