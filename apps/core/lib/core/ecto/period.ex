@@ -3,7 +3,8 @@ defmodule Core.Period do
 
   use Core.Schema
 
-  @derive Jason.Encoder
-
-  defstruct [:start, :end]
+  embedded_schema do
+    field(:start, presence: true)
+    field(:end)
+  end
 end

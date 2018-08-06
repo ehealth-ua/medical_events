@@ -3,17 +3,11 @@ defmodule Core.Visit do
 
   use Core.Schema
 
-  @derive Jason.Encoder
+  embedded_schema do
+    field(:id, presence: true)
+    field(:period)
 
-  defstruct [:id, :inserted_at, :updated_at, :inserted_by, :updated_by, :period]
-
-  # use Ecto.Schema
-
-  # alias Core.Period
-
-  # embedded_schema do
-  #   embeds_one(:period, Period)
-
-  #   timestamps()
-  # end
+    timestamps()
+    changed_by()
+  end
 end

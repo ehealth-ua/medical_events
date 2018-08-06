@@ -17,7 +17,7 @@ defmodule Core.Factories do
     id = UUID.uuid4()
     user_id = UUID.uuid4()
     visits = build_list(2, :visit)
-    visits = Enum.reduce(visits, %{}, fn %{id: id} = visit, acc -> Map.put(acc, id, visit) end)
+    visits = Enum.into(visits, %{}, fn %{id: id} = visit -> {id, visit} end)
 
     %Patient{
       _id: id,

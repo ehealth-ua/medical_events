@@ -164,5 +164,11 @@ defmodule Core.Mongo do
     |> Enum.into(%{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
 
+  defp prepare_doc(%DateTime{} = doc), do: doc
+
+  defp prepare_doc(%{} = doc) do
+    Enum.into(doc, %{}, fn {k, v} -> {k, prepare_doc(v)} end)
+  end
+
   defp prepare_doc(doc), do: doc
 end

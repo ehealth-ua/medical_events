@@ -42,6 +42,38 @@ defmodule Core.Schema do
     end
   end
 
+  defmacro embedded_schema(do: block) do
+    quote do
+      Module.put_attribute(__MODULE__, :__metadata__, %Metadata{})
+
+      unquote(block)
+      metadata = Module.get_attribute(__MODULE__, :__metadata__)
+
+      defstruct metadata.fields
+                |> Map.keys()
+                |> Keyword.new(fn x -> {x, nil} end)
+                |> Keyword.put(:__meta__, metadata)
+
+      defimpl Vex.Extract, for: __MODULE__ do
+        def settings(%{__meta__: metadata}) do
+          Enum.reduce(metadata.fields, %{}, fn {k, %{"validations" => validations}}, acc ->
+            Map.put(acc, k, validations)
+          end)
+        end
+
+        def attribute(map, [root_attr | path]) do
+          Map.get(map, root_attr) |> get_in(path)
+        end
+
+        def attribute(map, name) do
+          Map.get(map, name)
+        end
+      end
+
+      def metadata, do: @__metadata__
+    end
+  end
+
   defmacro field(name, validations \\ []) do
     quote do
       metadata = Module.get_attribute(__MODULE__, :__metadata__)

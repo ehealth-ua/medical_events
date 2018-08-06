@@ -23,7 +23,8 @@ use Mix.Config
 
 config :core,
   microservices: [
-    il: Core.Microservices.Il
+    il: Core.Microservices.Il,
+    digital_signature: Core.Microservices.DigitalSignature
   ],
   cache: [
     validators: Core.Validators.Cache
@@ -31,6 +32,14 @@ config :core,
 
 config :core, Core.Microservices.Il,
   endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
+  hackney_options: [
+    connect_timeout: 30_000,
+    recv_timeout: 30_000,
+    timeout: 30_000
+  ]
+
+config :core, Core.Microservices.DigitalSignature,
+  endpoint: {:system, "DIGITAL_SIGNATURE_ENDPOINT", "http://api-svc.digital-signature"},
   hackney_options: [
     connect_timeout: 30_000,
     recv_timeout: 30_000,

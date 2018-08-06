@@ -5,7 +5,8 @@ config :ex_unit, capture_log: false
 
 config :core,
   microservices: [
-    il: IlMock
+    il: IlMock,
+    digital_signature: DigitalSignatureMock
   ],
   cache: [
     validators: Core.Validators.CacheTest
