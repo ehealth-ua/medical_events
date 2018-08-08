@@ -2,8 +2,8 @@ defmodule Api.Web.VisitController do
   @moduledoc false
 
   use ApiWeb, :controller
-  alias Core.Patients
   alias Api.Web.RequestView
+  alias Core.Patients
 
   action_fallback(Api.Web.FallbackController)
 

@@ -66,7 +66,7 @@ config :kafka_ex,
   # errors when producing messages, it may be necessary to modify "advertised.host.name" in the
   # server.properties file.
   # In the case below you would set "advertised.host.name=localhost"
-  brokers: System.get_env("KAFKA_BROKERS") || "localhost:9092",
+  brokers: "localhost:9092",
   #
   # the default consumer group for worker processes, must be a binary (string)
   #    NOTE if you are on Kafka < 0.8.2 or if you want to disable the use of

@@ -10,6 +10,7 @@ defmodule Core.Patients do
   alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
+  alias EView.Views.ValidationError
   import Core.Condition
   import Core.Encounter
   import Core.Episode
@@ -53,50 +54,26 @@ defmodule Core.Patients do
         # "allergy_intolerances" => allergy_intolerances,
         "immunizations" => immunizations
       } ->
-        set = %{}
-
         set =
-          Enum.reduce(visits, set, fn visit, acc ->
-            visit_updates =
-              Enum.reduce(visit, %{}, fn {k, v}, visit_acc ->
-                Map.put(visit_acc, "visits.#{visit["id"]}.#{k}", v)
-              end)
-
-            Map.merge(acc, visit_updates)
-          end)
-
-        set =
-          Enum.reduce(episodes, set, fn episode, acc ->
-            episode_updates =
-              Enum.reduce(episode, %{}, fn {k, v}, episode_acc ->
-                Map.put(episode_acc, "episodes.#{episode["id"]}.#{k}", v)
-              end)
-
-            Map.merge(acc, episode_updates)
-          end)
-
-        set =
-          Enum.reduce(immunizations, set, fn immunization, acc ->
-            immunization_updates =
-              Enum.reduce(immunization, %{}, fn {k, v}, immunization_acc ->
-                Map.put(immunization_acc, "immunizations.#{immunization["id"]}.#{k}", v)
-              end)
-
-            Map.merge(acc, immunization_updates)
-          end)
-
-        # set =
-        #   Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
-        #     allergy_intolerance_updates =
-        #       Enum.reduce(allergy_intolerance, %{}, fn {k, v}, allergy_intolerance_acc ->
-        #         Map.put(allergy_intolerance_acc, "allergy_intolerances.#{allergy_intolerance["id"]}.#{k}", v)
-        #       end)
-
-        #     Map.merge(acc, allergy_intolerance_updates)
-        #   end)
+          %{}
+          |> add_to_set(visits, "visits")
+          |> add_to_set(episodes, "episodes")
+          # |> add_to_set(allergy_intolerances, "allergy_intolerances")
+          |> add_to_set(immunizations, "immunizations")
 
         Mongo.update_one(@collection, %{"id" => id}, %{"$set" => set})
     end
+  end
+
+  defp add_to_set(set, values, path) do
+    Enum.reduce(values, set, fn value, acc ->
+      value_updates =
+        Enum.reduce(value, %{}, fn {k, v}, value_acc ->
+          Map.put(value_acc, "#{path}.#{value["id"]}.#{k}", v)
+        end)
+
+      Map.merge(acc, value_updates)
+    end)
   end
 
   defp collect_signed_data(%VisitCreateRequest{id: id, signed_data: signed_data}) do
@@ -141,7 +118,7 @@ defmodule Core.Patients do
          }}
       else
         {:error, error} ->
-          {:halt, {:error, Jason.encode!(EView.Views.ValidationError.render("422.json", %{schema: error}))}}
+          {:halt, {:error, Jason.encode!(ValidationError.render("422.json", %{schema: error}))}}
       end
     end)
   end

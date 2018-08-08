@@ -11,7 +11,8 @@ defmodule PersonConsumer.MixProject do
       lockfile: "../../mix.lock",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 
@@ -26,8 +27,15 @@ defmodule PersonConsumer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:toml, "~> 0.3.0"},
       {:kafka_ex, "~> 0.8.3"},
       {:core, in_umbrella: true}
+    ]
+  end
+
+  defp aliases do
+    [
+      "ecto.setup": []
     ]
   end
 end

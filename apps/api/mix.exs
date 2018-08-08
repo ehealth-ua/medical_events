@@ -4,7 +4,7 @@ defmodule Api.Mixfile do
   def project do
     [
       app: :api,
-      version: "0.0.1",
+      version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -13,7 +13,8 @@ defmodule Api.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases()
     ]
   end
 
@@ -36,6 +37,7 @@ defmodule Api.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:toml, "~> 0.3.0"},
       {:plug_logger_json, "~> 0.6.0"},
       {:phoenix, "~> 1.3.3"},
       {:phoenix_pubsub, "~> 1.0"},
@@ -44,6 +46,12 @@ defmodule Api.Mixfile do
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
       {:core, in_umbrella: true}
+    ]
+  end
+
+  defp aliases do
+    [
+      "ecto.setup": []
     ]
   end
 end

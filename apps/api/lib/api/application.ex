@@ -1,4 +1,6 @@
 defmodule Api.Application do
+  @moduledoc false
+
   use Application
 
   # See https://hexdocs.pm/elixir/Application.html
@@ -9,7 +11,7 @@ defmodule Api.Application do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the endpoint when the application starts
-      supervisor(ApiWeb.Endpoint, []),
+      supervisor(ApiWeb.Endpoint, [])
       # Start your own worker by calling: Api.Worker.start_link(arg1, arg2, arg3)
       # worker(Api.Worker, [arg1, arg2, arg3]),
     ]

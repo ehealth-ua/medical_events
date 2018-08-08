@@ -134,6 +134,7 @@
       "properties": {
         "code": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
             "properties": {
@@ -145,6 +146,7 @@
         },
         "detail": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "object",
             "properties": {
@@ -234,6 +236,7 @@
         },
         "body_sites": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/definitions/body_site"
           }
@@ -319,18 +322,21 @@
         },
         "reasons": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/definitions/reason"
           }
         },
         "diagnoses": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/definitions/diagnosis"
           }
         },
         "actions": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "$ref": "#/definitions/action"
           }
@@ -364,12 +370,14 @@
   "properties": {
     "encounters": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "$ref": "#/definitions/encounter"
       }
     },
     "conditions": {
       "type": "array",
+      "minItems": 1,
       "items": {
         "$ref": "#/definitions/condition"
       }

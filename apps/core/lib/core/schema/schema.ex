@@ -1,4 +1,6 @@
 defmodule Core.Schema do
+  @moduledoc false
+
   alias Core.Metadata
 
   defmacro __using__(_) do
@@ -30,7 +32,7 @@ defmodule Core.Schema do
         end
 
         def attribute(map, [root_attr | path]) do
-          Map.get(map, root_attr) |> get_in(path)
+          get_in(Map.get(map, root_attr), path)
         end
 
         def attribute(map, name) do
@@ -62,7 +64,7 @@ defmodule Core.Schema do
         end
 
         def attribute(map, [root_attr | path]) do
-          Map.get(map, root_attr) |> get_in(path)
+          get_in(Map.get(map, root_attr), path)
         end
 
         def attribute(map, name) do

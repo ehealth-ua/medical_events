@@ -1,0 +1,54 @@
+language: elixir
+git:
+  depth: 1000
+cache:
+  directories:
+    - _build
+    - deps
+services:
+  - mongodb
+  - redis-server
+addons:
+  apt:
+    packages:
+      - docker-ce
+elixir:
+  - 1.6.6
+otp_release:
+  - 20.3.8
+notifications:
+  slack:
+    rooms:
+      - secure: "MAZDwNhuRd9NtHMrbVjKwjMZdAACrdKIcJwzNdORnowmYja11WruAOdtjC6N/dlIAlL1vJRlA0BXswg3M44uqt3zHXY7e3JPMfVDpLUH8b/CwdRhNK7N/CnSse7kZ5P7v8AVXk567Jm84b7fhJzGZkobRhT/R2hdPMHA/M50cOObUzY62ZEucROyvuwuDhmJYaZoUGK6X2tOpmxBtf1RQm5rVNFZWXhhtyupn/m2Hy8meTFdEdEyGoCQYtI8BCuD9Pa5XKWwZ28b38ws9ZlKV/kiDpwq0Uz1k+SKlzpo7zVZkEbdCHJF/e6JnetRmpm6i05zQdzMqc3gCC09rbZMlCoSTtcRvGZmE94YaOKd24qJK504ZJzl8PnkaUA3JXVUo4PpZqiA71sBPBe15qpnoURPMqzYKeqTHrNlhYXNBVibncl09OSSSNxBOgH0n2uqeTLS2ZXVpHUEUw6OQ8yQ6tR63qnW27xxSesewxZWvoKDOt1HLkhYAaRR4p/UOI4ae0iyUwAIBvuSH0gviqethMQ+vUWNDlI7bL7CTkiBGCApkHJPL5bPoJIE00LyuA2K7KBJsuv4ojzQ23K4zYaHTNG+7Z/nriePcJFoox1JY74apPf0VQrrPs6nxv6g6mXn9riuaU9g3jUyFwTEKUgd9FfrIHgFHZpV1jF9isByUGY="
+    on_success: always
+env:
+  global:
+    - NETWORK=medicalevents_default
+    - NO_ECTO_SETUP=true
+    - MIX_ENV=test
+    - DOCKER_NAMESPACE=edenlabllc
+    - APPS='{"medical_events_api":"medical_events_api","event_consumer":"event_consumer","person_consumer":"person_consumer"}'
+    - DOCKER_HOSTS='["kafka:10.50.0.5"]'
+    - secure: "EV/+bi5rDxHPFeguR1E042mcknMJ1PSuLlhMGgaVgC6O/y0JQFjt9geFetcUhEJPRq+Z/EOP9RYXXej9RXRfz02o/cWl/HovWj+2Roxuj5InHRS+O8sJyAz8QUqaZoP2QQXChH8up6Z3/UkmZdtZaV97HPdkqTLL2WnTxSzn8gfbn+7Sb6XG/j6mItIQ6LTybs9JMoeZtU7SNZvM6ttQp89uN1bajB2PFnwxRe6LgCH9RZVCU8/7GEdlPRKRuGY0q9Yhc6HAMF4sOYbk820Pwit48uAee3XLgRkLa+NaC8Hv8AupR9NoARP31YMbeY1742hoxBShCWnNY71TOG9Slw7xXqBoyMlyW7gEGmRx6Vi5uK3MxWL4wmjfOdWCJDncFuGEBz/I4vITby0ungrSmWH69FnO21OsOov+J0HJ3e7OSv88wismJBo7gweAHr1ljoTe4nBPhIGlh5UWZeOW6Vt4qQI+6mJM3w6w3+nzGiz3Xo+0gJ9R91u3dKB1jLP+d7dJFi81BK45Xb3C6VNjS452iBiNbg2dwnaUFxZUeGngDcXDxFpTxuu301FR3ZxO221IJ5W3PFoE1xOOoZLNJHCa7wdwAWOXknqMa2QGe4EVhurNbovdfPIYOeF1QUMVGrQGEPcs/hr8rlACNqPAnQB5iWrkcqtaJ9zPKE2fQtk="
+    - secure: "YQ7TpAXh6kIaHz15Y0jEjWz7XIIT31tc8nZyiBAIrDufTWbiJrOEUXOzurz2wDK/tXARAXPh2QbLmTMfzFkvw2YH+4jG1qNIYa7oRiJ2SJIqoMRWDmGBCA35bInO8KKwC/W4I50bVDbUChr0HzEoRK89i50hCj0fpGzzwPETJn4fGIe2496V7A/teBZHzML50pSLN6j8quhCRLKLz0SfEHHYNkrOhj0LlZWjG25rSehKL5NSw3hpWG8ISWTNnHXBi25PTOhLBQ3xjO4RqxV+pbO4W+HEW3KEpBJlNiWaJsiK5l4eACQH1QTgGFE2UxZu8Q9KeMPVewVbQ/eaAPDVBqzUzcHtBchmlJQoOSKY7lrB+Mr70FpoJDLmL5lgjZtJoyPkajIONnWPLYNZWkDAIj3wvaMbnVK8QxG/YqGPfhIjuj300Mzf3yOzkiy8QoNRbsvs8BtDBqMeuGb5oEYjW3wlMHT74mAcqEYPER3ow/hejm4EoWdcdaOBB9VujHd0AeCk+d1J8dQg5NbCt+ersFHHYuqZu3rFOeeK0QicpS5vZ1gHdaYd9t+KrFAlFQhO9MzpgZisTMk9lyp9/F/00E1Vw4DcwhiEU10vt0cC7bxsQAX1b/NnPPxObtIt2J1UZ595GrQtCdWuHKSFfzoajcYEEeicgFXHO2Cr5MOw9Do="
+branches:
+  except:
+    - /[0-9]*\.[0-9]*\.[0-9]*/
+before_install:
+  - sudo apt-get install jq
+  - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella/init-redis.sh -o init-redis.sh; sudo sh ./init-redis.sh
+  - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella/init-mongodb.sh -o init-mongodb.sh; sudo sh ./init-mongodb.sh
+jobs:
+  include:
+    - stage: "test and build"
+      # run tests
+      script:
+      - docker-compose up -d
+      - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella/tests.sh -o tests.sh; bash ./tests.sh) || travis_terminate 1
+      # Build Docker container
+    - stage: "test and build"
+      # "Decrypting deploy key..."
+      script:
+      # - openssl aes-256-cbc -K $encrypted_c996ec964e08_key -iv $encrypted_c996ec964e08_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
+      - docker-compose up -d
+      - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1

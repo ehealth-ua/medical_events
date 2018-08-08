@@ -31,7 +31,7 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :api do
+release :medical_events_api do
   set(version: current_version(:api))
 
   set(
@@ -39,6 +39,12 @@ release :api do
       :runtime_tools,
       api: :permanent,
       core: :permanent
+    ]
+  )
+
+  set(
+    config_providers: [
+      {Toml.Provider, [path: "/app/config.toml"]}
     ]
   )
 end
@@ -53,6 +59,12 @@ release :event_consumer do
       core: :permanent
     ]
   )
+
+  set(
+    config_providers: [
+      {Toml.Provider, [path: "/app/config.toml"]}
+    ]
+  )
 end
 
 release :person_consumer do
@@ -63,6 +75,12 @@ release :person_consumer do
       :runtime_tools,
       person_consumer: :permanent,
       core: :permanent
+    ]
+  )
+
+  set(
+    config_providers: [
+      {Toml.Provider, [path: "/app/config.toml"]}
     ]
   )
 end

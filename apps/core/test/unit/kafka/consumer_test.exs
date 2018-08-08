@@ -56,6 +56,12 @@ defmodule Core.Kafka.ConsumerTest do
                  _id: request._id,
                  signed_data: [Base.encode64(Jason.encode!(signed_content))]
                })
+
+      assert {:ok,
+              %Core.Request{
+                response_size: 585,
+                status: 1
+              }} = Requests.get_by_id(request._id)
     end
   end
 end

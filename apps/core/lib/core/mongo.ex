@@ -1,4 +1,6 @@
 defmodule Core.Mongo do
+  @moduledoc false
+
   alias Mongo, as: M
 
   defdelegate start_link(opts), to: M

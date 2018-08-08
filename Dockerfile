@@ -14,7 +14,7 @@ RUN mix do \
       local.rebar --force, \
       deps.get, \
       deps.compile, \
-      release
+      release --name=${APP_NAME}
 
 FROM alpine:3.8
 
@@ -30,6 +30,7 @@ RUN apk add --no-cache \
 WORKDIR /app
 
 COPY --from=builder /app/_build/prod/rel/${APP_NAME}/releases/0.1.0/${APP_NAME}.tar.gz /app
+COPY --from=builder /app/config.toml /app
 
 RUN tar -xzf ${APP_NAME}.tar.gz; rm ${APP_NAME}.tar.gz
 

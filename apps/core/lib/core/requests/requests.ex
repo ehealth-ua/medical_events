@@ -24,7 +24,7 @@ defmodule Core.Requests do
   end
 
   def create(module, data) do
-    id = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.encode64()
+    id = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.encode64(padding: false)
 
     request =
       Request.encode_response(%Request{
