@@ -23,7 +23,7 @@ defmodule MedicalEvents.Umbrella.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      {:distillery, "~> 1.5.3", runtime: false},
+      {:distillery, "~> 2.0-rc", runtime: false, override: true},
       {:excoveralls, "~> 0.9.1", only: [:dev, :test]},
       {:credo, "~> 0.9.3", only: [:dev, :test]}
     ]
