@@ -45,7 +45,7 @@ defmodule Core.Microservices.DigitalSignature do
       |> wrap_response(200)
       |> Jason.encode!()
 
-    check_response(%HTTPoison.Response{body: data, status_code: 200})
+    check_response({:ok, %HTTPoison.Response{body: data, status_code: 200}})
   end
 
   defp data_is_invalid_resp(path \\ "$.signed_content") do
@@ -79,7 +79,7 @@ defmodule Core.Microservices.DigitalSignature do
       }
       |> Jason.encode!()
 
-    ResponseDecoder.check_response(%HTTPoison.Response{body: data, status_code: 422})
+    check_response({:ok, %HTTPoison.Response{body: data, status_code: 422}})
   end
 
   defp wrap_response(data, code) do

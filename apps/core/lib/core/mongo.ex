@@ -92,7 +92,7 @@ defmodule Core.Mongo do
   def insert_one(%{__meta__: metadata} = doc, opts \\ []) do
     case Vex.errors(doc) do
       [] ->
-        insert_one(to_string(metadata.collection), prepare_doc(doc), opts)
+        insert_one(metadata.collection, prepare_doc(doc), opts)
 
       errors ->
         {:error, Enum.map(errors, &vex_to_json/1)}
@@ -106,7 +106,7 @@ defmodule Core.Mongo do
   def insert_one!(%{__meta__: metadata} = doc, opts \\ []) do
     case Vex.errors(doc) do
       [] ->
-        insert_one!(to_string(metadata.collection), prepare_doc(doc), opts)
+        insert_one!(metadata.collection, prepare_doc(doc), opts)
 
       errors ->
         {:error, errors}

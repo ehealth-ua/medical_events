@@ -1,27 +1,29 @@
 defmodule Core.Encounter do
   @moduledoc false
 
-  # use Ecto.Schema
+  use Core.Schema
 
-  # alias Core.CodeableConcept
-  # alias Core.Coding
-  # alias Core.Diagnosis
-  # alias Core.Period
-  # alias Core.Reference
-  # alias Core.StatusHistory
+  embedded_schema do
+    field(:id, presence: true)
+    field(:status)
+    field(:status_history)
+    field(:period)
+    field(:class)
+    field(:types)
+    field(:incoming_referrals)
+    field(:duration)
+    field(:reasons)
+    field(:diagnoses)
+    field(:service_provider)
+    field(:division)
+    field(:actions)
+    field(:signed_content_links)
 
-  # embedded_schema do
-  #   field(:status)
-  #   embeds_many(:status_history, StatusHistory)
-  #   embeds_one(:period, Period)
-  #   embeds_one(:class, Coding)
-  #   embeds_many(:types, CodeableConcept)
-  #   embeds_one(:episode, Reference)
-  #   embeds_many(:incoming_referrals, Reference)
-  #   embeds_many(:reasons, CodeableConcept)
-  #   embeds_many(:diagnoses, Diagnosis)
-  #   embeds_one(:service_provider, Reference)
+    timestamps()
+    changed_by()
+  end
 
-  #   timestamps()
-  # end
+  def create_encounter(data) do
+    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  end
 end

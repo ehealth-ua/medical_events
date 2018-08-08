@@ -5,7 +5,6 @@ defmodule Core.Application do
 
   use Application
   alias Core.Redis
-  alias Core.Repo
 
   def start(_type, _args) do
     import Supervisor.Spec

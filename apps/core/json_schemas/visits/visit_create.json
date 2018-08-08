@@ -103,23 +103,6 @@
       ],
       "additionalProperties": false
     },
-    "signed_encounter": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/uuid"
-        },
-        "signed_content": {
-          "type": "string",
-          "minLength": 1
-        }
-      },
-      "required": [
-        "id",
-        "signed_content"
-      ],
-      "additionalProperties": false
-    },
     "diagnosis": {
       "type": "object",
       "properties": {
@@ -226,7 +209,8 @@
     "signed_data": {
       "type": "array",
       "items": {
-        "$ref": "#/definitions/signed_encounter"
+        "type": "string",
+        "minLength": 1
       }
     }
   },

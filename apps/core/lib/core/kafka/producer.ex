@@ -1,8 +1,6 @@
 defmodule Core.Kafka.Producer do
   @moduledoc false
 
-  alias Core.Request
-
   @medical_events_topic "medical_events"
   @behaviour Core.Behaviours.KafkaProducerBehaviour
 

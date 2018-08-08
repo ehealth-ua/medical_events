@@ -1,31 +1,33 @@
 defmodule Core.Observation do
   @moduledoc false
 
-  # use Ecto.Schema
+  use Core.Schema
 
-  # alias Core.CodeableConcept
-  # alias Core.Observations.Value
-  # alias Core.Period
-  # alias Core.Reference
+  embedded_schema do
+    field(:id, presence: true)
+    field(:based_on)
+    field(:status)
+    field(:categories)
+    field(:code)
+    field(:patient_id, presence: true)
+    field(:encounter)
+    field(:effective_date_time)
+    field(:effective_period)
+    field(:issued)
+    field(:performers)
+    field(:value)
+    field(:interpretation)
+    field(:comment)
+    field(:body_side)
+    field(:method)
+    field(:reference_rage)
+    field(:component)
 
-  # schema "observations" do
-  #   embeds_many(:based_on, Reference)
-  #   embeds_many(:categories, CodeableConcept)
-  #   embeds_one(:code, CodeableConcept)
-  #   embeds_one(:patient, Reference)
-  #   embeds_one(:encounter, Reference)
-  #   field(:effective_date_time, :naive_datetime)
-  #   embeds_one(:effective_period, Period)
-  #   field(:issued, :naive_datetime)
-  #   embeds_many(:performers, Reference)
-  #   embeds_one(:value_codeable_concept, CodeableConcept)
-  #   field(:value, Value)
-  #   embeds_one(:data_absent_reason, CodeableConcept)
-  #   embeds_one(:interpretation, CodeableConcept)
-  #   field(:comment)
-  #   embeds_one(:body_side, CodeableConcept)
-  #   embeds_one(:method, CodeableConcept)
+    timestamps()
+    changed_by()
+  end
 
-  #   timestamps()
-  # end
+  def create_observation(data) do
+    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  end
 end

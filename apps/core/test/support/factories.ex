@@ -14,12 +14,12 @@ defmodule Core.Factories do
 
   def patient_factory do
     id = UUID.uuid4()
-    user_id = UUID.uuid4()
     visits = build_list(2, :visit)
     visits = Enum.into(visits, %{}, fn %{id: id} = visit -> {id, visit} end)
 
     %Patient{
       _id: id,
+      status: Patient.status(:active),
       visits: visits,
       # episodes: build_list(2, :episode),
       inserted_at: DateTime.utc_now(),
@@ -31,7 +31,6 @@ defmodule Core.Factories do
 
   def visit_factory do
     id = UUID.uuid4()
-    user_id = UUID.uuid4()
 
     %Visit{
       id: id,

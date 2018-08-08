@@ -66,7 +66,7 @@ config :kafka_ex,
   # errors when producing messages, it may be necessary to modify "advertised.host.name" in the
   # server.properties file.
   # In the case below you would set "advertised.host.name=localhost"
-  brokers: "localhost:9092",
+  brokers: System.get_env("KAFKA_BROKERS") || "localhost:9092",
   #
   # the default consumer group for worker processes, must be a binary (string)
   #    NOTE if you are on Kafka < 0.8.2 or if you want to disable the use of
@@ -91,6 +91,7 @@ config :kafka_ex,
   commit_interval: 5_000,
   # Threshold number of messages consumed for GenConsumer to commit offsets
   # to the broker.
+  auto_offset_reset: :earliest,
   commit_threshold: 100,
   # This is the flag that enables use of ssl
   # use_ssl: true,

@@ -10,7 +10,7 @@ defmodule Core.Schema do
   defmacro schema(collection, do: block) do
     quote do
       Module.put_attribute(__MODULE__, :__metadata__, %Metadata{
-        collection: unquote(collection),
+        collection: to_string(unquote(collection)),
         primary_key: Module.get_attribute(__MODULE__, :primary_key)
       })
 
@@ -106,10 +106,10 @@ end
 
 defimpl Vex.Blank, for: DateTime do
   def blank?(%DateTime{}), do: false
-  def blank?(value), do: true
+  def blank?(_), do: true
 end
 
 defimpl Vex.Blank, for: BSON.ObjectId do
   def blank?(%BSON.ObjectId{}), do: false
-  def blank?(value), do: true
+  def blank?(_), do: true
 end

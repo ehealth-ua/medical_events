@@ -3,9 +3,16 @@ defmodule Core.Patient do
 
   use Core.Schema
 
+  @status_active "active"
+  @status_inactive "inactive"
+
+  def status(:active), do: @status_active
+  def status(:inactive), do: @status_inactive
+
   @primary_key :_id
   schema :patients do
     field(:_id, uuid: true)
+    field(:status, presence: true)
     field(:visits)
     field(:episodes)
     field(:immunizations)

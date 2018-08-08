@@ -4,7 +4,7 @@ defmodule Core.Requests do
   alias Core.Mongo
   alias Core.Request
 
-  @collection to_string(Request.metadata().collection)
+  @collection Request.metadata().collection
 
   def get_by_id(id) do
     with %{} = request <- Mongo.find_one(@collection, %{"_id" => id}) do
@@ -21,9 +21,6 @@ defmodule Core.Requests do
       })
 
     Mongo.update_one(@collection, %{"_id" => id}, %{"$set" => set_data})
-    |> IO.inspect()
-
-    System.halt()
   end
 
   def create(module, data) do
@@ -41,7 +38,7 @@ defmodule Core.Requests do
     data =
       data
       |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
-      |> Map.put(:id, id)
+      |> Map.put(:_id, id)
 
     with {:ok, _} <- Mongo.insert_one(request) do
       {:ok, request, struct(module, data)}

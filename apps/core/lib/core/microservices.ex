@@ -1,13 +1,16 @@
 defmodule Core.Microservices do
   @moduledoc false
 
+  @success_codes [200, 201, 204]
+
+  require Logger
+
   defmacro __using__(_) do
     quote do
       use Confex, otp_app: :core
       use HTTPoison.Base
       require Logger
-
-      @success_codes [200, 201, 204]
+      import Core.Microservices
 
       def process_url(url), do: config()[:endpoint] <> url
 
@@ -75,32 +78,32 @@ defmodule Core.Microservices do
           }
         ]
       end
+    end
+  end
 
-      def check_response({:ok, %HTTPoison.Response{status_code: status_code, body: body}})
-          when status_code in @success_codes do
-        decode_response(body)
-      end
+  def check_response({:ok, %HTTPoison.Response{status_code: status_code, body: body}})
+      when status_code in @success_codes do
+    decode_response(body)
+  end
 
-      def check_response({:ok, %HTTPoison.Response{body: body} = response}) do
-        case decode_response(body) do
-          {:ok, body} -> {:error, body}
-          error -> error
-        end
-      end
+  def check_response({:ok, %HTTPoison.Response{body: body}}) do
+    case decode_response(body) do
+      {:ok, body} -> {:error, body}
+      error -> error
+    end
+  end
 
-      # no body in response
-      def decode_response(""), do: {:ok, ""}
+  # no body in response
+  def decode_response(""), do: {:ok, ""}
 
-      def decode_response(response) do
-        case Jason.decode(response) do
-          {:ok, body} ->
-            {:ok, body}
+  def decode_response(response) do
+    case Jason.decode(response) do
+      {:ok, body} ->
+        {:ok, body}
 
-          err ->
-            Logger.error(err)
-            {:error, {:response_json_decoder, response}}
-        end
-      end
+      err ->
+        Logger.error(err)
+        {:error, {:response_json_decoder, response}}
     end
   end
 end

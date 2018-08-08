@@ -1,5 +1,9 @@
 defmodule Core.Requests.VisitCreateRequest do
-  @moduledoc false
+  @moduledoc """
+  Struct for creating visit request.
+  _id is a binded Request id. 
+  The rest are appropriate request fields
+  """
 
-  defstruct [:id, :episodes, :visits, :signed_data]
+  defstruct [:_id, :id, :episodes, :visits, :signed_data]
 end

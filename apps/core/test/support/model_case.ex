@@ -18,6 +18,7 @@ defmodule Core.ModelCase do
   using do
     quote do
       import Core.Factories
+      alias Core.Mongo
     end
   end
 end
