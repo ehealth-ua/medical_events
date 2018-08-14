@@ -49,6 +49,6 @@ jobs:
     - stage: "test and build"
       # "Decrypting deploy key..."
       script:
-      - oopenssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out ~\/Downloads/eHealth-8110bd102a69.json -d
+      - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out ~\/Downloads/eHealth-8110bd102a69.json -d
       - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
