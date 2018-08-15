@@ -5,5 +5,5 @@ defmodule Core.Requests.VisitCreateRequest do
   The rest are appropriate request fields
   """
 
-  defstruct [:_id, :id, :episodes, :visits, :signed_data]
+  defstruct [:_id, :id, :visits, :signed_data]
 end

@@ -13,7 +13,6 @@ defmodule Core.Patients do
   alias EView.Views.ValidationError
   import Core.Condition
   import Core.Encounter
-  import Core.Episode
   import Core.Immunization
   import Core.Observation
   import Core.Visit
@@ -38,9 +37,8 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_visit(%VisitCreateRequest{_id: id, episodes: episodes, visits: visits} = request) do
+  def consume_create_visit(%VisitCreateRequest{_id: id, visits: visits} = request) do
     visits = Enum.into(visits || [], %{}, &{Map.get(&1, "id"), create_visit(&1)})
-    episodes = Enum.into(episodes || [], %{}, &{Map.get(&1, "id"), create_episode(&1)})
 
     case collect_signed_data(request) do
       {:error, error} ->
@@ -57,7 +55,6 @@ defmodule Core.Patients do
         set =
           %{}
           |> add_to_set(visits, "visits")
-          |> add_to_set(episodes, "episodes")
           # |> add_to_set(allergy_intolerances, "allergy_intolerances")
           |> add_to_set(immunizations, "immunizations")
 
