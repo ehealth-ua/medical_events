@@ -46,7 +46,7 @@ jobs:
       - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/tests.sh -o tests.sh; bash ./tests.sh) || travis_terminate 1
       # Build Docker container
-    - stage: "test and build medical_events_api"
+    - stage: "test and build"
       env:
         - APPS='[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"}]'
       # "Decrypting deploy key..."
@@ -54,7 +54,7 @@ jobs:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
       - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
-    - stage: "test and build event_consumer"
+    - stage: "test and build"
       env:
         - APPS='[{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-event-consumer","label":"api-event-consumer"}]'
       # "Decrypting deploy key..."
@@ -62,7 +62,7 @@ jobs:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
       - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
-    - stage: "test and build person_consumer"
+    - stage: "test and build"
       env:
         - APPS='[{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-person-consumer","label":"api-person-consumer"}]'
       # "Decrypting deploy key..."
