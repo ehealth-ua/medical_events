@@ -1,0 +1,66 @@
+defmodule Core.Kafka.Consumer.CreateVisitTest do
+  @moduledoc false
+
+  use Core.ModelCase
+
+  alias Core.Kafka.Consumer
+  alias Core.Mongo
+  alias Core.Job
+  alias Core.Jobs
+  alias Core.Jobs.VisitCreateJob
+  import Mox
+  import Core.Expectations.DigitalSignature
+
+  @status_processed Job.status(:processed)
+
+  describe "consume create visit event" do
+    test "empty content" do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      job = build(:job)
+      assert {:ok, _} = Mongo.insert_one(job)
+      signature()
+      assert :ok = Consumer.consume(%VisitCreateJob{_id: job._id, signed_data: [Base.encode64("")]})
+      assert {:ok, %Job{status: @status_processed, response_size: 395}} = Jobs.get_by_id(job._id)
+    end
+
+    test "empty map" do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      job = build(:job)
+      assert {:ok, _} = Mongo.insert_one(job)
+      signature()
+
+      assert :ok = Consumer.consume(%VisitCreateJob{_id: job._id, signed_data: [Base.encode64(Jason.encode!(%{}))]})
+
+      assert {:ok, %Job{status: @status_processed, response_size: 581}} = Jobs.get_by_id(job._id)
+    end
+
+    test "success create visit" do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      job = build(:job)
+      assert {:ok, _} = Core.Mongo.insert_one(job)
+      signature()
+      signed_content = %{"encounters" => [], "conditions" => []}
+
+      assert :ok =
+               Consumer.consume(%VisitCreateJob{
+                 _id: job._id,
+                 signed_data: [Base.encode64(Jason.encode!(signed_content))]
+               })
+
+      assert {:ok,
+              %Core.Job{
+                response_size: 585,
+                status: 1
+              }} = Jobs.get_by_id(job._id)
+    end
+  end
+end

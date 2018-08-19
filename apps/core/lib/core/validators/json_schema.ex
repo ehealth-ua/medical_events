@@ -8,6 +8,7 @@ defmodule Core.Validators.JsonSchema do
 
   use_schema(:visit_create, "json_schemas/visits/visit_create.json")
   use_schema(:visit_create_signed_content, "json_schemas/visits/visit_create_signed_content.json")
+  use_schema(:episode_create, "json_schemas/episodes/episode_create.json")
 
   def validate(schema, attrs) do
     @schemas

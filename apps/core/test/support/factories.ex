@@ -3,13 +3,15 @@ defmodule Core.Factories do
 
   use ExMachina
 
-  # alias Core.CodeableConcept
-  # alias Core.Coding
-  # alias Core.Episode
+  alias Core.CodeableConcept
+  alias Core.Coding
+  alias Core.Episode
+  alias Core.Identifier
+  alias Core.Job
   alias Core.Patient
   alias Core.Period
+  alias Core.Reference
   # alias Core.StatusHistory
-  alias Core.Request
   alias Core.Visit
 
   def patient_factory do
@@ -17,11 +19,14 @@ defmodule Core.Factories do
     visits = build_list(2, :visit)
     visits = Enum.into(visits, %{}, fn %{id: id} = visit -> {id, visit} end)
 
+    episodes = build_list(2, :episode)
+    episodes = Enum.into(episodes, %{}, fn %{id: id} = episode -> {id, episode} end)
+
     %Patient{
       _id: id,
       status: Patient.status(:active),
       visits: visits,
-      # episodes: build_list(2, :episode),
+      episodes: episodes,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: id,
@@ -49,41 +54,64 @@ defmodule Core.Factories do
     }
   end
 
-  def request_factory do
+  def job_factory do
     id = UUID.uuid4()
 
-    Request.encode_response(%Request{
+    Job.encode_response(%Job{
       _id: id,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      status: Request.status(:pending),
+      status: Job.status(:pending),
       response: ""
     })
   end
 
-  # def episode_factory do
-  #   %Episode{
-  #     status: Episode.status(:active),
-  #     status_history: build_list(1, :status_history),
-  #     type: build(:codeable_concept)
-  #   }
-  # end
+  def episode_factory do
+    id = UUID.uuid4()
 
-  # def codeable_concept_factory do
-  #   %CodeableConcept{
-  #     coding: build(:coding),
-  #     text: "code text"
-  #   }
-  # end
+    %Episode{
+      id: UUID.uuid4(),
+      status: Episode.status(:active),
+      # status_history: build_list(1, :status_history),
+      type: "primary_care",
+      name: "ОРВИ 2018",
+      managing_organization: build(:reference),
+      period: build(:period),
+      care_manager: build(:reference),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now(),
+      inserted_by: id,
+      updated_by: id
+    }
+  end
 
-  # def coding_factory do
-  #   %Coding{
-  #     system: "local",
-  #     version: "0.1",
-  #     code: "1",
-  #     display: "true"
-  #   }
-  # end
+  def codeable_concept_factory do
+    %CodeableConcept{
+      coding: build(:coding),
+      text: "code text"
+    }
+  end
+
+  def coding_factory do
+    %Coding{
+      system: "local",
+      code: "1",
+      display: "true"
+    }
+  end
+
+  def reference_factory do
+    %Reference{
+      identifier: build(:identifier)
+    }
+  end
+
+  def identifier_factory do
+    %Identifier{
+      type: build(:codeable_concept),
+      value: UUID.uuid4()
+    }
+  end
 
   # def status_history_factory do
   #   %StatusHistory{

@@ -13,6 +13,7 @@ defmodule Core.Episode do
 
   embedded_schema do
     field(:id, presence: true)
+    field(:name)
     field(:status)
     field(:status_history)
     field(:type)
@@ -23,9 +24,5 @@ defmodule Core.Episode do
 
     timestamps()
     changed_by()
-  end
-
-  def create_episode(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
 end

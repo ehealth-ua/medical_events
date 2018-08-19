@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "system": {
+            "type": "string",
+            "pattern": "^eHealth(/)?",
+            "description": "Dictionary: TBD"
+          },
+          "code": {
+            "type": "string",
+            "description": "Symbol in syntax defined by the system"
+          },
+          "display": {
+            "type": "string",
+            "description": "Representation defined by the system"
+          }
+        },
+        "required": [
+          "system",
+          "code"
+        ]
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ]
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept",
+          "description": "Description of identifier"
+        },
+        "value": {
+          "$ref": "#/definitions/uuid"
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/identifier"
+        }
+      },
+      "required": [
+        "identifier"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/uuid"
+    },
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "primary_care"
+      ],
+      "description": "Dictionary: TBD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active"
+      ],
+      "description": "Dictionary: TBD"
+    },
+    "managing_organization": {
+      "$ref": "#/definitions/reference"
+    },
+    "period": {
+      "$ref": "#/definitions/period"
+    },
+    "care_manager": {
+      "$ref": "#/definitions/reference"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "type",
+    "managing_organization",
+    "period",
+    "care_manager"
+  ]
+}

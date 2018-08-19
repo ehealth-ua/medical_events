@@ -1,13 +1,14 @@
 defmodule Core.Patients do
   @moduledoc false
 
+  alias Core.Episode
+  alias Core.Job
+  alias Core.Jobs
+  alias Core.Jobs.EpisodeCreateJob
+  alias Core.Jobs.VisitCreateJob
   alias Core.Mongo
   alias Core.Patient
   alias Core.Patients.Validators
-  alias Core.Request
-  alias Core.Requests
-  alias Core.Requests.VisitCreateRequest
-  alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias EView.Views.ValidationError
@@ -21,28 +22,36 @@ defmodule Core.Patients do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
-  @status_active Patient.status(:active)
-
   def get_by_id(id) do
     Mongo.find_one(@collection, %{"_id" => id})
   end
 
-  def produce_create_visit(%{"id" => id} = params) do
-    with %{} = patient <- get_by_id(id),
+  def produce_create_episode(%{"patient_id" => patient_id} = params, user_id) do
+    with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:visit_create, Map.delete(params, "id")),
-         {:ok, request, visit_create_request} <- Requests.create(VisitCreateRequest, params),
-         :ok <- @kafka_producer.publish_medical_event(visit_create_request) do
-      {:ok, request}
+         :ok <- JsonSchema.validate(:episode_create, Map.delete(params, "patient_id")),
+         {:ok, job, episode_create_job} <- Jobs.create(EpisodeCreateJob, Map.put(params, "user_id", user_id)),
+         :ok <- @kafka_producer.publish_medical_event(episode_create_job) do
+      {:ok, job}
     end
   end
 
-  def consume_create_visit(%VisitCreateRequest{_id: id, visits: visits} = request) do
+  def produce_create_visit(%{"patient_id" => patient_id} = params) do
+    with %{} = patient <- get_by_id(patient_id),
+         :ok <- Validators.is_active(patient),
+         :ok <- JsonSchema.validate(:visit_create, Map.delete(params, "patient_id")),
+         {:ok, job, visit_create_job} <- Jobs.create(VisitCreateJob, params),
+         :ok <- @kafka_producer.publish_medical_event(visit_create_job) do
+      {:ok, job}
+    end
+  end
+
+  def consume_create_visit(%VisitCreateJob{_id: id, visits: visits} = job) do
     visits = Enum.into(visits || [], %{}, &{Map.get(&1, "id"), create_visit(&1)})
 
-    case collect_signed_data(request) do
+    case collect_signed_data(job) do
       {:error, error} ->
-        Requests.update(id, Request.status(:processed), error)
+        Jobs.update(id, Job.status(:processed), error)
         :ok
 
       %{
@@ -62,6 +71,48 @@ defmodule Core.Patients do
     end
   end
 
+  def consume_create_episode(%EpisodeCreateJob{_id: id, patient_id: patient_id} = job) do
+    now = DateTime.utc_now()
+
+    episode = %Episode{
+      id: job.id,
+      name: job.name,
+      type: job.type,
+      status: job.status,
+      managing_organization: job.managing_organization,
+      period: job.period,
+      care_manager: job.care_manager,
+      inserted_by: job.user_id,
+      updated_by: job.user_id,
+      inserted_at: now,
+      updated_at: now
+    }
+
+    case Vex.errors(episode) do
+      [] ->
+        case Mongo.find_one(
+               Patient.metadata().collection,
+               %{"_id" => patient_id},
+               projection: ["episodes.#{episode.id}": true]
+             ) do
+          %{"episodes" => episodes} when episodes == %{} ->
+            set = Mongo.add_to_set(%{}, episode, "episodes.#{episode.id}")
+
+            {:ok, %{matched_count: 1, modified_count: 1}} =
+              Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
+
+            # TODO: define success response
+            {:ok, %{}}
+
+          _ ->
+            {:ok, %{"error" => "Episode with id #{episode.id} already exists"}}
+        end
+
+      errors ->
+        {:ok, ValidationError.render("422.json", %{schema: Enum.map(errors, &Mongo.vex_to_json/1)})}
+    end
+  end
+
   defp add_to_set(set, values, path) do
     Enum.reduce(values, set, fn value, acc ->
       value_updates =
@@ -73,7 +124,7 @@ defmodule Core.Patients do
     end)
   end
 
-  defp collect_signed_data(%VisitCreateRequest{id: id, signed_data: signed_data}) do
+  defp collect_signed_data(%VisitCreateJob{signed_data: signed_data}) do
     initial_data = %{
       "encounters" => %{},
       "conditions" => %{},

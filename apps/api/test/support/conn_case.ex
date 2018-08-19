@@ -15,6 +15,8 @@ defmodule ApiWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  alias Core.Headers
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -22,6 +24,7 @@ defmodule ApiWeb.ConnCase do
       alias Core.Mongo
       import ApiWeb.Router.Helpers
       import Core.Factories
+      import ApiWeb.ConnCase
 
       # The default endpoint for testing
       @endpoint ApiWeb.Endpoint
@@ -29,6 +32,15 @@ defmodule ApiWeb.ConnCase do
   end
 
   setup _tags do
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+      |> put_consumer_id_header()
+
+    {:ok, conn: conn}
+  end
+
+  def put_consumer_id_header(conn, id \\ UUID.uuid4()) do
+    Plug.Conn.put_req_header(conn, Headers.consumer_id(), id)
   end
 end

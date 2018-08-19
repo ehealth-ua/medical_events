@@ -56,6 +56,7 @@ defmodule Core.MixProject do
       {:jason, "~> 1.1"},
       {:mox, "~> 0.4.0"},
       {:confex, "~> 3.3"},
+      {:eview, "~> 0.14.0"},
       {:ex_machina, "~> 2.2"}
     ]
   end

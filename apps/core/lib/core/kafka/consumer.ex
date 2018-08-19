@@ -1,27 +1,44 @@
 defmodule Core.Kafka.Consumer do
   @moduledoc false
 
+  alias Core.Job
+  alias Core.Jobs
+  alias Core.Jobs.EpisodeCreateJob
+  alias Core.Jobs.VisitCreateJob
   alias Core.Patients
-  alias Core.Request
-  alias Core.Requests
-  alias Core.Requests.VisitCreateRequest
   require Logger
 
   @doc """
   TODO: add digital signature error handling
   """
-  def consume(%VisitCreateRequest{_id: id} = visit_create_request) do
-    case Requests.get_by_id(id) do
-      {:ok, _request} ->
-        with {:ok, response} <- Patients.consume_create_visit(visit_create_request) do
-          Requests.update(id, Request.status(:processed), response)
+  def consume(%VisitCreateJob{_id: id} = visit_create_job) do
+    case Jobs.get_by_id(id) do
+      {:ok, _job} ->
+        with {:ok, response} <- Patients.consume_create_visit(visit_create_job) do
+          Jobs.update(id, Job.status(:processed), response)
           :ok
         end
 
       _ ->
         response = "Can't get request by id #{id}"
         Logger.warn(fn -> response end)
-        Requests.update(id, Request.status(:failed), response)
+        Jobs.update(id, Job.status(:failed), response)
+        :ok
+    end
+  end
+
+  def consume(%EpisodeCreateJob{_id: id} = episode_create_job) do
+    case Jobs.get_by_id(id) do
+      {:ok, _job} ->
+        with {:ok, response} <- Patients.consume_create_episode(episode_create_job) do
+          Jobs.update(id, Job.status(:processed), response)
+          :ok
+        end
+
+      _ ->
+        response = "Can't get request by id #{id}"
+        Logger.warn(fn -> response end)
+        Jobs.update(id, Job.status(:failed), response)
         :ok
     end
   end

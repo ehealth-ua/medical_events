@@ -1,4 +1,4 @@
-defmodule Core.Request do
+defmodule Core.Job do
   @moduledoc """
   Request is stored in capped collection, so document size can't change on update.
   That means all fields on update should have the same size
@@ -21,7 +21,7 @@ defmodule Core.Request do
   def status(:failed), do: @status_failed
 
   @primary_key :_id
-  schema :requests do
+  schema :jobs do
     field(:_id)
     field(:status, presence: true, inclusion: [@status_pending, @status_processed, @status_failed])
     field(:response, length: [is: @response_length])
@@ -30,9 +30,9 @@ defmodule Core.Request do
     timestamps()
   end
 
-  def encode_response(%__MODULE__{response: value} = request) do
+  def encode_response(%__MODULE__{response: value} = job) do
     response = Jason.encode!(value)
-    %{request | response: String.pad_trailing(response, @response_length, "."), response_size: byte_size(response)}
+    %{job | response: String.pad_trailing(response, @response_length, "."), response_size: byte_size(response)}
   end
 
   def encode_response(%{"response" => value} = data) do
@@ -43,7 +43,7 @@ defmodule Core.Request do
     |> Map.put("response_size", byte_size(response))
   end
 
-  def decode_response(%__MODULE__{response: response, response_size: response_size} = request) do
-    %{request | response: Jason.decode!(String.slice(response, 0, response_size))}
+  def decode_response(%__MODULE__{response: response, response_size: response_size} = job) do
+    %{job | response: Jason.decode!(String.slice(response, 0, response_size))}
   end
 end

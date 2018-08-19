@@ -143,7 +143,7 @@ defmodule Core.Mongo do
     execute(:update_one!, [coll, filter, update, opts])
   end
 
-  defp vex_to_json({:error, field, :presence, message}) do
+  def vex_to_json({:error, field, :presence, message}) do
     {%{
        description: message,
        params: [],
@@ -151,7 +151,7 @@ defmodule Core.Mongo do
      }, "$.#{field}"}
   end
 
-  defp vex_to_json({:error, field, _, message}) do
+  def vex_to_json({:error, field, _, message}) do
     {%{
        description: message,
        params: [],
@@ -173,4 +173,14 @@ defmodule Core.Mongo do
   end
 
   defp prepare_doc(doc), do: doc
+
+  def add_to_set(set, %{__struct__: module, __meta__: _} = value, path) do
+    fields = Map.keys(module.metadata().fields)
+
+    Enum.reduce(fields, set, fn field, acc ->
+      add_to_set(acc, Map.get(value, field), "#{path}.#{field}")
+    end)
+  end
+
+  def add_to_set(set, value, path), do: Map.put(set, path, value)
 end

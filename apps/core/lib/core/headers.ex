@@ -3,6 +3,8 @@ defmodule Core.Headers do
 
   @consumer_id "x-consumer-id"
 
+  def consumer_id, do: @consumer_id
+
   def get_consumer_id(headers) do
     get_header(headers, @consumer_id)
   end
