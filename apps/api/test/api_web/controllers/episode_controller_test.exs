@@ -16,6 +16,8 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -28,6 +30,8 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "json schema validation failed", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -41,6 +45,8 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "success create episode", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)

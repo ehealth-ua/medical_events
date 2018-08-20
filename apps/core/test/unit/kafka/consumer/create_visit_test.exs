@@ -15,6 +15,8 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
 
   describe "consume create visit event" do
     test "empty content" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -27,6 +29,8 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
     end
 
     test "empty map" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -41,6 +45,8 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
     end
 
     test "success create visit" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)

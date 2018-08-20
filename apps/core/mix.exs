@@ -45,19 +45,19 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kafka_ex, "~> 0.8.3"},
-      {:httpoison, "~> 1.2"},
-      {:vex, "~> 0.8.0"},
-      {:elixir_uuid, "~> 1.2"},
-      {:mongodb, "~> 0.4.6"},
-      {:redix, "~> 0.7.1"},
-      {:poolboy, "~> 1.5"},
-      {:jvalid, "~> 0.7.0"},
-      {:jason, "~> 1.1"},
-      {:mox, "~> 0.4.0"},
       {:confex, "~> 3.3"},
+      {:elixir_uuid, "~> 1.2"},
       {:eview, "~> 0.14.0"},
-      {:ex_machina, "~> 2.2"}
+      {:httpoison, "~> 1.2"},
+      {:jason, "~> 1.1"},
+      {:jvalid, "~> 0.7.0"},
+      {:kafka_ex, "~> 0.8.3"},
+      {:mongodb, "~> 0.4.6"},
+      {:poolboy, "~> 1.5"},
+      {:redix, "~> 0.7.1"},
+      {:vex, "~> 0.8.0"},
+      {:mox, "~> 0.4.0", only: :test},
+      {:ex_machina, "~> 2.2", only: :test}
     ]
   end
 end

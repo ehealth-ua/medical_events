@@ -16,3 +16,4 @@ config :core,
   ]
 
 config :core, :mongo, url: "mongodb://localhost:27017/medical_data_test"
+config :core, :mongo_audit_log, url: "mongodb://localhost:27017/medical_events_audit_log"

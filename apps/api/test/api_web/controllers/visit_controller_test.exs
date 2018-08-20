@@ -16,6 +16,8 @@ defmodule Api.Web.VisitControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -28,6 +30,8 @@ defmodule Api.Web.VisitControllerTest do
     end
 
     test "no signed data set", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
@@ -54,11 +58,13 @@ defmodule Api.Web.VisitControllerTest do
     end
 
     test "success create visit", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
 
-      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
       patient = build(:patient)
       assert {:ok, _} = Mongo.insert_one(patient)
 

@@ -1,22 +1,27 @@
 defmodule Core.Mongo do
   @moduledoc false
 
+  alias Core.Mongo.AuditLog
+  alias DBConnection.Poolboy
   alias Mongo, as: M
 
   defdelegate start_link(opts), to: M
   defdelegate object_id, to: M
 
   defp execute(fun, args) do
-    args = List.insert_at(args, 0, :mongo)
-
     opts =
       args
       |> List.last()
-      |> Keyword.put(:pool, DBConnection.Poolboy)
+      |> Keyword.put(:pool, Poolboy)
 
-    args = List.replace_at(args, Enum.count(args) - 1, opts)
+    enriched_args =
+      args
+      |> List.replace_at(Enum.count(args) - 1, opts)
+      |> List.insert_at(0, :mongo)
 
-    apply(M, fun, args)
+    M
+    |> apply(fun, enriched_args)
+    |> AuditLog.log_operation(fun, args)
   end
 
   def aggregate(coll, pipeline, opts \\ []) do
@@ -47,11 +52,11 @@ defmodule Core.Mongo do
     execute(:delete_many!, [coll, filter, opts])
   end
 
-  def delete_one(coll, filter, opts \\ []) do
+  def delete_one(coll, %{"_id" => _} = filter, opts \\ []) do
     execute(:delete_one, [coll, filter, opts])
   end
 
-  def delete_one!(coll, filter, opts \\ []) do
+  def delete_one!(coll, %{"_id" => _} = filter, opts \\ []) do
     execute(:delete_one!, [coll, filter, opts])
   end
 
@@ -71,15 +76,15 @@ defmodule Core.Mongo do
     execute(:find_one, [coll, filter, opts])
   end
 
-  def find_one_and_delete(coll, filter, opts \\ []) do
+  def find_one_and_delete(coll, %{"_id" => _} = filter, opts \\ []) do
     execute(:find_one_and_delete, [coll, filter, opts])
   end
 
-  def find_one_and_replace(coll, filter, replacement, opts \\ []) do
+  def find_one_and_replace(coll, %{"_id" => _} = filter, replacement, opts \\ []) do
     execute(:find_one_and_replace, [coll, filter, replacement, opts])
   end
 
-  def find_one_and_update(coll, filter, update, opts \\ []) do
+  def find_one_and_update(coll, %{"_id" => _} = filter, update, opts \\ []) do
     execute(:find_one_and_update, [coll, filter, update, opts])
   end
 
@@ -119,11 +124,11 @@ defmodule Core.Mongo do
     execute(:insert_one!, [coll, doc, opts])
   end
 
-  def replace_one(coll, filter, replacement, opts \\ []) do
+  def replace_one(coll, %{"_id" => _} = filter, replacement, opts \\ []) do
     execute(:replace_one, [coll, filter, replacement, opts])
   end
 
-  def replace_one!(coll, filter, replacement, opts \\ []) do
+  def replace_one!(coll, %{"_id" => _} = filter, replacement, opts \\ []) do
     execute(:replace_one!, [coll, filter, replacement, opts])
   end
 
@@ -135,11 +140,11 @@ defmodule Core.Mongo do
     execute(:update_many!, [coll, filter, update, opts])
   end
 
-  def update_one(coll, filter, update, opts \\ []) do
+  def update_one(coll, %{"_id" => _} = filter, update, opts \\ []) do
     execute(:update_one, [coll, filter, update, opts])
   end
 
-  def update_one!(coll, filter, update, opts \\ []) do
+  def update_one!(coll, %{"_id" => _} = filter, update, opts \\ []) do
     execute(:update_one!, [coll, filter, update, opts])
   end
 

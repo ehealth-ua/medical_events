@@ -4,3 +4,4 @@ use Mix.Config
 # It should read environment variables to follow 12 factor apps convention.
 
 config :core, :mongo, url: "${DB_URL}"
+config :core, :mongo_audit_log, url: "${AUDIT_LOG_DB_URL}"

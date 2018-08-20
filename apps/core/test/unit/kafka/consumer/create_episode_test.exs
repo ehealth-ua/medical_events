@@ -3,6 +3,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
   use Core.ModelCase
 
+  import Mox
+
   alias Core.Kafka.Consumer
   alias Core.Mongo
   alias Core.Patient
@@ -11,6 +13,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
   describe "consume create episode event" do
     test "episode already exists" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient = build(:patient)
       assert {:ok, _} = Mongo.insert_one(patient)
       episode_id = patient.episodes |> Map.keys() |> hd
@@ -33,6 +36,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
     end
 
     test "episode was created" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient = build(:patient)
       assert {:ok, _} = Mongo.insert_one(patient)
       episode_id = UUID.uuid4()

@@ -34,7 +34,18 @@ defmodule Core.Application do
       redix_workers ++
         [
           worker(Core.Validators.Cache, []),
-          worker(Mongo, [[name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy]])
+          worker(Mongo, [[name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy]]),
+          worker(
+            Mongo,
+            [
+              [
+                name: :mongo_audit_log,
+                url: Application.get_env(:core, :mongo_audit_log)[:url],
+                pool: DBConnection.Poolboy
+              ]
+            ],
+            id: :mongo_audit_log
+          )
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -11,3 +11,4 @@ use Mix.Config
 # Configure your database
 
 config :core, :mongo, url: "mongodb://localhost:27017/medical_data"
+config :core, :mongo_audit_log, url: "mongodb://localhost:27017/medical_data"
