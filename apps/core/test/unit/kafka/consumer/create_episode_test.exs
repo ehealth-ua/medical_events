@@ -14,12 +14,10 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
   describe "consume create episode event" do
     test "episode already exists" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
       episode_id = patient.episodes |> Map.keys() |> hd
 
-      job = build(:job)
-      assert {:ok, _} = Mongo.insert_one(job)
+      job = insert(:job)
       user_id = UUID.uuid4()
 
       assert :ok =
@@ -37,12 +35,10 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
     test "episode was created" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
       episode_id = UUID.uuid4()
 
-      job = build(:job)
-      assert {:ok, _} = Mongo.insert_one(job)
+      job = insert(:job)
       user_id = UUID.uuid4()
 
       assert :ok =

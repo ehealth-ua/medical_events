@@ -8,6 +8,7 @@ defmodule Core.Factories do
   alias Core.Episode
   alias Core.Identifier
   alias Core.Job
+  alias Core.Mongo
   alias Core.Patient
   alias Core.Period
   alias Core.Reference
@@ -121,4 +122,10 @@ defmodule Core.Factories do
   #     updated_at: NaiveDateTime.utc_now()
   #   }
   # end
+
+  def insert(factory, args \\ []) do
+    entity = build(factory, args)
+    {:ok, _} = Mongo.insert_one(entity)
+    entity
+  end
 end

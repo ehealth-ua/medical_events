@@ -8,7 +8,7 @@ defmodule Core.PatientTest do
     test "success create patient" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient = build(:patient)
-      assert {:ok, _} = Core.Mongo.insert_one(patient)
+      assert {:ok, _} = Mongo.insert_one(patient)
     end
   end
 end

@@ -17,9 +17,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumerTest do
 
     test "update existing person" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = build(:patient)
-      id = patient._id
-      assert {:ok, _} = Mongo.insert_one(patient)
+      %{_id: id} = patient = insert(:patient)
       status_inactive = Patient.status(:inactive)
 
       assert :ok ==

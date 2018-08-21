@@ -26,8 +26,7 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = build(:patient, status: Patient.status(:inactive))
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient, status: Patient.status(:inactive))
 
       conn = post(conn, visit_path(conn, :create, patient._id))
       assert json_response(conn, 409)
@@ -41,8 +40,7 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
 
       conn = post(conn, episode_path(conn, :create, patient._id), %{})
       assert json_response(conn, 422)
@@ -56,8 +54,7 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
 
       conn =
         post(conn, episode_path(conn, :create, patient._id), %{

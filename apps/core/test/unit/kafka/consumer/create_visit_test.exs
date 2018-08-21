@@ -4,7 +4,6 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
   use Core.ModelCase
 
   alias Core.Kafka.Consumer
-  alias Core.Mongo
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.VisitCreateJob
@@ -21,8 +20,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      job = build(:job)
-      assert {:ok, _} = Mongo.insert_one(job)
+      job = insert(:job)
       signature()
       assert :ok = Consumer.consume(%VisitCreateJob{_id: job._id, signed_data: [Base.encode64("")]})
       assert {:ok, %Job{status: @status_processed, response_size: 395}} = Jobs.get_by_id(job._id)
@@ -35,8 +33,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      job = build(:job)
-      assert {:ok, _} = Mongo.insert_one(job)
+      job = insert(:job)
       signature()
 
       assert :ok = Consumer.consume(%VisitCreateJob{_id: job._id, signed_data: [Base.encode64(Jason.encode!(%{}))]})
@@ -51,8 +48,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      job = build(:job)
-      assert {:ok, _} = Mongo.insert_one(job)
+      job = insert(:job)
       signature()
       signed_content = %{"encounters" => [], "conditions" => []}
 

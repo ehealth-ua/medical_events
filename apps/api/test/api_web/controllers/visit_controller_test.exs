@@ -22,8 +22,7 @@ defmodule Api.Web.VisitControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = build(:patient, status: Patient.status(:inactive))
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient, status: Patient.status(:inactive))
 
       conn = post(conn, visit_path(conn, :create, patient._id))
       assert json_response(conn, 409)
@@ -36,8 +35,7 @@ defmodule Api.Web.VisitControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
 
       conn = post(conn, visit_path(conn, :create, patient._id))
       assert response = json_response(conn, 422)
@@ -59,14 +57,13 @@ defmodule Api.Web.VisitControllerTest do
 
     test "success create visit", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
 
-      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = build(:patient)
-      assert {:ok, _} = Mongo.insert_one(patient)
+      patient = insert(:patient)
 
       conn =
         post(conn, visit_path(conn, :create, patient._id), %{

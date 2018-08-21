@@ -21,10 +21,10 @@ defmodule ApiWeb.ConnCase do
     quote do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
-      alias Core.Mongo
+      import ApiWeb.ConnCase
       import ApiWeb.Router.Helpers
       import Core.Factories
-      import ApiWeb.ConnCase
+      alias Core.Mongo
 
       # The default endpoint for testing
       @endpoint ApiWeb.Endpoint
