@@ -30,7 +30,7 @@ config :core,
     validators: Core.Validators.Cache
   ],
   kafka: [
-    producer: KafkaEx
+    producer: Core.Kafka.Producer
   ]
 
 config :core, Core.Microservices.Il,
