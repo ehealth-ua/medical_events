@@ -23,10 +23,11 @@ defmodule Core.Schema do
                 |> Map.keys()
                 |> Keyword.new(fn x -> {x, nil} end)
                 |> Keyword.put(:__meta__, metadata)
+                |> Keyword.put(:__validations__, metadata.fields)
 
       defimpl Vex.Extract, for: __MODULE__ do
-        def settings(%{__meta__: metadata}) do
-          Enum.reduce(metadata.fields, %{}, fn {k, %{"validations" => validations}}, acc ->
+        def settings(%{__validations__: field_validations}) do
+          Enum.reduce(field_validations, %{}, fn {k, %{"validations" => validations}}, acc ->
             Map.put(acc, k, validations)
           end)
         end
@@ -55,10 +56,11 @@ defmodule Core.Schema do
                 |> Map.keys()
                 |> Keyword.new(fn x -> {x, nil} end)
                 |> Keyword.put(:__meta__, metadata)
+                |> Keyword.put(:__validations__, metadata.fields)
 
       defimpl Vex.Extract, for: __MODULE__ do
-        def settings(%{__meta__: metadata}) do
-          Enum.reduce(metadata.fields, %{}, fn {k, %{"validations" => validations}}, acc ->
+        def settings(%{__validations__: field_validations}) do
+          Enum.reduce(field_validations, %{}, fn {k, %{"validations" => validations}}, acc ->
             Map.put(acc, k, validations)
           end)
         end
@@ -103,6 +105,17 @@ defmodule Core.Schema do
       field(:inserted_by, presence: true)
       field(:updated_by, presence: true)
     end
+  end
+
+  def add_validations(%{__validations__: document_validations} = document, field, validations)
+      when is_list(validations) do
+    field_value = Map.get(document_validations, field)
+    field_validations = Map.get(field_value, "validations") ++ validations
+
+    %{
+      document
+      | __validations__: Map.put(document_validations, field, Map.put(field_value, "validations", field_validations))
+    }
   end
 end
 

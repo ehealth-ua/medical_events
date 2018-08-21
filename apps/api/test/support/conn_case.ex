@@ -43,4 +43,8 @@ defmodule ApiWeb.ConnCase do
   def put_consumer_id_header(conn, id \\ UUID.uuid4()) do
     Plug.Conn.put_req_header(conn, Headers.consumer_id(), id)
   end
+
+  def put_client_id_header(conn, id \\ UUID.uuid4()) do
+    Plug.Conn.put_req_header(conn, Headers.consumer_metadata(), Jason.encode!(%{"client_id" => id}))
+  end
 end

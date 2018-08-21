@@ -23,8 +23,25 @@ defmodule Api.Plugs.Headers do
         })
         |> halt()
 
-      user_id ->
-        put_private(conn, :user_id, user_id)
+      _ ->
+        conn
+    end
+  end
+
+  def put_user_id(%Conn{} = conn, _) do
+    put_private(conn, :user_id, get_header(conn.req_headers, consumer_id()))
+  end
+
+  def put_client_id(%Conn{} = conn, _) do
+    case get_header(conn.req_headers, consumer_metadata()) do
+      nil ->
+        conn
+
+      consumer_metadata ->
+        case Jason.decode(consumer_metadata) do
+          {:ok, data} -> put_private(conn, :client_id, Map.get(data, "client_id"))
+          _ -> conn
+        end
     end
   end
 end

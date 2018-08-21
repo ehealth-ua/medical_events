@@ -113,7 +113,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{"$set": %{title: "update two"}} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -134,7 +134,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{"$set": %{title: "update two"}} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -152,7 +152,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{replaced: "title"} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -173,7 +173,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{replaced: "title"} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -191,7 +191,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{"$set": %{title: "update two"}} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -212,7 +212,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         assert %{replaced: "field"} == event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -248,7 +248,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         refute event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -267,7 +267,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         refute event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
@@ -286,7 +286,7 @@ defmodule Core.AuditLogTest do
         assert id == event.entry_id
         assert @test_collection == event.collection
         refute event.params
-        assert %{"_id" => id} = event.filter
+        assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok

@@ -2,8 +2,10 @@ defmodule Core.Headers do
   @moduledoc false
 
   @consumer_id "x-consumer-id"
+  @consumer_metadata "x-consumer-metadata"
 
   def consumer_id, do: @consumer_id
+  def consumer_metadata, do: @consumer_metadata
 
   def get_consumer_id(headers) do
     get_header(headers, @consumer_id)

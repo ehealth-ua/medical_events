@@ -56,6 +56,17 @@ config :core, Core.Redis,
   database: {:system, "REDIS_DATABASE", nil},
   pool_size: {:system, :integer, "REDIS_POOL_SIZE", 5}
 
+config :vex,
+  sources: [
+    [
+      datetime: Core.Validators.DateTime,
+      reference: Core.Validators.Reference,
+      value: Core.Validators.Value,
+      employee: Core.Validators.Employee
+    ],
+    Vex.Validators
+  ]
+
 config :kafka_ex,
   # A list of brokers to connect to. This can be in either of the following formats
   #

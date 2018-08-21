@@ -14,6 +14,7 @@ defmodule Core.Jobs.EpisodeCreateJob do
     :managing_organization,
     :period,
     :care_manager,
-    :user_id
+    :user_id,
+    :client_id
   ]
 end

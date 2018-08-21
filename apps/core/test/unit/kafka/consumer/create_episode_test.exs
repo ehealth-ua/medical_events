@@ -5,11 +5,12 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
   import Mox
 
+  alias Core.Episode
+  alias Core.Jobs
+  alias Core.Jobs.EpisodeCreateJob
   alias Core.Kafka.Consumer
   alias Core.Mongo
   alias Core.Patient
-  alias Core.Jobs
-  alias Core.Jobs.EpisodeCreateJob
 
   describe "consume create episode event" do
     test "episode already exists" do
@@ -19,16 +20,35 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       job = insert(:job)
       user_id = UUID.uuid4()
+      client_id = UUID.uuid4()
+
+      stub(IlMock, :get_employee, fn id, _ ->
+        {:ok, %{"data" => %{"id" => id, "status" => "active", "type" => "DOCTOR", "legal_entity_id" => client_id}}}
+      end)
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
                  _id: job._id,
                  patient_id: patient._id,
                  id: episode_id,
-                 user_id: user_id
+                 user_id: user_id,
+                 client_id: client_id,
+                 managing_organization: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+                     "value" => client_id
+                   }
+                 },
+                 period: %{"start" => DateTime.utc_now()},
+                 care_manager: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => UUID.uuid4()
+                   }
+                 }
                })
 
-      error = "Episode with id #{episode_id} already exists"
+      error = "Episode with such id already exists"
 
       assert {:ok, %{response: %{"error" => ^error}}} = Jobs.get_by_id(job._id)
     end
@@ -37,6 +57,11 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient = insert(:patient)
       episode_id = UUID.uuid4()
+      client_id = UUID.uuid4()
+
+      stub(IlMock, :get_employee, fn id, _ ->
+        {:ok, %{"data" => %{"id" => id, "status" => "active", "type" => "DOCTOR", "legal_entity_id" => client_id}}}
+      end)
 
       job = insert(:job)
       user_id = UUID.uuid4()
@@ -46,7 +71,24 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  _id: job._id,
                  patient_id: patient._id,
                  id: episode_id,
-                 user_id: user_id
+                 type: "primary_care",
+                 name: "ОРВИ 2018",
+                 status: Episode.status(:active),
+                 user_id: user_id,
+                 client_id: client_id,
+                 managing_organization: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+                     "value" => client_id
+                   }
+                 },
+                 period: %{"start" => DateTime.utc_now()},
+                 care_manager: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => UUID.uuid4()
+                   }
+                 }
                })
 
       assert %{"episodes" => episodes} =

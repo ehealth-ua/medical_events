@@ -18,9 +18,9 @@ defmodule Core.Episode do
     field(:status_history)
     field(:type)
     field(:diagnosis)
-    field(:managing_organization)
-    field(:period)
-    field(:care_manager)
+    field(:managing_organization, presence: true, reference: [path: "managing_organization"])
+    field(:period, presence: true, reference: [path: "period"])
+    field(:care_manager, presence: true, reference: [path: "care_manager"])
 
     timestamps()
     changed_by()

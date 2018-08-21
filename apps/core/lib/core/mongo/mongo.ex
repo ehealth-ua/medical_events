@@ -167,7 +167,7 @@ defmodule Core.Mongo do
   defp prepare_doc(%{__meta__: _} = doc) do
     doc
     |> Map.from_struct()
-    |> Map.drop(~w(__meta__)a)
+    |> Map.drop(~w(__meta__ __validations__)a)
     |> Enum.into(%{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
 
@@ -185,6 +185,10 @@ defmodule Core.Mongo do
     Enum.reduce(fields, set, fn field, acc ->
       add_to_set(acc, Map.get(value, field), "#{path}.#{field}")
     end)
+  end
+
+  def add_to_set(set, [%{__struct__: module, __meta__: _} | _] = values, path) do
+    Map.put(set, path, Enum.map(values, fn value -> prepare_doc(value) end))
   end
 
   def add_to_set(set, value, path), do: Map.put(set, path, value)

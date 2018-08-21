@@ -76,7 +76,7 @@ defmodule Api.Web.EpisodeControllerTest do
           }
         })
 
-      assert response = json_response(conn, 202)
+      assert json_response(conn, 202)
     end
   end
 end

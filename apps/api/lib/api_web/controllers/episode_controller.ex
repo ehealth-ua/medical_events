@@ -8,7 +8,7 @@ defmodule Api.Web.EpisodeController do
   action_fallback(Api.Web.FallbackController)
 
   def create(conn, params) do
-    with {:ok, job} <- Patients.produce_create_episode(params, conn.private[:user_id]) do
+    with {:ok, job} <- Patients.produce_create_episode(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
