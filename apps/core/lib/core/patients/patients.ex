@@ -96,7 +96,7 @@ defmodule Core.Patients do
                projection: ["episodes.#{episode.id}": true]
              ) do
           %{"episodes" => episodes} when episodes == %{} ->
-            set = Mongo.add_to_set(%{}, episode, "episodes.#{episode.id}")
+            set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
               Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})

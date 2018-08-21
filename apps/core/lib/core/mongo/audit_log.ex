@@ -15,7 +15,7 @@ defmodule Core.Mongo.AuditLog do
   @delete "DELETE"
 
   @collection_audit_log "audit_log"
-  @collections_blacklist ~w(schema_migrations)
+  @collections_blacklist ~w(schema_migrations jobs)
 
   @audit_operations %{
     # insert
@@ -65,6 +65,7 @@ defmodule Core.Mongo.AuditLog do
   defp push_event_to_log(operation_result, operation, collection, args) do
     operation_name = @audit_operations[operation]
     {params, filter} = fetch_event_data(operation_name, args)
+    actor_id = fetch_actor_id(params, List.last(args))
 
     id =
       case operation_name do
@@ -78,7 +79,8 @@ defmodule Core.Mongo.AuditLog do
         entry_id: id,
         collection: collection,
         params: params,
-        filter: filter
+        filter: filter,
+        actor_id: actor_id
       })
 
     unless @kafka_producer.publish_mongo_event(event) == :ok do
@@ -93,6 +95,20 @@ defmodule Core.Mongo.AuditLog do
   defp fetch_event_data(@delete, [_, filter | _]), do: {nil, filter}
   defp fetch_event_data(@update, [_, filter, params | _]), do: {params, filter}
 
+  # fetch from data set. Usually for insert operations
+  defp fetch_actor_id(%{updated_by: actor_id}, _opts), do: actor_id
+
+  # fetch from $set attribute. Usually for update operations
+  defp fetch_actor_id(%{"$set" => %{updated_by: actor_id}}, _opts), do: actor_id
+  defp fetch_actor_id(%{"$set" => %{"updated_by" => actor_id}}, _opts), do: actor_id
+
+  # fetch from data set. Usually for replace or delete operations
+  defp fetch_actor_id(_params, actor_id: actor_id), do: actor_id
+  defp fetch_actor_id(_, _), do: nil
+
+  @doc """
+  Insert MongoDB operation log into audit_log collection
+  """
   def store_event(%Event{} = event) do
     Mongo.insert_one(:mongo_audit_log, @collection_audit_log, Map.from_struct(event), pool: Poolboy)
   end

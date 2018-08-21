@@ -36,10 +36,11 @@ defmodule Core.AuditLogTest do
       end)
 
       patient = build(:patient)
-      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(patient)
+      actor_id = patient.updated_by
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(patient, actor_id: actor_id)
       assert %{"_id" => id} = CoreMongo.find_one("patients", %{"_id" => id})
 
-      assert_audit_log(id, @insert, "patients")
+      assert_audit_log(id, @insert, actor_id, "patients")
     end
 
     test "insert_one" do
@@ -54,12 +55,12 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
+      actor_id = UUID.uuid4()
       doc = %{"title" => "the one"}
-      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, [])
-
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, actor_id: actor_id)
       assert %{"_id" => _, "title" => "the one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
 
-      assert_audit_log(id, @insert)
+      assert_audit_log(id, @insert, actor_id)
     end
 
     test "insert_one!" do
@@ -74,9 +75,10 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert %{inserted_id: id} = CoreMongo.insert_one!(@test_collection, %{"title" => "the one"}, [])
+      actor_id = UUID.uuid4()
+      assert %{inserted_id: id} = CoreMongo.insert_one!(@test_collection, %{"title" => "the one"}, actor_id: actor_id)
       assert %{"_id" => _, "title" => "the one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @insert)
+      assert_audit_log(id, @insert, actor_id)
     end
 
     test "insert_many" do
@@ -97,13 +99,14 @@ defmodule Core.AuditLogTest do
     setup do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
+      actor_id = UUID.uuid4()
       doc = %{"title" => "update one"}
-      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, [])
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, actor_id: actor_id)
 
-      {:ok, id: id}
+      {:ok, id: id, actor_id: actor_id}
     end
 
-    test "update_one", %{id: id} do
+    test "update_one", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -116,12 +119,15 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert {:ok, _} = CoreMongo.update_one(@test_collection, %{"_id" => id}, %{"$set": %{title: "update two"}})
+      filter = %{"_id" => id}
+      replacement = %{"$set": %{title: "update two"}}
+      assert {:ok, _} = CoreMongo.update_one(@test_collection, filter, replacement, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+
+      assert_audit_log(id, @update, actor_id)
     end
 
-    test "update_one!", %{id: id} do
+    test "update_one!", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -134,12 +140,12 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      CoreMongo.update_one!(@test_collection, %{"_id" => id}, %{"$set": %{title: "update two"}})
+      CoreMongo.update_one!(@test_collection, %{"_id" => id}, %{"$set": %{title: "update two"}}, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+      assert_audit_log(id, @update, actor_id)
     end
 
-    test "replace_one", %{id: id} do
+    test "replace_one", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -152,12 +158,15 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert {:ok, _} = CoreMongo.replace_one(@test_collection, %{"_id" => id}, %{replaced: "title"})
+      filter = %{"_id" => id}
+      replacement = %{replaced: "title"}
+      assert {:ok, _} = CoreMongo.replace_one(@test_collection, filter, replacement, actor_id: actor_id)
       assert %{"_id" => _, "replaced" => "title"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+
+      assert_audit_log(id, @update, actor_id)
     end
 
-    test "replace_one!", %{id: id} do
+    test "replace_one!", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -170,12 +179,12 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      CoreMongo.replace_one!(@test_collection, %{"_id" => id}, %{replaced: "title"})
+      CoreMongo.replace_one!(@test_collection, %{"_id" => id}, %{replaced: "title"}, actor_id: actor_id)
       assert %{"_id" => _, "replaced" => "title"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+      assert_audit_log(id, @update, actor_id)
     end
 
-    test "find_one_and_update", %{id: id} do
+    test "find_one_and_update", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -188,14 +197,15 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert {:ok, _} =
-               CoreMongo.find_one_and_update(@test_collection, %{"_id" => id}, %{"$set": %{title: "update two"}})
-
+      filter = %{"_id" => id}
+      replacement = %{"$set": %{title: "update two"}}
+      assert {:ok, _} = CoreMongo.find_one_and_update(@test_collection, filter, replacement, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+
+      assert_audit_log(id, @update, actor_id)
     end
 
-    test "find_one_and_replace", %{id: id} do
+    test "find_one_and_replace", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @update == event.type
@@ -208,10 +218,10 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert CoreMongo.find_one_and_replace(@test_collection, %{"_id" => id}, %{replaced: "field"})
+      assert CoreMongo.find_one_and_replace(@test_collection, %{"_id" => id}, %{replaced: "field"}, actor_id: actor_id)
 
       assert %{"_id" => _, "replaced" => "field"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
-      assert_audit_log(id, @update)
+      assert_audit_log(id, @update, actor_id)
     end
 
     test "find_one_and_replace when document not found", _ do
@@ -224,13 +234,14 @@ defmodule Core.AuditLogTest do
     setup do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
+      actor_id = UUID.uuid4()
       doc = %{"title" => "delete one"}
-      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, [])
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, actor_id: actor_id)
 
-      {:ok, id: id}
+      {:ok, id: id, actor_id: actor_id}
     end
 
-    test "delete_one", %{id: id} do
+    test "delete_one", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @delete == event.type
@@ -243,13 +254,13 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert {:ok, _} = CoreMongo.delete_one(@test_collection, %{"_id" => id})
+      assert {:ok, _} = CoreMongo.delete_one(@test_collection, %{"_id" => id}, actor_id: actor_id)
       refute CoreMongo.find_one(@test_collection, %{"_id" => id})
 
-      assert_audit_log(id, @delete)
+      assert_audit_log(id, @delete, actor_id)
     end
 
-    test "delete_one!", %{id: id} do
+    test "delete_one!", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @delete == event.type
@@ -262,13 +273,13 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert CoreMongo.delete_one!(@test_collection, %{"_id" => id})
+      assert CoreMongo.delete_one!(@test_collection, %{"_id" => id}, actor_id: actor_id)
       refute CoreMongo.find_one(@test_collection, %{"_id" => id})
 
-      assert_audit_log(id, @delete)
+      assert_audit_log(id, @delete, actor_id)
     end
 
-    test "find_one_and_delete", %{id: id} do
+    test "find_one_and_delete", %{id: id, actor_id: actor_id} do
       expect(KafkaMock, :publish_mongo_event, fn event ->
         assert Event == event.__struct__
         assert @delete == event.type
@@ -281,10 +292,10 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      assert CoreMongo.find_one_and_delete(@test_collection, %{"_id" => id})
+      assert CoreMongo.find_one_and_delete(@test_collection, %{"_id" => id}, actor_id: actor_id)
       refute CoreMongo.find_one(@test_collection, %{"_id" => id})
 
-      assert_audit_log(id, @delete)
+      assert_audit_log(id, @delete, actor_id)
     end
 
     test "find_one_and_delete when document not found", _ do
@@ -292,15 +303,50 @@ defmodule Core.AuditLogTest do
     end
   end
 
+  describe "audit log list" do
+    test "INSERT, UPDATE and DELETE patient" do
+      stub(KafkaMock, :publish_mongo_event, fn event ->
+        emulate_kafka_consumer(event)
+        :ok
+      end)
+
+      patient = build(:patient)
+      actor_id = patient.updated_by
+
+      # actor_id fetched from data set
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(patient)
+
+      # actor_id fetched from $set params
+      replacement = %{"$set" => %{title: "update", updated_by: actor_id}}
+      assert {:ok, _} = CoreMongo.update_one("patients", %{"_id" => id}, replacement)
+
+      # actor_id fetched from opts
+      assert CoreMongo.delete_one!("patients", %{"_id" => id}, actor_id: actor_id)
+
+      opts = [orderby: %{inserted_at: 1}, pool: Poolboy]
+
+      logs =
+        :mongo_audit_log
+        |> Mongo.find(@audit_log_collection, %{actor_id: actor_id}, opts)
+        |> Enum.to_list()
+
+      assert 3 = length(logs)
+      assert @insert == Enum.at(logs, 0)["type"]
+      assert @update == Enum.at(logs, 1)["type"]
+      assert @delete == Enum.at(logs, 2)["type"]
+    end
+  end
+
   defp emulate_kafka_consumer(event) do
     assert {:ok, _} = AuditLog.store_event(event)
   end
 
-  defp assert_audit_log(entry_id, type, collection \\ @test_collection) do
+  defp assert_audit_log(entry_id, type, actor_id, collection \\ @test_collection) do
     log_entry = Mongo.find_one(:mongo_audit_log, @audit_log_collection, %{entry_id: entry_id}, pool: Poolboy)
     assert log_entry
     assert entry_id == log_entry["entry_id"]
     assert type == log_entry["type"]
     assert collection == log_entry["collection"]
+    assert actor_id == log_entry["actor_id"]
   end
 end

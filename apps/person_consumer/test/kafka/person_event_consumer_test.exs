@@ -11,7 +11,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumerTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       id = UUID.uuid4()
       status_active = Patient.status(:active)
-      assert :ok == PersonEventConsumer.consume(%{"id" => id, "status" => status_active})
+      assert :ok == PersonEventConsumer.consume(%{"id" => id, "status" => status_active, "updated_by" => id})
       assert %{"_id" => ^id, "status" => ^status_active} = Mongo.find_one(Patient.metadata().collection, %{"_id" => id})
     end
 
@@ -21,7 +21,13 @@ defmodule PersonConsumer.Kafka.PersonEventConsumerTest do
       id = patient._id
       assert {:ok, _} = Mongo.insert_one(patient)
       status_inactive = Patient.status(:inactive)
-      assert :ok == PersonEventConsumer.consume(%{"id" => id, "status" => status_inactive})
+
+      assert :ok ==
+               PersonEventConsumer.consume(%{
+                 "id" => id,
+                 "updated_by" => patient.updated_by,
+                 "status" => status_inactive
+               })
 
       assert %{"_id" => ^id, "status" => ^status_inactive} =
                Mongo.find_one(Patient.metadata().collection, %{"_id" => id})

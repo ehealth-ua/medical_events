@@ -5,6 +5,10 @@ defmodule Api.Web.EpisodeControllerTest do
   alias Core.Patient
   import Mox
 
+  setup %{conn: conn} do
+    {:ok, conn: put_consumer_id_header(conn)}
+  end
+
   describe "create episode" do
     test "patient not found", %{conn: conn} do
       expect(IlMock, :get_dictionaries, fn _, _ ->

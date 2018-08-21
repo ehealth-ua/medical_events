@@ -21,11 +21,12 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
     {:async_commit, state}
   end
 
-  def consume(%{"id" => person_id, "status" => status}) when status in [@status_active, @status_inactive] do
+  def consume(%{"id" => person_id, "status" => status, "updated_by" => updated_by})
+      when status in [@status_active, @status_inactive] do
     Mongo.update_one(
       Patient.metadata().collection,
       %{"_id" => person_id},
-      %{"$set" => %{"status" => status}},
+      %{"$set" => %{"status" => status, "updated_by" => updated_by}},
       upsert: true
     )
 

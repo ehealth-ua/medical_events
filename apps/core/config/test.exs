@@ -1,7 +1,7 @@
 use Mix.Config
 
 # Configuration for test environment
-config :ex_unit, capture_log: false
+config :ex_unit, capture_log: true
 
 config :core,
   microservices: [

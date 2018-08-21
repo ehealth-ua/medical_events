@@ -52,7 +52,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
       end)
 
       job = build(:job)
-      assert {:ok, _} = Core.Mongo.insert_one(job)
+      assert {:ok, _} = Mongo.insert_one(job)
       signature()
       signed_content = %{"encounters" => [], "conditions" => []}
 
