@@ -48,9 +48,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  }
                })
 
-      error = "Episode with such id already exists"
-
-      assert {:ok, %{response: %{"error" => ^error}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{"error" => "Episode with such id already exists"}}} = Jobs.get_by_id(job._id)
     end
 
     test "episode was created" do

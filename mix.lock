@@ -27,7 +27,6 @@
   "mime": {:hex, :mime, "1.3.0", "5e8d45a39e95c650900d03f897fbf99ae04f60ab1daa4a34c7a20a5151b7a5fe", [:mix], [], "hexpm"},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], [], "hexpm"},
   "mongodb": {:hex, :mongodb, "0.4.6", "38f990d6985b7bba3392675e3bb6f4afe7de6a722a6b52478253d79665e7cb1d", [:mix], [{:connection, "~> 1.0", [hex: :connection, repo: "hexpm", optional: false]}, {:db_connection, "~> 1.1", [hex: :db_connection, repo: "hexpm", optional: false]}], "hexpm"},
-  "mongodb_ecto": {:hex, :mongodb_ecto, "0.2.0", "5eccf19f3798c0a5c39428c6d33394b55038f902bd60f7a4fb1f9ffb1f4ece97", [:mix], [{:ecto, "~> 2.1.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:mongodb, "~> 0.4.2", [hex: :mongodb, repo: "hexpm", optional: false]}], "hexpm"},
   "mox": {:hex, :mox, "0.4.0", "7f120840f7d626184a3d65de36189ca6f37d432e5d63acd80045198e4c5f7e6e", [:mix], [], "hexpm"},
   "nex_json_schema": {:hex, :nex_json_schema, "0.8.0", "b1552b4193150e4c79294eb9032b4bcf473e1dab23cb625f6ee219ab06c33297", [:mix], [], "hexpm"},
   "parse_trans": {:hex, :parse_trans, "3.2.0", "2adfa4daf80c14dc36f522cf190eb5c4ee3e28008fc6394397c16f62a26258c2", [:rebar3], [], "hexpm"},

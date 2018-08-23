@@ -1,12 +1,17 @@
 defmodule Core.Patients do
   @moduledoc false
 
+  alias Core.AllergyIntolerance
+  alias Core.Condition
+  alias Core.Encounter
   alias Core.Episode
+  alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.VisitCreateJob
   alias Core.Mongo
+  alias Core.Observation
   alias Core.Patient
   alias Core.Patients.Validators
   alias Core.Period
@@ -14,13 +19,9 @@ defmodule Core.Patients do
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
+  alias Core.Visit
   alias EView.Views.ValidationError
   import Core.Schema, only: [add_validations: 3]
-  import Core.Condition
-  import Core.Encounter
-  import Core.Immunization
-  import Core.Observation
-  import Core.Visit
 
   @collection Patient.metadata().collection
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
@@ -41,38 +42,30 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_create_visit(%{"patient_id" => patient_id} = params) do
+  def produce_create_visit(%{"patient_id" => patient_id} = params, user_id, client_id) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:visit_create, Map.delete(params, "patient_id")),
-         {:ok, job, visit_create_job} <- Jobs.create(VisitCreateJob, params),
+         {:ok, job, visit_create_job} <-
+           Jobs.create(VisitCreateJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
          :ok <- @kafka_producer.publish_medical_event(visit_create_job) do
       {:ok, job}
     end
   end
 
-  def consume_create_visit(%VisitCreateJob{_id: id, visits: visits} = job) do
-    visits = Enum.into(visits || [], %{}, &{Map.get(&1, "id"), create_visit(&1)})
+  def consume_create_visit(%VisitCreateJob{_id: id, patient_id: patient_id, user_id: user_id} = job) do
+    now = DateTime.utc_now()
 
-    case collect_signed_data(job) do
+    with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
+         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         :ok <- JsonSchema.validate(:visit_create_signed_content, content) do
+      with {:ok, visit} <- create_visit(job),
+           {:ok, encounter} <- create_encounter(job, content) do
+        {:ok, ""}
+      end
+    else
       {:error, error} ->
-        Jobs.update(id, Job.status(:processed), error)
-        :ok
-
-      %{
-        "encounters" => encounters,
-        "conditions" => conditions,
-        "observations" => observations,
-        # "allergy_intolerances" => allergy_intolerances,
-        "immunizations" => immunizations
-      } ->
-        set =
-          %{}
-          |> add_to_set(visits, "visits")
-          # |> add_to_set(allergy_intolerances, "allergy_intolerances")
-          |> add_to_set(immunizations, "immunizations")
-
-        Mongo.update_one(@collection, %{"id" => id}, %{"$set" => set})
+        {:ok, Jason.encode!(ValidationError.render("422.json", %{schema: error}))}
     end
   end
 
@@ -212,61 +205,96 @@ defmodule Core.Patients do
     end
   end
 
-  defp add_to_set(set, values, path) do
-    Enum.reduce(values, set, fn value, acc ->
-      value_updates =
-        Enum.reduce(value, %{}, fn {k, v}, value_acc ->
-          Map.put(value_acc, "#{path}.#{value["id"]}.#{k}", v)
-        end)
+  defp create_visit(%VisitCreateJob{visit: nil}), do: {:ok, nil}
 
-      Map.merge(acc, value_updates)
-    end)
-  end
+  defp create_visit(%VisitCreateJob{patient_id: patient_id, user_id: user_id, visit: visit}) do
+    visit = Visit.create(visit)
+    now = DateTime.utc_now()
 
-  defp collect_signed_data(%VisitCreateJob{signed_data: signed_data}) do
-    initial_data = %{
-      "encounters" => %{},
-      "conditions" => %{},
-      "observations" => %{},
-      # "allergy_intolerances" => %{},
-      "immunizations" => %{}
+    period =
+      visit.period
+      |> add_validations(
+        :start,
+        datetime: [less_than_or_equal_to: now, message: "Start date must be in past"]
+      )
+      |> add_validations(
+        :end,
+        presence: true,
+        datetime: [less_than_or_equal_to: now, message: "Start date must be in past"],
+        datetime: [greater_than: visit.period.start, message: "End date must be greater than the start date"]
+      )
+
+    visit = %{
+      visit
+      | period: period,
+        inserted_by: user_id,
+        updated_by: user_id,
+        inserted_at: now,
+        updated_at: now
     }
 
-    signed_data
-    |> Enum.with_index()
-    |> Enum.reduce_while(initial_data, fn {signed_content, index}, acc ->
-      with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_content, []),
-           {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
-           :ok <- JsonSchema.validate(:visit_create_signed_content, content) do
-        encounters = Enum.into(Map.get(content, "encounters", []), %{}, &{Map.get(&1, "id"), create_encounter(&1)})
-        conditions = Enum.into(Map.get(content, "conditions", []), %{}, &{Map.get(&1, "id"), create_condition(&1)})
+    case Vex.errors(visit) do
+      [] ->
+        case Mongo.find_one(
+               Patient.metadata().collection,
+               %{"_id" => patient_id},
+               projection: ["visits.#{visit.id}": true]
+             ) do
+          %{"visits" => visits} when visits == %{} ->
+            {:ok, visit}
 
-        observations =
-          Enum.into(Map.get(content, "observations", []), %{}, &{Map.get(&1, "id"), create_observation(&1)})
+          _ ->
+            {:error, "Visit with such id already exists"}
+        end
 
-        # allergy_intolerances =
-        #   Enum.into(
-        #     Map.get(content, "allergy_intolerances"),
-        #     %{},
-        #     &{Map.get(&1, "id"), create_allergy_intolerance(&1)}
-        #   )
+      errors ->
+        {:error, errors}
+    end
+  end
 
-        immunizations =
-          Enum.into(Map.get(content, "immunizations", []), %{}, &{Map.get(&1, "id"), create_immunization(&1)})
+  defp create_encounter(%VisitCreateJob{patient_id: patient_id, user_id: user_id}, content) do
+    now = DateTime.utc_now()
+    encounter = Encounter.create(content["encounter"])
 
-        {:cont,
-         %{
-           acc
-           | "encounters" => Map.merge(acc["encounters"], encounters),
-             "conditions" => Map.merge(acc["conditions"], conditions),
-             "observations" => Map.merge(acc["observations"], observations),
-             # "allergy_intolerances" => Map.merge(acc["allergy_intolerances"], allergy_intolerances),
-             "immunizations" => Map.merge(acc["immunizations"], immunizations)
-         }}
-      else
-        {:error, error} ->
-          {:halt, {:error, Jason.encode!(ValidationError.render("422.json", %{schema: error}))}}
-      end
-    end)
+    encounter = %{encounter | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
+
+    # TODO: not completed encounter validations
+    encounter =
+      encounter
+      |> add_validations(:contexts, length: [min: 2, max: 2])
+
+    case Vex.errors(encounter) do
+      [] ->
+        episode_context =
+          Enum.find(encounter.contexts, fn context ->
+            context.identifier.type.coding |> hd |> Map.get(:code) == "episode"
+          end)
+
+        episode_id = episode_context.identifier.value
+
+        encounter_search =
+          Patient.metadata().collection
+          |> Mongo.aggregate([
+            %{"$match" => %{"_id" => "9faade0a-827a-409d-b90d-4dcec13cecdb"}},
+            %{
+              "$project" => %{
+                "_id" => "$_id",
+                "encounter" => "$episodes.#{episode_id}.encounters.#{encounter.id}"
+              }
+            }
+          ])
+          |> Enum.to_list()
+
+        case encounter_search do
+          %{"encounter" => _} ->
+            {:error, "Encounter with such id already exists"}
+
+          _ ->
+            {:ok, encounter}
+        end
+
+      errors ->
+        {:error, errors}
+    end
   end
 end

@@ -25,36 +25,36 @@
       "additionalProperties": false
     },
     "coding": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "properties": {
-          "system": {
-            "type": "string",
-            "pattern": "^eHealth(/)?",
-            "description": "Dictionary: TBD"
-          },
-          "code": {
-            "type": "string",
-            "description": "Symbol in syntax defined by the system"
-          },
-          "display": {
-            "type": "string",
-            "description": "Representation defined by the system"
-          }
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "Dictionary: TBD"
         },
-        "required": [
-          "system",
-          "code"
-        ]
-      }
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        },
+        "display": {
+          "type": "string",
+          "description": "Representation defined by the system"
+        }
+      },
+      "required": [
+        "system",
+        "code"
+      ],
+      "additionalProperties": false
     },
     "codeable_concept": {
       "type": "object",
       "properties": {
         "coding": {
-          "$ref": "#/definitions/coding"
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/coding"
+          }
         },
         "text": {
           "type": "string"
@@ -62,23 +62,24 @@
       },
       "required": [
         "coding"
-      ]
+      ],
+      "additionalProperties": false
     },
     "identifier": {
       "type": "object",
       "properties": {
         "type": {
-          "$ref": "#/definitions/codeable_concept",
-          "description": "Description of identifier"
+          "$ref": "#/definitions/codeable_concept"
         },
         "value": {
-          "$ref": "#/definitions/uuid"
+          "type": "string",
+          "description": "The value that is unique"
         }
       },
       "required": [
-        "type",
         "value"
-      ]
+      ],
+      "additionalProperties": false
     },
     "reference": {
       "type": "object",
@@ -89,16 +90,14 @@
       },
       "required": [
         "identifier"
-      ]
+      ],
+      "additionalProperties": false
     }
   },
   "type": "object",
   "properties": {
     "id": {
       "$ref": "#/definitions/uuid"
-    },
-    "name": {
-      "type": "string"
     },
     "type": {
       "type": "string",
@@ -114,6 +113,10 @@
       ],
       "description": "Dictionary: TBD"
     },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
     "managing_organization": {
       "$ref": "#/definitions/reference"
     },
@@ -126,8 +129,9 @@
   },
   "required": [
     "id",
-    "name",
     "type",
+    "status",
+    "name",
     "managing_organization",
     "period",
     "care_manager"

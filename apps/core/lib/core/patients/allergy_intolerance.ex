@@ -1,4 +1,4 @@
-defmodule Core.Condition do
+defmodule Core.AllertyIntolerance do
   @moduledoc false
 
   use Core.Schema
@@ -7,16 +7,16 @@ defmodule Core.Condition do
     field(:id, presence: true)
     field(:clinical_status)
     field(:verification_status)
-    field(:severity)
+    field(:type)
+    field(:category)
+    field(:criticality)
     field(:code)
-    field(:body_sites)
-    field(:patient_id, presence: true)
-    field(:context)
-    field(:onset_date)
+    field(:onset_date_time)
     field(:asserted_date)
-    field(:asserter)
-    field(:stage)
-    field(:evidences)
+    field(:recorder)
+    field(:asser)
+    field(:last_occurance)
+    field(:context)
 
     timestamps()
     changed_by()

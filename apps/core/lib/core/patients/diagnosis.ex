@@ -1,17 +1,29 @@
 defmodule Core.Diagnosis do
   @moduledoc false
 
-  # use Ecto.Schema
+  use Core.Schema
+  alias Core.CodeableConcept
+  alias Core.Reference
 
-  # alias Core.CodeableConcept
-  # alias Core.Reference
-  # alias Core.StatusHistory
+  embedded_schema do
+    field(:condition, presence: true)
+    field(:role, presence: true)
+    field(:rank)
+    field(:code, presence: true)
 
-  # embedded_schema do
-  #   embeds_one(:condition, Reference)
-  #   embeds_one(:role, CodeableConcept)
-  #   field(:rank, :integer)
+    timestamps()
+    changed_by()
+  end
 
-  #   timestamps()
-  # end
+  def create(data) do
+    struct(
+      __MODULE__,
+      Enum.map(data, fn
+        {"condition", v} -> {:condition, Reference.create(v)}
+        {"role", v} -> {:role, CodeableConcept.create(v)}
+        {"code", v} -> {:code, CodeableConcept.create(v)}
+        {k, v} -> {String.to_atom(k), v}
+      end)
+    )
+  end
 end

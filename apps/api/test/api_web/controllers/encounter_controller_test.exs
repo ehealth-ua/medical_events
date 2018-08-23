@@ -1,4 +1,4 @@
-defmodule Api.Web.VisitControllerTest do
+defmodule Api.Web.EncounterControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
@@ -11,7 +11,7 @@ defmodule Api.Web.VisitControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      conn = post(conn, visit_path(conn, :create, UUID.uuid4()))
+      conn = post(conn, encounter_path(conn, :create, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
@@ -24,7 +24,7 @@ defmodule Api.Web.VisitControllerTest do
 
       patient = insert(:patient, status: Patient.status(:inactive))
 
-      conn = post(conn, visit_path(conn, :create, patient._id))
+      conn = post(conn, encounter_path(conn, :create, patient._id))
       assert json_response(conn, 409)
     end
 
@@ -37,7 +37,7 @@ defmodule Api.Web.VisitControllerTest do
 
       patient = insert(:patient)
 
-      conn = post(conn, visit_path(conn, :create, patient._id))
+      conn = post(conn, encounter_path(conn, :create, patient._id))
       assert response = json_response(conn, 422)
 
       assert [
@@ -64,10 +64,15 @@ defmodule Api.Web.VisitControllerTest do
       end)
 
       patient = insert(:patient)
+      now = DateTime.utc_now()
 
       conn =
-        post(conn, visit_path(conn, :create, patient._id), %{
-          "signed_data" => [Base.encode64(Jason.encode!(%{}))]
+        post(conn, encounter_path(conn, :create, patient._id), %{
+          "visit" => %{
+            "id" => UUID.uuid4(),
+            "period" => %{"start" => DateTime.to_iso8601(now), "end" => DateTime.to_iso8601(now)}
+          },
+          "signed_data" => Base.encode64(Jason.encode!(%{}))
         })
 
       assert response = json_response(conn, 202)

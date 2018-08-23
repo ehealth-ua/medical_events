@@ -2,6 +2,7 @@ defmodule Api.Web.EpisodeControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+  alias Core.Episode
   alias Core.Patient
   import Mox
 
@@ -15,7 +16,7 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      conn = post(conn, visit_path(conn, :create, UUID.uuid4()))
+      conn = post(conn, episode_path(conn, :create, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
@@ -28,7 +29,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       patient = insert(:patient, status: Patient.status(:inactive))
 
-      conn = post(conn, visit_path(conn, :create, patient._id))
+      conn = post(conn, episode_path(conn, :create, patient._id))
       assert json_response(conn, 409)
     end
 
@@ -60,6 +61,7 @@ defmodule Api.Web.EpisodeControllerTest do
         post(conn, episode_path(conn, :create, patient._id), %{
           "id" => UUID.uuid4(),
           "name" => "ОРВИ 2018",
+          "status" => Episode.status(:active),
           "type" => "primary_care",
           "managing_organization" => %{
             "identifier" => %{

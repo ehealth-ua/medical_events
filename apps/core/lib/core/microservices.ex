@@ -18,7 +18,7 @@ defmodule Core.Microservices do
 
       def process_request_headers(headers) do
         headers
-        |> Keyword.take(~w(request_id)a)
+        |> Keyword.take(~w(request_id x-consumer-metadata x-consumer-id)a)
         |> Kernel.++([{"Content-Type", "application/json"}])
       end
 

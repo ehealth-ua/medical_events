@@ -8,6 +8,7 @@ defmodule Core.Immunization do
     field(:status)
     field(:not_given)
     field(:vaccine_code)
+    field(:context)
     field(:date)
     field(:primary_source)
     field(:report_origin)
@@ -27,7 +28,7 @@ defmodule Core.Immunization do
     changed_by()
   end
 
-  def create_immunization(data) do
+  def create(data) do
     struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
 end

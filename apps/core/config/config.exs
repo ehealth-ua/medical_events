@@ -62,10 +62,13 @@ config :vex,
       datetime: Core.Validators.DateTime,
       reference: Core.Validators.Reference,
       value: Core.Validators.Value,
-      employee: Core.Validators.Employee
+      employee: Core.Validators.Employee,
+      reference_type: Core.Validators.ReferenceType
     ],
     Vex.Validators
   ]
+
+config :core, Core.Validators.JsonSchema, errors_limit: {:system, :integer, "JSON_SCHEMA_ERRORS_LIMIT", 10}
 
 config :kafka_ex,
   # A list of brokers to connect to. This can be in either of the following formats

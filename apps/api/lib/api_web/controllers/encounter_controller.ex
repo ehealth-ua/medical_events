@@ -1,4 +1,4 @@
-defmodule Api.Web.VisitController do
+defmodule Api.Web.EncounterController do
   @moduledoc false
 
   use ApiWeb, :controller
@@ -8,7 +8,7 @@ defmodule Api.Web.VisitController do
   action_fallback(Api.Web.FallbackController)
 
   def create(conn, params) do
-    with {:ok, job} <- Patients.produce_create_visit(params) do
+    with {:ok, job} <- Patients.produce_create_visit(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)

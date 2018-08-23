@@ -13,7 +13,7 @@ defmodule ApiWeb.Router do
   scope "/api", Api.Web do
     pipe_through(:api)
 
-    post("/patients/:patient_id/visits", VisitController, :create)
+    post("/patients/:patient_id/encounter_package", EncounterController, :create)
     post("/patients/:patient_id/episodes", EpisodeController, :create)
     get("/patients/:patient_id/episodes", EpisodeController, :list)
   end

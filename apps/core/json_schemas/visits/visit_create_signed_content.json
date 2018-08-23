@@ -5,11 +5,115 @@
       "type": "string",
       "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
-    "patient": {
+    "value": {
       "type": "object",
       "properties": {
-        "identifier": {
-          "$ref": "#/definitions/identifier"
+        "value": {
+          "type": "number"
+        },
+        "comparator": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "value"
+      ]
+    },
+    "value_quantity": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "comparator": {
+          "type": "string",
+          "enum": [
+            ">",
+            ">=",
+            "=",
+            "<=",
+            "<"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "system": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "code": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        }
+      }
+    },
+    "value_codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        }
+      }
+    },
+    "value_sampled_data": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "number"
+        },
+        "period": {
+          "type": "number"
+        },
+        "factor": {
+          "type": "number"
+        },
+        "lowerLimit": {
+          "type": "number"
+        },
+        "upperLimit": {
+          "type": "number"
+        },
+        "dimensions": {
+          "type": "number"
+        },
+        "data": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "data"
+      ]
+    },
+    "value_range": {
+      "type": "object",
+      "properties": {
+        "low": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "high": {
+          "$ref": "#/definitions/value_quantity"
+        }
+      }
+    },
+    "value_ratio": {
+      "type": "object",
+      "properties": {
+        "numerator": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "denominator": {
+          "$ref": "#/definitions/value_quantity"
         }
       }
     },
@@ -32,7 +136,7 @@
       ],
       "additionalProperties": false
     },
-    "code": {
+    "coding": {
       "type": "array",
       "minItems": 1,
       "items": {
@@ -40,7 +144,7 @@
         "properties": {
           "system": {
             "type": "string",
-            "description": "Dictionary TBD"
+            "description": "Dictionary: TBD"
           },
           "code": {
             "type": "string",
@@ -52,6 +156,7 @@
           }
         },
         "required": [
+          "system",
           "code"
         ]
       }
@@ -82,7 +187,7 @@
           "type": "object",
           "properties": {
             "coding": {
-              "$ref": "#/definitions/code"
+              "$ref": "#/definitions/coding"
             }
           },
           "description": "Description of identifier"
@@ -100,7 +205,7 @@
       "type": "object",
       "properties": {
         "coding": {
-          "$ref": "#/definitions/code"
+          "$ref": "#/definitions/coding"
         }
       },
       "description": "Role that this diagnosis has within the episode of care"
@@ -109,7 +214,7 @@
       "type": "object",
       "properties": {
         "coding": {
-          "$ref": "#/definitions/code"
+          "$ref": "#/definitions/coding"
         }
       }
     },
@@ -117,7 +222,7 @@
       "type": "object",
       "properties": {
         "coding": {
-          "$ref": "#/definitions/code"
+          "$ref": "#/definitions/coding"
         }
       }
     },
@@ -125,7 +230,7 @@
       "type": "object",
       "properties": {
         "coding": {
-          "$ref": "#/definitions/code"
+          "$ref": "#/definitions/coding"
         }
       }
     },
@@ -139,7 +244,7 @@
             "type": "object",
             "properties": {
               "coding": {
-                "$ref": "#/definitions/code"
+                "$ref": "#/definitions/coding"
               }
             }
           }
@@ -174,7 +279,7 @@
           "type": "object",
           "properties": {
             "coding": {
-              "$ref": "#/definitions/code"
+              "$ref": "#/definitions/coding"
             }
           },
           "description": "Role that this diagnosis has within the episode of care"
@@ -194,14 +299,6 @@
         "id": {
           "$ref": "#/definitions/uuid"
         },
-        "patient": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
-            }
-          }
-        },
         "context": {
           "type": "object",
           "properties": {
@@ -214,23 +311,23 @@
           "type": "object",
           "properties": {
             "coding": {
-              "$ref": "#/definitions/code"
+              "$ref": "#/definitions/coding"
             }
           }
         },
         "clinical_status": {
           "type": "string",
-          "description": "Dictionary TBD"
+          "description": "Dictionary: TBD"
         },
         "verification_status": {
           "type": "string",
-          "description": "Dictionary TBD"
+          "description": "Dictionary: TBD"
         },
         "severity ": {
           "type": "object",
           "properties": {
             "coding": {
-              "$ref": "#/definitions/code"
+              "$ref": "#/definitions/coding"
             }
           }
         },
@@ -252,7 +349,7 @@
               "type": "object",
               "properties": {
                 "coding": {
-                  "$ref": "#/definitions/code"
+                  "$ref": "#/definitions/coding"
                 }
               }
             }
@@ -267,7 +364,6 @@
       },
       "required": [
         "id",
-        "patient",
         "context",
         "code",
         "clinical_status",
@@ -284,19 +380,9 @@
         "status": {
           "type": "string"
         },
-        "patient": {
-          "$ref": "#/definitions/patient"
-        },
-        "episode": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
-            }
-          }
-        },
-        "context": {
-          "type": "object",
+        "contexts": {
+          "type": "array",
+          "minItems": 2,
           "properties": {
             "identifier": {
               "$ref": "#/definitions/identifier"
@@ -313,7 +399,7 @@
           "type": "object",
           "properties": {
             "coding": {
-              "$ref": "#/definitions/code"
+              "$ref": "#/definitions/coding"
             }
           }
         },
@@ -353,27 +439,186 @@
       "required": [
         "id",
         "status",
-        "patient",
-        "episode",
-        "context",
+        "contexts",
         "period",
         "class",
         "type",
         "reasons",
-        "diagnosis",
+        "diagnoses",
         "actions",
         "division"
       ]
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "based_on": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "category": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/coding"
+            }
+          }
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/coding"
+            }
+          }
+        },
+        "effective_date_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_period": {
+          "$ref": "#/definitions/period"
+        },
+        "issued": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "performer": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "interpretation": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/coding"
+            }
+          }
+        },
+        "comment": {
+          "type": "string"
+        },
+        "body_side": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/coding"
+            }
+          }
+        },
+        "method": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "$ref": "#/definitions/coding"
+            }
+          }
+        },
+        "value_quantity": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "value_codeable_concept": {
+          "$ref": "#/definitions/value_codeable_concept"
+        },
+        "value_sampled_data": {
+          "$ref": "#/definitions/value_sampled_data"
+        },
+        "value_string": {
+          "type": "string"
+        },
+        "value_boolean": {
+          "type": "boolean"
+        },
+        "value_range": {
+          "$ref": "#/definitions/value_range"
+        },
+        "value_ratio": {
+          "$ref": "#/definitions/value_ratio"
+        },
+        "value_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "value_date_time": {
+          "type": "string",
+          "format": "date"
+        },
+        "value_period": {
+          "$ref": "#/definitions/period"
+        },
+        "reference_range": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "low": {
+                "$ref": "#/definitions/value"
+              },
+              "high": {
+                "$ref": "#/definitions/value"
+              },
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "$ref": "#/definitions/coding"
+                  }
+                }
+              },
+              "applies_to": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "$ref": "#/definitions/coding"
+                  }
+                }
+              },
+              "age": {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "$ref": "#/definitions/value"
+                  },
+                  "high": {
+                    "$ref": "#/definitions/value"
+                  }
+                }
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "type": "object",
   "properties": {
-    "encounters": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/definitions/encounter"
-      }
+    "encounter": {
+      "$ref": "#/definitions/encounter"
     },
     "conditions": {
       "type": "array",
@@ -382,12 +627,16 @@
         "$ref": "#/definitions/condition"
       }
     },
-    "observations": {},
+    "observations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/observation"
+      }
+    },
     "allergy_intolerances": {},
     "immunizations": {}
   },
   "required": [
-    "encounters",
-    "conditions"
+    "encounter"
   ]
 }
