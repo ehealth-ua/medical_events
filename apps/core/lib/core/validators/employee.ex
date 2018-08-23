@@ -7,7 +7,10 @@ defmodule Core.Validators.Employee do
   @il_microservice Application.get_env(:core, :microservices)[:il]
 
   def validate(employee_id, options) do
-    headers = [{String.to_atom(Headers.consumer_metadata()), Keyword.get(options, :legal_entity_id)}]
+    headers = [
+      {String.to_atom(Headers.consumer_metadata()),
+       Jason.encode!(%{"client_id" => Keyword.get(options, :legal_entity_id)})}
+    ]
 
     case @il_microservice.get_employee(employee_id, headers) do
       {:ok, %{"data" => employee}} ->
