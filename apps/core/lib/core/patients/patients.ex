@@ -175,14 +175,19 @@ defmodule Core.Patients do
       updated_at: now
     }
 
+    episode_id = episode.id
+
     case Vex.errors(episode) do
       [] ->
         case Mongo.find_one(
                Patient.metadata().collection,
                %{"_id" => patient_id},
-               projection: ["episodes.#{episode.id}": true]
+               projection: ["episodes.#{episode_id}": true]
              ) do
-          %{"episodes" => episodes} when episodes == %{} ->
+          %{"episodes" => %{^episode_id => %{}}} ->
+            {:ok, %{"error" => "Episode with such id already exists"}}
+
+          _ ->
             set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
@@ -195,9 +200,6 @@ defmodule Core.Patients do
                  %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
                ]
              }}
-
-          _ ->
-            {:ok, %{"error" => "Episode with such id already exists"}}
         end
 
       errors ->
