@@ -130,7 +130,7 @@ defmodule Core.Patients do
         :value,
         employee: [
           employee_type: "DOCTOR",
-          status: "active",
+          status: "APPROVED",
           legal_entity_id: client_id,
           messages: [
             employee_type: "Employee submitted as a care_manager is not a doctor",
