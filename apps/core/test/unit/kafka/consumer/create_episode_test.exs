@@ -24,7 +24,14 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       stub(IlMock, :get_employee, fn id, _ ->
         {:ok,
-         %{"data" => %{"id" => id, "status" => "APPROVED", "employee_type" => "DOCTOR", "legal_entity_id" => client_id}}}
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "APPROVED",
+             "employee_type" => "DOCTOR",
+             "legal_entity" => %{"id" => client_id}
+           }
+         }}
       end)
 
       assert :ok =
@@ -60,7 +67,14 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       stub(IlMock, :get_employee, fn id, _ ->
         {:ok,
-         %{"data" => %{"id" => id, "status" => "APPROVED", "employee_type" => "DOCTOR", "legal_entity_id" => client_id}}}
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "APPROVED",
+             "employee_type" => "DOCTOR",
+             "legal_entity" => %{"id" => client_id}
+           }
+         }}
       end)
 
       job = insert(:job)

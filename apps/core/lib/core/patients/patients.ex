@@ -129,7 +129,7 @@ defmodule Core.Patients do
       |> add_validations(
         :value,
         employee: [
-          employee_type: "DOCTOR",
+          type: "DOCTOR",
           status: "APPROVED",
           legal_entity_id: client_id,
           messages: [
