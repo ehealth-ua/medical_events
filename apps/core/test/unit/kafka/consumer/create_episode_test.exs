@@ -23,7 +23,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       client_id = UUID.uuid4()
 
       stub(IlMock, :get_employee, fn id, _ ->
-        {:ok, %{"data" => %{"id" => id, "status" => "active", "type" => "DOCTOR", "legal_entity_id" => client_id}}}
+        {:ok,
+         %{"data" => %{"id" => id, "status" => "active", "employee_type" => "DOCTOR", "legal_entity_id" => client_id}}}
       end)
 
       assert :ok =
@@ -58,7 +59,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       client_id = UUID.uuid4()
 
       stub(IlMock, :get_employee, fn id, _ ->
-        {:ok, %{"data" => %{"id" => id, "status" => "active", "type" => "DOCTOR", "legal_entity_id" => client_id}}}
+        {:ok,
+         %{"data" => %{"id" => id, "status" => "active", "employee_type" => "DOCTOR", "legal_entity_id" => client_id}}}
       end)
 
       job = insert(:job)

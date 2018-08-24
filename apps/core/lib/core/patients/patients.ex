@@ -129,11 +129,11 @@ defmodule Core.Patients do
       |> add_validations(
         :value,
         employee: [
-          type: "DOCTOR",
+          employee_type: "DOCTOR",
           status: "active",
           legal_entity_id: client_id,
           messages: [
-            type: "Employee submitted as a care_manager is not a doctor",
+            employee_type: "Employee submitted as a care_manager is not a doctor",
             status: "Doctor submitted as a care_manager is not active",
             legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
           ]

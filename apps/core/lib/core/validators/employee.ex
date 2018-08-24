@@ -14,7 +14,7 @@ defmodule Core.Validators.Employee do
 
     case @il_microservice.get_employee(employee_id, headers) do
       {:ok, %{"data" => employee}} ->
-        with :ok <- validate_field(:type, employee, options),
+        with :ok <- validate_field(:employee_type, employee, options),
              :ok <- validate_field(:status, employee, options),
              :ok <- validate_field(:legal_entity_id, employee, options) do
           :ok
