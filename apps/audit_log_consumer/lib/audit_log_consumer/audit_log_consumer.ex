@@ -2,7 +2,6 @@ defmodule AuditLogConsumer.Kafka.MongoEventConsumer do
   @moduledoc false
 
   use KafkaEx.GenConsumer
-  alias Core.Kafka.Consumer
   alias Core.Mongo.AuditLog
   alias Core.Mongo.Event
   alias KafkaEx.Protocol.Fetch.Message

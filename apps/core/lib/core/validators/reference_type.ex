@@ -2,7 +2,6 @@ defmodule Core.Validators.ReferenceType do
   @moduledoc false
 
   use Vex.Validator
-  alias Core.Validators.Vex
 
   def validate([] = references, [type: type] = options) do
     results =

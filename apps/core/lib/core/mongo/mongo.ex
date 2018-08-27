@@ -187,7 +187,7 @@ defmodule Core.Mongo do
     end)
   end
 
-  def add_to_set(set, [%{__struct__: module, __meta__: _} | _] = values, path) do
+  def add_to_set(set, [%{__struct__: _module, __meta__: _} | _] = values, path) do
     Map.put(set, path, Enum.map(values, fn value -> prepare_doc(value) end))
   end
 

@@ -1,17 +1,12 @@
 defmodule Core.Patients do
   @moduledoc false
 
-  alias Core.AllergyIntolerance
-  alias Core.Condition
   alias Core.Encounter
   alias Core.Episode
-  alias Core.Immunization
-  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.VisitCreateJob
   alias Core.Mongo
-  alias Core.Observation
   alias Core.Patient
   alias Core.Patients.Validators
   alias Core.Period
@@ -53,14 +48,12 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_visit(%VisitCreateJob{_id: id, patient_id: patient_id, user_id: user_id} = job) do
-    now = DateTime.utc_now()
-
+  def consume_create_visit(%VisitCreateJob{} = job) do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
-         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         {:ok, %{"content" => content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:visit_create_signed_content, content) do
-      with {:ok, visit} <- create_visit(job),
-           {:ok, encounter} <- create_encounter(job, content) do
+      with {:ok, _visit} <- create_visit(job),
+           {:ok, _encounter} <- create_encounter(job, content) do
         {:ok, ""}
       end
     else
@@ -69,7 +62,7 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_episode(%EpisodeCreateJob{_id: id, patient_id: patient_id, client_id: client_id} = job) do
+  def consume_create_episode(%EpisodeCreateJob{patient_id: patient_id, client_id: client_id} = job) do
     now = DateTime.utc_now()
 
     # add period validations
@@ -254,7 +247,7 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_encounter(%VisitCreateJob{patient_id: patient_id, user_id: user_id}, content) do
+  defp create_encounter(%VisitCreateJob{user_id: user_id}, content) do
     now = DateTime.utc_now()
     encounter = Encounter.create(content["encounter"])
 
