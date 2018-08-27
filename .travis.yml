@@ -23,7 +23,6 @@ notifications:
     on_success: always
 env:
   global:
-    - NETWORK=medicalevents_default
     - NO_ECTO_SETUP=true
     - MIX_ENV=test
     - DOCKER_NAMESPACE=edenlabllc
