@@ -41,18 +41,19 @@ defmodule Api.Web.JobControllerTest do
       job =
         insert(:job,
           status: Job.status(:processed),
-          status_code: 203,
+          status_code: 202,
           response: job_response
         )
 
       response =
         conn
         |> get(job_path(conn, :show, job._id))
-        |> json_response(203)
+        |> json_response(202)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
 
       assert Job.status_to_string(job.status) == response["status"]
+      assert 202 == response["status_code"]
       assert Map.has_key?(response, "eta")
       assert Map.has_key?(response, "links")
       assert is_list(response["links"])

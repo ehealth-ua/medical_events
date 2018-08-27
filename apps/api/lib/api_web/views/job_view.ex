@@ -16,7 +16,8 @@ defmodule Api.Web.JobView do
     %{
       eta: job.eta,
       links: Jobs.fetch_links(job.response),
-      status: Job.status_to_string(job.status)
+      status: Job.status_to_string(job.status),
+      status_code: job.status_code
     }
   end
 

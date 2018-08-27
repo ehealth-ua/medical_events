@@ -46,6 +46,15 @@
         "processed",
         "failed"
       ]
+    },
+    "status_code": {
+      "type": "integer",
+      "enum": [
+        200,
+        202,
+        404,
+        422
+      ]
     }
   },
   "required": [

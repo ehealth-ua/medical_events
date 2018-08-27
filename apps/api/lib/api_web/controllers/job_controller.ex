@@ -16,7 +16,7 @@ defmodule Api.Web.JobController do
           |> put_status(200)
           |> render("details_error.json", job: job)
 
-        code when code in [200, 203] ->
+        code when code in [200, 202] ->
           conn
           |> put_status(job.status_code)
           |> render("details.json", job: job)
