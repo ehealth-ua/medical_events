@@ -36,12 +36,7 @@ before_install:
   - sudo apt-get install jq
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-redis.sh -o init-redis.sh; sudo sh ./init-redis.sh
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-mongodb.sh -o init-mongodb.sh; sudo sh ./init-mongodb.sh
-  # install kafka
-  - wget http://www.us.apache.org/dist/kafka/2.0.0/kafka_2.12-2.0.0.tgz -O kafka.tgz
-  - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
-  - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties &"
-  - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties &"
-  - sleep 5
+  - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-kafka.sh -o init-kafka.sh; sudo sh ./init-kafka.sh
   # create kafka topics
   - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic medical_events
   - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic person_events
