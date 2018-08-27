@@ -1,2 +1,2 @@
 [kafka_ex]
-brokers = "localhost:9092"
+brokers = "travis:9092"
