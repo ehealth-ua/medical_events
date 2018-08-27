@@ -47,4 +47,19 @@ defmodule ApiWeb.ConnCase do
   def put_client_id_header(conn, id \\ UUID.uuid4()) do
     Plug.Conn.put_req_header(conn, Headers.consumer_metadata(), Jason.encode!(%{"client_id" => id}))
   end
+
+  def assert_json_schema(data, name) do
+    assert :ok ==
+             name
+             |> schema_path()
+             |> File.read!()
+             |> Jason.decode!()
+             |> NExJsonSchema.Validator.validate(data)
+
+    data
+  end
+
+  defp schema_path(name) do
+    File.cwd!() <> "/test/data/" <> name
+  end
 end

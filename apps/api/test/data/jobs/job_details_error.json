@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "date": {
+      "type": "string",
+      "pattern": "^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2})\\:(\\d{2})\\:(\\d{2})\\.(\\d{1,6})$",
+      "description": "ISO 8601 date and time in UTC timezone."
+    }
+  },
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": ["array", "string"],
+      "description": "error message or list of errors"
+    },
+    "eta": {
+      "type": "string",
+      "$ref": "#/definitions/date",
+      "description": "estimated time of arrival"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processed",
+        "failed"
+      ]
+    },
+    "status_code": {
+      "type": "integer",
+      "enum": [
+        200,
+        202,
+        404,
+        422
+      ]
+    }
+  },
+  "required": [
+    "eta",
+    "errors",
+    "status",
+    "status_code"
+  ],
+  "additionalProperties": false
+}

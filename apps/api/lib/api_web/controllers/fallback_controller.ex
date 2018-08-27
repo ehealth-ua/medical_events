@@ -27,4 +27,10 @@ defmodule Api.Web.FallbackController do
     |> put_status(:conflict)
     |> render(Error, :"409", reason)
   end
+
+  def call(conn, {:error, {:not_implemented, reason}}) when is_binary(reason) do
+    conn
+    |> put_status(:not_implemented)
+    |> render(Error, :"501", reason)
+  end
 end

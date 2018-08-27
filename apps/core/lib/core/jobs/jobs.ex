@@ -8,14 +8,15 @@ defmodule Core.Jobs do
 
   def get_by_id(id) do
     with %{} = job <- Mongo.find_one(@collection, %{"_id" => id}) do
-      {:ok, create_job(job)}
+      {:ok, map_to_job(job)}
     end
   end
 
-  def update(id, status, response) do
+  def update(id, status, response, status_code) do
     set_data =
       Job.encode_response(%{
         "status" => status,
+        "status_code" => status_code,
         "updated_at" => DateTime.utc_now(),
         "response" => response
       })
@@ -30,8 +31,10 @@ defmodule Core.Jobs do
       Job.encode_response(%Job{
         _id: id,
         status: Job.status(:pending),
+        status_code: 200,
         inserted_at: DateTime.utc_now(),
         updated_at: DateTime.utc_now(),
+        eta: count_eta(),
         response: ""
       })
 
@@ -45,9 +48,22 @@ defmodule Core.Jobs do
     end
   end
 
-  defp create_job(data) do
+  # ToDo: count real eta based on kafka performance testing. Temporary hardcoded to 10 minutes.
+  defp count_eta do
+    time = :os.system_time(:second) + 600
+
+    time
+    |> DateTime.from_unix!()
+    |> DateTime.to_naive()
+    |> NaiveDateTime.to_string()
+  end
+
+  defp map_to_job(data) do
     Job
     |> struct(Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
     |> Job.decode_response()
   end
+
+  def fetch_links(response) when is_map(response), do: Map.get(response, ["links"], [])
+  def fetch_links(response), do: []
 end

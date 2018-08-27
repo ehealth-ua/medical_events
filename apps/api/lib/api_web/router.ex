@@ -16,5 +16,7 @@ defmodule ApiWeb.Router do
     post("/patients/:patient_id/encounter_package", EncounterController, :create)
     post("/patients/:patient_id/episodes", EpisodeController, :create)
     get("/patients/:patient_id/episodes", EpisodeController, :list)
+
+    get("/jobs/:id", JobController, :show)
   end
 end

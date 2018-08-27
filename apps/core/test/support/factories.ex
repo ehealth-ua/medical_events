@@ -58,13 +58,15 @@ defmodule Core.Factories do
   def job_factory do
     id = UUID.uuid4()
 
-    Job.encode_response(%Job{
+    %Job{
       _id: id,
+      eta: NaiveDateTime.utc_now() |> NaiveDateTime.to_iso8601(),
+      status_code: 200,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       status: Job.status(:pending),
       response: ""
-    })
+    }
   end
 
   def episode_factory do
@@ -123,8 +125,22 @@ defmodule Core.Factories do
   #   }
   # end
 
-  def insert(factory, args \\ []) do
-    entity = build(factory, args)
+  def insert(factory, args \\ [])
+
+  def insert(:job, args) do
+    :job
+    |> build(args)
+    |> Job.encode_response()
+    |> insert_entity()
+  end
+
+  def insert(factory, args) do
+    factory
+    |> build(args)
+    |> insert_entity()
+  end
+
+  defp insert_entity(entity) do
     {:ok, _} = Mongo.insert_one(entity)
     entity
   end
