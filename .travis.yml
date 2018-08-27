@@ -43,7 +43,6 @@ jobs:
     - stage: "test and build"
       # run tests
       script:
-      - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/tests.sh -o tests.sh; bash ./tests.sh) || travis_terminate 1
       # Build Docker container
     - stage: "test and build"
