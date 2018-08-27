@@ -38,6 +38,11 @@ before_install:
   - sudo apt-get install jq
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-redis.sh -o init-redis.sh; sudo sh ./init-redis.sh
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-mongodb.sh -o init-mongodb.sh; sudo sh ./init-mongodb.sh
+  - wget http://www.us.apache.org/dist/kafka/2.0.0/kafka_2.12-2.0.0.tgz -O kafka.tgz
+  - mkdir -p kafka && tar xzf kafka.tgz -C kafka --strip-components 1
+  - nohup bash -c "cd kafka && bin/zookeeper-server-start.sh config/zookeeper.properties &"
+  - nohup bash -c "cd kafka && bin/kafka-server-start.sh config/server.properties &"
+  - sleep 5
 jobs:
   include:
     - stage: "test and build"
@@ -51,7 +56,7 @@ jobs:
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
-      - docker-compose up -d
+#      - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
     - stage: "test and build"
       env:
@@ -59,7 +64,7 @@ jobs:
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
-      - docker-compose up -d
+#      - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
     - stage: "test and build"
       env:
@@ -67,5 +72,5 @@ jobs:
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
-      - docker-compose up -d
+#      - docker-compose up -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
