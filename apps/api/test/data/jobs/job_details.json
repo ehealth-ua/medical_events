@@ -32,6 +32,7 @@
       "items": {
         "$ref": "#/definitions/link"
       },
+      "minItems": 1,
       "description": "list of entities with links"
     },
     "eta": {
@@ -45,6 +46,15 @@
         "pending",
         "processed",
         "failed"
+      ]
+    },
+    "status_code": {
+      "type": "integer",
+      "enum": [
+        200,
+        202,
+        404,
+        422
       ]
     }
   },

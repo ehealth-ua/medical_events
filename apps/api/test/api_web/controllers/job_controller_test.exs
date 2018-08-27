@@ -10,7 +10,11 @@ defmodule Api.Web.JobControllerTest do
 
   describe "get job by id" do
     test "status: pending", %{conn: conn} do
-      job = insert(:job, status: Job.status(:pending))
+      job =
+        insert(:job,
+          status: Job.status(:pending),
+          status_code: 202
+        )
 
       response =
         conn
@@ -20,7 +24,14 @@ defmodule Api.Web.JobControllerTest do
         |> assert_json_schema("jobs/job_details.json")
 
       assert Job.status_to_string(job.status) == response["status"]
-      assert [] == response["links"]
+
+      assert [
+               %{
+                 "entity" => "job",
+                 "href" => "/jobs/" <> job._id
+               }
+             ] == response["links"]
+
       assert Map.has_key?(response, "eta")
     end
 
@@ -41,21 +52,22 @@ defmodule Api.Web.JobControllerTest do
       job =
         insert(:job,
           status: Job.status(:processed),
-          status_code: 203,
+          status_code: 200,
           response: job_response
         )
 
       response =
         conn
         |> get(job_path(conn, :show, job._id))
-        |> json_response(203)
+        |> json_response(303)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
 
       assert Job.status_to_string(job.status) == response["status"]
+      assert 200 == response["status_code"]
       assert Map.has_key?(response, "eta")
       assert Map.has_key?(response, "links")
-      assert is_list(response["links"])
+      assert job_response["links"] == response["links"]
     end
 
     test "status: processed with failed validation", %{conn: conn} do
