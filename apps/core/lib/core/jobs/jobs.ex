@@ -65,5 +65,5 @@ defmodule Core.Jobs do
   end
 
   def fetch_links(response) when is_map(response), do: Map.get(response, ["links"], [])
-  def fetch_links(response), do: []
+  def fetch_links(_response), do: []
 end

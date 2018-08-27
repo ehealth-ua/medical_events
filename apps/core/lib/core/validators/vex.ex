@@ -21,8 +21,8 @@ defmodule Core.Validators.Vex do
 
   def validate(data, settings) do
     case errors(data, settings) do
-      errors when length(errors) > 0 -> {:error, errors}
-      _ -> {:ok, data}
+      [] -> {:ok, data}
+      errors -> {:error, errors}
     end
   end
 

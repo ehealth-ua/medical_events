@@ -3,7 +3,6 @@ defmodule Core.Mongo.Event do
   MongoDB event for audit log
   """
 
-  alias BSON.ObjectId
   alias __MODULE__
 
   @allowed_event_types ~w(INSERT UPDATE DELETE)
