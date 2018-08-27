@@ -19,7 +19,7 @@ defmodule Api.Web.JobControllerTest do
       response =
         conn
         |> get(job_path(conn, :show, job._id))
-        |> json_response(202)
+        |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
 
@@ -59,7 +59,7 @@ defmodule Api.Web.JobControllerTest do
       response =
         conn
         |> get(job_path(conn, :show, job._id))
-        |> json_response(200)
+        |> json_response(303)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
 
