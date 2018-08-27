@@ -64,6 +64,13 @@ defmodule Core.Jobs do
     |> Job.decode_response()
   end
 
-  def fetch_links(response) when is_map(response), do: Map.get(response, ["links"], [])
-  def fetch_links(_response), do: []
+  def fetch_links(%Job{status_code: 200, response: response}), do: Map.get(response, "links", [])
+
+  def fetch_links(%Job{_id: id}),
+    do: [
+      %{
+        entity: "job",
+        href: "/jobs/#{id}"
+      }
+    ]
 end

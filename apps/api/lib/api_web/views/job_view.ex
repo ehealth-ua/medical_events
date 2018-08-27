@@ -15,7 +15,7 @@ defmodule Api.Web.JobView do
   def render("details.json", %{job: job}) do
     %{
       eta: job.eta,
-      links: Jobs.fetch_links(job.response),
+      links: Jobs.fetch_links(job),
       status: Job.status_to_string(job.status),
       status_code: job.status_code
     }
