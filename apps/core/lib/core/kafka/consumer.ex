@@ -14,8 +14,8 @@ defmodule Core.Kafka.Consumer do
   def consume(%PackageCreateJob{_id: id} = package_create_job) do
     case Jobs.get_by_id(id) do
       {:ok, _job} ->
-        with {:ok, response} <- Patients.consume_create_package(package_create_job) do
-          Jobs.update(id, Job.status(:processed), response, 200)
+        with {:ok, response, status_code} <- Patients.consume_create_package(package_create_job) do
+          Jobs.update(id, Job.status(:processed), response, status_code)
           :ok
         end
 
@@ -30,8 +30,8 @@ defmodule Core.Kafka.Consumer do
   def consume(%EpisodeCreateJob{_id: id} = episode_create_job) do
     case Jobs.get_by_id(id) do
       {:ok, _job} ->
-        with {:ok, response} <- Patients.consume_create_episode(episode_create_job) do
-          Jobs.update(id, Job.status(:processed), response, 200)
+        with {:ok, response, status_code} <- Patients.consume_create_episode(episode_create_job) do
+          Jobs.update(id, Job.status(:processed), response, status_code)
           :ok
         end
 

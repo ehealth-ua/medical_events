@@ -71,11 +71,11 @@ defmodule Core.Patients do
            "links" => [
              %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
            ]
-         }}
+         }, 200}
       end
     else
       {:error, error} ->
-        {:ok, Jason.encode!(ValidationError.render("422.json", %{schema: error}))}
+        {:ok, Jason.encode!(ValidationError.render("422.json", %{schema: error})), 422}
     end
   end
 
@@ -167,7 +167,7 @@ defmodule Core.Patients do
                projection: ["episodes.#{episode_id}": true]
              ) do
           %{"episodes" => %{^episode_id => %{}}} ->
-            {:ok, %{"error" => "Episode with such id already exists"}}
+            {:ok, %{"error" => "Episode with such id already exists"}, 422}
 
           _ ->
             set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
@@ -181,11 +181,11 @@ defmodule Core.Patients do
                "links" => [
                  %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
                ]
-             }}
+             }, 200}
         end
 
       errors ->
-        {:ok, ValidationError.render("422.json", %{schema: Enum.map(errors, &Mongo.vex_to_json/1)})}
+        {:ok, ValidationError.render("422.json", %{schema: Enum.map(errors, &Mongo.vex_to_json/1)}), 422}
     end
   end
 
