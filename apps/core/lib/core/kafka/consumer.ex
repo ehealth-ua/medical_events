@@ -4,17 +4,17 @@ defmodule Core.Kafka.Consumer do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
-  alias Core.Jobs.VisitCreateJob
+  alias Core.Jobs.PackageCreateJob
   alias Core.Patients
   require Logger
 
   @doc """
   TODO: add digital signature error handling
   """
-  def consume(%VisitCreateJob{_id: id} = visit_create_job) do
+  def consume(%PackageCreateJob{_id: id} = package_create_job) do
     case Jobs.get_by_id(id) do
       {:ok, _job} ->
-        with {:ok, response} <- Patients.consume_create_visit(visit_create_job) do
+        with {:ok, response} <- Patients.consume_create_package(package_create_job) do
           Jobs.update(id, Job.status(:processed), response, 200)
           :ok
         end

@@ -62,8 +62,12 @@ config :vex,
       datetime: Core.Validators.DateTime,
       reference: Core.Validators.Reference,
       value: Core.Validators.Value,
+      division: Core.Validators.Division,
       employee: Core.Validators.Employee,
-      reference_type: Core.Validators.ReferenceType
+      reference_type: Core.Validators.ReferenceType,
+      diagnoses_role: Core.Validators.DiagnosesRole,
+      visit_context: Core.Validators.VisitContext,
+      episode_context: Core.Validators.EpisodeContext
     ],
     Vex.Validators
   ]

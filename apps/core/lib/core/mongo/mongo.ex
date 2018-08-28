@@ -164,6 +164,10 @@ defmodule Core.Mongo do
      }, "$.#{field}"}
   end
 
+  defp prepare_doc([%{__struct__: module, __meta__: _} | _] = docs) do
+    Enum.map(docs, &prepare_doc/1)
+  end
+
   defp prepare_doc(%{__meta__: _} = doc) do
     doc
     |> Map.from_struct()
@@ -178,6 +182,8 @@ defmodule Core.Mongo do
   end
 
   defp prepare_doc(doc), do: doc
+
+  def add_to_set(set, nil, _), do: set
 
   def add_to_set(set, %{__struct__: module, __meta__: _} = value, path) do
     fields = Map.keys(module.metadata().fields)

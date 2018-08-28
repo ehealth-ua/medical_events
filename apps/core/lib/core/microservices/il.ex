@@ -14,4 +14,8 @@ defmodule Core.Microservices.Il do
   def get_employee(id, headers) do
     get("/api/employees/#{id}", headers)
   end
+
+  def get_division(id, headers) do
+    get("/api/divisions/#{id}", headers)
+  end
 end

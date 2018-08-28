@@ -1,0 +1,1287 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "value_quantity": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "comparator": {
+          "type": "string",
+          "enum": [
+            ">",
+            ">=",
+            "=",
+            "<=",
+            "<"
+          ]
+        },
+        "unit": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "system": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "code": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        }
+      },
+      "required": [
+        "value",
+        "unit"
+      ],
+      "additionalProperties": false
+    },
+    "value_codeable_concept": {
+      "$ref": "#/definitions/codeable_concept"
+    },
+    "value_sampled_data": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "number"
+        },
+        "period": {
+          "type": "number"
+        },
+        "factor": {
+          "type": "number"
+        },
+        "lowerLimit": {
+          "type": "number"
+        },
+        "upperLimit": {
+          "type": "number"
+        },
+        "dimensions": {
+          "type": "number"
+        },
+        "data": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "value_range": {
+      "type": "object",
+      "properties": {
+        "low": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "high": {
+          "$ref": "#/definitions/value_quantity"
+        }
+      },
+      "additionalProperties": false
+    },
+    "value_ratio": {
+      "type": "object",
+      "properties": {
+        "numerator": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "denominator": {
+          "$ref": "#/definitions/value_quantity"
+        }
+      },
+      "additionalProperties": false
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/resources"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        },
+        "display": {
+          "type": "string",
+          "description": "Representation defined by the system"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/identifier"
+        }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "role": {
+      "$ref": "#/definitions/codeable_concept"
+    },
+    "action": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/actions"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              },
+              "display": {
+                "type": "string",
+                "description": "Representation defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "reason": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/ICPC2/reasons"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              },
+              "display": {
+                "type": "string",
+                "description": "Representation defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/codeable_concept"
+          }
+        },
+        "detail": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "identifier": {
+                "$ref": "#/definitions/identifier"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "diagnosis": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "condition"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          },
+                          "display": {
+                            "type": "string",
+                            "description": "Representation defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "should be filled one of: condition or condition_id"
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/ICPC2/conditions",
+                      "eHealth/ICD10/conditions"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "role": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/diagnoses_roles"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "rank": {
+          "type": "number",
+          "description": "Ranking of the diagnosis (for each role type)"
+        }
+      },
+      "required": [
+        "code",
+        "condition",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "vaccination_protocol": {
+      "dose_sequence": {
+        "type": "number"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "authority": {
+        "$ref": "#/definitions/codeable_concept"
+      },
+      "series": {
+        "type": "string"
+      },
+      "series_doses": {
+        "type": "number"
+      },
+      "target_disease": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/definitions/codeable_concept"
+        }
+      },
+      "dose_status": {
+        "$ref": "#/definitions/codeable_concept"
+      },
+      "dose_status_reason": {
+        "$ref": "#/definitions/codeable_concept"
+      }
+    },
+    "condition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "report_origin": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "asserter": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "code": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "clinical_status": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "verification_status": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "severity": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "body_sites": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/codeable_concept"
+          }
+        },
+        "onset_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "stage": {
+          "type": "object",
+          "properties": {
+            "summary": {
+              "$ref": "#/definitions/codeable_concept"
+            }
+          },
+          "required": [
+            "summary"
+          ]
+        },
+        "evidences": {
+          "$ref": "#/definitions/evidence"
+        }
+      },
+      "required": [
+        "id",
+        "context",
+        "code",
+        "clinical_status",
+        "verification_status",
+        "onset_date"
+      ],
+      "additionalProperties": false
+    },
+    "encounter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string"
+        },
+        "contexts": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "class": {
+          "type": "object",
+          "properties": {
+            "system": {
+              "type": "string",
+              "enum": [
+                "eHealth/encounter_classes"
+              ]
+            },
+            "code": {
+              "type": "string",
+              "description": "Symbol in syntax defined by the system"
+            },
+            "display": {
+              "type": "string",
+              "description": "Representation defined by the system"
+            }
+          },
+          "required": [
+            "code",
+            "system"
+          ],
+          "additionalProperties": false
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/encounter_types"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "incoming_referrals": {
+          "type": "array",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "performer": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "employee"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          },
+                          "display": {
+                            "type": "string",
+                            "description": "Representation defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/reason"
+          }
+        },
+        "diagnoses": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/diagnosis"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/action"
+          }
+        },
+        "division": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "division"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          },
+                          "display": {
+                            "type": "string",
+                            "description": "Representation defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "contexts",
+        "class",
+        "type",
+        "performer",
+        "reasons",
+        "diagnoses",
+        "actions",
+        "division"
+      ],
+      "additionalProperties": false
+    },
+    "observation": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "report_origin": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "status": {
+          "type": "string"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "based_on": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "category": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "code": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "effective_date_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_period": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "description": "C? Starting time with inclusive boundary"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "description": "C? End time with inclusive boundary, if not ongoing"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "additionalProperties": false
+        },
+        "issued": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "performer": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          }
+        },
+        "interpretation": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "body_side": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "method": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value_quantity": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "value_codeable_concept": {
+          "$ref": "#/definitions/value_codeable_concept"
+        },
+        "value_sampled_data": {
+          "$ref": "#/definitions/value_sampled_data"
+        },
+        "value_string": {
+          "type": "string"
+        },
+        "value_boolean": {
+          "type": "boolean"
+        },
+        "value_range": {
+          "$ref": "#/definitions/value_range"
+        },
+        "value_ratio": {
+          "$ref": "#/definitions/value_ratio"
+        },
+        "value_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "value_date_time": {
+          "type": "string",
+          "format": "date"
+        },
+        "value_period": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "date-time",
+              "description": "C? Starting time with inclusive boundary"
+            },
+            "end": {
+              "type": "string",
+              "format": "date-time",
+              "description": "C? End time with inclusive boundary, if not ongoing"
+            }
+          },
+          "required": [
+            "start"
+          ],
+          "additionalProperties": false
+        },
+        "reference_range": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "low": {
+                "$ref": "#/definitions/value_quantity"
+              },
+              "high": {
+                "$ref": "#/definitions/value_quantity"
+              },
+              "type": {
+                "$ref": "#/definitions/codeable_concept"
+              },
+              "applies_to": {
+                "$ref": "#/definitions/codeable_concept"
+              },
+              "age": {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "$ref": "#/definitions/value_quantity"
+                  },
+                  "high": {
+                    "$ref": "#/definitions/value_quantity"
+                  }
+                }
+              },
+              "text": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "component": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "$ref": "#/definitions/codeable_concept"
+              },
+              "value_quantity": {
+                "$ref": "#/definitions/value_quantity"
+              },
+              "value_codeable_concept": {
+                "$ref": "#/definitions/value_codeable_concept"
+              },
+              "value_sampled_data": {
+                "$ref": "#/definitions/value_sampled_data"
+              },
+              "value_string": {
+                "type": "string"
+              },
+              "value_boolean": {
+                "type": "boolean"
+              },
+              "value_range": {
+                "$ref": "#/definitions/value_range"
+              },
+              "value_ratio": {
+                "$ref": "#/definitions/value_ratio"
+              },
+              "value_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "value_date_time": {
+                "type": "string",
+                "format": "date"
+              },
+              "value_period": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "C? Starting time with inclusive boundary"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "C? End time with inclusive boundary, if not ongoing"
+                  }
+                },
+                "required": [
+                  "start"
+                ],
+                "additionalProperties": false
+              },
+              "interpretation": {
+                "$ref": "#/definitions/codeable_concept"
+              },
+              "reference_range": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "low": {
+                      "$ref": "#/definitions/value_quantity"
+                    },
+                    "high": {
+                      "$ref": "#/definitions/value_quantity"
+                    },
+                    "type": {
+                      "$ref": "#/definitions/codeable_concept"
+                    },
+                    "applies_to": {
+                      "$ref": "#/definitions/codeable_concept"
+                    },
+                    "age": {
+                      "type": "object",
+                      "properties": {
+                        "low": {
+                          "$ref": "#/definitions/value_quantity"
+                        },
+                        "high": {
+                          "$ref": "#/definitions/value_quantity"
+                        }
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "immunization": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string",
+          "description": "Dictionary: TBD"
+        },
+        "not_given": {
+          "type": "boolean"
+        },
+        "vaccine_code": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "encounter": {
+          "$ref": "#/definitions/reference"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "recorder": {
+          "$ref": "#/definitions/reference"
+        },
+        "issued": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "legal_entity": {
+          "$ref": "#/definitions/reference"
+        },
+        "manufacturer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lot_number": {
+          "type": "string"
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "site": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "route": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "dose_quantity": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "practitioner": {
+          "$ref": "#/definitions/reference"
+        },
+        "explanation": {
+          "type": "object",
+          "properties": {},
+          "oneOf": [
+            {
+              "properties": {
+                "reasons": {
+                  "$ref": "#/definitions/codeable_concept"
+                }
+              }
+            },
+            {
+              "properties": {
+                "reason_not_given": {
+                  "$ref": "#/definitions/codeable_concept"
+                }
+              }
+            }
+          ]
+        },
+        "reactions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "detail": {
+                "$ref": "#/definitions/reference"
+              },
+              "reported": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "vaccination_protocols": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/vaccination_protocol"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "not_given",
+        "vaccine_code",
+        "encounter",
+        "date",
+        "recorder",
+        "issued",
+        "primary_source"
+      ]
+    },
+    "allergy_intolerances": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "clinical_status": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dictionary: TBD"
+        },
+        "verification_status": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dictionary: TBD"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criticality": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "$ref": "#/definitions/reference"
+        },
+        "code": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "onset_date_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "asserter": {
+          "$ref": "#/definitions/reference"
+        },
+        "last_occurrence": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "id",
+        "clinical_status",
+        "verification_status",
+        "type",
+        "category",
+        "criticality",
+        "context",
+        "code",
+        "onset_date_time",
+        "asserted_date",
+        "asserter"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "encounter": {
+      "$ref": "#/definitions/encounter"
+    },
+    "conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/condition"
+      }
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/observation"
+      }
+    },
+    "allergy_intolerances": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/allergy_intolerances"
+      }
+    },
+    "immunizations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/immunization"
+      }
+    }
+  },
+  "required": [
+    "encounter"
+  ],
+  "additionalProperties": false
+}

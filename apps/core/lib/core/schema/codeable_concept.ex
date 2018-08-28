@@ -5,7 +5,7 @@ defmodule Core.CodeableConcept do
   alias Core.Coding
 
   embedded_schema do
-    field(:coding, presence: true)
+    field(:coding, presence: true, reference: [path: "coding"])
     field(:text)
   end
 

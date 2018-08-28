@@ -7,8 +7,8 @@ defmodule Core.Validators.JsonSchema do
   use Confex, otp_app: :core
   alias Core.Validators.SchemaMapper
 
-  use_schema(:visit_create, "json_schemas/visits/visit_create.json")
-  use_schema(:visit_create_signed_content, "json_schemas/visits/visit_create_signed_content.json")
+  use_schema(:package_create, "json_schemas/packages/package_create.json")
+  use_schema(:package_create_signed_content, "json_schemas/packages/package_create_signed_content.json")
   use_schema(:episode_create, "json_schemas/episodes/episode_create.json")
 
   def validate(schema, attrs, errors_limit \\ nil) do

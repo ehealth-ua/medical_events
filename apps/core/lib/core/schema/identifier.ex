@@ -5,7 +5,7 @@ defmodule Core.Identifier do
   alias Core.CodeableConcept
 
   embedded_schema do
-    field(:type, presence: true)
+    field(:type, presence: true, reference: [path: "type"])
     field(:value, presence: true)
   end
 

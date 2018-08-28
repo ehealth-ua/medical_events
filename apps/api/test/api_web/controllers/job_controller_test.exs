@@ -11,7 +11,8 @@ defmodule Api.Web.JobControllerTest do
   describe "get job by id" do
     test "status: pending", %{conn: conn} do
       job =
-        insert(:job,
+        insert(
+          :job,
           status: Job.status(:pending),
           status_code: 202
         )
@@ -50,7 +51,8 @@ defmodule Api.Web.JobControllerTest do
       }
 
       job =
-        insert(:job,
+        insert(
+          :job,
           status: Job.status(:processed),
           status_code: 200,
           response: job_response
@@ -72,7 +74,8 @@ defmodule Api.Web.JobControllerTest do
 
     test "status: processed with failed validation", %{conn: conn} do
       job =
-        insert(:job,
+        insert(
+          :job,
           status: Job.status(:processed),
           status_code: 422,
           response: [%{"type" => "invalid"}]
@@ -93,7 +96,8 @@ defmodule Api.Web.JobControllerTest do
 
     test "status: failed", %{conn: conn} do
       job =
-        insert(:job,
+        insert(
+          :job,
           status: Job.status(:failed),
           status_code: 404,
           response: "Can't get request by id bd33b561-2616-4268-898d-4fc4e07e3481"

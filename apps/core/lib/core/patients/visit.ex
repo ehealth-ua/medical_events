@@ -6,7 +6,7 @@ defmodule Core.Visit do
 
   embedded_schema do
     field(:id, presence: true)
-    field(:period)
+    field(:period, reference: [path: "period"])
 
     timestamps()
     changed_by()

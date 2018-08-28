@@ -5,7 +5,7 @@ defmodule Core.Reference do
   alias Core.Identifier
 
   embedded_schema do
-    field(:identifier, presence: true)
+    field(:identifier, presence: true, reference: [path: "identifier"])
   end
 
   def create(data) do

@@ -1,4 +1,4 @@
-defmodule Core.Kafka.Consumer.CreateVisitTest do
+defmodule Core.Kafka.Consumer.CreatePackageTest do
   @moduledoc false
 
   use Core.ModelCase
@@ -6,7 +6,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
   alias Core.Kafka.Consumer
   alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.VisitCreateJob
+  alias Core.Jobs.PackageCreateJob
   import Mox
   import Core.Expectations.DigitalSignature
 
@@ -24,7 +24,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
       signature()
 
       assert :ok =
-               Consumer.consume(%VisitCreateJob{
+               Consumer.consume(%PackageCreateJob{
                  _id: job._id,
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
                  signed_data: Base.encode64("")
@@ -44,7 +44,7 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
       signature()
 
       assert :ok =
-               Consumer.consume(%VisitCreateJob{
+               Consumer.consume(%PackageCreateJob{
                  _id: job._id,
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
                  signed_data: Base.encode64(Jason.encode!(%{}))
@@ -61,13 +61,38 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
         {:ok, %{"data" => %{}}}
       end)
 
+      client_id = UUID.uuid4()
+
+      expect(IlMock, :get_employee, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "APPROVED",
+             "employee_type" => "DOCTOR",
+             "legal_entity" => %{"id" => client_id}
+           }
+         }}
+      end)
+
+      expect(IlMock, :get_division, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "active",
+             "legal_entity_id" => client_id
+           }
+         }}
+      end)
+
       encounter_id = UUID.uuid4()
 
       patient = insert(:patient)
       job = insert(:job)
       signature()
       visit_id = UUID.uuid4()
-      episode_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd
 
       signed_content = %{
         "encounter" => %{
@@ -87,12 +112,8 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
               }
             }
           ],
-          "period" => %{
-            "start" => DateTime.to_iso8601(DateTime.utc_now()),
-            "end" => DateTime.to_iso8601(DateTime.utc_now())
-          },
-          "class" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_classes"}]},
-          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_classes"}]},
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],
@@ -104,7 +125,8 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
                   "value" => UUID.uuid4()
                 }
               },
-              "role" => %{"coding" => [%{"code" => "role", "system" => "diagnoses_roles"}]}
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
+              "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
@@ -113,39 +135,46 @@ defmodule Core.Kafka.Consumer.CreateVisitTest do
               "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
               "value" => UUID.uuid4()
             }
+          },
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
           }
-        },
-        "conditions" => [
-          %{
-            "id" => UUID.uuid4(),
-            "context" => %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
-                "value" => encounter_id
-              }
-            },
-            "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
-            "clinical_status" => "test",
-            "verification_status" => "test",
-            "onset_date" => Date.to_iso8601(Date.utc_today())
-          }
-        ]
+        }
+        # "conditions" => [
+        #   %{
+        #     "id" => UUID.uuid4(),
+        #     "context" => %{
+        #       "identifier" => %{
+        #         "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+        #         "value" => encounter_id
+        #       }
+        #     },
+        #     "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
+        #     "clinical_status" => "test",
+        #     "verification_status" => "test",
+        #     "onset_date" => Date.to_iso8601(Date.utc_today())
+        #   }
+        # ]
       }
 
       user_id = UUID.uuid4()
 
       assert :ok =
-               Consumer.consume(%VisitCreateJob{
+               Consumer.consume(%PackageCreateJob{
                  _id: job._id,
-                 visit: %{"id" => visit_id, "period" => %{}},
+                 visit: %{"id" => visit_id, "period" => %{"start" => DateTime.utc_now(), "end" => DateTime.utc_now()}},
                  patient_id: patient._id,
                  user_id: user_id,
+                 client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
       assert {:ok,
               %Core.Job{
-                response_size: 2,
+                response_size: 142,
                 status: @status_processed
               }} = Jobs.get_by_id(job._id)
     end

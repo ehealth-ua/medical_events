@@ -6,13 +6,10 @@ defmodule Core.Diagnosis do
   alias Core.Reference
 
   embedded_schema do
-    field(:condition, presence: true)
-    field(:role, presence: true)
+    field(:condition, presence: true, reference: [path: "condition"])
+    field(:role, presence: true, reference: [path: "role"])
     field(:rank)
     field(:code, presence: true)
-
-    timestamps()
-    changed_by()
   end
 
   def create(data) do

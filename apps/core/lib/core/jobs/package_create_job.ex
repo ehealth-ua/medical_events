@@ -1,6 +1,6 @@
-defmodule Core.Jobs.VisitCreateJob do
+defmodule Core.Jobs.PackageCreateJob do
   @moduledoc """
-  Struct for creating visit request.
+  Struct for creating package request.
   _id is a binded Request id. 
   """
 
