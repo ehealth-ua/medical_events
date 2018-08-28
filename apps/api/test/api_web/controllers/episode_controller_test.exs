@@ -65,14 +65,14 @@ defmodule Api.Web.EpisodeControllerTest do
           "type" => "primary_care",
           "managing_organization" => %{
             "identifier" => %{
-              "type" => %{"coding" => [%{"system" => "eHealth", "code" => "episode"}]},
+              "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "legal_entity"}]},
               "value" => UUID.uuid4()
             }
           },
           "period" => %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
           "care_manager" => %{
             "identifier" => %{
-              "type" => %{"coding" => [%{"system" => "eHealth", "code" => "episode"}]},
+              "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "employee"}]},
               "value" => UUID.uuid4()
             }
           }

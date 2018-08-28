@@ -90,7 +90,6 @@ defmodule Core.Patients do
         :start,
         datetime: [less_than_or_equal_to: now, message: "Start date of episode must be in past"]
       )
-      |> add_validations(:end, absence: [message: "End date of episode could not be submitted on creation"])
 
     # add managing_organization validations
     managing_organization = Reference.create(job.managing_organization)
@@ -102,31 +101,10 @@ defmodule Core.Patients do
         value: [equals: client_id, message: "User can create an episode only for the legal entity for which he works"]
       )
 
-    codeable_concept = add_validations(identifier.type, :coding, reference: [path: "coding"])
-
-    coding =
-      Enum.map(
-        codeable_concept.coding,
-        &(&1
-          |> add_validations(
-            :code,
-            value: [equals: "legal_entity", message: "Only legal_entity could be submitted as a managing_organization"]
-          )
-          |> add_validations(
-            :system,
-            value: [equals: "eHealth/resources", message: "Submitted system is not allowed for this field"]
-          ))
-      )
-
-    managing_organization = %{
-      managing_organization
-      | identifier: %{identifier | type: %{codeable_concept | coding: coding}}
-    }
+    managing_organization = %{managing_organization | identifier: identifier}
 
     # add care_manager organizations
-    care_manager =
-      job.care_manager
-      |> Reference.create()
+    care_manager = Reference.create(job.care_manager)
 
     identifier =
       care_manager.identifier
