@@ -84,3 +84,21 @@ release :person_consumer do
     ]
   )
 end
+
+release :audit_log_consumer do
+  set(version: current_version(:audit_log_consumer))
+
+  set(
+    applications: [
+      :runtime_tools,
+      audit_log_consumer: :permanent,
+      core: :permanent
+    ]
+  )
+
+  set(
+    config_providers: [
+      {Toml.Provider, [path: "/app/config.toml"]}
+    ]
+  )
+end
