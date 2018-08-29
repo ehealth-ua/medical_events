@@ -45,6 +45,7 @@ defmodule Api.Mixfile do
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
+      {:scrivener, "~> 2.5"},
       {:core, in_umbrella: true}
     ]
   end

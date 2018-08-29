@@ -33,4 +33,10 @@ defmodule Api.Web.FallbackController do
     |> put_status(:not_implemented)
     |> render(Error, :"501", reason)
   end
+
+  def call(conn, {:error, {:"422", error}}) do
+    conn
+    |> put_status(422)
+    |> render(Error, :"400", %{message: error})
+  end
 end

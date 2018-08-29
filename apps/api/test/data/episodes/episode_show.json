@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "required": [
+        "identifier"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/uuid"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "primary_care"
+      ],
+      "description": "Dictionary: TBD"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active"
+      ],
+      "description": "Dictionary: TBD"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "period": {
+    },
+    "managing_organization": {
+    },
+    "care_manager": {
+    },
+    "patient_id": {
+      "description": "Patient's id"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "status",
+    "name",
+    "period",
+    "managing_organization",
+    "care_manager",
+    "patient_id"
+  ]
+}

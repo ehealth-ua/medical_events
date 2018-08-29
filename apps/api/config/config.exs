@@ -6,8 +6,7 @@
 use Mix.Config
 
 # General application configuration
-config :api,
-  namespace: Api
+config :api, namespace: Api
 
 # Configures the endpoint
 config :api, ApiWeb.Endpoint,
