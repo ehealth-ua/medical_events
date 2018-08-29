@@ -60,6 +60,7 @@ config :vex,
   sources: [
     [
       datetime: Core.Validators.DateTime,
+      date: Core.Validators.Date,
       reference: Core.Validators.Reference,
       value: Core.Validators.Value,
       division: Core.Validators.Division,
@@ -67,7 +68,8 @@ config :vex,
       reference_type: Core.Validators.ReferenceType,
       diagnoses_role: Core.Validators.DiagnosesRole,
       visit_context: Core.Validators.VisitContext,
-      episode_context: Core.Validators.EpisodeContext
+      episode_context: Core.Validators.EpisodeContext,
+      diagnosis_condition: Core.Validators.DiagnosisCondition
     ],
     Vex.Validators
   ]

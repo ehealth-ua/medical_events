@@ -87,7 +87,7 @@ defmodule Core.AuditLogTest do
         %{"title" => "two"}
       ]
 
-      assert {:ok, %{inserted_ids: inserted_ids}} = CoreMongo.insert_many(@test_collection, docs)
+      assert {:ok, %{inserted_ids: inserted_ids}} = CoreMongo.insert_many(@test_collection, docs, [])
       assert 2 == map_size(inserted_ids)
 
       assert %{"_id" => _, "title" => "one"} = CoreMongo.find_one(@test_collection, %{"_id" => inserted_ids[0]})

@@ -1,6 +1,7 @@
 defmodule Core.Patients do
   @moduledoc false
 
+  alias Core.Condition
   alias Core.Encounter
   alias Core.Episode
   alias Core.Jobs
@@ -55,7 +56,8 @@ defmodule Core.Patients do
          {:ok, %{"content" => content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content) do
       with {:ok, visit} <- create_visit(job),
-           {:ok, encounter} <- create_encounter(job, content, visit) do
+           {:ok, encounter} <- create_encounter(job, content, visit),
+           {:ok, conditions} <- create_conditions(job, content, encounter) do
         visit_id = if is_map(visit), do: visit.id
 
         set =
@@ -66,14 +68,23 @@ defmodule Core.Patients do
         {:ok, %{matched_count: 1, modified_count: 1}} =
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
 
-        {:ok,
-         %{
-           "links" => [
-             %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
-           ]
-         }, 200}
+        {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
+
+        links = [
+          %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
+        ]
+
+        links =
+          Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
+            acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
+          end)
+
+        {:ok, %{"links" => links}, 200}
       end
     else
+      {:error, %{"error" => error, "meta" => _}} ->
+        {:ok, Jason.encode!(error), 422}
+
       {:error, error} ->
         {:ok, Jason.encode!(ValidationError.render("422.json", %{schema: error})), 422}
     end
@@ -330,14 +341,27 @@ defmodule Core.Patients do
 
     division = %{division | identifier: identifier}
 
+    # Diagnoses validations
+    diagnoses = encounter.diagnoses
+
+    diagnoses =
+      Enum.map(diagnoses, fn diagnosis ->
+        condition = diagnosis.condition
+
+        identifier =
+          add_validations(condition.identifier, :value, diagnosis_condition: [conditions: [], patient_id: patient_id])
+
+        %{diagnosis | condition: %{condition | identifier: identifier}}
+      end)
+
     encounter =
-      %{encounter | contexts: contexts, performer: performer, division: division}
+      %{encounter | contexts: contexts, performer: performer, division: division, diagnoses: diagnoses}
       |> add_validations(
         :diagnoses,
         diagnoses_role: [type: "chief_complaint", message: "Encounter must have at least one chief complaint"]
       )
 
-    case Vex.errors(encounter) do
+    case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do
       [] ->
         result =
           Patient.metadata().collection
@@ -358,5 +382,55 @@ defmodule Core.Patients do
       errors ->
         {:error, errors}
     end
+  end
+
+  defp create_conditions(
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         content,
+         encounter
+       ) do
+    now = DateTime.utc_now()
+
+    conditions =
+      Enum.map(content["conditions"], fn data ->
+        condition = Condition.create(data)
+
+        condition =
+          %{
+            condition
+            | inserted_at: now,
+              updated_at: now,
+              inserted_by: user_id,
+              updated_by: user_id,
+              patient_id: patient_id
+          }
+          |> add_validations(
+            :onset_date,
+            date: [less_than_or_equal_to: now, message: "Onset date must be in past"]
+          )
+
+        context = condition.context
+        identifier = add_validations(context.identifier, :value, value: [equals: encounter.id])
+
+        %{condition | context: %{context | identifier: identifier}}
+      end)
+
+    case Vex.errors(%{conditions: conditions}, conditions: [reference: [path: "conditions"]]) do
+      [] ->
+        validate_conditions(conditions)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp validate_conditions(conditions) do
+    Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
+      if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
+        {:halt, {:error, "Condition with id '#{condition._id}' already exists"}}
+      else
+        {:cont, acc}
+      end
+    end)
   end
 end

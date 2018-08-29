@@ -1,13 +1,16 @@
 defmodule Core.Stage do
   @moduledoc false
 
-  # use Ecto.Schema
+  use Core.Schema
+  alias Core.CodeableConcept
 
-  # alias Code.CodeableConcept
+  embedded_schema do
+    field(:summary, reference: [path: "summary"])
+  end
 
-  # embedded_schema do
-  #   embeds_one(:summary, CodeableConcept)
-
-  #   timestamps()
-  # end
+  def create(data) do
+    %__MODULE__{
+      summary: CodeableConcept.create(Map.get(data, "summary"))
+    }
+  end
 end

@@ -88,11 +88,19 @@ defmodule Core.Mongo do
     execute(:find_one_and_update, [coll, filter, update, opts])
   end
 
-  def insert_many(coll, docs, opts \\ []) do
+  def insert_many(coll, [%{__meta__: _} | _] = docs, opts) do
+    execute(:insert_many, [coll, prepare_doc(docs), opts])
+  end
+
+  def insert_many(coll, docs, opts) do
     execute(:insert_many, [coll, docs, opts])
   end
 
-  def insert_many!(coll, docs, opts \\ []) do
+  def insert_many!(coll, [%{__meta__: _} | _] = docs, opts) do
+    execute(:insert_many!, [coll, prepare_doc(docs), opts])
+  end
+
+  def insert_many!(coll, docs, opts) do
     execute(:insert_many!, [coll, docs, opts])
   end
 
@@ -164,7 +172,7 @@ defmodule Core.Mongo do
      }, "$.#{field}"}
   end
 
-  defp prepare_doc([%{__struct__: module, __meta__: _} | _] = docs) do
+  defp prepare_doc([%{__struct__: _, __meta__: _} | _] = docs) do
     Enum.map(docs, &prepare_doc/1)
   end
 

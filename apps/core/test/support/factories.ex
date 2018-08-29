@@ -5,6 +5,7 @@ defmodule Core.Factories do
 
   alias Core.CodeableConcept
   alias Core.Coding
+  alias Core.Condition
   alias Core.Episode
   alias Core.Identifier
   alias Core.Job
@@ -113,6 +114,19 @@ defmodule Core.Factories do
     %Identifier{
       type: build(:codeable_concept),
       value: UUID.uuid4()
+    }
+  end
+
+  def condition_factory do
+    patient_id = UUID.uuid4()
+
+    %Condition{
+      _id: UUID.uuid4(),
+      patient_id: patient_id,
+      inserted_by: patient_id,
+      updated_by: patient_id,
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
     }
   end
 

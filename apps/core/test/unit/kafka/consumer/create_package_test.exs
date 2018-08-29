@@ -89,6 +89,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       encounter_id = UUID.uuid4()
 
       patient = insert(:patient)
+      condition = insert(:condition, patient_id: patient._id, inserted_by: patient._id, updated_by: patient._id)
       job = insert(:job)
       signature()
       visit_id = UUID.uuid4()
@@ -122,7 +123,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "condition" => %{
                 "identifier" => %{
                   "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
-                  "value" => UUID.uuid4()
+                  "value" => condition._id
                 }
               },
               "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
@@ -142,22 +143,40 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => UUID.uuid4()
             }
           }
-        }
-        # "conditions" => [
-        #   %{
-        #     "id" => UUID.uuid4(),
-        #     "context" => %{
-        #       "identifier" => %{
-        #         "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
-        #         "value" => encounter_id
-        #       }
-        #     },
-        #     "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
-        #     "clinical_status" => "test",
-        #     "verification_status" => "test",
-        #     "onset_date" => Date.to_iso8601(Date.utc_today())
-        #   }
-        # ]
+        },
+        "conditions" => [
+          %{
+            "id" => UUID.uuid4(),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
+            "clinical_status" => "test",
+            "verification_status" => "test",
+            "onset_date" => Date.to_iso8601(Date.utc_today()),
+            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/severity"}]},
+            "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
+            "stage" => %{
+              "summary" => %{"coding" => [%{"code" => "181414000", "system" => "eHealth/condition_stages"}]}
+            },
+            "evidences" => [
+              %{
+                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/ICD10/conditions"}]}],
+                "details" => [
+                  %{
+                    "identifier" => %{
+                      "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
+                      "value" => UUID.uuid4()
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
 
       user_id = UUID.uuid4()
@@ -174,7 +193,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: 142,
+                response_size: 273,
                 status: @status_processed
               }} = Jobs.get_by_id(job._id)
     end
