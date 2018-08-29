@@ -18,7 +18,10 @@ defmodule AuditLogConsumer.Kafka.MongoEventConsumer do
     {:async_commit, state}
   end
 
-  def consume(%Event{} = event), do: AuditLog.store_event(event)
+  def consume(%Event{} = event) do
+    AuditLog.store_event(event)
+    :ok
+  end
 
   def consume(value) do
     Logger.warn(fn -> "unknown kafka event: #{inspect(value)}" end)

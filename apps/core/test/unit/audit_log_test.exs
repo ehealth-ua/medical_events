@@ -338,7 +338,7 @@ defmodule Core.AuditLogTest do
   end
 
   defp emulate_kafka_consumer(event) do
-    assert {:ok, _} = AuditLog.store_event(event)
+    assert :ok = AuditLog.store_event(event)
   end
 
   defp assert_audit_log(entry_id, type, actor_id, collection \\ @test_collection) do

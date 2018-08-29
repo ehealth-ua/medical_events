@@ -4,6 +4,7 @@ defmodule Core.Mongo.AuditLog do
   alias Core.Mongo.Event
   alias DBConnection.Poolboy
   alias Mongo.DeleteResult
+  alias Mongo.Error
   alias Mongo.InsertOneResult
   alias Mongo.UpdateResult
   require Logger
@@ -85,8 +86,8 @@ defmodule Core.Mongo.AuditLog do
 
     unless @kafka_producer.publish_mongo_event(event) == :ok do
       Logger.error(
-        "Failed publish audit log to Kafka. Push data: operation: `#{operation}}`, id: `#{id}}`," <>
-          "collection: `#{collection}}`, params: `#{inspect(params)}}`"
+        "Failed publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{id}`," <>
+          "collection: `#{collection}`, params: `#{inspect(params)}`"
       )
     end
   end
@@ -110,7 +111,16 @@ defmodule Core.Mongo.AuditLog do
   Insert MongoDB operation log into audit_log collection
   """
   def store_event(%Event{} = event) do
-    Mongo.insert_one(:mongo_audit_log, @collection_audit_log, Map.from_struct(event), pool: Poolboy)
+    case Mongo.insert_one(:mongo_audit_log, @collection_audit_log, Map.from_struct(event), pool: Poolboy) do
+      {:ok, _} ->
+        :ok
+
+      {:error, %Error{} = err} ->
+        Logger.error("Failed store event in MongoDB audit log. Reason: `#{err.message}`, code: `#{err.code}`")
+
+      err ->
+        Logger.error("Failed store event in MongoDB audit log. Error: `#{inspect(err)}")
+    end
   end
 
   def collection, do: @collection_audit_log
