@@ -86,7 +86,7 @@ defmodule Core.Mongo.AuditLog do
 
     unless @kafka_producer.publish_mongo_event(event) == :ok do
       Logger.error(
-        "Failed publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{id}`," <>
+        "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{id}`," <>
           "collection: `#{collection}`, params: `#{inspect(params)}`"
       )
     end
@@ -116,10 +116,10 @@ defmodule Core.Mongo.AuditLog do
         :ok
 
       {:error, %Error{} = err} ->
-        Logger.error("Failed store event in MongoDB audit log. Reason: `#{err.message}`, code: `#{err.code}`")
+        Logger.error("Failed to store event in MongoDB audit log. Reason: `#{err.message}`, code: `#{err.code}`")
 
       err ->
-        Logger.error("Failed store event in MongoDB audit log. Error: `#{inspect(err)}")
+        Logger.error("Failed to store event in MongoDB audit log. Error: `#{inspect(err)}")
     end
   end
 

@@ -9,6 +9,7 @@ defmodule Core.Factories do
   alias Core.Episode
   alias Core.Identifier
   alias Core.Job
+  alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
   alias Core.Patient
   alias Core.Period

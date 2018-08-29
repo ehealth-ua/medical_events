@@ -31,7 +31,7 @@ defmodule Core.Jobs do
       Job.encode_response(%Job{
         _id: id,
         status: Job.status(:pending),
-        status_code: 200,
+        status_code: 202,
         inserted_at: DateTime.utc_now(),
         updated_at: DateTime.utc_now(),
         eta: count_eta(),
@@ -50,12 +50,12 @@ defmodule Core.Jobs do
 
   # ToDo: count real eta based on kafka performance testing. Temporary hardcoded to 10 minutes.
   defp count_eta do
-    time = :os.system_time(:second) + 600
+    time = :os.system_time(:millisecond) + 60_000
 
     time
-    |> DateTime.from_unix!()
+    |> DateTime.from_unix!(:millisecond)
     |> DateTime.to_naive()
-    |> NaiveDateTime.to_string()
+    |> NaiveDateTime.to_iso8601()
   end
 
   defp map_to_job(data) do

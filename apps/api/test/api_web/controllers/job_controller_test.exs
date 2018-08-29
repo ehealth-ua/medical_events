@@ -3,6 +3,8 @@ defmodule Api.Web.JobControllerTest do
 
   use ApiWeb.ConnCase
   alias Core.Job
+  alias Core.Jobs
+  alias Core.Jobs.PackageCreateJob
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -10,12 +12,16 @@ defmodule Api.Web.JobControllerTest do
 
   describe "get job by id" do
     test "status: pending", %{conn: conn} do
-      job =
-        insert(
-          :job,
-          status: Job.status(:pending),
-          status_code: 202
-        )
+      data = %{
+        "_id" => UUID.uuid4(),
+        "patient_id" => UUID.uuid4(),
+        "visit" => [],
+        "signed_data" => [],
+        "user_id" => UUID.uuid4(),
+        "client_id" => UUID.uuid4()
+      }
+
+      {:ok, job, _} = Jobs.create(PackageCreateJob, data)
 
       response =
         conn

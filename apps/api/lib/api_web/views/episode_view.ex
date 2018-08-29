@@ -2,8 +2,6 @@ defmodule Api.Web.EpisodeView do
   @moduledoc false
 
   use ApiWeb, :view
-  alias Core.Job
-  alias Core.Jobs
 
   def render("index.json", %{episodes: episodes, patient_id: patient_id}) do
     render_many(episodes, __MODULE__, "show.json", as: :episode, patient_id: patient_id)
