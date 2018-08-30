@@ -30,7 +30,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64("")
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 395}} = Jobs.get_by_id(job._id)
+      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(job._id)
     end
 
     test "empty map" do
@@ -50,7 +50,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(%{}))
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 397}} = Jobs.get_by_id(job._id)
+      assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(job._id)
     end
 
     # TODO: not completed

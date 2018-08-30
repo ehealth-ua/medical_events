@@ -86,7 +86,10 @@ defmodule Core.Patients do
         {:ok, Jason.encode!(error), 422}
 
       {:error, error} ->
-        {:ok, Jason.encode!(ValidationError.render("422.json", %{schema: error})), 422}
+        {:ok, ValidationError.render("422.json", %{schema: error}), 422}
+
+      {:error, {:bad_request, error}} ->
+        {:ok, error, 422}
     end
   end
 
