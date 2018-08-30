@@ -79,6 +79,7 @@ defmodule Core.Factories do
       name: "ОРВИ 2018",
       managing_organization: build(:reference),
       period: build(:period),
+      encounters: %{},
       care_manager: build(:reference),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),

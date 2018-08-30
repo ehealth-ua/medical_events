@@ -60,10 +60,20 @@ defmodule Core.Patients do
            {:ok, conditions} <- create_conditions(job, content, encounter) do
         visit_id = if is_map(visit), do: visit.id
 
+        episode_id =
+          encounter.contexts
+          |> Enum.find(fn context ->
+            context.identifier.type.coding
+            |> hd
+            |> Map.get(:code) == "episode"
+          end)
+          |> Map.get(:identifier)
+          |> Map.get(:value)
+
         set =
           %{"updated_by" => user_id, "updated_at" => now}
           |> Mongo.add_to_set(visit, "visits.#{visit_id}")
-          |> Mongo.add_to_set(encounter, "encounters.#{encounter.id}")
+          |> Mongo.add_to_set(encounter, "episodes.#{episode_id}.encounters.#{encounter.id}")
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
@@ -164,6 +174,7 @@ defmodule Core.Patients do
       status: job.status,
       managing_organization: managing_organization,
       period: period,
+      encounters: %{},
       care_manager: care_manager,
       inserted_by: job.user_id,
       updated_by: job.user_id,
