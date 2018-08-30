@@ -47,7 +47,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "value" => client_id
                    }
                  },
-                 period: %{"start" => DateTime.utc_now()},
+                 period: %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
                  care_manager: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
@@ -96,7 +96,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "value" => client_id
                    }
                  },
-                 period: %{"start" => DateTime.utc_now()},
+                 period: %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
                  care_manager: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},

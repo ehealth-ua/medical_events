@@ -184,7 +184,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: job._id,
-                 visit: %{"id" => visit_id, "period" => %{"start" => DateTime.utc_now(), "end" => DateTime.utc_now()}},
+                 visit: %{
+                   "id" => visit_id,
+                   "period" => %{
+                     "start" => DateTime.to_iso8601(DateTime.utc_now()),
+                     "end" => DateTime.to_iso8601(DateTime.utc_now())
+                   }
+                 },
                  patient_id: patient._id,
                  user_id: user_id,
                  client_id: client_id,

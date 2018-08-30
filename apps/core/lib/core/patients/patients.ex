@@ -90,6 +90,9 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{"links" => links}, 200}
+      else
+        {:error, error} ->
+          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(error)}), 422}
       end
     else
       {:error, %{"error" => error, "meta" => _}} ->
@@ -210,7 +213,7 @@ defmodule Core.Patients do
         end
 
       errors ->
-        {:ok, ValidationError.render("422.json", %{schema: Enum.map(errors, &Mongo.vex_to_json/1)}), 422}
+        {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
     end
   end
 

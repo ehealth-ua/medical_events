@@ -9,7 +9,17 @@ defmodule Core.Period do
   end
 
   def create(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+    %__MODULE__{
+      start: create_date(Map.get(data, "start")),
+      end: create_date(Map.get(data, "end"))
+    }
+  end
+
+  defp create_date(nil), do: nil
+
+  defp create_date(value) when is_binary(value) do
+    {:ok, datetime, _} = DateTime.from_iso8601(value)
+    datetime
   end
 end
 

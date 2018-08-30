@@ -156,6 +156,10 @@ defmodule Core.Mongo do
     execute(:update_one!, [coll, filter, update, opts])
   end
 
+  def vex_to_json(errors) when is_list(errors) do
+    Enum.map(errors, &vex_to_json/1)
+  end
+
   def vex_to_json({:error, field, :presence, message}) do
     {%{
        description: message,
