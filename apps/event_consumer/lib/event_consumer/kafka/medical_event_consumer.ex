@@ -11,7 +11,7 @@ defmodule EventConsumer.Kafka.MedicalEventConsumer do
     for %Message{value: message, offset: offset} <- message_set do
       value = :erlang.binary_to_term(message)
       Logger.debug(fn -> "message: " <> inspect(value) end)
-      Logger.info(fn -> "offset: " <> offset end)
+      Logger.info(fn -> "offset: #{offset}" end)
       :ok = Consumer.consume(value)
     end
 
