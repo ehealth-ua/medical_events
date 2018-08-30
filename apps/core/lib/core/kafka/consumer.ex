@@ -15,14 +15,13 @@ defmodule Core.Kafka.Consumer do
     case Jobs.get_by_id(id) do
       {:ok, _job} ->
         with {:ok, response, status_code} <- Patients.consume_create_package(package_create_job) do
-          Jobs.update(id, Job.status(:processed), response, status_code)
+          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
           :ok
         end
 
       _ ->
         response = "Can't get request by id #{id}"
         Logger.warn(fn -> response end)
-        Jobs.update(id, Job.status(:failed), response, 404)
         :ok
     end
   end
@@ -31,14 +30,13 @@ defmodule Core.Kafka.Consumer do
     case Jobs.get_by_id(id) do
       {:ok, _job} ->
         with {:ok, response, status_code} <- Patients.consume_create_episode(episode_create_job) do
-          Jobs.update(id, Job.status(:processed), response, status_code)
+          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
           :ok
         end
 
       _ ->
         response = "Can't get request by id #{id}"
         Logger.warn(fn -> response end)
-        Jobs.update(id, Job.status(:failed), response, 404)
         :ok
     end
   end
