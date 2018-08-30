@@ -9,7 +9,6 @@ defmodule Core.Factories do
   alias Core.Episode
   alias Core.Identifier
   alias Core.Job
-  alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
   alias Core.Patient
   alias Core.Period
@@ -58,10 +57,8 @@ defmodule Core.Factories do
   end
 
   def job_factory do
-    id = UUID.uuid4()
-
     %Job{
-      _id: id,
+      _id: UUID.uuid4(),
       eta: NaiveDateTime.utc_now() |> NaiveDateTime.to_iso8601(),
       status_code: 200,
       inserted_at: DateTime.utc_now(),

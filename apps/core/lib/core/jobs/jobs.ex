@@ -27,24 +27,28 @@ defmodule Core.Jobs do
   def create(module, data) do
     id = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.encode64(padding: false)
 
-    job =
-      Job.encode_response(%Job{
-        _id: id,
-        status: Job.status(:pending),
-        status_code: 202,
-        inserted_at: DateTime.utc_now(),
-        updated_at: DateTime.utc_now(),
-        eta: count_eta(),
-        response: ""
-      })
+    if Mongo.find_one(@collection, %{"_id" => id}, projection: [_id: true]) do
+      {:job_exists, id}
+    else
+      job =
+        Job.encode_response(%Job{
+          _id: id,
+          status: Job.status(:pending),
+          status_code: 202,
+          inserted_at: DateTime.utc_now(),
+          updated_at: DateTime.utc_now(),
+          eta: count_eta(),
+          response: ""
+        })
 
-    data =
-      data
-      |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
-      |> Map.put(:_id, id)
+      data =
+        data
+        |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
+        |> Map.put(:_id, id)
 
-    with {:ok, _} <- Mongo.insert_one(job) do
-      {:ok, job, struct(module, data)}
+      with {:ok, _} <- Mongo.insert_one(job) do
+        {:ok, job, struct(module, data)}
+      end
     end
   end
 

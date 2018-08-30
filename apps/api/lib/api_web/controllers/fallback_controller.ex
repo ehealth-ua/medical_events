@@ -3,8 +3,13 @@ defmodule Api.Web.FallbackController do
 
   use ApiWeb, :controller
 
+  alias Api.Web.JobController
   alias EView.Views.Error
   alias EView.Views.ValidationError
+
+  def call(conn, {:job_exists, job_id}) do
+    JobController.show(conn, %{"id" => job_id})
+  end
 
   def call(conn, {:error, errors}) when is_list(errors) do
     conn

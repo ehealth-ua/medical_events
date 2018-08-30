@@ -50,35 +50,54 @@ defmodule Api.Web.EpisodeControllerTest do
     test "success create episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
+      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
       patient = insert(:patient)
 
-      conn =
-        post(conn, episode_path(conn, :create, patient._id), %{
-          "id" => UUID.uuid4(),
-          "name" => "ОРВИ 2018",
-          "status" => Episode.status(:active),
-          "type" => "primary_care",
-          "managing_organization" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "legal_entity"}]},
-              "value" => UUID.uuid4()
-            }
-          },
-          "period" => %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
-          "care_manager" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "employee"}]},
-              "value" => UUID.uuid4()
-            }
+      data = %{
+        "id" => UUID.uuid4(),
+        "name" => "ОРВИ 2018",
+        "status" => Episode.status(:active),
+        "type" => "primary_care",
+        "managing_organization" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "legal_entity"}]},
+            "value" => UUID.uuid4()
           }
-        })
+        },
+        "period" => %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
+        "care_manager" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "employee"}]},
+            "value" => UUID.uuid4()
+          }
+        }
+      }
 
-      assert json_response(conn, 202)
+      conn1 = post(conn, episode_path(conn, :create, patient._id), data)
+
+      assert %{
+               "data" => %{
+                 "id" => job_id,
+                 "status" => "pending"
+               }
+             } = json_response(conn1, 202)
+
+      conn2 = post(conn, episode_path(conn, :create, patient._id), data)
+
+      href = "/jobs/#{job_id}"
+
+      assert %{
+               "data" => %{
+                 "eta" => _,
+                 "links" => [%{"entity" => "job", "href" => ^href}],
+                 "status" => "pending",
+                 "status_code" => 202
+               }
+             } = json_response(conn2, 200)
     end
   end
 

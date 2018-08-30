@@ -3,6 +3,7 @@ defmodule Api.Web.JobController do
 
   use ApiWeb, :controller
 
+  alias Api.Web.JobView
   alias Core.Job
   alias Core.Jobs
 
@@ -13,6 +14,7 @@ defmodule Api.Web.JobController do
          {status, template} <- map_http_response_code(job) do
       conn
       |> put_status(status)
+      |> put_view(JobView)
       |> render(template, job: job)
     end
   end
