@@ -11,6 +11,12 @@ defmodule Api.Web.FallbackController do
     JobController.show(conn, %{"id" => job_id})
   end
 
+  def call(conn, {:error, {:access_denied, reason}}) do
+    conn
+    |> put_status(:unauthorized)
+    |> render(Error, :"401", %{message: reason})
+  end
+
   def call(conn, {:error, errors}) when is_list(errors) do
     conn
     |> put_status(422)
@@ -21,6 +27,12 @@ defmodule Api.Web.FallbackController do
     conn
     |> put_status(:not_found)
     |> render(Error, :"404")
+  end
+
+  def call(conn, {:error, {:not_found, message}}) do
+    conn
+    |> put_status(:not_found)
+    |> render(Error, :"404", %{message: message})
   end
 
   def call(conn, {:error, {:conflict, reason}}) when is_binary(reason) do

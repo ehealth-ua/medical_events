@@ -1,11 +1,12 @@
-defmodule Api.Plugs.Headers do
+defmodule Api.Web.Plugs.Headers do
   @moduledoc false
 
-  alias EView.Views.Error
-  alias Plug.Conn
   import Core.Headers
   import Plug.Conn
   import Phoenix.Controller
+
+  alias EView.Views.Error
+  alias Plug.Conn
 
   def required_header(%Conn{} = conn, header) do
     case get_header(conn.req_headers, header) do
