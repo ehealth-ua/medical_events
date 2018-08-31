@@ -93,6 +93,32 @@ defmodule Core.AuditLogTest do
       assert %{"_id" => _, "title" => "one"} = CoreMongo.find_one(@test_collection, %{"_id" => inserted_ids[0]})
       assert %{"_id" => _, "title" => "two"} = CoreMongo.find_one(@test_collection, %{"_id" => inserted_ids[1]})
     end
+
+    test "update_one with upsert option" do
+      id = UUID.uuid4()
+      actor_id = UUID.uuid4()
+
+      expect(KafkaMock, :publish_mongo_event, fn event ->
+        assert Event == event.__struct__
+        assert @insert == event.type
+        assert @test_collection == event.collection
+        assert %{"$set" => %{"title" => "the one", "updated_by" => actor_id}} == event.params
+        assert %{"_id" => id} == event.filter
+
+        emulate_kafka_consumer(event)
+        :ok
+      end)
+
+      CoreMongo.update_one(
+        @test_collection,
+        %{"_id" => id},
+        %{"$set" => %{"title" => "the one", "updated_by" => actor_id}},
+        upsert: true
+      )
+
+      assert %{"_id" => _, "title" => "the one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
+      assert_audit_log(id, @insert, actor_id)
+    end
   end
 
   describe "UPDATE operations" do
@@ -112,7 +138,7 @@ defmodule Core.AuditLogTest do
         assert @update == event.type
         assert id == event.entry_id
         assert @test_collection == event.collection
-        assert %{"$set": %{title: "update two"}} == event.params
+        assert %{"$set" => %{title: "update two"}} == event.params
         assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
@@ -120,7 +146,7 @@ defmodule Core.AuditLogTest do
       end)
 
       filter = %{"_id" => id}
-      replacement = %{"$set": %{title: "update two"}}
+      replacement = %{"$set" => %{title: "update two"}}
       assert {:ok, _} = CoreMongo.update_one(@test_collection, filter, replacement, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
 
@@ -133,16 +159,50 @@ defmodule Core.AuditLogTest do
         assert @update == event.type
         assert id == event.entry_id
         assert @test_collection == event.collection
-        assert %{"$set": %{title: "update two"}} == event.params
+        assert %{"$set" => %{title: "update two"}} == event.params
         assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
         :ok
       end)
 
-      CoreMongo.update_one!(@test_collection, %{"_id" => id}, %{"$set": %{title: "update two"}}, actor_id: actor_id)
+      CoreMongo.update_one!(@test_collection, %{"_id" => id}, %{"$set" => %{title: "update two"}}, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
       assert_audit_log(id, @update, actor_id)
+    end
+
+    test "update_one with upsert option", %{id: id, actor_id: actor_id} do
+      expect(KafkaMock, :publish_mongo_event, fn event ->
+        assert Event == event.__struct__
+        assert @update == event.type
+        assert id == event.entry_id
+        assert @test_collection == event.collection
+        assert %{"$set" => %{title: "update two", updated_by: actor_id}} == event.params
+        assert %{"_id" => ^id} = event.filter
+
+        emulate_kafka_consumer(event)
+        :ok
+      end)
+
+      filter = %{"_id" => id}
+      replacement = %{"$set" => %{title: "update two", updated_by: actor_id}}
+      assert {:ok, _} = CoreMongo.update_one(@test_collection, filter, replacement, upsert: true)
+      assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
+
+      assert_audit_log(id, @update, actor_id)
+    end
+
+    # Mongo or ExMongo always send nModified: 1 when expected 0.
+    @tag :pending
+    test "update without changes. Audit log entry not created", %{actor_id: actor_id} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      doc = %{"title" => "unique"}
+      assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(@test_collection, doc, actor_id: actor_id)
+
+      filter = %{"_id" => id}
+      replacement = %{"$set" => %{"title" => "unique"}}
+      assert {:ok, _} = CoreMongo.update_one(@test_collection, filter, replacement, actor_id: actor_id)
+      assert %{"_id" => _, "title" => "update one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
     end
 
     test "replace_one", %{id: id, actor_id: actor_id} do
@@ -190,7 +250,7 @@ defmodule Core.AuditLogTest do
         assert @update == event.type
         assert id == event.entry_id
         assert @test_collection == event.collection
-        assert %{"$set": %{title: "update two"}} == event.params
+        assert %{"$set" => %{title: "update two"}} == event.params
         assert %{"_id" => ^id} = event.filter
 
         emulate_kafka_consumer(event)
@@ -198,9 +258,37 @@ defmodule Core.AuditLogTest do
       end)
 
       filter = %{"_id" => id}
-      replacement = %{"$set": %{title: "update two"}}
+      replacement = %{"$set" => %{title: "update two"}}
       assert {:ok, _} = CoreMongo.find_one_and_update(@test_collection, filter, replacement, actor_id: actor_id)
       assert %{"_id" => _, "title" => "update two"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
+
+      assert_audit_log(id, @update, actor_id)
+    end
+
+    test "find_one_and_update with upsert option" do
+      id = UUID.uuid4()
+      actor_id = UUID.uuid4()
+
+      expect(KafkaMock, :publish_mongo_event, fn event ->
+        assert Event == event.__struct__
+        # so pity, but Mongo returns a map with document.
+        # There is no chance to determine whether the document is inserted or updated
+        assert @update == event.type
+        assert id == event.entry_id
+        assert @test_collection == event.collection
+        assert %{"$set" => %{title: "one", updated_by: actor_id}} == event.params
+        assert %{"_id" => ^id} = event.filter
+
+        emulate_kafka_consumer(event)
+        :ok
+      end)
+
+      filter = %{"_id" => id}
+      replacement = %{"$set" => %{title: "one", updated_by: actor_id}}
+
+      assert {:ok, _} = CoreMongo.find_one_and_update(@test_collection, filter, replacement, upsert: true)
+
+      assert %{"_id" => _, "title" => "one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
 
       assert_audit_log(id, @update, actor_id)
     end
@@ -221,6 +309,39 @@ defmodule Core.AuditLogTest do
       assert CoreMongo.find_one_and_replace(@test_collection, %{"_id" => id}, %{replaced: "field"}, actor_id: actor_id)
 
       assert %{"_id" => _, "replaced" => "field"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
+      assert_audit_log(id, @update, actor_id)
+    end
+
+    test "find_one_and_replace with upsert option" do
+      id = UUID.uuid4()
+      actor_id = UUID.uuid4()
+
+      expect(KafkaMock, :publish_mongo_event, fn event ->
+        assert Event == event.__struct__
+        # so pity, but Mongo returns a map with document.
+        # There is no chance to determine whether the document is inserted or updated
+        assert @update == event.type
+        assert id == event.entry_id
+        assert @test_collection == event.collection
+        assert %{"title" => "one", "updated_by" => actor_id} == event.params
+        assert %{"_id" => ^id} = event.filter
+        assert actor_id = event.actor_id
+
+        emulate_kafka_consumer(event)
+        :ok
+      end)
+
+      assert CoreMongo.find_one_and_replace(
+               @test_collection,
+               %{"_id" => id},
+               %{
+                 "title" => "one",
+                 "updated_by" => actor_id
+               },
+               upsert: true
+             )
+
+      assert %{"_id" => _, "title" => "one"} = CoreMongo.find_one(@test_collection, %{"_id" => id})
       assert_audit_log(id, @update, actor_id)
     end
 

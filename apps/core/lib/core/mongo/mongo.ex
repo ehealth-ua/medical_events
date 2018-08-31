@@ -81,10 +81,12 @@ defmodule Core.Mongo do
   end
 
   def find_one_and_replace(coll, %{"_id" => _} = filter, replacement, opts \\ []) do
+    opts = maybe_add_return_document(opts)
     execute(:find_one_and_replace, [coll, filter, replacement, opts])
   end
 
   def find_one_and_update(coll, %{"_id" => _} = filter, update, opts \\ []) do
+    opts = maybe_add_return_document(opts)
     execute(:find_one_and_update, [coll, filter, update, opts])
   end
 
@@ -194,6 +196,15 @@ defmodule Core.Mongo do
   end
 
   defp prepare_doc(doc), do: doc
+
+  defp maybe_add_return_document(opts) do
+    # for valid audit logging.
+    # See `returnNewDocument` in https://docs.mongodb.com/manual/reference/method/db.collection.findOneAndReplace/
+    case Keyword.get(opts, :upsert, false) do
+      true -> opts ++ [return_document: :after]
+      _ -> opts
+    end
+  end
 
   def add_to_set(set, nil, _), do: set
 

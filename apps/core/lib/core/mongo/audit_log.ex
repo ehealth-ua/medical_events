@@ -64,32 +64,89 @@ defmodule Core.Mongo.AuditLog do
   def log_operation(operation_result, _operation, _args), do: operation_result
 
   defp push_event_to_log(operation_result, operation, collection, args) do
-    operation_name = @audit_operations[operation]
-    {params, filter} = fetch_event_data(operation_name, args)
-    actor_id = fetch_actor_id(params, List.last(args))
+    with {:ok, map_event} <- prepare_event(operation_result, operation, args) do
+      actor_id = fetch_actor_id(map_event.params, List.last(args))
 
-    id =
-      case operation_name do
-        @insert -> operation_result.inserted_id
-        name when name in [@update, @delete] -> filter["_id"]
+      {:ok, event} =
+        map_event
+        |> Map.merge(%{collection: collection, actor_id: actor_id})
+        |> Event.new()
+
+      unless @kafka_producer.publish_mongo_event(event) == :ok do
+        Logger.error(
+          "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{map_event.entry_id}`," <>
+            "collection: `#{collection}`, params: `#{inspect(map_event.params)}`"
+        )
       end
-
-    {:ok, event} =
-      Event.new(%{
-        type: operation_name,
-        entry_id: id,
-        collection: collection,
-        params: params,
-        filter: filter,
-        actor_id: actor_id
-      })
-
-    unless @kafka_producer.publish_mongo_event(event) == :ok do
-      Logger.error(
-        "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{id}`," <>
-          "collection: `#{collection}`, params: `#{inspect(params)}`"
-      )
     end
+  end
+
+  defp prepare_event(%DeleteResult{deleted_count: 0}, _, _), do: :skip_audit_log
+
+  defp prepare_event(%DeleteResult{}, _operation, args) do
+    {params, filter} = fetch_event_data(@delete, args)
+
+    {:ok,
+     %{
+       type: @delete,
+       params: params,
+       filter: filter,
+       entry_id: filter["_id"]
+     }}
+  end
+
+  defp prepare_event(%InsertOneResult{inserted_id: nil}, _operation, _args), do: :skip_audit_log
+
+  defp prepare_event(%InsertOneResult{inserted_id: entry_id}, _operation, args) do
+    {params, filter} = fetch_event_data(@insert, args)
+
+    {:ok,
+     %{
+       type: @insert,
+       params: params,
+       filter: filter,
+       entry_id: entry_id
+     }}
+  end
+
+  defp prepare_event(%UpdateResult{modified_count: 0}, _, _), do: :skip_audit_log
+
+  defp prepare_event(%UpdateResult{matched_count: 0, modified_count: count}, _operation, args) when count > 0 do
+    {params, filter} = fetch_event_data(@update, args)
+
+    {:ok,
+     %{
+       type: @insert,
+       params: params,
+       filter: filter,
+       entry_id: filter["_id"]
+     }}
+  end
+
+  defp prepare_event(%UpdateResult{modified_count: count}, _operation, args) when count > 0 do
+    {params, filter} = fetch_event_data(@update, args)
+
+    {:ok,
+     %{
+       type: @update,
+       params: params,
+       filter: filter,
+       entry_id: filter["_id"]
+     }}
+  end
+
+  # for find_one_and_update, find_one_and_replace and find_one_and_delete operations
+  defp prepare_event(result, operation, args) when is_map(result) do
+    operation_type = @audit_operations[operation]
+    {params, filter} = fetch_event_data(operation_type, args)
+
+    {:ok,
+     %{
+       type: operation_type,
+       params: params,
+       filter: filter,
+       entry_id: filter["_id"]
+     }}
   end
 
   defp fetch_event_data(@insert, [_, params | _]), do: {params, nil}
@@ -98,6 +155,7 @@ defmodule Core.Mongo.AuditLog do
 
   # fetch from data set. Usually for insert operations
   defp fetch_actor_id(%{updated_by: actor_id}, _opts), do: actor_id
+  defp fetch_actor_id(%{"updated_by" => actor_id}, _opts), do: actor_id
 
   # fetch from $set attribute. Usually for update operations
   defp fetch_actor_id(%{"$set" => %{updated_by: actor_id}}, _opts), do: actor_id
