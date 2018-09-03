@@ -90,7 +90,7 @@ defmodule Core.Factories do
 
   def codeable_concept_factory do
     %CodeableConcept{
-      coding: build(:coding),
+      coding: [build(:coding)],
       text: "code text"
     }
   end

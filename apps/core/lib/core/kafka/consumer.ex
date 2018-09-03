@@ -4,41 +4,21 @@ defmodule Core.Kafka.Consumer do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
+  alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Patients
   require Logger
 
-  @doc """
-  TODO: add digital signature error handling
-  """
-  def consume(%PackageCreateJob{_id: id} = package_create_job) do
-    case Jobs.get_by_id(id) do
-      {:ok, _job} ->
-        with {:ok, response, status_code} <- Patients.consume_create_package(package_create_job) do
-          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
-          :ok
-        end
-
-      _ ->
-        response = "Can't get request by id #{id}"
-        Logger.warn(fn -> response end)
-        :ok
-    end
+  def consume(%PackageCreateJob{} = package_create_job) do
+    do_consume(Patients, :consume_create_package, package_create_job)
   end
 
-  def consume(%EpisodeCreateJob{_id: id} = episode_create_job) do
-    case Jobs.get_by_id(id) do
-      {:ok, _job} ->
-        with {:ok, response, status_code} <- Patients.consume_create_episode(episode_create_job) do
-          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
-          :ok
-        end
+  def consume(%EpisodeCreateJob{} = episode_create_job) do
+    do_consume(Patients, :consume_create_episode, episode_create_job)
+  end
 
-      _ ->
-        response = "Can't get request by id #{id}"
-        Logger.warn(fn -> response end)
-        :ok
-    end
+  def consume(%EpisodeUpdateJob{} = episode_update_job) do
+    do_consume(Patients, :consume_update_episode, episode_update_job)
   end
 
   def consume(value) do
@@ -47,5 +27,27 @@ defmodule Core.Kafka.Consumer do
     end)
 
     :ok
+  end
+
+  defp do_consume(module, fun, %{_id: id} = kafka_job) do
+    case Jobs.get_by_id(id) do
+      {:ok, _} ->
+        :ets.new(:message_cache, [:set, :protected, :named_table])
+
+        with {:ok, response, status_code} <- apply(module, fun, [kafka_job]) do
+          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
+        else
+          {:error, response, status_code} ->
+            {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:failed), response, status_code)
+        end
+
+        :ets.delete(:message_cache)
+        :ok
+
+      _ ->
+        response = "Can't get request by id #{id}"
+        Logger.warn(fn -> response end)
+        :ok
+    end
   end
 end

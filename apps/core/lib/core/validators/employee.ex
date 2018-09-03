@@ -14,6 +14,8 @@ defmodule Core.Validators.Employee do
 
     case @il_microservice.get_employee(employee_id, headers) do
       {:ok, %{"data" => employee}} ->
+        :ets.insert(:message_cache, {Keyword.get(options, :ets_key), employee})
+
         with :ok <- validate_field({:type, ["employee_type"]}, employee, options),
              :ok <- validate_field({:status, ["status"]}, employee, options),
              :ok <- validate_field({:legal_entity_id, ["legal_entity", "id"]}, employee, options) do

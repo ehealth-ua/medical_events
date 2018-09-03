@@ -6,10 +6,14 @@ defmodule Core.Reference do
 
   embedded_schema do
     field(:identifier, presence: true, reference: [path: "identifier"])
+    field(:display_value)
   end
 
   def create(data) do
-    %__MODULE__{identifier: Identifier.create(Map.get(data, "identifier"))}
+    %__MODULE__{
+      identifier: Identifier.create(Map.get(data, "identifier")),
+      display_value: Map.get(data, "display_value")
+    }
   end
 end
 

@@ -9,21 +9,6 @@ defmodule Api.Web.EpisodeController do
 
   action_fallback(Api.Web.FallbackController)
 
-  def create(conn, params) do
-    with {:ok, job} <- Patients.produce_create_episode(params, conn.private[:user_id], conn.private[:client_id]) do
-      conn
-      |> put_status(202)
-      |> put_view(JobView)
-      |> render("create.json", job: job)
-    end
-  end
-
-  def show(conn, %{"patient_id" => patient_id, "id" => id}) do
-    with {:ok, episode} <- Episodes.get(patient_id, id) do
-      render(conn, "show.json", episode: episode, patient_id: patient_id)
-    end
-  end
-
   def index(conn, %{"patient_id" => patient_id} = params) do
     with {:ok, episodes, paging} <- Episodes.list(params),
          %{
@@ -45,6 +30,30 @@ defmodule Api.Web.EpisodeController do
           total_pages: total_pages
         }
       )
+    end
+  end
+
+  def create(conn, params) do
+    with {:ok, job} <- Patients.produce_create_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
+
+  def show(conn, %{"patient_id" => patient_id, "id" => id}) do
+    with {:ok, episode} <- Episodes.get(patient_id, id) do
+      render(conn, "show.json", episode: episode, patient_id: patient_id)
+    end
+  end
+
+  def update(conn, params) do
+    with {:ok, job} <- Patients.produce_update_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
     end
   end
 end

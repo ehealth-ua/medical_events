@@ -6,18 +6,20 @@ defmodule Core.Patients do
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
+  alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
   alias Core.Patient
+  alias Core.Patients.Episodes
   alias Core.Patients.Validators
-  alias Core.Period
-  alias Core.Reference
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
   alias EView.Views.ValidationError
   import Core.Schema, only: [add_validations: 3]
+  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
+  require Logger
 
   @collection Patient.metadata().collection
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
@@ -34,6 +36,18 @@ defmodule Core.Patients do
          {:ok, job, episode_create_job} <-
            Jobs.create(EpisodeCreateJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
          :ok <- @kafka_producer.publish_medical_event(episode_create_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_update_episode(%{"patient_id" => patient_id, "id" => id} = params, user_id, client_id) do
+    with %{} = patient <- get_by_id(patient_id),
+         :ok <- Validators.is_active(patient),
+         {:ok, _} <- Episodes.get(patient_id, id),
+         :ok <- JsonSchema.validate(:episode_update, Map.drop(params, ~w(patient_id id))),
+         {:ok, job, episode_update_job} <-
+           Jobs.create(EpisodeUpdateJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
+         :ok <- @kafka_producer.publish_medical_event(episode_update_job) do
       {:ok, job}
     end
   end
@@ -109,81 +123,17 @@ defmodule Core.Patients do
   def consume_create_episode(%EpisodeCreateJob{patient_id: patient_id, client_id: client_id} = job) do
     now = DateTime.utc_now()
 
-    # add period validations
-    period =
-      job.period
-      |> Period.create()
-      |> add_validations(
-        :start,
-        datetime: [less_than_or_equal_to: now, message: "Start date of episode must be in past"]
-      )
+    episode =
+      job
+      |> Map.from_struct()
+      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
+      |> Episode.create()
 
-    # add managing_organization validations
-    managing_organization = Reference.create(job.managing_organization)
-
-    identifier =
-      managing_organization.identifier
-      |> add_validations(
-        :value,
-        value: [equals: client_id, message: "User can create an episode only for the legal entity for which he works"]
-      )
-
-    managing_organization = %{managing_organization | identifier: identifier}
-
-    # add care_manager organizations
-    care_manager = Reference.create(job.care_manager)
-
-    identifier =
-      care_manager.identifier
-      |> add_validations(
-        :value,
-        employee: [
-          type: "DOCTOR",
-          status: "APPROVED",
-          legal_entity_id: client_id,
-          messages: [
-            type: "Employee submitted as a care_manager is not a doctor",
-            status: "Doctor submitted as a care_manager is not active",
-            legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
-          ]
-        ]
-      )
-
-    codeable_concept = add_validations(identifier.type, :coding, reference: [path: "coding"])
-
-    coding =
-      Enum.map(
-        codeable_concept.coding,
-        &(&1
-          |> add_validations(
-            :code,
-            value: [equals: "employee", message: "Only employee could be submitted as a care_manager"]
-          )
-          |> add_validations(
-            :system,
-            value: [equals: "eHealth/resources", message: "Submitted system is not allowed for this field"]
-          ))
-      )
-
-    care_manager = %{
-      care_manager
-      | identifier: %{identifier | type: %{codeable_concept | coding: coding}}
-    }
-
-    episode = %Episode{
-      id: job.id,
-      name: job.name,
-      type: job.type,
-      status: job.status,
-      managing_organization: managing_organization,
-      period: period,
-      encounters: %{},
-      care_manager: care_manager,
-      inserted_by: job.user_id,
-      updated_by: job.user_id,
-      inserted_at: now,
-      updated_at: now
-    }
+    episode =
+      %{episode | encounters: %{}, inserted_by: job.user_id, updated_by: job.user_id, inserted_at: now, updated_at: now}
+      |> EpisodeValidations.validate_period()
+      |> EpisodeValidations.validate_managing_organization(client_id)
+      |> EpisodeValidations.validate_care_manager(client_id)
 
     episode_id = episode.id
 
@@ -198,12 +148,16 @@ defmodule Core.Patients do
             {:ok, %{"error" => "Episode with such id already exists"}, 422}
 
           _ ->
+            episode =
+              episode
+              |> fill_up_episode_care_manager("care_manager_employee")
+              |> fill_up_episode_managing_organization("managing_organization_legal_entity")
+
             set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
               Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
 
-            # TODO: define success response
             {:ok,
              %{
                "links" => [
@@ -214,6 +168,50 @@ defmodule Core.Patients do
 
       errors ->
         {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+    end
+  end
+
+  def consume_update_episode(%EpisodeUpdateJob{patient_id: patient_id, id: id, client_id: client_id} = job) do
+    now = DateTime.utc_now()
+    status = Episode.status(:active)
+
+    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id, id) do
+      episode =
+        episode
+        |> Episode.create()
+        |> Map.merge(Map.take(job, ~w(name care_manager managing_organization)a))
+        |> EpisodeValidations.validate_managing_organization(job.managing_organization, client_id)
+        |> EpisodeValidations.validate_care_manager(job.care_manager, client_id)
+
+      case Vex.errors(episode) do
+        [] ->
+          episode =
+            episode
+            |> fill_up_episode_care_manager("care_manager_employee")
+            |> fill_up_episode_managing_organization("managing_organization_legal_entity")
+
+          set =
+            %{"updated_by" => episode.updated_by, "updated_at" => now}
+            |> Mongo.add_to_set(episode.care_manager, "episodes.#{episode.id}.care_manager")
+            |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
+            |> Mongo.add_to_set(episode.managing_organization, "episodes.#{episode.id}.managing_organization")
+
+          {:ok, %{matched_count: 1, modified_count: 1}} =
+            Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
+
+          {:ok,
+           %{
+             "links" => [
+               %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+             ]
+           }, 200}
+
+        errors ->
+          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+      end
+    else
+      {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be updated", 422}
+      nil -> {:error, "Failed to get episode", 404}
     end
   end
 
@@ -449,5 +447,29 @@ defmodule Core.Patients do
         {:cont, acc}
       end
     end)
+  end
+
+  defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode, ets_key) do
+    with [{^ets_key, employee}] <- :ets.lookup(:message_cache, ets_key) do
+      first_name = get_in(employee, ["party", "first_name"])
+      second_name = get_in(employee, ["party", "second_name"])
+      last_name = get_in(employee, ["party", "last_name"])
+
+      %{episode | care_manager: %{care_manager | display_value: "#{first_name} #{second_name} #{last_name}"}}
+    else
+      _ ->
+        Logger.warn("Failed to fill up employee value for episode")
+        episode
+    end
+  end
+
+  defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode, ets_key) do
+    with [{^ets_key, legal_entity}] <- :ets.lookup(:message_cache, ets_key) do
+      %{episode | managing_organization: %{managing_organization | display_value: Map.get(legal_entity, "public_name")}}
+    else
+      _ ->
+        Logger.warn("Failed to fill up legal_entity value for episode")
+        episode
+    end
   end
 end

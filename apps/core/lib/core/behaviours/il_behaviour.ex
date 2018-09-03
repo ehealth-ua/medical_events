@@ -5,6 +5,10 @@ defmodule Core.Behaviours.IlBehaviour do
               {:ok, result :: term}
               | {:error, reason :: term}
 
+  @callback get_legal_entity(id :: binary, headers :: list) ::
+              {:ok, result :: term}
+              | {:error, reason :: term}
+
   @callback get_employee(id :: binary, headers :: list) ::
               {:ok, result :: term}
               | {:error, reason :: term}
