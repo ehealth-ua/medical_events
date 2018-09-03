@@ -37,7 +37,9 @@ defmodule Api.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:core, in_umbrella: true},
       {:toml, "~> 0.3.0"},
+      {:plug, "~> 1.0"},
       {:plug_logger_json, "~> 0.6.0"},
       {:phoenix, "~> 1.3.3"},
       {:phoenix_pubsub, "~> 1.0"},
@@ -45,8 +47,7 @@ defmodule Api.Mixfile do
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
-      {:scrivener, "~> 2.5"},
-      {:core, in_umbrella: true}
+      {:scrivener, "~> 2.5"}
     ]
   end
 

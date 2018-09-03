@@ -6,7 +6,8 @@ config :ex_unit, capture_log: true
 config :core,
   microservices: [
     il: IlMock,
-    digital_signature: DigitalSignatureMock
+    digital_signature: DigitalSignatureMock,
+    casher: CasherMock
   ],
   cache: [
     validators: Core.Validators.CacheTest

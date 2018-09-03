@@ -36,7 +36,7 @@ defmodule ApiWeb do
       use Phoenix.Router
       import Plug.Conn
       import Phoenix.Controller
-      import Api.Plugs.Headers
+      import Api.Web.Plugs.Headers
     end
   end
 
