@@ -10,6 +10,7 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:package_create, "json_schemas/packages/package_create.json")
   use_schema(:package_create_signed_content, "json_schemas/packages/package_create_signed_content.json")
   use_schema(:episode_create, "json_schemas/episodes/episode_create.json")
+  use_schema(:episode_update, "json_schemas/episodes/episode_update.json")
 
   def validate(schema, attrs, errors_limit \\ nil) do
     result =

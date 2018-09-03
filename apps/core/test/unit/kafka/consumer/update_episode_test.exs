@@ -1,25 +1,21 @@
-defmodule Core.Kafka.Consumer.CreateEpisodeTest do
+defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
   @moduledoc false
 
   use Core.ModelCase
 
   import Mox
 
-  alias Core.Episode
   alias Core.Jobs
-  alias Core.Jobs.EpisodeCreateJob
+  alias Core.Jobs.EpisodeUpdateJob
+  alias Core.Episode
   alias Core.Kafka.Consumer
-  alias Core.Mongo
-  alias Core.Patient
+  alias Core.Patients.Episodes
 
-  describe "consume create episode event" do
-    test "episode already exists" do
+  describe "consume update episode event" do
+    test "update with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = insert(:patient)
-      episode_id = patient.episodes |> Map.keys() |> hd
-
-      job = insert(:job)
-      user_id = UUID.uuid4()
+      episode = build(:episode, status: Episode.status(:closed))
+      patient = insert(:patient, episodes: %{episode.id => episode})
       client_id = UUID.uuid4()
 
       stub(IlMock, :get_employee, fn id, _ ->
@@ -34,22 +30,15 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
          }}
       end)
 
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      job = insert(:job)
+      user_id = UUID.uuid4()
 
       assert :ok =
-               Consumer.consume(%EpisodeCreateJob{
+               Consumer.consume(%EpisodeUpdateJob{
                  _id: job._id,
                  patient_id: patient._id,
-                 id: episode_id,
+                 id: episode.id,
+                 name: "ОРВИ 2019",
                  user_id: user_id,
                  client_id: client_id,
                  managing_organization: %{
@@ -58,7 +47,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "value" => client_id
                    }
                  },
-                 period: %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
                  care_manager: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
@@ -67,13 +55,13 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  }
                })
 
-      assert {:ok, %{response: %{"error" => "Episode with such id already exists"}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: "Episode in status closed can not be updated"}} = Jobs.get_by_id(job._id)
     end
 
-    test "episode was created" do
+    test "episode was updated" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient = insert(:patient)
-      episode_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd
       client_id = UUID.uuid4()
 
       stub(IlMock, :get_employee, fn id, _ ->
@@ -86,8 +74,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
              "legal_entity" => %{"id" => client_id},
              "party" => %{
                "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
+               "second_name" => "bar",
+               "last_name" => "baz"
              }
            }
          }}
@@ -108,13 +96,11 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       user_id = UUID.uuid4()
 
       assert :ok =
-               Consumer.consume(%EpisodeCreateJob{
+               Consumer.consume(%EpisodeUpdateJob{
                  _id: job._id,
                  patient_id: patient._id,
                  id: episode_id,
-                 type: "primary_care",
-                 name: "ОРВИ 2018",
-                 status: Episode.status(:active),
+                 name: "ОРВИ 2019",
                  user_id: user_id,
                  client_id: client_id,
                  managing_organization: %{
@@ -123,7 +109,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "value" => client_id
                    }
                  },
-                 period: %{"start" => DateTime.to_iso8601(DateTime.utc_now())},
                  care_manager: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
@@ -132,11 +117,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  }
                })
 
-      assert %{"episodes" => episodes} =
-               Mongo.find_one(Patient.metadata().collection, %{"_id" => patient._id}, projection: [episodes: true])
-
-      assert Map.has_key?(episodes, episode_id)
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient._id, episode_id)
     end
   end
 end

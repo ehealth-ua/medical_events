@@ -2,10 +2,12 @@ defmodule Core.Episode do
   @moduledoc false
 
   use Core.Schema
+  alias Core.Period
+  alias Core.Reference
 
   @status_active "active"
   @status_closed "closed"
-  @status_cancelled "cancelled"
+  @status_cancelled "entered_in_error"
 
   def status(:active), do: @status_active
   def status(:closed), do: @status_closed
@@ -25,5 +27,17 @@ defmodule Core.Episode do
 
     timestamps()
     changed_by()
+  end
+
+  def create(data) do
+    struct(
+      __MODULE__,
+      Enum.map(data, fn
+        {"managing_organization", v} -> {:managing_organization, Reference.create(v)}
+        {"period", v} -> {:period, Period.create(v)}
+        {"care_manager", v} -> {:care_manager, Reference.create(v)}
+        {k, v} -> {String.to_atom(k), v}
+      end)
+    )
   end
 end

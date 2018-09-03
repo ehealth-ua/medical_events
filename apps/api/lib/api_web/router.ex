@@ -27,6 +27,8 @@ defmodule ApiWeb.Router do
       get("/patients/:patient_id/episodes/:id", EpisodeController, :show)
     end
 
+    patch("/api/patients/:patient_id/episodes/:id", EpisodeController, :update)
+
     get("/jobs/:id", JobController, :show)
   end
 end

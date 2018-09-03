@@ -21,6 +21,8 @@ defmodule Core.Period do
     {:ok, datetime, _} = DateTime.from_iso8601(value)
     datetime
   end
+
+  defp create_date(%DateTime{} = value), do: value
 end
 
 defimpl Vex.Blank, for: Core.Period do

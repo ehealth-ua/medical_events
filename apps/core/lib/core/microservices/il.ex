@@ -11,6 +11,10 @@ defmodule Core.Microservices.Il do
     get("/api/dictionaries", headers, params: params)
   end
 
+  def get_legal_entity(id, headers) do
+    get("/api/legal_entities/#{id}", headers)
+  end
+
   def get_employee(id, headers) do
     get("/api/employees/#{id}", headers)
   end
