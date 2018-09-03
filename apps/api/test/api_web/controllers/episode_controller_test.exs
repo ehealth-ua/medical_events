@@ -2,9 +2,12 @@ defmodule Api.Web.EpisodeControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+
+  import Core.Expectations.CasherExpectation
+  import Mox
+
   alias Core.Episode
   alias Core.Patient
-  import Mox
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -108,6 +111,8 @@ defmodule Api.Web.EpisodeControllerTest do
       episode = build(:episode)
       patient = insert(:patient, episodes: %{episode.id => episode})
 
+      expect_get_person_data(patient._id)
+
       conn
       |> get(episode_path(conn, :show, patient._id, episode.id))
       |> json_response(200)
@@ -117,10 +122,11 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "get episode invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      expect_get_person_data_empty()
 
       conn
       |> get(episode_path(conn, :show, "invalid-uuid", UUID.uuid4()))
-      |> json_response(404)
+      |> json_response(401)
     end
 
     test "get episode invalid episode uuid", %{conn: conn} do
@@ -128,6 +134,8 @@ defmodule Api.Web.EpisodeControllerTest do
 
       episode = build(:episode)
       patient = insert(:patient, episodes: %{episode.id => episode})
+
+      expect_get_person_data(patient._id)
 
       conn
       |> get(episode_path(conn, :show, patient._id, "invalid-episode-uuid"))
@@ -138,9 +146,10 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient = insert(:patient, episodes: %{})
+      expect_get_person_data(patient._id)
 
       conn
-      |> get(episode_path(conn, :show, patient._id, patient._id))
+      |> get(episode_path(conn, :show, patient._id, UUID.uuid4()))
       |> json_response(404)
     end
   end
@@ -150,6 +159,7 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient = insert(:patient)
+      expect_get_person_data(patient._id)
 
       resp =
         conn
@@ -160,22 +170,11 @@ defmodule Api.Web.EpisodeControllerTest do
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
     end
 
-    test "get episodes not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      resp =
-        conn
-        |> get(episode_path(conn, :index, "any"))
-        |> json_response(200)
-
-      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
-      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
-    end
-
     test "get episodes no episodes", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient = insert(:patient, episodes: %{})
+      expect_get_person_data(patient._id)
 
       resp =
         conn
@@ -190,6 +189,7 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient = insert(:patient, episodes: nil)
+      expect_get_person_data(patient._id)
 
       resp =
         conn
@@ -223,6 +223,8 @@ defmodule Api.Web.EpisodeControllerTest do
           :patient,
           episodes: episodes
         )
+
+      expect_get_person_data(patient._id)
 
       resp =
         conn
@@ -258,6 +260,8 @@ defmodule Api.Web.EpisodeControllerTest do
           :patient,
           episodes: episodes
         )
+
+      expect_get_person_data(patient._id)
 
       resp =
         conn

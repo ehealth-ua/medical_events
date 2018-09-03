@@ -1,10 +1,13 @@
 defmodule Api.Web.Plugs.AuthorizeParty do
-  @moduledoc false
+  @moduledoc """
+  Authorizes party, requires `patient_id` request param
+  """
 
   import Plug.Conn
 
   alias Api.Web.FallbackController
   alias Core.Redis
+  alias Core.Redis.StorageKeys
   alias Plug.Conn
 
   @casher_api Application.get_env(:core, :microservices)[:casher]
@@ -22,13 +25,15 @@ defmodule Api.Web.Plugs.AuthorizeParty do
     else
       _ ->
         conn
-        |> FallbackController.call({:error, {:access_denied, "Access denied - you have no active declaration with the patient"}})
+        |> FallbackController.call(
+          {:error, {:access_denied, "Access denied - you have no active declaration with the patient"}}
+        )
         |> halt()
     end
   end
 
   defp get_patient_ids(user_id, client_id) do
-    case Redis.get("casher:person_data:#{user_id}:#{client_id}") do
+    case Redis.get(StorageKeys.person_data(user_id, client_id)) do
       {:ok, patient_ids} ->
         {:ok, patient_ids}
 
