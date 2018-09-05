@@ -67,16 +67,18 @@ defmodule Core.Mongo.AuditLog do
     with {:ok, map_event} <- prepare_event(operation_result, operation, args) do
       actor_id = fetch_actor_id(map_event.params, List.last(args))
 
-      {:ok, event} =
-        map_event
-        |> Map.merge(%{collection: collection, actor_id: actor_id})
-        |> Event.new()
-
-      unless @kafka_producer.publish_mongo_event(event) == :ok do
-        Logger.error(
-          "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{map_event.entry_id}`," <>
-            "collection: `#{collection}`, params: `#{inspect(map_event.params)}`"
-        )
+      with {:ok, event} <-
+             map_event
+             |> Map.merge(%{collection: collection, actor_id: actor_id})
+             |> Event.new(),
+           :ok <- @kafka_producer.publish_mongo_event(event) do
+        :ok
+      else
+        _ ->
+          Logger.error(
+            "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{map_event.entry_id}`," <>
+              "collection: `#{collection}`, params: `#{inspect(map_event.params)}`"
+          )
       end
     end
   end
