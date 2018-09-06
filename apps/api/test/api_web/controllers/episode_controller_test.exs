@@ -330,7 +330,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id), %{"page_size" => 1})
+        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "1"})
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -367,7 +367,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id), %{"page_size" => 200, "page_number" => 2})
+        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "200", "page" => "2"})
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))

@@ -57,6 +57,7 @@ defmodule Core.MixProject do
       {:redix, "~> 0.7.1"},
       {:vex, "~> 0.8.0"},
       {:mox, "~> 0.4.0", only: :test},
+      {:scrivener, "~> 2.5"},
       {:ex_machina, "~> 2.2", only: :test}
     ]
   end

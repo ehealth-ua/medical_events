@@ -10,25 +10,12 @@ defmodule Api.Web.EpisodeController do
   action_fallback(Api.Web.FallbackController)
 
   def index(conn, %{"patient_id" => patient_id} = params) do
-    with {:ok, episodes, paging} <- Episodes.list(params),
-         %{
-           "total_pages" => total_pages,
-           "total_entries" => total_entries,
-           "page_size" => page_size,
-           "page_number" => page_number
-         } = paging do
+    with %Page{} = paging <- Episodes.list(params) do
       render(
         conn,
         "index.json",
-        episodes: episodes,
-        patient_id: patient_id,
-        paging: %Page{
-          entries: episodes,
-          page_number: page_number,
-          page_size: page_size,
-          total_entries: total_entries,
-          total_pages: total_pages
-        }
+        paging: paging,
+        patient_id: patient_id
       )
     end
   end

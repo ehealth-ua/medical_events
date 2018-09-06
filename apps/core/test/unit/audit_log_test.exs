@@ -325,7 +325,7 @@ defmodule Core.AuditLogTest do
         assert @test_collection == event.collection
         assert %{"title" => "one", "updated_by" => actor_id} == event.params
         assert %{"_id" => ^id} = event.filter
-        assert actor_id = event.actor_id
+        assert actor_id == event.actor_id
 
         emulate_kafka_consumer(event)
         :ok

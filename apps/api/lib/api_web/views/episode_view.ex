@@ -2,13 +2,17 @@ defmodule Api.Web.EpisodeView do
   @moduledoc false
 
   use ApiWeb, :view
+  alias Scrivener.Page
 
-  def render("index.json", %{episodes: episodes, patient_id: patient_id}) do
-    render_many(episodes, __MODULE__, "show.json", as: :episode, patient_id: patient_id)
+  def render("index.json", %{paging: %Page{entries: episodes}, patient_id: patient_id}) do
+    episodes
+    |> Enum.map(&Map.get(&1, "episode"))
+    |> render_many(__MODULE__, "show.json", as: :episode, patient_id: patient_id)
   end
 
   def render("show.json", %{episode: episode, patient_id: patient_id}) do
     # TODO add diagnoses_hstr
+
     episode
     |> Map.take(~w(id type status name period))
     |> Map.put("patient_id", patient_id)
