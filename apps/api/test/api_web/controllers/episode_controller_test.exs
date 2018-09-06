@@ -375,5 +375,20 @@ defmodule Api.Web.EpisodeControllerTest do
       assert idy == episode_y.id
       assert %{"page_number" => 2, "total_entries" => 202, "total_pages" => 2, "page_size" => 200} = resp["paging"]
     end
+
+    test "get episodes paging string instead of int", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient = insert(:patient)
+      expect_get_person_data(patient._id)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "1"})
+        |> json_response(200)
+
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 2, "page_size" => 1} = resp["paging"]
+    end
   end
 end

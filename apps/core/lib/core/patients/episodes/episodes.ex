@@ -49,8 +49,8 @@ defmodule Core.Patients.Episodes do
   end
 
   defp page_ops(params) do
-    page_number = Map.get(params, "page_number", 1)
-    page_size = Map.get(params, "page_size", 100)
+    page_number = get_page_param_option(Map.get(params, "page_number"), 1)
+    page_size = get_page_param_option(Map.get(params, "page_size"), 100)
     offset = if page_number > 0, do: (page_number - 1) * page_size, else: 0
     [page_number: page_number, limit: page_size, offset: offset]
   end
@@ -70,5 +70,18 @@ defmodule Core.Patients.Episodes do
       "page_size" => page_size,
       "page_number" => page
     }
+  end
+
+  defp get_page_param_option(nil, default), do: default
+  defp get_page_param_option(n, _) when is_integer(n), do: n
+
+  defp get_page_param_option(text, default) when is_binary(text) do
+    case Integer.parse(text) do
+      {n, _} ->
+        n
+
+      :error ->
+        default
+    end
   end
 end
