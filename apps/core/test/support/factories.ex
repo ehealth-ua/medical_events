@@ -10,6 +10,8 @@ defmodule Core.Factories do
   alias Core.Identifier
   alias Core.Job
   alias Core.Mongo
+  alias Core.Observation
+  alias Core.Observations.Value
   alias Core.Patient
   alias Core.Period
   alias Core.Reference
@@ -71,6 +73,31 @@ defmodule Core.Factories do
     }
   end
 
+  def observation_factory do
+    id = UUID.uuid4()
+    now = DateTime.utc_now()
+
+    %Observation{
+      _id: UUID.uuid4(),
+      status: Observation.status(:valid),
+      categories: build_list(2, :codeable_concept),
+      code: build(:codeable_concept),
+      patient_id: UUID.uuid4(),
+      context: build(:reference),
+      effective_date_time: DateTime.utc_now(),
+      issued: DateTime.utc_now(),
+      primary_source: true,
+      performer: build(:reference),
+      interpretation: build(:codeable_concept),
+      value: build(:value),
+      body_site: build(:codeable_concept),
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
   def episode_factory do
     id = UUID.uuid4()
 
@@ -89,6 +116,10 @@ defmodule Core.Factories do
       inserted_by: id,
       updated_by: id
     }
+  end
+
+  def value_factory do
+    %Value{type: "string", value: "some value"}
   end
 
   def codeable_concept_factory do

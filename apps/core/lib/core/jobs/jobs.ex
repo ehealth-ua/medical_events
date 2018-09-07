@@ -25,7 +25,7 @@ defmodule Core.Jobs do
   end
 
   def create(module, data) do
-    id = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.encode64(padding: false)
+    id = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.url_encode64(padding: false)
 
     if Mongo.find_one(@collection, %{"_id" => id}, projection: [_id: true]) do
       {:job_exists, id}

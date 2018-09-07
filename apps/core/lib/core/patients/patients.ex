@@ -19,8 +19,9 @@ defmodule Core.Patients do
   alias Core.Visit
   alias EView.Views.ValidationError
   import Core.Schema, only: [add_validations: 3]
-  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
+  alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations.Validations, as: ObservationValidations
+  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   require Logger
 
@@ -73,9 +74,9 @@ defmodule Core.Patients do
          {:ok, %{"content" => content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content) do
       with {:ok, visit} <- create_visit(job),
-           {:ok, conditions} <- create_conditions(job, content),
-           {:ok, encounter} <- create_encounter(job, content, conditions, visit),
-           {:ok, observations} <- create_observations(job, content, encounter) do
+           {:ok, observations} <- create_observations(job, content),
+           {:ok, conditions} <- create_conditions(job, content, observations),
+           {:ok, encounter} <- create_encounter(job, content, conditions, visit) do
         visit_id = if is_map(visit), do: visit.id
 
         set =
@@ -106,6 +107,9 @@ defmodule Core.Patients do
 
         {:ok, %{"links" => links}, 200}
       else
+        {:error, error, status_code} ->
+          {:ok, error, status_code}
+
         {:error, error} ->
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(error)}), 422}
       end
@@ -254,7 +258,7 @@ defmodule Core.Patients do
                projection: ["visits.#{visit.id}": true]
              ) do
           %{"visits" => %{^visit_id => %{}}} ->
-            {:error, "Visit with such id already exists"}
+            {:error, "Visit with such id already exists", 409}
 
           _ ->
             {:ok, visit}
@@ -295,7 +299,7 @@ defmodule Core.Patients do
 
         case result do
           [%{"_id" => _}] ->
-            {:error, "Encounter with such id already exists"}
+            {:error, "Encounter with such id already exists", 409}
 
           _ ->
             {:ok, encounter}
@@ -306,7 +310,11 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_conditions(%PackageCreateJob{patient_id: patient_id, user_id: user_id}, %{"conditions" => _} = content) do
+  defp create_conditions(
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %{"conditions" => _} = content,
+         observations
+       ) do
     now = DateTime.utc_now()
     encounter_id = content["encounter"]["id"]
 
@@ -314,24 +322,17 @@ defmodule Core.Patients do
       Enum.map(content["conditions"], fn data ->
         condition = Condition.create(data)
 
-        condition =
-          %{
-            condition
-            | inserted_at: now,
-              updated_at: now,
-              inserted_by: user_id,
-              updated_by: user_id,
-              patient_id: patient_id
-          }
-          |> add_validations(
-            :onset_date,
-            date: [less_than_or_equal_to: now, message: "Onset date must be in past"]
-          )
-
-        context = condition.context
-        identifier = add_validations(context.identifier, :value, value: [equals: encounter_id])
-
-        %{condition | context: %{context | identifier: identifier}}
+        %{
+          condition
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id,
+            patient_id: patient_id
+        }
+        |> ConditionValidations.validate_onset_date()
+        |> ConditionValidations.validate_context(encounter_id)
+        |> ConditionValidations.validate_evidences(observations, patient_id)
       end)
 
     case Vex.errors(%{conditions: conditions}, conditions: [reference: [path: "conditions"]]) do
@@ -343,14 +344,14 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_conditions(_, _), do: {:ok, []}
+  defp create_conditions(_, _, _), do: {:ok, []}
 
   defp create_observations(
          %PackageCreateJob{patient_id: patient_id, user_id: user_id},
-         %{"observations" => _} = content,
-         encounter
+         %{"observations" => _} = content
        ) do
     now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
 
     observations =
       Enum.map(content["observations"], fn data ->
@@ -366,7 +367,7 @@ defmodule Core.Patients do
         }
         |> ObservationValidations.validate_issued()
         |> ObservationValidations.validate_effective_period()
-        |> ObservationValidations.validate_context(encounter.id)
+        |> ObservationValidations.validate_context(encounter_id)
         |> ObservationValidations.validate_performer()
         |> ObservationValidations.validate_value()
       end)
@@ -380,12 +381,12 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_observations(_, _, _), do: {:ok, []}
+  defp create_observations(_, _), do: {:ok, []}
 
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
-        {:halt, {:error, "Condition with id '#{condition._id}' already exists"}}
+        {:halt, {:error, "Condition with id '#{condition._id}' already exists", 409}}
       else
         {:cont, acc}
       end
@@ -395,7 +396,7 @@ defmodule Core.Patients do
   defp validate_observations(observations) do
     Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
       if Mongo.find_one(Observation.metadata().collection, %{"_id" => observation._id}, projection: %{"_id" => true}) do
-        {:halt, {:error, "Observation with id '#{observation._id}' already exists"}}
+        {:halt, {:error, "Observation with id '#{observation._id}' already exists", 409}}
       else
         {:cont, acc}
       end

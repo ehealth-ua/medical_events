@@ -90,13 +90,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       encounter_id = UUID.uuid4()
-
       patient = insert(:patient)
+      db_observation = insert(:observation, patient_id: patient._id)
       condition_id = UUID.uuid4()
       job = insert(:job)
       signature()
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd
+      observation_id = UUID.uuid4()
 
       signed_content = %{
         "encounter" => %{
@@ -170,7 +171,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   %{
                     "identifier" => %{
                       "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
-                      "value" => UUID.uuid4()
+                      "value" => observation_id
+                    }
+                  },
+                  %{
+                    "identifier" => %{
+                      "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
+                      "value" => db_observation._id
                     }
                   }
                 ]
@@ -180,7 +187,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ],
         "observations" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => observation_id,
             "status" => @status_valid,
             "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "context" => %{

@@ -79,7 +79,8 @@ config :vex,
       visit_context: Core.Validators.VisitContext,
       episode_context: Core.Validators.EpisodeContext,
       diagnosis_condition: Core.Validators.DiagnosisCondition,
-      strict_presence: Core.Validators.StrictPresence
+      strict_presence: Core.Validators.StrictPresence,
+      evidence_observation: Core.Validators.EvidenceObservation
     ],
     Vex.Validators
   ]
