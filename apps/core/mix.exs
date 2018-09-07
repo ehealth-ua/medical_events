@@ -34,11 +34,8 @@ defmodule Core.MixProject do
 
   defp aliases do
     [
-      test: [
-        "drop",
-        "migrate",
-        "test"
-      ]
+      reset: ["drop", "migrate"],
+      test: ["reset", "test"]
     ]
   end
 

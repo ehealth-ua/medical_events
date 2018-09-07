@@ -9,6 +9,7 @@ defmodule Core.Patients do
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
+  alias Core.Observation
   alias Core.Patient
   alias Core.Patients.Episodes
   alias Core.Patients.Validators
@@ -19,6 +20,7 @@ defmodule Core.Patients do
   alias EView.Views.ValidationError
   import Core.Schema, only: [add_validations: 3]
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
+  alias Core.Observations.Validations, as: ObservationValidations
   require Logger
 
   @collection Patient.metadata().collection
@@ -71,7 +73,8 @@ defmodule Core.Patients do
          :ok <- JsonSchema.validate(:package_create_signed_content, content) do
       with {:ok, visit} <- create_visit(job),
            {:ok, encounter} <- create_encounter(job, content, visit),
-           {:ok, conditions} <- create_conditions(job, content, encounter) do
+           {:ok, conditions} <- create_conditions(job, content, encounter),
+           {:ok, observations} <- create_observations(job, content, encounter) do
         visit_id = if is_map(visit), do: visit.id
 
         episode_id =
@@ -93,6 +96,7 @@ defmodule Core.Patients do
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
 
         {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
+        {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
 
         links = [
           %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
@@ -101,6 +105,12 @@ defmodule Core.Patients do
         links =
           Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
             acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
+          end)
+
+        links =
+          Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
+            acc ++
+              [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
           end)
 
         {:ok, %{"links" => links}, 200}
@@ -401,7 +411,7 @@ defmodule Core.Patients do
 
   defp create_conditions(
          %PackageCreateJob{patient_id: patient_id, user_id: user_id},
-         content,
+         %{"conditions" => _} = content,
          encounter
        ) do
     now = DateTime.utc_now()
@@ -439,10 +449,59 @@ defmodule Core.Patients do
     end
   end
 
+  defp create_conditions(_, _, _), do: {:ok, []}
+
+  defp create_observations(
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %{"observations" => _} = content,
+         encounter
+       ) do
+    now = DateTime.utc_now()
+
+    observations =
+      Enum.map(content["observations"], fn data ->
+        observation = Observation.create(data)
+
+        %{
+          observation
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id,
+            patient_id: patient_id
+        }
+        |> ObservationValidations.validate_issued()
+        |> ObservationValidations.validate_effective_period()
+        |> ObservationValidations.validate_context(encounter.id)
+        |> ObservationValidations.validate_performer()
+        |> ObservationValidations.validate_value()
+      end)
+
+    case Vex.errors(%{observations: observations}, observations: [reference: [path: "observations"]]) do
+      [] ->
+        validate_observations(observations)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_observations(_, _, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
         {:halt, {:error, "Condition with id '#{condition._id}' already exists"}}
+      else
+        {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_observations(observations) do
+    Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
+      if Mongo.find_one(Observation.metadata().collection, %{"_id" => observation._id}, projection: %{"_id" => true}) do
+        {:halt, {:error, "Observation with id '#{observation._id}' already exists"}}
       else
         {:cont, acc}
       end

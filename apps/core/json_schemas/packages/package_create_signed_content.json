@@ -83,6 +83,10 @@
           "$ref": "#/definitions/value_quantity"
         }
       },
+      "required": [
+        "low",
+        "high"
+      ],
       "additionalProperties": false
     },
     "value_ratio": {
@@ -95,7 +99,143 @@
           "$ref": "#/definitions/value_quantity"
         }
       },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
       "additionalProperties": false
+    },
+    "performer": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "employee"
+                        ]
+                      },
+                      "display": {
+                        "type": "string",
+                        "description": "Representation defined by the system"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "report_origin": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/report_origins"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              },
+              "display": {
+                "type": "string",
+                "description": "Representation defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/observation_interpretations"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              },
+              "display": {
+                "type": "string",
+                "description": "Representation defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      }
     },
     "coding_item": {
       "type": "object",
@@ -454,7 +594,7 @@
           "type": "boolean"
         },
         "report_origin": {
-          "$ref": "#/definitions/codeable_concept"
+          "$ref": "#/definitions/report_origin"
         },
         "asserter": {
           "type": "object",
@@ -851,15 +991,19 @@
           "$ref": "#/definitions/uuid"
         },
         "status": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "finished"
+          ]
         },
         "contexts": {
           "type": "array",
           "minItems": 2,
           "maxItems": 2,
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
+          "items": {
+            "type": "object",
+            "items": {
+              "$ref": "#/definitions/reference"
             }
           }
         },
@@ -929,72 +1073,12 @@
         },
         "incoming_referrals": {
           "type": "array",
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
-            }
+          "items": {
+            "$ref": "#/definitions/reference"
           }
         },
         "performer": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "object",
-                  "properties": {
-                    "coding": {
-                      "type": "array",
-                      "minItems": 1,
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/resources"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "enum": [
-                              "employee"
-                            ],
-                            "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
-                          }
-                        },
-                        "required": [
-                          "code",
-                          "system"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "text": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "coding"
-                  ],
-                  "additionalProperties": false
-                },
-                "value": {
-                  "type": "string",
-                  "description": "The value that is unique"
-                }
-              },
-              "required": [
-                "value"
-              ],
-              "additionalProperties": false
-            }
-          }
+          "$ref": "#/definitions/performer"
         },
         "reasons": {
           "type": "array",
@@ -1103,32 +1187,223 @@
           "type": "boolean"
         },
         "report_origin": {
-          "$ref": "#/definitions/codeable_concept"
+          "$ref": "#/definitions/report_origin"
         },
         "status": {
-          "type": "string"
+          "type": "string",
+          "description": "Dictionary: TBD"
         },
         "context": {
           "type": "object",
           "properties": {
             "identifier": {
-              "$ref": "#/definitions/identifier"
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          },
+                          "display": {
+                            "type": "string",
+                            "description": "Representation defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
             }
           }
         },
         "based_on": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "identifier": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "object",
+                    "properties": {
+                      "coding": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "system": {
+                              "type": "string",
+                              "enum": [
+                                "eHealth/resources"
+                              ]
+                            },
+                            "code": {
+                              "type": "string",
+                              "enum": [
+                                "referral"
+                              ],
+                              "description": "Symbol in syntax defined by the system"
+                            },
+                            "display": {
+                              "type": "string",
+                              "description": "Representation defined by the system"
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "system"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "coding"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "Dictionary: TBD"
+                  }
+                },
+                "required": [
+                  "value"
+                ],
+                "additionalProperties": false
+              }
             }
           }
         },
-        "category": {
-          "$ref": "#/definitions/codeable_concept"
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "coding": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/observation_categories"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Symbol in syntax defined by the system"
+                    },
+                    "display": {
+                      "type": "string",
+                      "description": "Representation defined by the system"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "system"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "coding"
+            ],
+            "additionalProperties": false
+          }
         },
         "code": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/observations_codes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "effective_date_time": {
           "type": "string",
@@ -1159,24 +1434,85 @@
           "format": "date-time"
         },
         "performer": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "$ref": "#/definitions/identifier"
-            }
-          }
+          "$ref": "#/definitions/performer"
         },
         "interpretation": {
-          "$ref": "#/definitions/codeable_concept"
+          "$ref": "#/definitions/interpretation"
         },
         "comment": {
           "type": "string"
         },
-        "body_side": {
-          "$ref": "#/definitions/codeable_concept"
+        "body_site": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/body_sites"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          }
         },
         "method": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/observation_methods"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          }
         },
         "value_quantity": {
           "$ref": "#/definitions/value_quantity"
@@ -1201,11 +1537,11 @@
         },
         "value_time": {
           "type": "string",
-          "format": "date-time"
+          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$"
         },
         "value_date_time": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "value_period": {
           "type": "object",
@@ -1318,7 +1654,7 @@
                 "additionalProperties": false
               },
               "interpretation": {
-                "$ref": "#/definitions/codeable_concept"
+                "$ref": "#/definitions/interpretation"
               },
               "reference_range": {
                 "type": "array",
@@ -1358,6 +1694,15 @@
           }
         }
       },
+      "required": [
+        "id",
+        "status",
+        "context",
+        "categories",
+        "code",
+        "issued",
+        "primary_source"
+      ],
       "additionalProperties": false
     },
     "immunization": {

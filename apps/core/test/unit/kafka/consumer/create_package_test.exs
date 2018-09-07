@@ -7,12 +7,15 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
+  alias Core.Observation
   import Mox
   import Core.Expectations.DigitalSignature
 
   @status_processed Job.status(:processed)
 
-  describe "consume create visit event" do
+  @status_valid Observation.status(:valid)
+
+  describe "consume create package event" do
     test "empty content" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -54,7 +57,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     # TODO: not completed
-    test "success create visit" do
+    test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       expect(IlMock, :get_dictionaries, fn _, _ ->
@@ -63,7 +66,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       client_id = UUID.uuid4()
 
-      expect(IlMock, :get_employee, fn id, _ ->
+      expect(IlMock, :get_employee, 2, fn id, _ ->
         {:ok,
          %{
            "data" => %{
@@ -176,6 +179,71 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             ]
           }
+        ],
+        "observations" => [
+          %{
+            "id" => UUID.uuid4(),
+            "status" => @status_valid,
+            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "categories" => [
+              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+            ],
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "effective_period" => %{
+              "start" => DateTime.to_iso8601(DateTime.utc_now()),
+              "end" => DateTime.to_iso8601(DateTime.utc_now())
+            },
+            "primary_source" => true,
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => UUID.uuid4()
+              }
+            },
+            "interpretation" => %{
+              "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+            },
+            "body_site" => %{
+              "coding" => [%{"code" => "category", "system" => "eHealth/body_sites"}]
+            },
+            "method" => %{
+              "coding" => [%{"code" => "category", "system" => "eHealth/observation_methods"}]
+            },
+            "value_period" => %{
+              "start" => DateTime.to_iso8601(DateTime.utc_now()),
+              "end" => DateTime.to_iso8601(DateTime.utc_now())
+            }
+          },
+          %{
+            "id" => UUID.uuid4(),
+            "status" => @status_valid,
+            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "categories" => [
+              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+            ],
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "effective_period" => %{
+              "start" => DateTime.to_iso8601(DateTime.utc_now()),
+              "end" => DateTime.to_iso8601(DateTime.utc_now())
+            },
+            "primary_source" => false,
+            "report_origin" => %{
+              "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+            },
+            "value_time" => "12:00:00"
+          }
         ]
       }
 
@@ -199,7 +267,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: 273,
+                response_size: 543,
                 status: @status_processed
               }} = Jobs.get_by_id(job._id)
     end

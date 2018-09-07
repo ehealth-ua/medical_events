@@ -1,21 +1,15 @@
 defmodule Core.Observations.Value do
-  @moduledoc """
-  Value type
-  """
-  # @behaviour Ecto.Type
+  @moduledoc false
 
-  # def type, do: :map
+  use Core.Schema
 
-  # # Cast value to type
-  # def cast(value), do: {:ok, value}
+  embedded_schema do
+    field(:type, presence: true)
+    field(:value, presence: true, reference: [path: "value"])
+  end
+end
 
-  # # Everything else is a failure though
-  # # def cast(_), do: :error
-
-  # # Load data from database
-  # def load(value), do: {:ok, value}
-
-  # # Dump data to database
-  # def dump(value), do: {:ok, value}
-  # def dump(_), do: :error
+defimpl Vex.Blank, for: Core.Observations.Value do
+  def blank?(%Core.Observations.Value{}), do: false
+  def blank?(_), do: true
 end
