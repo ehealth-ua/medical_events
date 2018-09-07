@@ -19,6 +19,8 @@ defmodule Core.Conditions.Validations do
     %{condition | context: %{context | identifier: identifier}}
   end
 
+  def validate_evidences(%Condition{evidences: nil} = condition, _, _), do: condition
+
   def validate_evidences(%Condition{} = condition, observations, patient_id) do
     evidences =
       Enum.map(condition.evidences, fn evidence ->
