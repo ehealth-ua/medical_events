@@ -63,7 +63,7 @@ defmodule Core.Observation do
     field(:comment)
     field(:body_site, reference: [path: "body_site"])
     field(:method, reference: [path: "method"])
-    field(:reference_rage)
+    field(:reference_range)
     field(:components, reference: [path: "components"])
 
     timestamps()

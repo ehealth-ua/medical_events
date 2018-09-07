@@ -27,7 +27,16 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
     Mongo.update_one(
       Patient.metadata().collection,
       %{"_id" => person_id},
-      %{"$set" => %{"status" => status, "updated_by" => updated_by}},
+      %{
+        "$set" => %{"status" => status, "updated_by" => updated_by},
+        "$setOnInsert" => %{
+          "visits" => %{},
+          "episodes" => %{},
+          "encounters" => %{},
+          "immunizations" => %{},
+          "allergy_intolerances" => %{}
+        }
+      },
       upsert: true
     )
 

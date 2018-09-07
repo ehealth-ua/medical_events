@@ -83,7 +83,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
          %{
            "data" => %{
              "id" => id,
-             "status" => "active",
+             "status" => "ACTIVE",
              "legal_entity_id" => client_id
            }
          }}
@@ -92,7 +92,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       encounter_id = UUID.uuid4()
 
       patient = insert(:patient)
-      condition = insert(:condition, patient_id: patient._id, inserted_by: patient._id, updated_by: patient._id)
+      condition_id = UUID.uuid4()
       job = insert(:job)
       signature()
       visit_id = UUID.uuid4()
@@ -102,20 +102,18 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         "encounter" => %{
           "id" => encounter_id,
           "status" => "finished",
-          "contexts" => [
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
-                "value" => visit_id
-              }
-            },
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
-                "value" => episode_id
-              }
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
             }
-          ],
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
           "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
@@ -126,7 +124,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "condition" => %{
                 "identifier" => %{
                   "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
-                  "value" => condition._id
+                  "value" => condition_id
                 }
               },
               "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
@@ -149,7 +147,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         },
         "conditions" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => condition_id,
             "context" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},

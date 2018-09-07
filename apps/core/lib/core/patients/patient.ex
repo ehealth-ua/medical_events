@@ -15,6 +15,7 @@ defmodule Core.Patient do
     field(:status, presence: true)
     field(:visits)
     field(:episodes)
+    field(:encounters)
     field(:immunizations)
     field(:allergy_intolerances)
 

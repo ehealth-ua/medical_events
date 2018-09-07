@@ -21,6 +21,7 @@ defmodule Core.Patients do
   import Core.Schema, only: [add_validations: 3]
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Observations.Validations, as: ObservationValidations
+  alias Core.Patients.Encounters.Validations, as: EncounterValidations
   require Logger
 
   @collection Patient.metadata().collection
@@ -72,25 +73,15 @@ defmodule Core.Patients do
          {:ok, %{"content" => content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content) do
       with {:ok, visit} <- create_visit(job),
-           {:ok, encounter} <- create_encounter(job, content, visit),
-           {:ok, conditions} <- create_conditions(job, content, encounter),
+           {:ok, conditions} <- create_conditions(job, content),
+           {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, observations} <- create_observations(job, content, encounter) do
         visit_id = if is_map(visit), do: visit.id
-
-        episode_id =
-          encounter.contexts
-          |> Enum.find(fn context ->
-            context.identifier.type.coding
-            |> hd
-            |> Map.get(:code) == "episode"
-          end)
-          |> Map.get(:identifier)
-          |> Map.get(:value)
 
         set =
           %{"updated_by" => user_id, "updated_at" => now}
           |> Mongo.add_to_set(visit, "visits.#{visit_id}")
-          |> Mongo.add_to_set(encounter, "episodes.#{episode_id}.encounters.#{encounter.id}")
+          |> Mongo.add_to_set(encounter, "encounters.#{encounter.id}")
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
@@ -277,114 +268,20 @@ defmodule Core.Patients do
   defp create_encounter(
          %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
          content,
+         conditions,
          visit
        ) do
     now = DateTime.utc_now()
+
     encounter = Encounter.create(content["encounter"])
-    encounter = %{encounter | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
 
     encounter =
-      encounter
-      |> add_validations(
-        :contexts,
-        reference_type: [type: "visit", message: "Contexts does not contain reference to the Visit"],
-        reference_type: [type: "episode", message: "Contexts does not contain reference to the Episode"]
-      )
-
-    # Contexts validations
-    contexts =
-      Enum.map(encounter.contexts, fn context ->
-        identifier = context.identifier
-        codeable_concept = add_validations(identifier.type, :coding, length: [min: 1, max: 1])
-        identifier = %{identifier | type: codeable_concept}
-
-        coding_code =
-          codeable_concept.coding
-          |> List.first()
-          |> Map.get(:code)
-
-        identifier =
-          case coding_code do
-            "visit" ->
-              add_validations(
-                identifier,
-                :value,
-                visit_context: [visit: visit, patient_id: patient_id]
-              )
-
-            "episode" ->
-              add_validations(
-                identifier,
-                :value,
-                episode_context: [patient_id: patient_id]
-              )
-
-            _ ->
-              identifier
-          end
-
-        %{context | identifier: identifier}
-      end)
-
-    # Performer validations
-    performer = encounter.performer
-
-    identifier =
-      performer.identifier
-      |> add_validations(
-        :value,
-        employee: [
-          type: "DOCTOR",
-          status: "APPROVED",
-          legal_entity_id: client_id,
-          messages: [
-            type: "Employee submitted as a care_manager is not a doctor",
-            status: "Doctor submitted as a care_manager is not active",
-            legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
-          ]
-        ]
-      )
-
-    performer = %{performer | identifier: identifier}
-
-    # Division validations
-    division = encounter.division
-
-    identifier =
-      division.identifier
-      |> add_validations(
-        :value,
-        division: [
-          status: "active",
-          legal_entity_id: client_id,
-          messages: [
-            status: "Division is not active",
-            legal_entity_id: "User is not allowed to create encouners for this division"
-          ]
-        ]
-      )
-
-    division = %{division | identifier: identifier}
-
-    # Diagnoses validations
-    diagnoses = encounter.diagnoses
-
-    diagnoses =
-      Enum.map(diagnoses, fn diagnosis ->
-        condition = diagnosis.condition
-
-        identifier =
-          add_validations(condition.identifier, :value, diagnosis_condition: [conditions: [], patient_id: patient_id])
-
-        %{diagnosis | condition: %{condition | identifier: identifier}}
-      end)
-
-    encounter =
-      %{encounter | contexts: contexts, performer: performer, division: division, diagnoses: diagnoses}
-      |> add_validations(
-        :diagnoses,
-        diagnoses_role: [type: "chief_complaint", message: "Encounter must have at least one chief complaint"]
-      )
+      %{encounter | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
+      |> EncounterValidations.validate_episode(patient_id)
+      |> EncounterValidations.validate_visit(visit, patient_id)
+      |> EncounterValidations.validate_performer(client_id)
+      |> EncounterValidations.validate_division(client_id)
+      |> EncounterValidations.validate_diagnoses(conditions, patient_id)
 
     case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do
       [] ->
@@ -409,12 +306,9 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_conditions(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
-         %{"conditions" => _} = content,
-         encounter
-       ) do
+  defp create_conditions(%PackageCreateJob{patient_id: patient_id, user_id: user_id}, %{"conditions" => _} = content) do
     now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
 
     conditions =
       Enum.map(content["conditions"], fn data ->
@@ -435,7 +329,7 @@ defmodule Core.Patients do
           )
 
         context = condition.context
-        identifier = add_validations(context.identifier, :value, value: [equals: encounter.id])
+        identifier = add_validations(context.identifier, :value, value: [equals: encounter_id])
 
         %{condition | context: %{context | identifier: identifier}}
       end)
@@ -449,7 +343,7 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_conditions(_, _, _), do: {:ok, []}
+  defp create_conditions(_, _), do: {:ok, []}
 
   defp create_observations(
          %PackageCreateJob{patient_id: patient_id, user_id: user_id},
