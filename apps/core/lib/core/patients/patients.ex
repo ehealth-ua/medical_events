@@ -87,23 +87,33 @@ defmodule Core.Patients do
         {:ok, %{matched_count: 1, modified_count: 1}} =
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
 
-        {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
-        {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
-
         links = [
           %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
         ]
 
         links =
-          Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-            acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
-          end)
+          if !Enum.empty?(conditions) do
+            {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
+
+            Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
+              acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
+            end)
+          else
+            links
+          end
 
         links =
-          Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-            acc ++
-              [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
-          end)
+          if !Enum.empty?(observations) do
+            {:ok, %{inserted_ids: observation_ids}} =
+              Mongo.insert_many(Observation.metadata().collection, observations, [])
+
+            Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
+              acc ++
+                [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
+            end)
+          else
+            links
+          end
 
         {:ok, %{"links" => links}, 200}
       else

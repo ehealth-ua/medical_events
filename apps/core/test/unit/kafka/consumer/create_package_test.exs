@@ -56,6 +56,113 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(job._id)
     end
 
+    test "visit already exists" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      client_id = UUID.uuid4()
+
+      expect(IlMock, :get_employee, 2, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "APPROVED",
+             "employee_type" => "DOCTOR",
+             "legal_entity" => %{"id" => client_id}
+           }
+         }}
+      end)
+
+      expect(IlMock, :get_division, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "ACTIVE",
+             "legal_entity_id" => client_id
+           }
+         }}
+      end)
+
+      encounter_id = UUID.uuid4()
+      patient = insert(:patient)
+      condition = insert(:condition, patient_id: patient._id)
+      visit_id = patient.visits |> Map.keys() |> hd
+      job = insert(:job)
+      signature()
+      episode_id = patient.episodes |> Map.keys() |> hd
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "status" => "finished",
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
+                  "value" => condition._id
+                }
+              },
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
+              "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]}
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "division" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
+          },
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
+          }
+        }
+      }
+
+      user_id = UUID.uuid4()
+
+      assert :ok =
+               Consumer.consume(%PackageCreateJob{
+                 _id: job._id,
+                 patient_id: patient._id,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+
+      assert {:ok,
+              %Core.Job{
+                response_size: 375,
+                status: @status_processed
+              }} = Jobs.get_by_id(job._id)
+    end
+
     # TODO: not completed
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
