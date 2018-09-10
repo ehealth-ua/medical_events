@@ -92,28 +92,9 @@ defmodule Core.Patients do
         ]
 
         links =
-          if !Enum.empty?(conditions) do
-            {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
-
-            Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-              acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
-            end)
-          else
-            links
-          end
-
-        links =
-          if !Enum.empty?(observations) do
-            {:ok, %{inserted_ids: observation_ids}} =
-              Mongo.insert_many(Observation.metadata().collection, observations, [])
-
-            Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-              acc ++
-                [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
-            end)
-          else
-            links
-          end
+          links
+          |> insert_conditions(conditions, patient_id)
+          |> insert_observations(observations, patient_id)
 
         {:ok, %{"links" => links}, 200}
       else
@@ -435,5 +416,25 @@ defmodule Core.Patients do
         Logger.warn("Failed to fill up legal_entity value for episode")
         episode
     end
+  end
+
+  defp insert_conditions(links, [], _), do: links
+
+  defp insert_conditions(links, conditions, patient_id) do
+    {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
+
+    Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
+      acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
+    end)
+  end
+
+  defp insert_observations(links, [], _), do: links
+
+  defp insert_observations(links, observations, patient_id) do
+    {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
+
+    Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
+      acc ++ [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
+    end)
   end
 end
