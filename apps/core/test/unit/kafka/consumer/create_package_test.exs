@@ -4,6 +4,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   use Core.ModelCase
 
   alias Core.Kafka.Consumer
+  alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
@@ -12,7 +13,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   import Core.Expectations.DigitalSignature
 
   @status_processed Job.status(:processed)
-
   @status_valid Observation.status(:valid)
 
   describe "consume create package event" do
@@ -173,7 +173,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       client_id = UUID.uuid4()
 
-      expect(IlMock, :get_employee, 2, fn id, _ ->
+      expect(IlMock, :get_employee, 3, fn id, _ ->
         {:ok,
          %{
            "data" => %{
@@ -356,6 +356,123 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "value_time" => "12:00:00"
           }
+        ],
+        "immunizations" => [
+          %{
+            "id" => UUID.uuid4(),
+            "status" => Immunization.status(:completed),
+            "not_given" => false,
+            "vaccine_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/vaccines_codes",
+                  "code" => "FLUVAX"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => UUID.uuid4()
+              }
+            },
+            "primary_source" => true,
+            "date" => to_string(Date.utc_today()),
+            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
+            "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
+            "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
+            "dose_quantity" => %{
+              "value" => 18,
+              "unit" => "mg",
+              "system" => "eHealth/dose_quantities"
+            },
+            "explanation" => %{
+              "reasons" => [
+                %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/reason_explanations",
+                      "code" => "429060002"
+                    }
+                  ]
+                }
+              ]
+            },
+            "reactions" => [
+              %{
+                "date" => Date.utc_today(),
+                "detail" => %{
+                  "identifier" => %{
+                    "type" => %{
+                      "coding" => [
+                        %{
+                          "system" => "eHealth/resources",
+                          "code" => "observation"
+                        }
+                      ]
+                    },
+                    "value" => observation_id
+                  }
+                },
+                "reported" => true
+              }
+            ],
+            "vaccination_protocols" => [
+              %{
+                "dose_sequence" => 1,
+                "name" => "Vaccination Protocol Sequence 1",
+                "authority" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_authorities",
+                      "code" => "1857005"
+                    }
+                  ]
+                },
+                "series" => "Vaccination Series 1",
+                "series_doses" => 2,
+                "target_diseases" => [
+                  %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/vaccination_target_diseases",
+                        "code" => "1857005"
+                      }
+                    ]
+                  }
+                ],
+                "dose_status" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_target_diseases",
+                      "code" => "count"
+                    }
+                  ]
+                },
+                "dose_status_reason" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_dose_statuse_reasons",
+                      "code" => "coldchbrk"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
         ]
       }
 
@@ -379,7 +496,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: 543,
+                response_size: 680,
                 status: @status_processed
               }} = Jobs.get_by_id(job._id)
     end

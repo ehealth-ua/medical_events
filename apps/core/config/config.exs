@@ -80,7 +80,8 @@ config :vex,
       episode_context: Core.Validators.EpisodeContext,
       diagnosis_condition: Core.Validators.DiagnosisCondition,
       strict_presence: Core.Validators.StrictPresence,
-      evidence_observation: Core.Validators.EvidenceObservation
+      observation_reference: Core.Validators.ObservationReference,
+      source: Core.Validators.Source
     ],
     Vex.Validators
   ]

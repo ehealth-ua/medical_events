@@ -1,4 +1,4 @@
-defmodule Core.Validators.EvidenceObservation do
+defmodule Core.Validators.ObservationReference do
   @moduledoc false
 
   use Vex.Validator
@@ -20,7 +20,7 @@ defmodule Core.Validators.EvidenceObservation do
           error(options, "Observation with such id is not found")
 
         %{"status" => @status_entered_in_error} ->
-          error(options, ~s(Observation in "entered_in_error" status can not be used as an evidence))
+          error(options, ~s(Observation in "entered_in_error" status can not be referenced))
 
         _ ->
           :ok

@@ -128,3 +128,8 @@ defimpl Vex.Blank, for: BSON.ObjectId do
   def blank?(%BSON.ObjectId{}), do: false
   def blank?(_), do: true
 end
+
+defimpl Vex.Blank, for: NaiveDateTime do
+  def blank?(%NaiveDateTime{}), do: false
+  def blank?(_), do: true
+end

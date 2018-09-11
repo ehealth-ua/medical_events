@@ -53,6 +53,10 @@ defmodule Core.Condition do
         {"code", v} ->
           {:code, CodeableConcept.create(v)}
 
+        {"asserted_date", v} ->
+          date = v |> Date.from_iso8601!() |> Date.to_erl()
+          {:asserted_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+
         {"id", v} ->
           {:_id, v}
 

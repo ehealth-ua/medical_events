@@ -11,7 +11,7 @@ defmodule Core.Patients.Episodes do
 
   def get(patient_id, id) do
     with %{"episodes" => %{^id => episode}} <-
-           Mongo.find_one(@collection, %{"_id" => patient_id}, "episodes.#{id}": true) do
+           Mongo.find_one(@collection, %{"_id" => patient_id}, projection: ["episodes.#{id}": true]) do
       {:ok, episode}
     else
       _ ->

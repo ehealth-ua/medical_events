@@ -1,9 +1,11 @@
 defmodule Core.Patients do
   @moduledoc false
 
+  import Core.Schema, only: [add_validations: 3]
   alias Core.Condition
   alias Core.Encounter
   alias Core.Episode
+  alias Core.Immunization
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
@@ -12,17 +14,18 @@ defmodule Core.Patients do
   alias Core.Observation
   alias Core.Patient
   alias Core.Patients.Episodes
+  alias Core.Patients.Immunizations
   alias Core.Patients.Validators
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
   alias EView.Views.ValidationError
-  import Core.Schema, only: [add_validations: 3]
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
+  alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   require Logger
 
   @collection Patient.metadata().collection
@@ -76,13 +79,19 @@ defmodule Core.Patients do
       with {:ok, visit} <- create_visit(job),
            {:ok, observations} <- create_observations(job, content),
            {:ok, conditions} <- create_conditions(job, content, observations),
-           {:ok, encounter} <- create_encounter(job, content, conditions, visit) do
+           {:ok, encounter} <- create_encounter(job, content, conditions, visit),
+           {:ok, immunizations} <- create_immunizations(job, content, observations) do
         visit_id = if is_map(visit), do: visit.id
 
         set =
           %{"updated_by" => user_id, "updated_at" => now}
           |> Mongo.add_to_set(visit, "visits.#{visit_id}")
           |> Mongo.add_to_set(encounter, "encounters.#{encounter.id}")
+
+        set =
+          Enum.reduce(immunizations, set, fn immunization, acc ->
+            Mongo.add_to_set(set, immunization, "immunizations.#{immunization.id}")
+          end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
           Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
@@ -95,6 +104,12 @@ defmodule Core.Patients do
           links
           |> insert_conditions(conditions, patient_id)
           |> insert_observations(observations, patient_id)
+
+        links =
+          Enum.reduce(immunizations, links, fn immunization, acc ->
+            acc ++
+              [%{"entity" => "immunization", "href" => "/api/patients/#{patient_id}/immunizations/#{immunization.id}"}]
+          end)
 
         {:ok, %{"links" => links}, 200}
       else
@@ -135,12 +150,8 @@ defmodule Core.Patients do
 
     case Vex.errors(episode) do
       [] ->
-        case Mongo.find_one(
-               Patient.metadata().collection,
-               %{"_id" => patient_id},
-               projection: ["episodes.#{episode_id}": true]
-             ) do
-          %{"episodes" => %{^episode_id => %{}}} ->
+        case Episodes.get(patient_id, episode_id) do
+          {:ok, _} ->
             {:ok, %{"error" => "Episode with such id already exists"}, 422}
 
           _ ->
@@ -374,6 +385,42 @@ defmodule Core.Patients do
 
   defp create_observations(_, _), do: {:ok, []}
 
+  defp create_immunizations(
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %{"immunizations" => _} = content,
+         observations
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    immunizations =
+      Enum.map(content["immunizations"], fn data ->
+        immunization = Immunization.create(data)
+
+        %{
+          immunization
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> ImmunizationValidations.validate_date()
+        |> ImmunizationValidations.validate_context(encounter_id)
+        |> ImmunizationValidations.validate_source()
+        |> ImmunizationValidations.validate_reactions(observations, patient_id)
+      end)
+
+    case Vex.errors(%{immunizations: immunizations}, immunizations: [reference: [path: "immunizations"]]) do
+      [] ->
+        validate_immunizations(patient_id, immunizations)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_immunizations(_, _, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
@@ -390,6 +437,18 @@ defmodule Core.Patients do
         {:halt, {:error, "Observation with id '#{observation._id}' already exists", 409}}
       else
         {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_immunizations(patient_id, immunizations) do
+    Enum.reduce_while(immunizations, {:ok, immunizations}, fn immunization, acc ->
+      case Immunizations.get(patient_id, immunization.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Immunization with id '#{immunization.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
       end
     end)
   end

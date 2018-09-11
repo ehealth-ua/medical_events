@@ -29,8 +29,10 @@ defmodule Core.Observations.Validations do
 
   def validate_performer(%Observation{performer: nil} = observation), do: observation
 
-  def validate_performer(%Observation{performer: performer} = observation) do
-    identifier = add_validations(performer.identifier, :value, employee: [ets_key: "performer_employee"])
+  def validate_performer(%Observation{_id: id, performer: performer} = observation) do
+    identifier =
+      add_validations(performer.identifier, :value, employee: [ets_key: "observation_#{id}_performer_employee"])
+
     %{observation | performer: %{performer | identifier: identifier}}
   end
 

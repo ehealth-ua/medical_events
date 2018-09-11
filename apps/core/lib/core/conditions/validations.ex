@@ -30,7 +30,7 @@ defmodule Core.Conditions.Validations do
               add_validations(
                 detail.identifier,
                 :value,
-                evidence_observation: [patient_id: patient_id, observations: observations]
+                observation_reference: [patient_id: patient_id, observations: observations]
               )
 
             %{detail | identifier: identifier}

@@ -554,34 +554,173 @@
       "additionalProperties": false
     },
     "vaccination_protocol": {
-      "dose_sequence": {
-        "type": "number"
-      },
-      "name": {
-        "type": "string",
-        "minLength": 1
-      },
-      "authority": {
-        "$ref": "#/definitions/codeable_concept"
-      },
-      "series": {
-        "type": "string"
-      },
-      "series_doses": {
-        "type": "number"
-      },
-      "target_disease": {
-        "type": "array",
-        "minItems": 1,
-        "items": {
-          "$ref": "#/definitions/codeable_concept"
+      "type": "object",
+      "properties": {
+        "dose_sequence": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/vaccination_authorities"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "series": {
+          "type": "string"
+        },
+        "series_doses": {
+          "type": "number"
+        },
+        "target_diseases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "coding": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/vaccination_target_diseases"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Symbol in syntax defined by the system"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "system"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "coding"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "dose_status": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/vaccination_target_diseases"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "dose_status_reason": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/vaccination_dose_statuse_reasons"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         }
-      },
-      "dose_status": {
-        "$ref": "#/definitions/codeable_concept"
-      },
-      "dose_status_reason": {
-        "$ref": "#/definitions/codeable_concept"
       }
     },
     "condition": {
@@ -603,6 +742,10 @@
               "$ref": "#/definitions/identifier"
             }
           }
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date"
         },
         "context": {
           "type": "object",
@@ -1838,18 +1981,116 @@
         "not_given": {
           "type": "boolean"
         },
-        "vaccine_code": {
-          "$ref": "#/definitions/codeable_concept"
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
         },
-        "encounter": {
-          "$ref": "#/definitions/reference"
+        "vaccine_code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/vaccines_codes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          },
+                          "display": {
+                            "type": "string",
+                            "description": "Representation defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          }
         },
         "date": {
           "type": "string",
           "format": "date"
         },
-        "recorder": {
-          "$ref": "#/definitions/reference"
+        "performer": {
+          "$ref": "#/definitions/performer"
         },
         "issued": {
           "type": "string",
@@ -1873,36 +2114,194 @@
           "format": "date"
         },
         "site": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/body_sites"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "route": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/vaccination_routes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "dose_quantity": {
-          "$ref": "#/definitions/value_quantity"
-        },
-        "practitioner": {
-          "$ref": "#/definitions/reference"
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "comparator": {
+              "type": "string",
+              "enum": [
+                ">",
+                ">=",
+                "=",
+                "<=",
+                "<"
+              ]
+            },
+            "unit": {
+              "type": "string",
+              "description": "Dictionary: TBD"
+            },
+            "system": {
+              "type": "string",
+              "enum": [
+                "eHealth/dose_quantities"
+              ]
+            },
+            "code": {
+              "type": "string",
+              "description": "Dictionary: TBD"
+            }
+          },
+          "required": [
+            "value",
+            "unit"
+          ],
+          "additionalProperties": false
         },
         "explanation": {
           "type": "object",
-          "properties": {},
-          "oneOf": [
-            {
-              "properties": {
-                "reasons": {
-                  "$ref": "#/definitions/codeable_concept"
-                }
+          "properties": {
+            "reasons": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/reason_explanations"
+                          ]
+                        },
+                        "code": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
               }
             },
-            {
-              "properties": {
-                "reason_not_given": {
-                  "$ref": "#/definitions/codeable_concept"
-                }
+            "reason_not_given": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/reason_explanations"
+                          ]
+                        },
+                        "code": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
               }
             }
-          ]
+          }
         },
         "reactions": {
           "type": "array",
@@ -1915,7 +2314,63 @@
                 "format": "date"
               },
               "detail": {
-                "$ref": "#/definitions/reference"
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "coding": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 1,
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "system": {
+                                  "type": "string",
+                                  "enum": [
+                                    "eHealth/resources"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "enum": [
+                                    "observation"
+                                  ],
+                                  "description": "Symbol in syntax defined by the system"
+                                }
+                              },
+                              "required": [
+                                "code",
+                                "system"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "coding"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The value that is unique"
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "description": "should be filled one of: condition or condition_id"
               },
               "reported": {
                 "type": "boolean"
@@ -1936,12 +2391,12 @@
         "status",
         "not_given",
         "vaccine_code",
-        "encounter",
+        "context",
         "date",
-        "recorder",
         "issued",
         "primary_source"
-      ]
+      ],
+      "additionalProperties": false
     },
     "allergy_intolerances": {
       "type": "object",
