@@ -90,7 +90,7 @@ defmodule Core.Patients do
 
         set =
           Enum.reduce(immunizations, set, fn immunization, acc ->
-            Mongo.add_to_set(set, immunization, "immunizations.#{immunization.id}")
+            Mongo.add_to_set(acc, immunization, "immunizations.#{immunization.id}")
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =

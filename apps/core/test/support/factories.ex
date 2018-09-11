@@ -132,8 +132,7 @@ defmodule Core.Factories do
   def coding_factory do
     %Coding{
       system: "local",
-      code: "1",
-      display: "true"
+      code: "1"
     }
   end
 

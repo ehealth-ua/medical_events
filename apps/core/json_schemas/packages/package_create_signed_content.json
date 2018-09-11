@@ -131,10 +131,6 @@
                         "enum": [
                           "employee"
                         ]
-                      },
-                      "display": {
-                        "type": "string",
-                        "description": "Representation defined by the system"
                       }
                     },
                     "required": [
@@ -183,10 +179,6 @@
               "code": {
                 "type": "string",
                 "description": "Symbol in syntax defined by the system"
-              },
-              "display": {
-                "type": "string",
-                "description": "Representation defined by the system"
               }
             },
             "required": [
@@ -219,10 +211,6 @@
               "code": {
                 "type": "string",
                 "description": "Symbol in syntax defined by the system"
-              },
-              "display": {
-                "type": "string",
-                "description": "Representation defined by the system"
               }
             },
             "required": [
@@ -249,10 +237,6 @@
         "code": {
           "type": "string",
           "description": "Symbol in syntax defined by the system"
-        },
-        "display": {
-          "type": "string",
-          "description": "Representation defined by the system"
         }
       },
       "required": [
@@ -332,10 +316,6 @@
               "code": {
                 "type": "string",
                 "description": "Symbol in syntax defined by the system"
-              },
-              "display": {
-                "type": "string",
-                "description": "Representation defined by the system"
               }
             },
             "required": [
@@ -372,10 +352,6 @@
               "code": {
                 "type": "string",
                 "description": "Symbol in syntax defined by the system"
-              },
-              "display": {
-                "type": "string",
-                "description": "Representation defined by the system"
               }
             },
             "required": [
@@ -425,10 +401,6 @@
                               "condition"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -479,10 +451,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -519,10 +487,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -774,10 +738,6 @@
                               "encounter"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -827,10 +787,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -875,10 +831,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -918,10 +870,6 @@
                     "code": {
                       "type": "string",
                       "description": "Symbol in syntax defined by the system"
-                    },
-                    "display": {
-                      "type": "string",
-                      "description": "Representation defined by the system"
                     }
                   },
                   "required": [
@@ -966,10 +914,6 @@
                       "code": {
                         "type": "string",
                         "description": "Symbol in syntax defined by the system"
-                      },
-                      "display": {
-                        "type": "string",
-                        "description": "Representation defined by the system"
                       }
                     },
                     "required": [
@@ -1024,10 +968,6 @@
                               "condition"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -1077,10 +1017,6 @@
                                       "observation"
                                     ],
                                     "description": "Symbol in syntax defined by the system"
-                                  },
-                                  "display": {
-                                    "type": "string",
-                                    "description": "Representation defined by the system"
                                   }
                                 },
                                 "required": [
@@ -1166,10 +1102,6 @@
                               "episode"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -1231,10 +1163,6 @@
                               "visit"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -1281,10 +1209,6 @@
             "code": {
               "type": "string",
               "description": "Symbol in syntax defined by the system"
-            },
-            "display": {
-              "type": "string",
-              "description": "Representation defined by the system"
             }
           },
           "required": [
@@ -1311,10 +1235,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -1390,10 +1310,6 @@
                               "division"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -1483,10 +1399,6 @@
                               "encounter"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [
@@ -1548,10 +1460,6 @@
                                 "referral"
                               ],
                               "description": "Symbol in syntax defined by the system"
-                            },
-                            "display": {
-                              "type": "string",
-                              "description": "Representation defined by the system"
                             }
                           },
                           "required": [
@@ -1605,10 +1513,6 @@
                     "code": {
                       "type": "string",
                       "description": "Symbol in syntax defined by the system"
-                    },
-                    "display": {
-                      "type": "string",
-                      "description": "Representation defined by the system"
                     }
                   },
                   "required": [
@@ -1646,10 +1550,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -1723,10 +1623,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -1759,10 +1655,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -2002,10 +1894,6 @@
                   "code": {
                     "type": "string",
                     "description": "Symbol in syntax defined by the system"
-                  },
-                  "display": {
-                    "type": "string",
-                    "description": "Representation defined by the system"
                   }
                 },
                 "required": [
@@ -2051,10 +1939,6 @@
                               "encounter"
                             ],
                             "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
                           }
                         },
                         "required": [

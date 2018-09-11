@@ -6,7 +6,6 @@ defmodule Core.Coding do
   embedded_schema do
     field(:system, presence: true)
     field(:code, presence: true)
-    field(:display)
   end
 
   def create(data) do

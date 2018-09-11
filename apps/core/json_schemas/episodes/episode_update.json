@@ -32,10 +32,6 @@
                           "employee"
                         ],
                         "description": "Symbol in syntax defined by the system"
-                      },
-                      "display": {
-                        "type": "string",
-                        "description": "Representation defined by the system"
                       }
                     },
                     "required": [
@@ -93,10 +89,6 @@
                           "legal_entity"
                         ],
                         "description": "Symbol in syntax defined by the system"
-                      },
-                      "display": {
-                        "type": "string",
-                        "description": "Representation defined by the system"
                       }
                     },
                     "required": [
