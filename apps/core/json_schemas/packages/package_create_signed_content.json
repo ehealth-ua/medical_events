@@ -624,7 +624,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/vaccination_target_diseases"
+                      "eHealth/vaccination_dose_statuses"
                     ]
                   },
                   "code": {
@@ -1368,6 +1368,9 @@
         "report_origin": {
           "$ref": "#/definitions/report_origin"
         },
+        "performer": {
+          "$ref": "#/definitions/performer"
+        },
         "status": {
           "type": "string",
           "description": "Dictionary: TBD"
@@ -1595,9 +1598,6 @@
         "issued": {
           "type": "string",
           "format": "date-time"
-        },
-        "performer": {
-          "$ref": "#/definitions/performer"
         },
         "interpretation": {
           "$ref": "#/definitions/interpretation"
@@ -2313,25 +2313,121 @@
           "minLength": 1
         },
         "context": {
-          "$ref": "#/definitions/reference"
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "should be filled one of: condition or condition_id"
         },
         "code": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/allergy_intolerances_codes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "onset_date_time": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "asserted_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
-        "asserter": {
-          "$ref": "#/definitions/reference"
+        "primary_source": {
+          "type": "boolean"
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "performer": {
+          "$ref": "#/definitions/performer"
         },
         "last_occurrence": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         }
       },
       "required": [
@@ -2345,7 +2441,7 @@
         "code",
         "onset_date_time",
         "asserted_date",
-        "asserter"
+        "primary_source"
       ]
     }
   },

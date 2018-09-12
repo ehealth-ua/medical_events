@@ -472,7 +472,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "dose_status" => %{
                   "coding" => [
                     %{
-                      "system" => "eHealth/vaccination_target_diseases",
+                      "system" => "eHealth/vaccination_dose_statuses",
                       "code" => "count"
                     }
                   ]
@@ -487,6 +487,47 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               }
             ]
+          }
+        ],
+        "allergy_intolerances" => [
+          %{
+            "id" => UUID.uuid4(),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/allergy_intolerances_codes",
+                  "code" => "227493005"
+                }
+              ]
+            },
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => UUID.uuid4()
+              }
+            },
+            "primary_source" => true,
+            "clinical_status" => "active",
+            "verification_status" => "confirmed",
+            "type" => "allergy",
+            "category" => "food",
+            "criticality" => "low",
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "last_occurence" => DateTime.to_iso8601(DateTime.utc_now()),
+            "onset_date_time" => DateTime.to_iso8601(DateTime.utc_now())
           }
         ]
       }
@@ -511,7 +552,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: 680,
+                response_size: 831,
                 status: @status_processed
               }} = Jobs.get_by_id(job._id)
     end

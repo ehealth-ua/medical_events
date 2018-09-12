@@ -2,6 +2,7 @@ defmodule Core.Patients do
   @moduledoc false
 
   import Core.Schema, only: [add_validations: 3]
+  alias Core.AllergyIntolerance
   alias Core.Condition
   alias Core.Encounter
   alias Core.Episode
@@ -13,6 +14,7 @@ defmodule Core.Patients do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Patient
+  alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.Validators
@@ -23,6 +25,7 @@ defmodule Core.Patients do
   alias EView.Views.ValidationError
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations.Validations, as: ObservationValidations
+  alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
@@ -80,7 +83,8 @@ defmodule Core.Patients do
            {:ok, observations} <- create_observations(job, content),
            {:ok, conditions} <- create_conditions(job, content, observations),
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
-           {:ok, immunizations} <- create_immunizations(job, content, observations) do
+           {:ok, immunizations} <- create_immunizations(job, content, observations),
+           {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content) do
         visit_id = if is_map(visit), do: visit.id
 
         set =
@@ -109,6 +113,17 @@ defmodule Core.Patients do
           Enum.reduce(immunizations, links, fn immunization, acc ->
             acc ++
               [%{"entity" => "immunization", "href" => "/api/patients/#{patient_id}/immunizations/#{immunization.id}"}]
+          end)
+
+        links =
+          Enum.reduce(allergy_intolerances, links, fn allergy_intolerance, acc ->
+            acc ++
+              [
+                %{
+                  "entity" => "allergy_intolerance",
+                  "href" => "/api/patients/#{patient_id}/allergy_intolerances/#{allergy_intolerance.id}"
+                }
+              ]
           end)
 
         {:ok, %{"links" => links}, 200}
@@ -422,6 +437,45 @@ defmodule Core.Patients do
 
   defp create_immunizations(_, _, _), do: {:ok, []}
 
+  defp create_allergy_intolerances(
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %{"allergy_intolerances" => _} = content
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    allergy_intolerances =
+      Enum.map(content["allergy_intolerances"], fn data ->
+        allergy_intolerance = AllergyIntolerance.create(data)
+
+        %{
+          allergy_intolerance
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> AllergyIntoleranceValidations.validate_context(encounter_id)
+        |> AllergyIntoleranceValidations.validate_source()
+        |> AllergyIntoleranceValidations.validate_onset_date_time()
+        |> AllergyIntoleranceValidations.validate_last_occurence()
+        |> AllergyIntoleranceValidations.validate_asserted_date()
+      end)
+
+    case Vex.errors(
+           %{allergy_intolerances: allergy_intolerances},
+           allergy_intolerances: [reference: [path: "allergy_intolerances"]]
+         ) do
+      [] ->
+        validate_allergy_intolerances(patient_id, allergy_intolerances)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_allergy_intolerances(_, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
@@ -447,6 +501,18 @@ defmodule Core.Patients do
       case Immunizations.get(patient_id, immunization.id) do
         {:ok, _} ->
           {:halt, {:error, "Immunization with id '#{immunization.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_allergy_intolerances(patient_id, allergy_intolerances) do
+    Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance, acc ->
+      case AllergyIntolerances.get(patient_id, allergy_intolerance.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}
