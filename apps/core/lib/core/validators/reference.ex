@@ -11,7 +11,7 @@ defmodule Core.Validators.Reference do
 
       errors ->
         Enum.map(errors, fn {:error, field, validator, error_message} ->
-          {:error, "#{path}.#{field}", validator, error_message}
+          {:error, "#{get_subpath(path)}#{field}", validator, error_message}
         end)
     end
   end
@@ -21,7 +21,7 @@ defmodule Core.Validators.Reference do
       references
       |> Enum.with_index()
       |> Enum.reduce([], fn {reference, i}, acc ->
-        case validate(reference, path: "#{path}[#{i}]") do
+        case validate(reference, path: "#{get_subpath(path)}[#{i}]") do
           :ok -> acc
           errors -> acc ++ errors
         end
@@ -34,4 +34,7 @@ defmodule Core.Validators.Reference do
   end
 
   def validate(_, _), do: :ok
+
+  defp get_subpath(nil), do: ""
+  defp get_subpath(path), do: path <> "."
 end

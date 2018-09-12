@@ -4,6 +4,8 @@ defmodule Core.Observation do
   use Core.Schema
   alias Core.CodeableConcept
   alias Core.Observations.Component
+  alias Core.Observations.EffectiveAt
+  alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity
   alias Core.Observations.Values.Range
@@ -11,6 +13,7 @@ defmodule Core.Observation do
   alias Core.Observations.Values.SampledData
   alias Core.Period
   alias Core.Reference
+  alias Core.Source
 
   @status_valid "valid"
   @status_entered_in_error "entered_in_error"
@@ -27,43 +30,16 @@ defmodule Core.Observation do
     field(:code, presence: true, reference: [path: "code"])
     field(:patient_id, presence: true)
     field(:context, presence: true, reference: [path: "context"])
-
-    field(
-      :effective_date_time,
-      presence: [unless: :effective_period, message: "must be present unless effective_period is present"],
-      absence: [if: :effective_period, message: "must be absent if effective_period is present"]
-    )
-
-    field(
-      :effective_period,
-      presence: [unless: :effective_date_time, message: "must be present unless effective_date_time is present"],
-      absence: [if: :effective_date_time, message: "must be absent if effective_date_time is present"],
-      reference: [path: "effective_period"]
-    )
-
+    field(:effective_at, presence: true, reference: [path: "effective_at"])
     field(:issued, presence: true)
     field(:primary_source, strict_presence: true)
-
-    field(
-      :report_origin,
-      presence: [if: [primary_source: false], message: "must be present if primary_source is false"],
-      absence: [if: [primary_source: true], message: "must be present if primary_source is true"],
-      reference: [path: "report_origin"]
-    )
-
-    field(
-      :performer,
-      presence: [if: [primary_source: true], message: "must be present if primary_source is true"],
-      absence: [if: [primary_source: false], message: "must be absent if primary_source is false"],
-      reference: [path: "performer"]
-    )
-
+    field(:source, presence: true, reference: [path: "source"])
     field(:value, presence: true)
     field(:interpretation, reference: [path: "interpretation"])
     field(:comment)
     field(:body_site, reference: [path: "body_site"])
     field(:method, reference: [path: "method"])
-    field(:reference_range)
+    field(:reference_ranges, reference: [path: "reference_ranges"])
     field(:components, reference: [path: "components"])
 
     timestamps()
@@ -82,23 +58,23 @@ defmodule Core.Observation do
 
         {"effective_date_time", v} ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
-          {:effective_date_time, datetime}
+          {:effective_at, %EffectiveAt{type: "effective_date_time", value: datetime}}
 
         {"effective_period", v} ->
-          {:effective_period, Period.create(v)}
+          {:effective_at, %EffectiveAt{type: "effective_period", value: Period.create(v)}}
 
         {"issued", v} ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:issued, datetime}
 
         {"report_origin", v} ->
-          {:report_origin, CodeableConcept.create(v)}
+          {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
+
+        {"performer", v} ->
+          {:source, %Source{type: "performer", value: Reference.create(v)}}
 
         {"code", v} ->
           {:code, CodeableConcept.create(v)}
-
-        {"performer", v} ->
-          {:performer, Reference.create(v)}
 
         {"id", v} ->
           {:_id, v}
@@ -139,6 +115,9 @@ defmodule Core.Observation do
 
         {"value_period", v} ->
           {:value, %Value{type: "value_period", value: Period.create(v)}}
+
+        {"reference_ranges", v} ->
+          {:reference_ranges, Enum.map(v, &ReferenceRange.create/1)}
 
         {"components", v} ->
           {:components, Enum.map(v, &Component.create/1)}

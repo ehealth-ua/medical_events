@@ -5,7 +5,7 @@ defmodule Core.Observations.Value do
 
   embedded_schema do
     field(:type, presence: true)
-    field(:value, presence: true, reference: [path: "value"])
+    field(:value, presence: true, reference: [path: nil])
   end
 end
 

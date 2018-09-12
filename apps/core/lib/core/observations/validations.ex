@@ -3,8 +3,12 @@ defmodule Core.Observations.Validations do
 
   import Core.Schema, only: [add_validations: 3]
   alias Core.Observation
+  alias Core.Observations.Component
+  alias Core.Observations.EffectiveAt
   alias Core.Observations.Value
   alias Core.Period
+  alias Core.Reference
+  alias Core.Source
 
   def validate_issued(%Observation{} = observation) do
     now = DateTime.utc_now()
@@ -27,13 +31,28 @@ defmodule Core.Observations.Validations do
     %{observation | context: %{context | identifier: identifier}}
   end
 
-  def validate_performer(%Observation{performer: nil} = observation), do: observation
+  def validate_source(%Observation{_id: id, source: %Source{type: "performer"}} = observation) do
+    observation = add_validations(observation, :source, source: [primary_source: observation.primary_source])
+    source = observation.source
+    source = %{source | value: validate_performer(id, source.value)}
+    %{observation | source: source}
+  end
 
-  def validate_performer(%Observation{_id: id, performer: performer} = observation) do
+  def validate_source(%Observation{} = observation) do
+    add_validations(observation, :source, source: [primary_source: observation.primary_source])
+  end
+
+  def validate_components(%Observation{components: nil} = observation), do: observation
+
+  def validate_components(%Observation{} = observation) do
+    %{observation | components: Enum.map(observation.components, &validate_component_value/1)}
+  end
+
+  def validate_performer(id, %Reference{} = performer) do
     identifier =
       add_validations(performer.identifier, :value, employee: [ets_key: "observation_#{id}_performer_employee"])
 
-    %{observation | performer: %{performer | identifier: identifier}}
+    %{performer | identifier: identifier}
   end
 
   def validate_value(%Observation{value: %Value{type: type, value: %Period{}} = value} = observation) do
@@ -50,11 +69,26 @@ defmodule Core.Observations.Validations do
 
   def validate_value(%Observation{} = observation), do: observation
 
-  def validate_effective_period(%Observation{effective_period: nil} = observation), do: observation
-
-  def validate_effective_period(%Observation{effective_period: period} = observation) do
-    %{observation | effective_period: validate_period(period)}
+  def validate_component_value(%Component{value: %Value{type: type, value: %Period{}} = value} = component) do
+    add_validations(
+      %{component | value: %{value | value: validate_period(value.value)}},
+      :value,
+      reference: [path: type]
+    )
   end
+
+  def validate_component_value(%Component{value: %Value{type: type}} = component) do
+    add_validations(component, :value, reference: [path: type])
+  end
+
+  def validate_component_value(%Component{} = component), do: component
+
+  def validate_effective_at(%Observation{effective_at: %EffectiveAt{type: "effective_period"}} = observation) do
+    effective_at = %{observation.effective_at | value: validate_period(observation.effective_at.value)}
+    %{observation | effective_at: effective_at}
+  end
+
+  def validate_effective_at(%Observation{} = observation), do: observation
 
   defp validate_period(%Period{} = period) do
     now = DateTime.utc_now()

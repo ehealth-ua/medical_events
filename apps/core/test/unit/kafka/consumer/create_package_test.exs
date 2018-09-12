@@ -330,7 +330,22 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "value_period" => %{
               "start" => DateTime.to_iso8601(DateTime.utc_now()),
               "end" => DateTime.to_iso8601(DateTime.utc_now())
-            }
+            },
+            "reference_ranges" => [],
+            "components" => [
+              %{
+                "code" => %{
+                  "coding" => [%{"code" => "category", "system" => "eHealth/resources"}]
+                },
+                "value_period" => %{
+                  "start" => DateTime.to_iso8601(DateTime.utc_now()),
+                  "end" => DateTime.to_iso8601(DateTime.utc_now())
+                },
+                "interpretation" => %{
+                  "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+                }
+              }
+            ]
           },
           %{
             "id" => UUID.uuid4(),

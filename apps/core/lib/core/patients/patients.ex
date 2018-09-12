@@ -368,10 +368,11 @@ defmodule Core.Patients do
             patient_id: patient_id
         }
         |> ObservationValidations.validate_issued()
-        |> ObservationValidations.validate_effective_period()
+        |> ObservationValidations.validate_effective_at()
         |> ObservationValidations.validate_context(encounter_id)
-        |> ObservationValidations.validate_performer()
+        |> ObservationValidations.validate_source()
         |> ObservationValidations.validate_value()
+        |> ObservationValidations.validate_components()
       end)
 
     case Vex.errors(%{observations: observations}, observations: [reference: [path: "observations"]]) do

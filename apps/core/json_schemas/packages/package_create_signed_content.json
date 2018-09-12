@@ -1717,7 +1717,7 @@
           ],
           "additionalProperties": false
         },
-        "reference_range": {
+        "reference_ranges": {
           "type": "array",
           "items": {
             "type": "object",
@@ -1748,10 +1748,11 @@
               "text": {
                 "type": "string"
               }
-            }
+            },
+            "additionalProperties": false
           }
         },
-        "component": {
+        "components": {
           "type": "array",
           "minItems": 1,
           "items": {
@@ -1845,7 +1846,8 @@
                   }
                 }
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
       },

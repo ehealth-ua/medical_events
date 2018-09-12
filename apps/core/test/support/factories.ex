@@ -11,10 +11,12 @@ defmodule Core.Factories do
   alias Core.Job
   alias Core.Mongo
   alias Core.Observation
+  alias Core.Observations.EffectiveAt
   alias Core.Observations.Value
   alias Core.Patient
   alias Core.Period
   alias Core.Reference
+  alias Core.Source
   # alias Core.StatusHistory
   alias Core.Visit
 
@@ -84,10 +86,10 @@ defmodule Core.Factories do
       code: build(:codeable_concept),
       patient_id: UUID.uuid4(),
       context: build(:reference),
-      effective_date_time: DateTime.utc_now(),
+      effective_at: %EffectiveAt{type: "effective_date_time", value: now},
       issued: DateTime.utc_now(),
       primary_source: true,
-      performer: build(:reference),
+      source: build(:source),
       interpretation: build(:codeable_concept),
       value: build(:value),
       body_site: build(:codeable_concept),
@@ -96,6 +98,10 @@ defmodule Core.Factories do
       inserted_by: id,
       updated_by: id
     }
+  end
+
+  def source_factory do
+    %Source{type: "performer", value: build(:codeable_concept)}
   end
 
   def episode_factory do
