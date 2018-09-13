@@ -20,10 +20,10 @@ defmodule Core.Validators.EpisodeContext do
       |> Enum.to_list()
 
     case result do
-      [%{"status" => @status_active}] ->
+      [%{"_id" => ^episode_id, "status" => @status_active}] ->
         :ok
 
-      [%{}] ->
+      [%{"_id" => ^episode_id}] ->
         error(options, "Episode is not active")
 
       [] ->

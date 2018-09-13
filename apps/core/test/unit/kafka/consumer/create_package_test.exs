@@ -331,11 +331,20 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "start" => DateTime.to_iso8601(DateTime.utc_now()),
               "end" => DateTime.to_iso8601(DateTime.utc_now())
             },
-            "reference_ranges" => [],
+            "reference_ranges" => [
+              %{
+                "type" => %{"coding" => [%{"code" => "category", "system" => "reference_range_types"}]},
+                "applies_to" => [
+                  %{
+                    "coding" => [%{"code" => "category", "system" => "reference_range_types"}]
+                  }
+                ]
+              }
+            ],
             "components" => [
               %{
                 "code" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/resources"}]
+                  "coding" => [%{"code" => "category", "system" => "eHealth/observations_codes"}]
                 },
                 "value_period" => %{
                   "start" => DateTime.to_iso8601(DateTime.utc_now()),
@@ -343,7 +352,16 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 },
                 "interpretation" => %{
                   "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
-                }
+                },
+                "reference_ranges" => [
+                  %{
+                    "applies_to" => [
+                      %{
+                        "coding" => [%{"code" => "category", "system" => "reference_range_types"}]
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           },
