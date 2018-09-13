@@ -26,7 +26,7 @@ defmodule Core.Validators.EpisodeContext do
       [%{"_id" => ^episode_id}] ->
         error(options, "Episode is not active")
 
-      [] ->
+      _ ->
         error(options, "Episode with such ID is not found")
     end
   end

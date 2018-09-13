@@ -3,11 +3,11 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
   use Core.ModelCase
 
-  alias Core.Kafka.Consumer
   alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
+  alias Core.Kafka.Consumer
   alias Core.Observation
   import Mox
   import Core.Expectations.DigitalSignature
@@ -56,7 +56,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(job._id)
     end
 
-    test "visit already exists" do
+    test "visit not found" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       expect(IlMock, :get_dictionaries, fn _, _ ->
@@ -91,7 +91,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       encounter_id = UUID.uuid4()
       patient = insert(:patient)
       condition = insert(:condition, patient_id: patient._id)
-      visit_id = patient.visits |> Map.keys() |> hd
       job = insert(:job)
       signature()
       episode_id = patient.episodes |> Map.keys() |> hd
@@ -103,7 +102,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           "visit" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
-              "value" => visit_id
+              "value" => UUID.uuid4()
             }
           },
           "episode" => %{

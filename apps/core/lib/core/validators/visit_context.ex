@@ -31,10 +31,10 @@ defmodule Core.Validators.VisitContext do
 
     case result do
       [%{"_id" => _}] ->
-        error(options, "Visit with such ID is not found")
+        :ok
 
       _ ->
-        :ok
+        error(options, "Visit with such ID is not found")
     end
   end
 
