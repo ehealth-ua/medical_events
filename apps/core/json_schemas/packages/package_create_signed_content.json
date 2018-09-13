@@ -61,7 +61,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "reference_range_types"
+                      "eHealth/reference_range_types"
                     ]
                   },
                   "code": {
@@ -99,7 +99,7 @@
                     "system": {
                       "type": "string",
                       "enum": [
-                        "reference_range_types"
+                        "eHealth/reference_range_applications"
                       ]
                     },
                     "code": {

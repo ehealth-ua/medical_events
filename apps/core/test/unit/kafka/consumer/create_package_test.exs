@@ -333,10 +333,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "reference_ranges" => [
               %{
-                "type" => %{"coding" => [%{"code" => "category", "system" => "reference_range_types"}]},
+                "type" => %{"coding" => [%{"code" => "category", "system" => "eHealth/reference_range_types"}]},
                 "applies_to" => [
                   %{
-                    "coding" => [%{"code" => "category", "system" => "reference_range_types"}]
+                    "coding" => [%{"code" => "category", "system" => "eHealth/reference_range_applications"}]
                   }
                 ]
               }
@@ -357,7 +357,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   %{
                     "applies_to" => [
                       %{
-                        "coding" => [%{"code" => "category", "system" => "reference_range_types"}]
+                        "coding" => [%{"code" => "category", "system" => "eHealth/reference_range_applications"}]
                       }
                     ]
                   }
