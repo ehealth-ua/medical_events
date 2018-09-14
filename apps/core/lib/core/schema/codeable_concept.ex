@@ -9,6 +9,8 @@ defmodule Core.CodeableConcept do
     field(:text)
   end
 
+  def create(nil), do: nil
+
   def create(data) do
     %__MODULE__{coding: Enum.map(Map.get(data, "coding"), &Coding.create/1), text: Map.get(data, "text")}
   end

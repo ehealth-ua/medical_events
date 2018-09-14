@@ -1,15 +1,15 @@
 defmodule Core.StatusHistory do
   @moduledoc false
 
-  # use Ecto.Schema
+  use Core.Schema
 
-  # alias Core.Period
+  embedded_schema do
+    field(:status, presence: true)
+    field(:inserted_at, presence: true)
+    field(:inserted_by, presence: true, uuid: true)
+  end
 
-  # @primary_key false
-  # embedded_schema do
-  #   field(:status)
-  #   embeds_one(:period, Period)
-
-  #   timestamps()
-  # end
+  def create(data) do
+    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  end
 end

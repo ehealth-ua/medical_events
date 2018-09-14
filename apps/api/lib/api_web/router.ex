@@ -28,6 +28,8 @@ defmodule ApiWeb.Router do
     end
 
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)
+    patch("/patients/:patient_id/episodes/:id/actions/close", EpisodeController, :close)
+    patch("/patients/:patient_id/episodes/:id/actions/cancel", EpisodeController, :cancel)
 
     get("/jobs/:id", JobController, :show)
   end

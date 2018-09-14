@@ -34,7 +34,8 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
           "episodes" => %{},
           "encounters" => %{},
           "immunizations" => %{},
-          "allergy_intolerances" => %{}
+          "allergy_intolerances" => %{},
+          "status_history" => []
         }
       },
       upsert: true

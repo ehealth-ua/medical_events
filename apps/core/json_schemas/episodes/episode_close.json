@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "period": {
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "required": [
+        "end"
+      ],
+      "additionalProperties": false
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/episode_closing_reasons"
+          ],
+          "description": "Dictionary: TBD"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "period": {
+      "$ref": "#/definitions/period"
+    },
+    "closing_summary": {
+      "type": "string"
+    },
+    "closing_reason": {
+      "$ref": "#/definitions/codeable_concept"
+    }
+  },
+  "required": [
+    "period",
+    "closing_reason"
+  ],
+  "additionalProperties": false
+}

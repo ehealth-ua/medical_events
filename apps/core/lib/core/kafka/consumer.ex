@@ -3,6 +3,7 @@ defmodule Core.Kafka.Consumer do
 
   alias Core.Job
   alias Core.Jobs
+  alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCreateJob
@@ -21,6 +22,10 @@ defmodule Core.Kafka.Consumer do
     do_consume(Patients, :consume_update_episode, episode_update_job)
   end
 
+  def consume(%EpisodeCloseJob{} = episode_close_job) do
+    do_consume(Patients, :consume_close_episode, episode_close_job)
+  end
+
   def consume(value) do
     Logger.warn(fn ->
       "unknown kafka event #{inspect(value)}"
@@ -34,11 +39,17 @@ defmodule Core.Kafka.Consumer do
       {:ok, _} ->
         :ets.new(:message_cache, [:set, :protected, :named_table])
 
-        with {:ok, response, status_code} <- apply(module, fun, [kafka_job]) do
-          {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:processed), response, status_code)
-        else
-          {:error, response, status_code} ->
-            {:ok, %{matched_count: 1, modified_count: 1}} = Jobs.update(id, Job.status(:failed), response, status_code)
+        try do
+          with {:ok, response, status_code} <- apply(module, fun, [kafka_job]) do
+            {:ok, %{matched_count: 1, modified_count: 1}} =
+              Jobs.update(id, Job.status(:processed), response, status_code)
+          else
+            {:error, response, status_code} ->
+              {:ok, %{matched_count: 1, modified_count: 1}} =
+                Jobs.update(id, Job.status(:failed), response, status_code)
+          end
+        rescue
+          error -> Logger.warn(inspect(error))
         end
 
         :ets.delete(:message_cache)

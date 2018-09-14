@@ -102,8 +102,8 @@ defmodule Core.Schema do
 
   defmacro changed_by do
     quote do
-      field(:inserted_by, presence: true)
-      field(:updated_by, presence: true)
+      field(:inserted_by, presence: true, uuid: true)
+      field(:updated_by, presence: true, uuid: true)
     end
   end
 
@@ -121,6 +121,11 @@ end
 
 defimpl Vex.Blank, for: DateTime do
   def blank?(%DateTime{}), do: false
+  def blank?(_), do: true
+end
+
+defimpl Vex.Blank, for: Date do
+  def blank?(%Date{}), do: false
   def blank?(_), do: true
 end
 

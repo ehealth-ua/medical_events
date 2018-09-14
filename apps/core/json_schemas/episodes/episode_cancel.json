@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/cancellation_reasons"
+          ],
+          "description": "Dictionary: TBD"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        }
+      },
+      "required": [
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "explanatory_letter": {
+      "type": "string"
+    },
+    "cancellation_reason": {
+      "$ref": "#/definitions/codeable_concept"
+    }
+  },
+  "required": [
+    "cancellation_reason"
+  ],
+  "additionalProperties": false
+}

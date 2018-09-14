@@ -36,11 +36,40 @@ defmodule Api.Web.EpisodeController do
   end
 
   def update(conn, params) do
-    with {:ok, job} <- Patients.produce_update_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+    {url_params, request_params, conn_params} = get_params(conn, params)
+
+    with {:ok, job} <- Patients.produce_update_episode(url_params, request_params, conn_params) do
       conn
       |> put_status(202)
       |> put_view(JobView)
       |> render("create.json", job: job)
     end
+  end
+
+  def close(conn, params) do
+    {url_params, request_params, conn_params} = get_params(conn, params)
+
+    with {:ok, job} <- Patients.produce_close_episode(url_params, request_params, conn_params) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
+
+  def cancel(conn, params) do
+    with {:ok, job} <- Patients.produce_cancel_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
+
+  defp get_params(conn, %{"id" => id, "patient_id" => patient_id} = params) do
+    url_params = %{"id" => id, "patient_id" => patient_id}
+    request_params = Map.drop(params, ~w(id patient_id))
+    conn_params = %{"user_id" => conn.private[:user_id], "client_id" => conn.private[:client_id]}
+    {url_params, request_params, conn_params}
   end
 end

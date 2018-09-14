@@ -17,7 +17,7 @@ defmodule Core.Factories do
   alias Core.Period
   alias Core.Reference
   alias Core.Source
-  # alias Core.StatusHistory
+  alias Core.StatusHistory
   alias Core.Visit
 
   def patient_factory do
@@ -107,14 +107,17 @@ defmodule Core.Factories do
   def episode_factory do
     id = UUID.uuid4()
 
+    date = Date.to_erl(Date.utc_today())
+    date = {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+
     %Episode{
       id: UUID.uuid4(),
       status: Episode.status(:active),
-      # status_history: build_list(1, :status_history),
+      status_history: build_list(1, :status_history),
       type: "primary_care",
       name: "ОРВИ 2018",
       managing_organization: build(:reference),
-      period: build(:period),
+      period: build(:period, start: date),
       encounters: %{},
       care_manager: build(:reference),
       inserted_at: DateTime.utc_now(),
@@ -168,14 +171,13 @@ defmodule Core.Factories do
     }
   end
 
-  # def status_history_factory do
-  #   %StatusHistory{
-  #     status: Episode.status(:active),
-  #     period: build(:period),
-  #     inserted_at: NaiveDateTime.utc_now(),
-  #     updated_at: NaiveDateTime.utc_now()
-  #   }
-  # end
+  def status_history_factory do
+    %StatusHistory{
+      status: Episode.status(:active),
+      inserted_at: DateTime.utc_now(),
+      inserted_by: UUID.uuid4()
+    }
+  end
 
   def insert(factory, args \\ [])
 

@@ -191,6 +191,11 @@ defmodule Core.Mongo do
 
   defp prepare_doc(%DateTime{} = doc), do: doc
 
+  defp prepare_doc(%Date{} = doc) do
+    date = Date.to_erl(doc)
+    {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+  end
+
   defp prepare_doc(%{} = doc) do
     Enum.into(doc, %{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
@@ -220,5 +225,10 @@ defmodule Core.Mongo do
     Map.put(set, path, Enum.map(values, fn value -> prepare_doc(value) end))
   end
 
+  def add_to_set(set, %{__struct__: _} = value, path), do: Map.put(set, path, prepare_doc(value))
+
   def add_to_set(set, value, path), do: Map.put(set, path, value)
+
+  def add_to_push(push, nil, _), do: push
+  def add_to_push(push, %{__struct__: _} = value, path), do: Map.put(push, path, prepare_doc(value))
 end

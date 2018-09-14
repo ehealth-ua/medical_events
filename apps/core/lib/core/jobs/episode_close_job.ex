@@ -1,6 +1,6 @@
-defmodule Core.Jobs.EpisodeUpdateJob do
+defmodule Core.Jobs.EpisodeCloseJob do
   @moduledoc """
-  Struct for updating episode request.
+  Struct for closing episode request.
   _id is a binded Request id.
   """
 

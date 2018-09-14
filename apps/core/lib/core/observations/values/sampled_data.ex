@@ -17,3 +17,8 @@ defmodule Core.Observations.Values.SampledData do
     struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
 end
+
+defimpl Vex.Blank, for: Core.Observations.Values.SampledData do
+  def blank?(%Core.Observations.Values.SampledData{}), do: false
+  def blank?(_), do: true
+end

@@ -2,12 +2,10 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
   @moduledoc false
 
   use Core.ModelCase
-
   import Mox
-
+  alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.EpisodeUpdateJob
-  alias Core.Episode
   alias Core.Kafka.Consumer
   alias Core.Patients.Episodes
 
@@ -38,21 +36,23 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  _id: job._id,
                  patient_id: patient._id,
                  id: episode.id,
-                 name: "ОРВИ 2019",
-                 user_id: user_id,
-                 client_id: client_id,
-                 managing_organization: %{
-                   "identifier" => %{
-                     "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
-                     "value" => client_id
-                   }
+                 request_params: %{
+                   "managing_organization" => %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+                       "value" => client_id
+                     }
+                   },
+                   "care_manager" => %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                       "value" => UUID.uuid4()
+                     }
+                   },
+                   "name" => "ОРВИ 2019"
                  },
-                 care_manager: %{
-                   "identifier" => %{
-                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                     "value" => UUID.uuid4()
-                   }
-                 }
+                 user_id: user_id,
+                 client_id: client_id
                })
 
       assert {:ok, %{response: "Episode in status closed can not be updated"}} = Jobs.get_by_id(job._id)
@@ -100,21 +100,23 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  _id: job._id,
                  patient_id: patient._id,
                  id: episode_id,
-                 name: "ОРВИ 2019",
-                 user_id: user_id,
-                 client_id: client_id,
-                 managing_organization: %{
-                   "identifier" => %{
-                     "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
-                     "value" => client_id
-                   }
+                 request_params: %{
+                   "managing_organization" => %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+                       "value" => client_id
+                     }
+                   },
+                   "care_manager" => %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                       "value" => UUID.uuid4()
+                     }
+                   },
+                   "name" => "ОРВИ 2019"
                  },
-                 care_manager: %{
-                   "identifier" => %{
-                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                     "value" => UUID.uuid4()
-                   }
-                 }
+                 user_id: user_id,
+                 client_id: client_id
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)

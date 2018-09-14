@@ -7,14 +7,26 @@ defmodule Core.Patients.Episodes.Validations do
   alias Core.Reference
 
   def validate_period(%Episode{period: period} = episode) do
-    now = DateTime.utc_now()
+    now = Date.utc_today()
 
     period =
       add_validations(
         period,
         :start,
-        datetime: [less_than_or_equal_to: now, message: "Start date of episode must be in past"]
+        date: [less_than_or_equal_to: now, message: "Start date of episode must be in past"]
       )
+
+    period =
+      if period.end do
+        add_validations(
+          period,
+          :end,
+          date: [less_than_or_equal_to: now, message: "End date must be in past"],
+          date: [greater_than_or_equal: period.start, message: "End date must be greater than or equal the start date"]
+        )
+      else
+        period
+      end
 
     %{episode | period: period}
   end

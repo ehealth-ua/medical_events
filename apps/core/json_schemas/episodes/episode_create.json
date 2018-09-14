@@ -91,7 +91,7 @@
       "properties": {
         "start": {
           "type": "string",
-          "format": "date-time",
+          "format": "date",
           "description": "C? Starting time with inclusive boundary"
         }
       },
