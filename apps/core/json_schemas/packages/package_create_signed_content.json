@@ -1065,10 +1065,7 @@
                           },
                           "code": {
                             "type": "string",
-                            "enum": [
-                              "condition"
-                            ],
-                            "description": "Symbol in syntax defined by the system"
+                            "description": "Dictionary: TBD"
                           }
                         },
                         "required": [
