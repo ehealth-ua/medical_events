@@ -60,7 +60,10 @@ defmodule Core.Patients do
          {:ok, _} <- Episodes.get(patient_id, id),
          :ok <- JsonSchema.validate(:episode_update, request_params),
          {:ok, job, episode_update_job} <-
-           Jobs.create(EpisodeUpdateJob, url_params |> Map.merge(request_params) |> Map.merge(conn_params)),
+           Jobs.create(
+             EpisodeUpdateJob,
+             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
+           ),
          :ok <- @kafka_producer.publish_medical_event(episode_update_job) do
       {:ok, job}
     end
@@ -72,7 +75,10 @@ defmodule Core.Patients do
          {:ok, _} <- Episodes.get(patient_id, id),
          :ok <- JsonSchema.validate(:episode_close, request_params),
          {:ok, job, episode_close_job} <-
-           Jobs.create(EpisodeCloseJob, url_params |> Map.merge(request_params) |> Map.merge(conn_params)),
+           Jobs.create(
+             EpisodeCloseJob,
+             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
+           ),
          :ok <- @kafka_producer.publish_medical_event(episode_close_job) do
       {:ok, job}
     end
