@@ -8,8 +8,8 @@ defmodule Core.Jobs.EpisodeCancelJob do
     :_id,
     :patient_id,
     :id,
-    :status,
-    :explanatory_letter,
-    :cancellation_reason
+    :request_params,
+    :user_id,
+    :client_id
   ]
 end

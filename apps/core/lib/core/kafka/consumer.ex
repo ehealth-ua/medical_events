@@ -3,6 +3,7 @@ defmodule Core.Kafka.Consumer do
 
   alias Core.Job
   alias Core.Jobs
+  alias Core.Jobs.EpisodeCancelJob
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
@@ -24,6 +25,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%EpisodeCloseJob{} = episode_close_job) do
     do_consume(Patients, :consume_close_episode, episode_close_job)
+  end
+
+  def consume(%EpisodeCancelJob{} = episode_cancel_job) do
+    do_consume(Patients, :consume_cancel_episode, episode_cancel_job)
   end
 
   def consume(value) do
@@ -49,7 +54,8 @@ defmodule Core.Kafka.Consumer do
                 Jobs.update(id, Job.status(:failed), response, status_code)
           end
         rescue
-          error -> Logger.warn(inspect(error))
+          error ->
+            Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
         end
 
         :ets.delete(:message_cache)

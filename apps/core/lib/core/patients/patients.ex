@@ -84,13 +84,16 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_cancel_episode(%{"patient_id" => patient_id, "id" => id} = params, user_id, client_id) do
+  def produce_cancel_episode(%{"patient_id" => patient_id, "id" => id} = url_params, request_params, conn_params) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
          {:ok, _} <- Episodes.get(patient_id, id),
-         :ok <- JsonSchema.validate(:episode_cancel, Map.delete(params, "patient_id")),
+         :ok <- JsonSchema.validate(:episode_cancel, request_params),
          {:ok, job, episode_cancel_job} <-
-           Jobs.create(EpisodeCancelJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
+           Jobs.create(
+             EpisodeCancelJob,
+             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
+           ),
          :ok <- @kafka_producer.publish_medical_event(episode_cancel_job) do
       {:ok, job}
     end
@@ -190,7 +193,15 @@ defmodule Core.Patients do
       |> Episode.create()
 
     episode =
-      %{episode | encounters: %{}, inserted_by: job.user_id, updated_by: job.user_id, inserted_at: now, updated_at: now}
+      %{
+        episode
+        | encounters: %{},
+          status_history: [],
+          inserted_by: job.user_id,
+          updated_by: job.user_id,
+          inserted_at: now,
+          updated_at: now
+      }
       |> EpisodeValidations.validate_period()
       |> EpisodeValidations.validate_managing_organization(client_id)
       |> EpisodeValidations.validate_care_manager(client_id)
@@ -304,7 +315,7 @@ defmodule Core.Patients do
 
           status_history =
             StatusHistory.create(%{
-              "status" => Episode.status(:closed),
+              "status" => episode.status,
               "inserted_at" => episode.updated_at,
               "inserted_by" => episode.updated_by
             })
@@ -329,6 +340,62 @@ defmodule Core.Patients do
       end
     else
       {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be closed", 422}
+      nil -> {:error, "Failed to get episode", 404}
+    end
+  end
+
+  def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, id: id} = job) do
+    now = DateTime.utc_now()
+    status = Episode.status(:active)
+
+    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id, id) do
+      episode = Episode.create(episode)
+      changes = Map.take(job.request_params, ~w(explanatory_letter cancellation_reason))
+
+      episode =
+        %{
+          episode
+          | status: Episode.status(:cancelled),
+            updated_by: job.user_id,
+            updated_at: now
+        }
+        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+
+      case Vex.errors(episode) do
+        [] ->
+          set =
+            %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
+            |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
+            |> Mongo.add_to_set(episode.explanatory_letter, "episodes.#{episode.id}.explanatory_letter")
+            |> Mongo.add_to_set(episode.cancellation_reason, "episodes.#{episode.id}.cancellation_reason")
+
+          status_history =
+            StatusHistory.create(%{
+              "status" => episode.status,
+              "inserted_at" => episode.updated_at,
+              "inserted_by" => episode.updated_by
+            })
+
+          push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
+
+          {:ok, %{matched_count: 1, modified_count: 1}} =
+            Mongo.update_one(@collection, %{"_id" => patient_id}, %{
+              "$set" => set,
+              "$push" => push
+            })
+
+          {:ok,
+           %{
+             "links" => [
+               %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+             ]
+           }, 200}
+
+        errors ->
+          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+      end
+    else
+      {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be canceled", 422}
       nil -> {:error, "Failed to get episode", 404}
     end
   end
@@ -460,7 +527,7 @@ defmodule Core.Patients do
   defp create_conditions(_, _, _), do: {:ok, []}
 
   defp create_observations(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
          %{"observations" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -481,7 +548,7 @@ defmodule Core.Patients do
         |> ObservationValidations.validate_issued()
         |> ObservationValidations.validate_effective_at()
         |> ObservationValidations.validate_context(encounter_id)
-        |> ObservationValidations.validate_source()
+        |> ObservationValidations.validate_source(client_id)
         |> ObservationValidations.validate_value()
         |> ObservationValidations.validate_components()
       end)
@@ -498,7 +565,7 @@ defmodule Core.Patients do
   defp create_observations(_, _), do: {:ok, []}
 
   defp create_immunizations(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
          %{"immunizations" => _} = content,
          observations
        ) do
@@ -518,7 +585,7 @@ defmodule Core.Patients do
         }
         |> ImmunizationValidations.validate_date()
         |> ImmunizationValidations.validate_context(encounter_id)
-        |> ImmunizationValidations.validate_source()
+        |> ImmunizationValidations.validate_source(client_id)
         |> ImmunizationValidations.validate_reactions(observations, patient_id)
       end)
 
@@ -534,7 +601,7 @@ defmodule Core.Patients do
   defp create_immunizations(_, _, _), do: {:ok, []}
 
   defp create_allergy_intolerances(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
          %{"allergy_intolerances" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -552,7 +619,7 @@ defmodule Core.Patients do
             updated_by: user_id
         }
         |> AllergyIntoleranceValidations.validate_context(encounter_id)
-        |> AllergyIntoleranceValidations.validate_source()
+        |> AllergyIntoleranceValidations.validate_source(client_id)
         |> AllergyIntoleranceValidations.validate_onset_date_time()
         |> AllergyIntoleranceValidations.validate_last_occurence()
         |> AllergyIntoleranceValidations.validate_asserted_date()

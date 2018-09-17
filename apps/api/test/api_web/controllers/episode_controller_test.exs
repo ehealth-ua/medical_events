@@ -299,6 +299,99 @@ defmodule Api.Web.EpisodeControllerTest do
     end
   end
 
+  describe "cancel episode" do
+    test "patient not found", %{conn: conn} do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      conn = patch(conn, episode_path(conn, :cancel, UUID.uuid4(), UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "episode not found", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      patient = insert(:patient)
+
+      conn = patch(conn, episode_path(conn, :cancel, patient._id, UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      patient = insert(:patient, status: Patient.status(:inactive))
+
+      conn = patch(conn, episode_path(conn, :cancel, patient._id, UUID.uuid4()))
+      assert json_response(conn, 409)
+    end
+
+    test "json schema validation failed", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      stub(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+      patient = insert(:patient)
+      episode_id = patient.episodes |> Map.keys() |> hd
+
+      conn = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), %{})
+      assert json_response(conn, 422)
+    end
+
+    test "success cancel episode", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
+      patient = insert(:patient)
+      episode_id = patient.episodes |> Map.keys() |> hd
+
+      data = %{
+        "cancellation_reason" => %{
+          "coding" => [%{"system" => "eHealth/cancellation_reasons", "code" => "misspelling"}]
+        },
+        "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"
+      }
+
+      conn1 = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), data)
+
+      assert %{
+               "data" => %{
+                 "id" => job_id,
+                 "status" => "pending"
+               }
+             } = json_response(conn1, 202)
+
+      conn2 = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), data)
+
+      href = "/jobs/#{job_id}"
+
+      assert %{
+               "data" => %{
+                 "eta" => _,
+                 "links" => [%{"entity" => "job", "href" => ^href}],
+                 "status" => "pending",
+                 "status_code" => 202
+               }
+             } = json_response(conn2, 200)
+    end
+  end
+
   describe "show episode" do
     test "get episode success", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)

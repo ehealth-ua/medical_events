@@ -31,14 +31,14 @@ defmodule Core.Observations.Validations do
     %{observation | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%Observation{_id: id, source: %Source{type: "performer"}} = observation) do
+  def validate_source(%Observation{_id: id, source: %Source{type: "performer"}} = observation, client_id) do
     observation = add_validations(observation, :source, source: [primary_source: observation.primary_source])
     source = observation.source
-    source = %{source | value: validate_performer(id, source.value)}
+    source = %{source | value: validate_performer(id, source.value, client_id)}
     %{observation | source: source}
   end
 
-  def validate_source(%Observation{} = observation) do
+  def validate_source(%Observation{} = observation, _) do
     add_validations(observation, :source, source: [primary_source: observation.primary_source])
   end
 
@@ -48,9 +48,13 @@ defmodule Core.Observations.Validations do
     %{observation | components: Enum.map(observation.components, &validate_component_value/1)}
   end
 
-  def validate_performer(id, %Reference{} = performer) do
+  def validate_performer(id, %Reference{} = performer, client_id) do
     identifier =
-      add_validations(performer.identifier, :value, employee: [ets_key: "observation_#{id}_performer_employee"])
+      add_validations(
+        performer.identifier,
+        :value,
+        employee: [legal_entity_id: client_id, ets_key: "observation_#{id}_performer_employee"]
+      )
 
     %{performer | identifier: identifier}
   end

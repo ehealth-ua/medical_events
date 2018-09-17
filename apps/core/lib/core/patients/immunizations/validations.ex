@@ -16,20 +16,24 @@ defmodule Core.Patients.Immunizations.Validations do
     %{immunization | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%Immunization{id: id, source: %Source{type: "performer"}} = immunization) do
+  def validate_source(%Immunization{id: id, source: %Source{type: "performer"}} = immunization, client_id) do
     immunization = add_validations(immunization, :source, source: [primary_source: immunization.primary_source])
     source = immunization.source
-    source = %{source | value: validate_performer(id, source.value)}
+    source = %{source | value: validate_performer(id, source.value, client_id)}
     %{immunization | source: source}
   end
 
-  def validate_source(%Immunization{} = immunization) do
+  def validate_source(%Immunization{} = immunization, _) do
     add_validations(immunization, :source, source: [primary_source: immunization.primary_source])
   end
 
-  def validate_performer(id, %Reference{} = performer) do
+  def validate_performer(id, %Reference{} = performer, client_id) do
     identifier =
-      add_validations(performer.identifier, :value, employee: [ets_key: "immunization_#{id}_performer_employee"])
+      add_validations(
+        performer.identifier,
+        :value,
+        employee: [legal_entity_id: client_id, ets_key: "immunization_#{id}_performer_employee"]
+      )
 
     %{performer | identifier: identifier}
   end

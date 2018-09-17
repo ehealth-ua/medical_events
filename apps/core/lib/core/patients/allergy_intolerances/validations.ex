@@ -11,22 +11,26 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
     %{allergy_intolerance | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%AllergyIntolerance{id: id, source: %Source{type: "performer"}} = allergy_intolerance) do
+  def validate_source(%AllergyIntolerance{id: id, source: %Source{type: "performer"}} = allergy_intolerance, client_id) do
     allergy_intolerance =
       add_validations(allergy_intolerance, :source, source: [primary_source: allergy_intolerance.primary_source])
 
     source = allergy_intolerance.source
-    source = %{source | value: validate_performer(id, source.value)}
+    source = %{source | value: validate_performer(id, source.value, client_id)}
     %{allergy_intolerance | source: source}
   end
 
-  def validate_source(%AllergyIntolerance{} = allergy_intolerance) do
+  def validate_source(%AllergyIntolerance{} = allergy_intolerance, _) do
     add_validations(allergy_intolerance, :source, source: [primary_source: allergy_intolerance.primary_source])
   end
 
-  def validate_performer(id, %Reference{} = performer) do
+  def validate_performer(id, %Reference{} = performer, client_id) do
     identifier =
-      add_validations(performer.identifier, :value, employee: [ets_key: "allergy_intolerance_#{id}_performer_employee"])
+      add_validations(
+        performer.identifier,
+        :value,
+        employee: [legal_entity_id: client_id, ets_key: "allergy_intolerance_#{id}_performer_employee"]
+      )
 
     %{performer | identifier: identifier}
   end

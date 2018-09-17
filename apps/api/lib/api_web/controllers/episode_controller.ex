@@ -58,7 +58,9 @@ defmodule Api.Web.EpisodeController do
   end
 
   def cancel(conn, params) do
-    with {:ok, job} <- Patients.produce_cancel_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+    {url_params, request_params, conn_params} = get_params(conn, params)
+
+    with {:ok, job} <- Patients.produce_cancel_episode(url_params, request_params, conn_params) do
       conn
       |> put_status(202)
       |> put_view(JobView)
