@@ -17,7 +17,7 @@ defmodule Core.Condition do
     field(:body_sites, reference: [path: "body_sites"])
     field(:patient_id, presence: true)
     field(:context, reference: [path: "context"])
-    field(:onset_date)
+    field(:onset_date, reference: [path: "onset_date"])
     field(:asserted_date)
     field(:asserter)
     field(:stage, reference: [path: "stage"])

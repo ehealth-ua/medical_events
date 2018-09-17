@@ -10,7 +10,7 @@ defmodule Core.Conditions.Validations do
     add_validations(
       condition,
       :onset_date,
-      date: [less_than_or_equal_to: now, message: "Onset date must be in past"]
+      datetime: [less_than_or_equal_to: now, message: "Onset date must be in past"]
     )
   end
 
