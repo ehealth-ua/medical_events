@@ -6,6 +6,14 @@ defmodule Core.Schema do
   defmacro __using__(_) do
     quote do
       import Core.Schema
+
+      def create_datetime(nil), do: nil
+      def create_datetime(%DateTime{} = value), do: value
+
+      def create_datetime(value) when is_binary(value) do
+        {:ok, datetime, _} = DateTime.from_iso8601(value)
+        datetime
+      end
     end
   end
 

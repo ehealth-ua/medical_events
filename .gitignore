@@ -18,6 +18,7 @@ erl_crash.dump
 
 # Don't commit editor configs
 .idea
+.vscode
 .elixir_ls/*
 *.iws
 /out/

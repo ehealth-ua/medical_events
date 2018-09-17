@@ -3,9 +3,20 @@ defmodule Core.Source do
 
   use Core.Schema
 
+  alias Core.CodeableConcept
+  alias Core.Reference
+
   embedded_schema do
     field(:type, presence: true)
     field(:value, presence: true, reference: [path: "value"])
+  end
+
+  def create("report_origin" = type, value) do
+    %__MODULE__{type: type, value: CodeableConcept.create(value)}
+  end
+
+  def create("performer" = type, value) do
+    %__MODULE__{type: type, value: Reference.create(value)}
   end
 end
 

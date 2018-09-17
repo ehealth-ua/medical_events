@@ -6,6 +6,7 @@ defmodule Core.Factories do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
+  alias Core.Encounter
   alias Core.Episode
   alias Core.Identifier
   alias Core.Job
@@ -13,27 +14,34 @@ defmodule Core.Factories do
   alias Core.Observation
   alias Core.Observations.EffectiveAt
   alias Core.Observations.Value
+  alias Core.Observations.Values.Quantity
   alias Core.Patient
   alias Core.Period
   alias Core.Reference
+  alias Core.Observations.Component
+  alias Core.Observations.ReferenceRange
   alias Core.Source
   alias Core.StatusHistory
   alias Core.Visit
 
   def patient_factory do
-    id = UUID.uuid4()
     visits = build_list(2, :visit)
     visits = Enum.into(visits, %{}, fn %{id: id} = visit -> {id, visit} end)
 
     episodes = build_list(2, :episode)
     episodes = Enum.into(episodes, %{}, fn %{id: id} = episode -> {id, episode} end)
 
+    encounters = build_list(2, :encounter)
+    encounters = Enum.into(encounters, %{}, fn encounter -> {encounter.id, encounter} end)
+
+    id = UUID.uuid4()
+
     %Patient{
       _id: id,
       status: Patient.status(:active),
       visits: visits,
       episodes: episodes,
-      encounters: %{},
+      encounters: encounters,
       immunizations: %{},
       allergy_intolerances: %{},
       inserted_at: DateTime.utc_now(),
@@ -82,17 +90,41 @@ defmodule Core.Factories do
     %Observation{
       _id: UUID.uuid4(),
       status: Observation.status(:valid),
-      categories: build_list(2, :codeable_concept),
-      code: build(:codeable_concept),
+      categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
+      code: codeable_concept_coding(system: "eHealth/observations_codes"),
+      comment: "some comment",
       patient_id: UUID.uuid4(),
-      context: build(:reference),
+      based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
       effective_at: %EffectiveAt{type: "effective_date_time", value: now},
       issued: DateTime.utc_now(),
       primary_source: true,
-      source: build(:source),
-      interpretation: build(:codeable_concept),
+      source: build(:source, type: "performer", value: reference_coding(system: "eHealth/resources", code: "employee")),
+      interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
+      method: codeable_concept_coding(system: "eHealth/observation_methods"),
       value: build(:value),
-      body_site: build(:codeable_concept),
+      body_site: codeable_concept_coding(system: "eHealth/body_sites"),
+      reference_ranges: [
+        build(
+          :reference_range,
+          type: codeable_concept_coding(system: "eHealth/resources"),
+          applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+        )
+      ],
+      components:
+        build_list(
+          2,
+          :component,
+          code: codeable_concept_coding(system: "eHealth/resources"),
+          interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
+          reference_ranges: [
+            build(
+              :reference_range,
+              type: codeable_concept_coding(system: "eHealth/resources"),
+              applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+            )
+          ]
+        ),
       inserted_at: now,
       updated_at: now,
       inserted_by: id,
@@ -101,7 +133,57 @@ defmodule Core.Factories do
   end
 
   def source_factory do
-    %Source{type: "performer", value: build(:codeable_concept)}
+    %Source{type: "performer", value: build(:reference)}
+  end
+
+  def reference_range_factory do
+    %ReferenceRange{
+      low: build(:quantity),
+      high: build(:quantity),
+      type: build(:codeable_concept),
+      applies_to: build_list(2, :codeable_concept),
+      age: %{
+        low: build(:quantity, comparator: ">", unit: "years"),
+        high: build(:quantity, comparator: "<", unit: "years")
+      },
+      text: "some text"
+    }
+  end
+
+  def component_factory do
+    %Component{
+      code: build(:codeable_concept),
+      value: build(:value),
+      interpretation: build(:codeable_concept),
+      reference_ranges: build_list(2, :reference_range)
+    }
+  end
+
+  def quantity_factory do
+    %Quantity{
+      value: :rand.uniform(100),
+      comparator: "<",
+      unit: "mg",
+      system: "eHealth/units",
+      code: "mg"
+    }
+  end
+
+  def encounter_factory do
+    id = UUID.uuid4()
+    now = DateTime.utc_now()
+
+    %Encounter{
+      id: UUID.uuid4(),
+      episode: build(:reference),
+      performer: build(:reference),
+      visit: build(:visit),
+      type: build(:codeable_concept),
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
   end
 
   def episode_factory do
@@ -128,7 +210,7 @@ defmodule Core.Factories do
   end
 
   def value_factory do
-    %Value{type: "string", value: "some value"}
+    %Value{type: "value_string", value: "some value"}
   end
 
   def codeable_concept_factory do
@@ -177,6 +259,14 @@ defmodule Core.Factories do
       inserted_at: DateTime.utc_now(),
       inserted_by: UUID.uuid4()
     }
+  end
+
+  def reference_coding(attrs) do
+    build(:reference, identifier: build(:identifier, type: codeable_concept_coding(attrs)))
+  end
+
+  def codeable_concept_coding(attrs) do
+    build(:codeable_concept, coding: [build(:coding, attrs)])
   end
 
   def insert(factory, args \\ [])

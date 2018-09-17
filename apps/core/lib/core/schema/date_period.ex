@@ -10,7 +10,7 @@ defmodule Core.DatePeriod do
 
   def create(data) do
     %__MODULE__{
-      start: create_date(Map.get(data, "start")),
+      start: Map.get(data, "start"),
       end: create_date(Map.get(data, "end"))
     }
   end

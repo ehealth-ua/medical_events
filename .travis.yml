@@ -6,12 +6,12 @@ cache:
     - _build
     - deps
 services:
-  - mongodb
   - redis-server
 addons:
   apt:
     packages:
       - docker-ce
+
 elixir:
   - 1.7.2
 otp_release:
@@ -34,46 +34,51 @@ branches:
     - /[0-9]*\.[0-9]*\.[0-9]*/
 before_install:
   - sudo apt-get install jq
+  - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/install-mongodb.sh -o install-mongodb.sh; sudo sh ./install-mongodb.sh
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-redis.sh -o init-redis.sh; sudo sh ./init-redis.sh
-  - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-mongodb.sh -o init-mongodb.sh; sudo sh ./init-mongodb.sh
   - curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/init-kafka.sh -o init-kafka.sh; sudo sh ./init-kafka.sh
   # create kafka topics
   - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic medical_events
   - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic person_events
   - kafka/bin/kafka-topics.sh --create --partitions 1 --replication-factor 1 --zookeeper localhost:2181 --topic mongo_events
+
 jobs:
   include:
     - stage: "test and build"
-      # run tests
+      name: "Run tests"
       script:
+      - mongo --version
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/tests.sh -o tests.sh; bash ./tests.sh) || travis_terminate 1
-      # Build Docker containers
-      # API with Core
+    
     - stage: "test and build"
+      name: "Build Docker containers. API with Core"
       env:
         - APPS='[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
-      # Event Consumer
+      
     - stage: "test and build"
+      name: "Event Consumer"
       env:
         - APPS='[{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-event-consumer","label":"api-event-consumer"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
-      # Person Consumer
+    
     - stage: "test and build"
+      name: "Person Consumer"
       env:
         - APPS='[{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-person-consumer","label":"api-person-consumer"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
       - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
-      # Audit log Consumer
+      
     - stage: "test and build"
+      name: "Audit log Consumer"
       env:
       - APPS='[{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-audit-log-consumer","label":"api-audit-log-consumer"}]'
       # "Decrypting deploy key..."

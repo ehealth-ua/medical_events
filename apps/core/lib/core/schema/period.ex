@@ -10,19 +10,10 @@ defmodule Core.Period do
 
   def create(data) do
     %__MODULE__{
-      start: create_date(Map.get(data, "start")),
-      end: create_date(Map.get(data, "end"))
+      start: create_datetime(Map.get(data, "start")),
+      end: create_datetime(Map.get(data, "end"))
     }
   end
-
-  defp create_date(nil), do: nil
-
-  defp create_date(value) when is_binary(value) do
-    {:ok, datetime, _} = DateTime.from_iso8601(value)
-    datetime
-  end
-
-  defp create_date(%DateTime{} = value), do: value
 end
 
 defimpl Vex.Blank, for: Core.Period do

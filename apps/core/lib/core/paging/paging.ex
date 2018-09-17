@@ -1,5 +1,6 @@
 defmodule Core.Paging do
   @moduledoc false
+
   alias Core.Mongo
   alias Scrivener.Page
 
@@ -27,7 +28,7 @@ defmodule Core.Paging do
 
   def page_options(params) do
     page_number = get_page_param_option(Map.get(params, "page"), 1)
-    page_size = get_page_param_option(Map.get(params, "page_size"), 100)
+    page_size = get_page_param_option(Map.get(params, "page_size"), 50)
     offset = if page_number > 0, do: (page_number - 1) * page_size, else: 0
     [page_number: page_number, limit: page_size, offset: offset]
   end
