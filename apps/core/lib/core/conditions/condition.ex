@@ -5,6 +5,7 @@ defmodule Core.Condition do
   alias Core.CodeableConcept
   alias Core.Evidence
   alias Core.Reference
+  alias Core.Source
   alias Core.Stage
 
   @primary_key :_id
@@ -18,6 +19,8 @@ defmodule Core.Condition do
     field(:patient_id, presence: true)
     field(:context, reference: [path: "context"])
     field(:onset_date, reference: [path: "onset_date"])
+    field(:primary_source, strict_presence: true)
+    field(:source, presence: true)
     field(:asserted_date)
     field(:asserter)
     field(:stage, reference: [path: "stage"])
@@ -56,6 +59,12 @@ defmodule Core.Condition do
         {"asserted_date", v} ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:asserted_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+
+        {"report_origin", v} ->
+          {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
+
+        {"asserter", v} ->
+          {:source, %Source{type: "asserter", value: Reference.create(v)}}
 
         {"id", v} ->
           {:_id, v}

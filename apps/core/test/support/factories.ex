@@ -12,14 +12,14 @@ defmodule Core.Factories do
   alias Core.Job
   alias Core.Mongo
   alias Core.Observation
+  alias Core.Observations.Component
   alias Core.Observations.EffectiveAt
+  alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity
   alias Core.Patient
   alias Core.Period
   alias Core.Reference
-  alias Core.Observations.Component
-  alias Core.Observations.ReferenceRange
   alias Core.Source
   alias Core.StatusHistory
   alias Core.Visit
@@ -249,7 +249,9 @@ defmodule Core.Factories do
       inserted_by: patient_id,
       updated_by: patient_id,
       inserted_at: DateTime.utc_now(),
-      updated_at: DateTime.utc_now()
+      updated_at: DateTime.utc_now(),
+      source: build(:source, type: "asserter", value: reference_coding(system: "eHealth/resources", code: "employee")),
+      primary_source: true
     }
   end
 

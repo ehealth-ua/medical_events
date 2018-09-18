@@ -288,7 +288,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   }
                 ]
               }
-            ]
+            ],
+            "primary_source" => true,
+            "asserter" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => UUID.uuid4()
+              }
+            }
           }
         ],
         "observations" => [
@@ -530,7 +537,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "performer" => %{
+            "asserter" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                 "value" => UUID.uuid4()

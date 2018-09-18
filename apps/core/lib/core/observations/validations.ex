@@ -32,7 +32,13 @@ defmodule Core.Observations.Validations do
   end
 
   def validate_source(%Observation{_id: id, source: %Source{type: "performer"}} = observation, client_id) do
-    observation = add_validations(observation, :source, source: [primary_source: observation.primary_source])
+    observation =
+      add_validations(
+        observation,
+        :source,
+        source: [primary_source: observation.primary_source, primary_required: "performer"]
+      )
+
     source = observation.source
     source = %{source | value: validate_performer(id, source.value, client_id)}
     %{observation | source: source}

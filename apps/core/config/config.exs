@@ -81,7 +81,8 @@ config :vex,
       diagnosis_condition: Core.Validators.DiagnosisCondition,
       strict_presence: Core.Validators.StrictPresence,
       observation_reference: Core.Validators.ObservationReference,
-      source: Core.Validators.Source
+      source: Core.Validators.Source,
+      unique_ids: Core.Validators.UniqueIds
     ],
     Vex.Validators
   ]

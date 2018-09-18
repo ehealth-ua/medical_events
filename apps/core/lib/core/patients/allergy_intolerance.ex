@@ -50,8 +50,8 @@ defmodule Core.AllergyIntolerance do
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
 
-        {"performer", v} ->
-          {:source, %Source{type: "performer", value: Reference.create(v)}}
+        {"asserter", v} ->
+          {:source, %Source{type: "asserter", value: Reference.create(v)}}
 
         {k, v} ->
           {String.to_atom(k), v}

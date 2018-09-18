@@ -2,6 +2,8 @@ defmodule Core.Conditions.Validations do
   @moduledoc false
 
   alias Core.Condition
+  alias Core.Reference
+  alias Core.Source
   import Core.Schema, only: [add_validations: 3]
 
   def validate_onset_date(%Condition{} = condition) do
@@ -17,6 +19,34 @@ defmodule Core.Conditions.Validations do
   def validate_context(%Condition{context: context} = condition, encounter_id) do
     identifier = add_validations(context.identifier, :value, value: [equals: encounter_id])
     %{condition | context: %{context | identifier: identifier}}
+  end
+
+  def validate_source(%Condition{_id: id, source: %Source{type: "asserter"}} = condition, client_id) do
+    condition =
+      add_validations(
+        condition,
+        :source,
+        source: [primary_source: condition.primary_source, primary_required: "asserter"]
+      )
+
+    source = condition.source
+    source = %{source | value: validate_asserter(id, source.value, client_id)}
+    %{condition | source: source}
+  end
+
+  def validate_source(%Condition{} = condition, _) do
+    add_validations(condition, :source, source: [primary_source: condition.primary_source])
+  end
+
+  def validate_asserter(id, %Reference{} = asserter, client_id) do
+    identifier =
+      add_validations(
+        asserter.identifier,
+        :value,
+        employee: [legal_entity_id: client_id, ets_key: "condition_#{id}_asserter_employee"]
+      )
+
+    %{asserter | identifier: identifier}
   end
 
   def validate_evidences(%Condition{evidences: nil} = condition, _, _), do: condition

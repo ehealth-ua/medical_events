@@ -491,7 +491,7 @@ defmodule Core.Patients do
   end
 
   defp create_conditions(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id},
+         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
          %{"conditions" => _} = content,
          observations
        ) do
@@ -513,9 +513,13 @@ defmodule Core.Patients do
         |> ConditionValidations.validate_onset_date()
         |> ConditionValidations.validate_context(encounter_id)
         |> ConditionValidations.validate_evidences(observations, patient_id)
+        |> ConditionValidations.validate_source(client_id)
       end)
 
-    case Vex.errors(%{conditions: conditions}, conditions: [reference: [path: "conditions"]]) do
+    case Vex.errors(
+           %{conditions: conditions},
+           conditions: [unique_ids: [field: :_id], reference: [path: "conditions"]]
+         ) do
       [] ->
         validate_conditions(conditions)
 
@@ -553,7 +557,10 @@ defmodule Core.Patients do
         |> ObservationValidations.validate_components()
       end)
 
-    case Vex.errors(%{observations: observations}, observations: [reference: [path: "observations"]]) do
+    case Vex.errors(
+           %{observations: observations},
+           observations: [unique_ids: [field: :_id], reference: [path: "observations"]]
+         ) do
       [] ->
         validate_observations(observations)
 
@@ -589,7 +596,10 @@ defmodule Core.Patients do
         |> ImmunizationValidations.validate_reactions(observations, patient_id)
       end)
 
-    case Vex.errors(%{immunizations: immunizations}, immunizations: [reference: [path: "immunizations"]]) do
+    case Vex.errors(
+           %{immunizations: immunizations},
+           immunizations: [unique_ids: [field: :id], reference: [path: "immunizations"]]
+         ) do
       [] ->
         validate_immunizations(patient_id, immunizations)
 
@@ -627,7 +637,7 @@ defmodule Core.Patients do
 
     case Vex.errors(
            %{allergy_intolerances: allergy_intolerances},
-           allergy_intolerances: [reference: [path: "allergy_intolerances"]]
+           allergy_intolerances: [unique_ids: [field: :id], reference: [path: "allergy_intolerances"]]
          ) do
       [] ->
         validate_allergy_intolerances(patient_id, allergy_intolerances)

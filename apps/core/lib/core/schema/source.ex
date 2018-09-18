@@ -15,6 +15,10 @@ defmodule Core.Source do
     %__MODULE__{type: type, value: CodeableConcept.create(value)}
   end
 
+  def create("asserter" = type, value) do
+    %__MODULE__{type: type, value: Reference.create(value)}
+  end
+
   def create("performer" = type, value) do
     %__MODULE__{type: type, value: Reference.create(value)}
   end
