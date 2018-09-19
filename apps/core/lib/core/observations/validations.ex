@@ -31,7 +31,7 @@ defmodule Core.Observations.Validations do
     %{observation | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%Observation{_id: id, source: %Source{type: "performer"}} = observation, client_id) do
+  def validate_source(%Observation{source: %Source{type: "performer"}} = observation, client_id) do
     observation =
       add_validations(
         observation,
@@ -40,7 +40,7 @@ defmodule Core.Observations.Validations do
       )
 
     source = observation.source
-    source = %{source | value: validate_performer(id, source.value, client_id)}
+    source = %{source | value: validate_performer(source.value, client_id)}
     %{observation | source: source}
   end
 
@@ -54,7 +54,7 @@ defmodule Core.Observations.Validations do
     %{observation | components: Enum.map(observation.components, &validate_component_value/1)}
   end
 
-  def validate_performer(id, %Reference{} = performer, client_id) do
+  def validate_performer(%Reference{} = performer, client_id) do
     identifier =
       add_validations(
         performer.identifier,

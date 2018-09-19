@@ -11,7 +11,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
     %{allergy_intolerance | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%AllergyIntolerance{id: id, source: %Source{type: "asserter"}} = allergy_intolerance, client_id) do
+  def validate_source(%AllergyIntolerance{source: %Source{type: "asserter"}} = allergy_intolerance, client_id) do
     allergy_intolerance =
       add_validations(
         allergy_intolerance,
@@ -20,7 +20,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
       )
 
     source = allergy_intolerance.source
-    source = %{source | value: validate_asserter(id, source.value, client_id)}
+    source = %{source | value: validate_asserter(source.value, client_id)}
     %{allergy_intolerance | source: source}
   end
 
@@ -28,7 +28,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
     add_validations(allergy_intolerance, :source, source: [primary_source: allergy_intolerance.primary_source])
   end
 
-  def validate_asserter(id, %Reference{} = asserter, client_id) do
+  def validate_asserter(%Reference{} = asserter, client_id) do
     identifier =
       add_validations(
         asserter.identifier,

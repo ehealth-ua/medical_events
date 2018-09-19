@@ -16,7 +16,7 @@ defmodule Core.Patients.Immunizations.Validations do
     %{immunization | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%Immunization{id: id, source: %Source{type: "performer"}} = immunization, client_id) do
+  def validate_source(%Immunization{source: %Source{type: "performer"}} = immunization, client_id) do
     immunization =
       add_validations(
         immunization,
@@ -25,7 +25,7 @@ defmodule Core.Patients.Immunizations.Validations do
       )
 
     source = immunization.source
-    source = %{source | value: validate_performer(id, source.value, client_id)}
+    source = %{source | value: validate_performer(source.value, client_id)}
     %{immunization | source: source}
   end
 
@@ -33,7 +33,7 @@ defmodule Core.Patients.Immunizations.Validations do
     add_validations(immunization, :source, source: [primary_source: immunization.primary_source])
   end
 
-  def validate_performer(id, %Reference{} = performer, client_id) do
+  def validate_performer(%Reference{} = performer, client_id) do
     identifier =
       add_validations(
         performer.identifier,
