@@ -3,6 +3,7 @@ defmodule Api.Web.ReferenceView do
 
   alias Core.CodeableConcept
   alias Core.Coding
+  alias Core.Evidence
   alias Core.Identifier
   alias Core.Observations.Component
   alias Core.Observations.EffectiveAt
@@ -11,6 +12,7 @@ defmodule Api.Web.ReferenceView do
   alias Core.Period
   alias Core.Reference
   alias Core.Source
+  alias Core.Stage
 
   def render(%Reference{} = reference) do
     %{
@@ -71,6 +73,19 @@ defmodule Api.Web.ReferenceView do
     )a)
   end
 
+  def render(%Evidence{} = evidence) do
+    %{
+      codes: render(evidence.codes),
+      details: render(evidence.details)
+    }
+  end
+
+  def render(%Stage{} = stage) do
+    %{
+      summary: render(stage.summary)
+    }
+  end
+
   def render(nil), do: nil
 
   def render(references) when is_list(references) do
@@ -122,12 +137,8 @@ defmodule Api.Web.ReferenceView do
     %{type => value}
   end
 
-  def render_source(%Source{type: "report_origin", value: value}) do
-    %{"report_origin" => render(value)}
-  end
-
-  def render_source(%Source{type: "performer", value: value}) do
-    %{"performer" => render(value)}
+  def render_source(%Source{type: type, value: value}) do
+    %{type => render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do

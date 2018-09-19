@@ -23,6 +23,9 @@ defmodule ApiWeb.Router do
     scope "/" do
       pipe_through(:authorize_party)
 
+      get("/patients/:patient_id/conditions", ConditionController, :index)
+      get("/patients/:patient_id/conditions/:id", ConditionController, :show)
+
       get("/patients/:patient_id/episodes", EpisodeController, :index)
       get("/patients/:patient_id/episodes/:id", EpisodeController, :show)
 

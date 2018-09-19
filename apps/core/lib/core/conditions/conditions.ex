@@ -1,35 +1,37 @@
-defmodule Core.Observations do
+defmodule Core.Conditions do
   @moduledoc false
 
+  alias Core.Condition
   alias Core.Mongo
-  alias Core.Observation
   alias Core.Paging
   alias Core.Patients.Encounters
   alias Scrivener.Page
 
-  @observation_collection Observation.metadata().collection
+  @condition_collection Condition.metadata().collection
 
-  def get_by_id(patient_id, id) do
-    @observation_collection
-    |> Mongo.find_one(%{"_id" => id, "patient_id" => patient_id})
+  def get(patient_id, condition_id) do
+    @condition_collection
+    |> Mongo.find_one(%{"_id" => condition_id, "patient_id" => patient_id})
     |> case do
-      %{} = observation -> {:ok, Observation.create(observation)}
+      %{} = condition -> {:ok, Condition.create(condition)}
       _ -> nil
     end
   end
 
   def list(params) do
-    paging_params = Map.take(params, ["page", "page_size"])
+    pipeline = search_conditions_pipe(params)
+    paging_params = Map.take(params, ~w(page page_size))
 
-    with %Page{entries: observations} = page <-
-           Paging.paginate(:aggregate, @observation_collection, search_observations_pipe(params), paging_params) do
-      {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
+    with %Page{entries: conditions} = page <-
+           Paging.paginate(:aggregate, @condition_collection, pipeline, paging_params) do
+      {:ok, %Page{page | entries: Enum.map(conditions, &Condition.create/1)}}
     end
   end
 
-  defp search_observations_pipe(%{"patient_id" => patient_id} = params) do
+  defp search_conditions_pipe(%{"patient_id" => patient_id} = params) do
     code = params["code"]
     episode_id = params["episode_id"]
+
     encounter_ids = get_encounter_ids(patient_id, episode_id)
 
     encounter_ids =

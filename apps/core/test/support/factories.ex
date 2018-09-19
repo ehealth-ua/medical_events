@@ -8,6 +8,7 @@ defmodule Core.Factories do
   alias Core.Condition
   alias Core.Encounter
   alias Core.Episode
+  alias Core.Evidence
   alias Core.Identifier
   alias Core.Job
   alias Core.Mongo
@@ -22,6 +23,7 @@ defmodule Core.Factories do
   alias Core.Reference
   alias Core.Source
   alias Core.StatusHistory
+  alias Core.Stage
   alias Core.Visit
 
   def patient_factory do
@@ -222,7 +224,7 @@ defmodule Core.Factories do
 
   def coding_factory do
     %Coding{
-      system: "local",
+      system: "eHealth/resources",
       code: "1"
     }
   end
@@ -240,14 +242,44 @@ defmodule Core.Factories do
     }
   end
 
+  def stage_factory do
+    %Stage{
+      summary: build(:codeable_concept)
+    }
+  end
+
+  def evidence_factory do
+    %Evidence{
+      codes: [build(:codeable_concept)],
+      details: [build(:reference)]
+    }
+  end
+
   def condition_factory do
+    id = UUID.uuid4()
     patient_id = UUID.uuid4()
+    today = to_string(Date.utc_today())
 
     %Condition{
       _id: UUID.uuid4(),
+      context: reference_coding(code: "encounter"),
+      code: codeable_concept_coding(system: "eHealth/ICD10/conditions"),
+      clinical_status: "active",
+      verification_status: "provisional",
+      severity: codeable_concept_coding(system: "eHealth/severity"),
+      body_sites: [codeable_concept_coding(system: "eHealth/body_sites")],
+      onset_date: today,
+      asserted_date: today,
+      stage: build(:stage, summary: codeable_concept_coding(system: "eHealth/condition_stages")),
+      evidences: [
+        build(:evidence,
+          codes: [codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "condition")],
+          details: [reference_coding(code: "observation")]
+        )
+      ],
       patient_id: patient_id,
-      inserted_by: patient_id,
-      updated_by: patient_id,
+      inserted_by: id,
+      updated_by: id,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       source: build(:source, type: "asserter", value: reference_coding(system: "eHealth/resources", code: "employee")),
