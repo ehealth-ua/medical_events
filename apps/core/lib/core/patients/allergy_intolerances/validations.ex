@@ -33,7 +33,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
       add_validations(
         asserter.identifier,
         :value,
-        employee: [legal_entity_id: client_id, ets_key: "allergy_intolerance_#{id}_asserter_employee"]
+        employee: [legal_entity_id: client_id]
       )
 
     %{asserter | identifier: identifier}

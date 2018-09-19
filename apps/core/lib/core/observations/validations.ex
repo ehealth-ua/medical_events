@@ -59,7 +59,7 @@ defmodule Core.Observations.Validations do
       add_validations(
         performer.identifier,
         :value,
-        employee: [legal_entity_id: client_id, ets_key: "observation_#{id}_performer_employee"]
+        employee: [legal_entity_id: client_id]
       )
 
     %{performer | identifier: identifier}

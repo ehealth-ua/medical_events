@@ -21,7 +21,7 @@ defmodule Core.Conditions.Validations do
     %{condition | context: %{context | identifier: identifier}}
   end
 
-  def validate_source(%Condition{_id: id, source: %Source{type: "asserter"}} = condition, client_id) do
+  def validate_source(%Condition{source: %Source{type: "asserter"}} = condition, client_id) do
     condition =
       add_validations(
         condition,
@@ -30,7 +30,7 @@ defmodule Core.Conditions.Validations do
       )
 
     source = condition.source
-    source = %{source | value: validate_asserter(id, source.value, client_id)}
+    source = %{source | value: validate_asserter(source.value, client_id)}
     %{condition | source: source}
   end
 
@@ -38,12 +38,12 @@ defmodule Core.Conditions.Validations do
     add_validations(condition, :source, source: [primary_source: condition.primary_source])
   end
 
-  def validate_asserter(id, %Reference{} = asserter, client_id) do
+  def validate_asserter(%Reference{} = asserter, client_id) do
     identifier =
       add_validations(
         asserter.identifier,
         :value,
-        employee: [legal_entity_id: client_id, ets_key: "condition_#{id}_asserter_employee"]
+        employee: [legal_entity_id: client_id]
       )
 
     %{asserter | identifier: identifier}

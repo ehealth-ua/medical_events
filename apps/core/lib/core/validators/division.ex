@@ -12,7 +12,9 @@ defmodule Core.Validators.Division do
        Jason.encode!(%{"client_id" => Keyword.get(options, :legal_entity_id)})}
     ]
 
-    case @il_microservice.get_division(division_id, headers) do
+    ets_key = "division_#{division_id}"
+
+    case get_data(ets_key, division_id, headers) do
       {:ok, %{"data" => division}} ->
         with :ok <- validate_field({:status, ["status"]}, division, options),
              :ok <- validate_field({:legal_entity_id, ["legal_entity_id"]}, division, options) do
@@ -34,5 +36,12 @@ defmodule Core.Validators.Division do
 
   def error(options, error_message) do
     {:error, message(options, error_message)}
+  end
+
+  defp get_data(ets_key, division_id, headers) do
+    case :ets.lookup(:message_cache, ets_key) do
+      [{^ets_key, division}] -> {:ok, %{"data" => division}}
+      _ -> @il_microservice.get_division(division_id, headers)
+    end
   end
 end

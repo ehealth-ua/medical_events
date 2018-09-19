@@ -22,7 +22,10 @@ defmodule Core.Patients.Episodes.Validations do
           period,
           :end,
           date: [less_than_or_equal_to: now, message: "End date must be in past"],
-          date: [greater_than_or_equal: period.start, message: "End date must be greater than or equal the start date"]
+          date: [
+            greater_than_or_equal_to: period.start,
+            message: "End date must be greater than or equal the start date"
+          ]
         )
       else
         period
@@ -47,8 +50,7 @@ defmodule Core.Patients.Episodes.Validations do
           status: "ACTIVE",
           messages: [
             status: "LegalEntity is not active"
-          ],
-          ets_key: "managing_organization_legal_entity"
+          ]
         ]
       )
 
@@ -75,8 +77,7 @@ defmodule Core.Patients.Episodes.Validations do
             type: "Employee submitted as a care_manager is not a doctor",
             status: "Doctor submitted as a care_manager is not active",
             legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
-          ],
-          ets_key: "care_manager_employee"
+          ]
         ]
       )
 

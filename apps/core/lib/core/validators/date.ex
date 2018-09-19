@@ -3,6 +3,10 @@ defmodule Core.Validators.Date do
 
   use Vex.Validator
 
+  def validate(%DateTime{} = datetime, options) do
+    validate(get_date(datetime), options)
+  end
+
   def validate(%Date{} = date, options) do
     with :ok <- validate_greater_than(date, options),
          :ok <- validate_greater_than_or_equal(date, options),
@@ -19,7 +23,7 @@ defmodule Core.Validators.Date do
   end
 
   defp validate_greater_than(date, options) do
-    greater_than = Keyword.get(options, :greater_than)
+    greater_than = options |> Keyword.get(:greater_than) |> get_date()
 
     if is_nil(greater_than) do
       :ok
@@ -32,7 +36,7 @@ defmodule Core.Validators.Date do
   end
 
   defp validate_greater_than_or_equal(date, options) do
-    greater_than_or_equal_to = Keyword.get(options, :greater_than_or_equal_to)
+    greater_than_or_equal_to = options |> Keyword.get(:greater_than_or_equal_to) |> get_date
 
     if is_nil(greater_than_or_equal_to) do
       :ok
@@ -48,7 +52,7 @@ defmodule Core.Validators.Date do
   end
 
   defp validate_less_than(date, options) do
-    less_than = Keyword.get(options, :less_than)
+    less_than = options |> Keyword.get(:less_than) |> get_date
 
     if is_nil(less_than) do
       :ok
@@ -61,7 +65,7 @@ defmodule Core.Validators.Date do
   end
 
   defp validate_less_than_or_equal(date, options) do
-    less_than_or_equal_to = Keyword.get(options, :less_than_or_equal_to)
+    less_than_or_equal_to = options |> Keyword.get(:less_than_or_equal_to) |> get_date
 
     if is_nil(less_than_or_equal_to) do
       :ok
@@ -72,4 +76,7 @@ defmodule Core.Validators.Date do
       end
     end
   end
+
+  defp get_date(%DateTime{} = datetime), do: DateTime.to_date(datetime)
+  defp get_date(value), do: value
 end

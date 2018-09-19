@@ -7,6 +7,12 @@ defmodule Core.Encounter do
   alias Core.Diagnosis
   alias Core.Reference
 
+  @status_finished "finished"
+  @status_entered_in_error "entered_in_error"
+
+  def status(:finished), do: @status_finished
+  def status(:entered_in_error), do: @status_entered_in_error
+
   embedded_schema do
     field(:id, presence: true)
     field(:status, presence: true)

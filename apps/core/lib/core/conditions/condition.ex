@@ -20,9 +20,8 @@ defmodule Core.Condition do
     field(:context, reference: [path: "context"])
     field(:onset_date, reference: [path: "onset_date"])
     field(:primary_source, strict_presence: true)
-    field(:source, presence: true)
+    field(:source, presence: true, reference: [path: "source"])
     field(:asserted_date)
-    field(:asserter)
     field(:stage, reference: [path: "stage"])
     field(:evidences, reference: [path: "evidences"])
 

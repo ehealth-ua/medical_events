@@ -12,9 +12,11 @@ defmodule Core.Validators.Employee do
        Jason.encode!(%{"client_id" => Keyword.get(options, :legal_entity_id)})}
     ]
 
-    case @il_microservice.get_employee(employee_id, headers) do
+    ets_key = "employee_#{employee_id}"
+
+    case get_data(ets_key, employee_id, headers) do
       {:ok, %{"data" => employee}} ->
-        :ets.insert(:message_cache, {Keyword.get(options, :ets_key), employee})
+        :ets.insert(:message_cache, {ets_key, employee})
 
         with :ok <- validate_field({:type, ["employee_type"]}, employee, options),
              :ok <- validate_field({:status, ["status"]}, employee, options),
@@ -37,5 +39,12 @@ defmodule Core.Validators.Employee do
 
   def error(options, error_message) do
     {:error, message(options, error_message)}
+  end
+
+  defp get_data(ets_key, employee_id, headers) do
+    case :ets.lookup(:message_cache, ets_key) do
+      [{^ets_key, employee}] -> {:ok, %{"data" => employee}}
+      _ -> @il_microservice.get_employee(employee_id, headers)
+    end
   end
 end

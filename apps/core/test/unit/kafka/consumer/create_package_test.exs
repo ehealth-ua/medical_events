@@ -65,7 +65,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       client_id = UUID.uuid4()
 
-      expect(IlMock, :get_employee, 2, fn id, _ ->
+      expect(IlMock, :get_employee, fn id, _ ->
         {:ok,
          %{
            "data" => %{
@@ -172,7 +172,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       client_id = UUID.uuid4()
 
-      expect(IlMock, :get_employee, 3, fn id, _ ->
+      expect(IlMock, :get_employee, fn id, _ ->
         {:ok,
          %{
            "data" => %{
@@ -204,6 +204,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd
       observation_id = UUID.uuid4()
+      employee_id = UUID.uuid4()
 
       signed_content = %{
         "encounter" => %{
@@ -248,7 +249,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           "performer" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-              "value" => UUID.uuid4()
+              "value" => employee_id
             }
           }
         },
@@ -293,7 +294,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "asserter" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => UUID.uuid4()
+                "value" => employee_id
               }
             }
           }
@@ -321,7 +322,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "performer" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => UUID.uuid4()
+                "value" => employee_id
               }
             },
             "interpretation" => %{
@@ -425,7 +426,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "performer" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => UUID.uuid4()
+                "value" => employee_id
               }
             },
             "primary_source" => true,
@@ -540,7 +541,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "asserter" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => UUID.uuid4()
+                "value" => employee_id
               }
             },
             "primary_source" => true,

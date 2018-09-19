@@ -38,7 +38,7 @@ defmodule Core.Patients.Immunizations.Validations do
       add_validations(
         performer.identifier,
         :value,
-        employee: [legal_entity_id: client_id, ets_key: "immunization_#{id}_performer_employee"]
+        employee: [legal_entity_id: client_id]
       )
 
     %{performer | identifier: identifier}

@@ -18,6 +18,7 @@ defmodule Core.Patients do
   alias Core.Observation
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
+  alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.Validators
@@ -217,8 +218,8 @@ defmodule Core.Patients do
           _ ->
             episode =
               episode
-              |> fill_up_episode_care_manager("care_manager_employee")
-              |> fill_up_episode_managing_organization("managing_organization_legal_entity")
+              |> fill_up_episode_care_manager()
+              |> fill_up_episode_managing_organization()
 
             set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
 
@@ -256,8 +257,8 @@ defmodule Core.Patients do
         [] ->
           episode =
             episode
-            |> fill_up_episode_care_manager("care_manager_employee")
-            |> fill_up_episode_managing_organization("managing_organization_legal_entity")
+            |> fill_up_episode_care_manager()
+            |> fill_up_episode_managing_organization()
 
           set =
             %{"updated_by" => episode.updated_by, "updated_at" => now}
@@ -363,33 +364,43 @@ defmodule Core.Patients do
 
       case Vex.errors(episode) do
         [] ->
-          set =
-            %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
-            |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
-            |> Mongo.add_to_set(episode.explanatory_letter, "episodes.#{episode.id}.explanatory_letter")
-            |> Mongo.add_to_set(episode.cancellation_reason, "episodes.#{episode.id}.cancellation_reason")
+          all_encounters_canceled =
+            patient_id
+            |> Encounters.get_episode_encounters(id, %{"status" => "$encounters.v.status"})
+            |> Enum.map(& &1["status"])
+            |> Enum.all?(fn status -> status == Encounter.status(:entered_in_error) end)
 
-          status_history =
-            StatusHistory.create(%{
-              "status" => episode.status,
-              "inserted_at" => episode.updated_at,
-              "inserted_by" => episode.updated_by
-            })
+          if all_encounters_canceled do
+            set =
+              %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
+              |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
+              |> Mongo.add_to_set(episode.explanatory_letter, "episodes.#{episode.id}.explanatory_letter")
+              |> Mongo.add_to_set(episode.cancellation_reason, "episodes.#{episode.id}.cancellation_reason")
 
-          push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
+            status_history =
+              StatusHistory.create(%{
+                "status" => episode.status,
+                "inserted_at" => episode.updated_at,
+                "inserted_by" => episode.updated_by
+              })
 
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id}, %{
-              "$set" => set,
-              "$push" => push
-            })
+            push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
-          {:ok,
-           %{
-             "links" => [
-               %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
-             ]
-           }, 200}
+            {:ok, %{matched_count: 1, modified_count: 1}} =
+              Mongo.update_one(@collection, %{"_id" => patient_id}, %{
+                "$set" => set,
+                "$push" => push
+              })
+
+            {:ok,
+             %{
+               "links" => [
+                 %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+               ]
+             }, 200}
+          else
+            {:error, "Episode can not be canceled while it has not canceled encounters", 409}
+          end
 
         errors ->
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
@@ -693,8 +704,8 @@ defmodule Core.Patients do
     end)
   end
 
-  defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode, ets_key) do
-    with [{^ets_key, employee}] <- :ets.lookup(:message_cache, ets_key) do
+  defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do
+    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
       first_name = get_in(employee, ["party", "first_name"])
       second_name = get_in(employee, ["party", "second_name"])
       last_name = get_in(employee, ["party", "last_name"])
@@ -707,8 +718,8 @@ defmodule Core.Patients do
     end
   end
 
-  defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode, ets_key) do
-    with [{^ets_key, legal_entity}] <- :ets.lookup(:message_cache, ets_key) do
+  defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode) do
+    with [{_, legal_entity}] <- :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
       %{episode | managing_organization: %{managing_organization | display_value: Map.get(legal_entity, "public_name")}}
     else
       _ ->

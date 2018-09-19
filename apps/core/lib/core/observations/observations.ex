@@ -4,11 +4,10 @@ defmodule Core.Observations do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Paging
-  alias Core.Patient
+  alias Core.Patients.Encounters
   alias Scrivener.Page
 
   @observation_collection Observation.metadata().collection
-  @patient_collection Patient.metadata().collection
 
   def get_by_id(patient_id, id) do
     @observation_collection
@@ -50,29 +49,8 @@ defmodule Core.Observations do
   def get_encounter_ids(_patient_id, nil), do: []
 
   def get_encounter_ids(patient_id, episode_id) do
-    pipeline = [
-      %{
-        "$match" => %{
-          "_id" => patient_id
-        }
-      },
-      %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}},
-      %{"$unwind" => "$encounters"},
-      %{
-        "$project" => %{
-          "episode_id" => "$encounters.v.episode.identifier.value",
-          "encounter_id" => "$encounters.v.id"
-        }
-      },
-      %{
-        "$match" => %{
-          "episode_id" => episode_id
-        }
-      }
-    ]
-
-    @patient_collection
-    |> Mongo.aggregate(pipeline)
+    patient_id
+    |> Encounters.get_episode_encounters(episode_id)
     |> Enum.map(& &1["encounter_id"])
   end
 
