@@ -259,7 +259,7 @@ defmodule Core.Factories do
   def condition_factory do
     id = UUID.uuid4()
     patient_id = UUID.uuid4()
-    today = to_string(Date.utc_today())
+    today = Date.utc_today()
 
     %Condition{
       _id: UUID.uuid4(),

@@ -41,8 +41,7 @@ defmodule Core.Condition do
           {:stage, Stage.create(v)}
 
         {"onset_date", v} ->
-          date = v |> Date.from_iso8601!() |> Date.to_erl()
-          {:onset_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+          {:onset_date, create_date(v)}
 
         {"body_sites", v} ->
           {:body_sites, Enum.map(v, &CodeableConcept.create/1)}
@@ -59,12 +58,8 @@ defmodule Core.Condition do
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}
 
-        {"asserted_date", nil} ->
-          {:asserted_date, nil}
-
         {"asserted_date", v} ->
-          date = v |> Date.from_iso8601!() |> Date.to_erl()
-          {:asserted_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+          {:asserted_date, create_date(v)}
 
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
@@ -79,5 +74,19 @@ defmodule Core.Condition do
           {String.to_atom(k), v}
       end)
     )
+  end
+
+  defp create_date(nil), do: nil
+  defp create_date(%DateTime{} = date), do: date
+
+  defp create_date(date) when is_binary(date) do
+    erl_date =
+      date
+      |> Date.from_iso8601!()
+      |> Date.to_erl()
+
+    {erl_date, {0, 0, 0}}
+    |> NaiveDateTime.from_erl!()
+    |> DateTime.from_naive!("Etc/UTC")
   end
 end
