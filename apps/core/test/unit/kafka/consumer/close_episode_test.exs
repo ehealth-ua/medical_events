@@ -22,7 +22,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode.id,
                  request_params: %{
@@ -36,7 +36,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status closed can not be closed"}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: "Episode in status closed can not be closed"}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was closed" do
@@ -50,7 +50,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode_id,
                  request_params: %{
@@ -64,7 +64,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
       assert {:ok, %{"status" => @closed}} = Episodes.get(patient._id, episode_id)
     end
   end

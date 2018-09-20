@@ -75,7 +75,8 @@ defmodule Core.Factories do
 
   def job_factory do
     %Job{
-      _id: UUID.uuid4(),
+      _id: Mongo.generate_id(),
+      hash: :crypto.hash(:md5, to_string(DateTime.to_unix(DateTime.utc_now()))),
       eta: NaiveDateTime.utc_now() |> NaiveDateTime.to_iso8601(),
       status_code: 200,
       inserted_at: DateTime.utc_now(),
@@ -272,7 +273,8 @@ defmodule Core.Factories do
       asserted_date: today,
       stage: build(:stage, summary: codeable_concept_coding(system: "eHealth/condition_stages")),
       evidences: [
-        build(:evidence,
+        build(
+          :evidence,
           codes: [codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "condition")],
           details: [reference_coding(code: "observation")]
         )

@@ -22,7 +22,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode.id,
                  request_params: %{
@@ -35,7 +35,8 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status entered_in_error can not be canceled"}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: "Episode in status entered_in_error can not be canceled"}} =
+               Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was canceled" do
@@ -49,7 +50,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode_id,
                  request_params: %{
@@ -62,7 +63,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
       assert {:ok, %{"status" => @canceled}} = Episodes.get(patient._id, episode_id)
     end
   end

@@ -33,7 +33,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode.id,
                  request_params: %{
@@ -55,7 +55,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status closed can not be updated"}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: "Episode in status closed can not be updated"}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was updated" do
@@ -97,7 +97,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode_id,
                  request_params: %{
@@ -119,7 +119,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
       assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient._id, episode_id)
     end
   end

@@ -47,7 +47,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode_id,
                  user_id: user_id,
@@ -67,7 +67,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  }
                })
 
-      assert {:ok, %{response: %{"error" => "Episode with such id already exists"}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{"error" => "Episode with such id already exists"}}} =
+               Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was created" do
@@ -109,7 +110,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  id: episode_id,
                  type: "primary_care",
@@ -136,7 +137,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                Mongo.find_one(Patient.metadata().collection, %{"_id" => patient._id}, projection: [episodes: true])
 
       assert Map.has_key?(episodes, episode_id)
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(job._id)
+      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

@@ -28,12 +28,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
                  signed_data: Base.encode64("")
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(job._id)
+      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "empty map" do
@@ -48,12 +48,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
                  signed_data: Base.encode64(Jason.encode!(%{}))
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(job._id)
+      assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "visit not found" do
@@ -148,7 +148,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  patient_id: patient._id,
                  user_id: user_id,
                  client_id: client_id,
@@ -159,10 +159,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               %Core.Job{
                 response_size: 375,
                 status: @status_processed
-              }} = Jobs.get_by_id(job._id)
+              }} = Jobs.get_by_id(to_string(job._id))
     end
 
-    # TODO: not completed
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -561,7 +560,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
-                 _id: job._id,
+                 _id: to_string(job._id),
                  visit: %{
                    "id" => visit_id,
                    "period" => %{
@@ -579,7 +578,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               %Core.Job{
                 response_size: 831,
                 status: @status_processed
-              }} = Jobs.get_by_id(job._id)
+              }} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

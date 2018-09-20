@@ -146,3 +146,7 @@ defimpl Vex.Blank, for: NaiveDateTime do
   def blank?(%NaiveDateTime{}), do: false
   def blank?(_), do: true
 end
+
+defimpl String.Chars, for: BSON.ObjectId do
+  def to_string(value), do: BSON.ObjectId.encode!(value)
+end

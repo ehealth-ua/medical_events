@@ -25,7 +25,7 @@ defmodule Api.Web.JobControllerTest do
 
       response =
         conn
-        |> get(job_path(conn, :show, job._id))
+        |> get(job_path(conn, :show, to_string(job._id)))
         |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
@@ -35,7 +35,7 @@ defmodule Api.Web.JobControllerTest do
       assert [
                %{
                  "entity" => "job",
-                 "href" => "/jobs/" <> job._id
+                 "href" => "/jobs/" <> to_string(job._id)
                }
              ] == response["links"]
 
@@ -66,7 +66,7 @@ defmodule Api.Web.JobControllerTest do
 
       response =
         conn
-        |> get(job_path(conn, :show, job._id))
+        |> get(job_path(conn, :show, to_string(job._id)))
         |> json_response(303)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details.json")
@@ -89,7 +89,7 @@ defmodule Api.Web.JobControllerTest do
 
       response =
         conn
-        |> get(job_path(conn, :show, job._id))
+        |> get(job_path(conn, :show, to_string(job._id)))
         |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details_error.json")
@@ -111,7 +111,7 @@ defmodule Api.Web.JobControllerTest do
 
       response =
         conn
-        |> get(job_path(conn, :show, job._id))
+        |> get(job_path(conn, :show, to_string(job._id)))
         |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details_error.json")

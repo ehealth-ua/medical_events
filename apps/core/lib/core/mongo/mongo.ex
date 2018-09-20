@@ -24,6 +24,10 @@ defmodule Core.Mongo do
     |> AuditLog.log_operation(fun, args)
   end
 
+  def generate_id do
+    Mongo.IdServer.new()
+  end
+
   def aggregate(coll, pipeline, opts \\ []) do
     execute(:aggregate, [coll, pipeline, opts])
   end
@@ -195,6 +199,8 @@ defmodule Core.Mongo do
     date = Date.to_erl(doc)
     {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
   end
+
+  defp prepare_doc(%BSON.ObjectId{} = doc), do: doc
 
   defp prepare_doc(%{} = doc) do
     Enum.into(doc, %{}, fn {k, v} -> {k, prepare_doc(v)} end)

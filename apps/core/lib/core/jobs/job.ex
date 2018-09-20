@@ -23,6 +23,7 @@ defmodule Core.Job do
   @primary_key :_id
   schema :jobs do
     field(:_id)
+    field(:hash, presence: true)
     field(:eta, presence: true)
     field(:status, presence: true, inclusion: [@status_pending, @status_processed, @status_failed])
     field(:status_code, presence: true, inclusion: [200, 202, 404, 422])
