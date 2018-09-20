@@ -21,7 +21,7 @@ defmodule Api.Web.ConditionControllerTest do
       {code, condition_code} = build_condition_code()
       {encounter_id, context} = build_encounter_id()
 
-      insert(:condition, patient_id: patient._id, context: context, code: condition_code)
+      insert(:condition, patient_id: patient._id, context: context, code: condition_code, asserted_date: nil)
       insert(:condition, patient_id: patient._id, context: context, code: condition_code)
 
       # Missed code, encounter, patient_id
@@ -151,7 +151,7 @@ defmodule Api.Web.ConditionControllerTest do
   describe "get condition" do
     test "success", %{conn: conn} do
       patient = insert(:patient)
-      condition = insert(:condition, patient_id: patient._id)
+      condition = insert(:condition, patient_id: patient._id, asserted_date: nil)
 
       expect_get_person_data(patient._id)
 

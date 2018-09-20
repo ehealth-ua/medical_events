@@ -323,7 +323,7 @@
           "format": "date"
         },
         "asserted_date": {
-          "type": "string",
+          "type": ["string", "null"],
           "format": "date"
         },
         "stage": {

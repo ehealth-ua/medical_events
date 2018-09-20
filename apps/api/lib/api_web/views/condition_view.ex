@@ -23,8 +23,8 @@ defmodule Api.Web.ConditionView do
       code: ReferenceView.render(condition.code),
       context: ReferenceView.render(condition.context),
       evidences: ReferenceView.render(condition.evidences),
-      asserted_date: Date.to_string(condition.asserted_date),
-      onset_date: Date.to_string(condition.onset_date)
+      asserted_date: render_date(condition.asserted_date),
+      onset_date: render_date(condition.onset_date)
     }
 
     condition
@@ -32,4 +32,7 @@ defmodule Api.Web.ConditionView do
     |> Map.merge(condition_data)
     |> Map.merge(ReferenceView.render_source(condition.source))
   end
+
+  defp render_date(nil), do: nil
+  defp render_date(%DateTime{} = date_time), do: date_time |> DateTime.to_date() |> to_string()
 end
