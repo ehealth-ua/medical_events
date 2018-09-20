@@ -213,7 +213,7 @@ defmodule Core.Factories do
   end
 
   def value_factory do
-    %Value{type: "value_string", value: "some value"}
+    %Value{type: "string", value: "some value"}
   end
 
   def codeable_concept_factory do

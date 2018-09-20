@@ -92,11 +92,11 @@ defmodule Api.Web.ReferenceView do
     Enum.map(references, &render/1)
   end
 
-  def render_value(%Value{type: "value_codeable_concept", value: value}) do
+  def render_value(%Value{type: "codeable_concept", value: value}) do
     %{"value_codeable_concept" => render(value)}
   end
 
-  def render_value(%Value{type: "value_quantity", value: value}) do
+  def render_value(%Value{type: "quantity", value: value}) do
     fields = ~w(
       value
       comparator
@@ -108,7 +108,7 @@ defmodule Api.Web.ReferenceView do
     %{"value_quantity" => Map.take(value, fields)}
   end
 
-  def render_value(%Value{type: "value_sampled_data", value: value}) do
+  def render_value(%Value{type: "sampled_data", value: value}) do
     fields = ~w(
       origin
       period
@@ -121,20 +121,20 @@ defmodule Api.Web.ReferenceView do
     %{"value_sampled_data" => Map.take(value, fields)}
   end
 
-  def render_value(%Value{type: "value_range", value: value}) do
+  def render_value(%Value{type: "range", value: value}) do
     %{"value_range" => Map.take(value, ~w(low high)a)}
   end
 
-  def render_value(%Value{type: "value_ratio", value: value}) do
+  def render_value(%Value{type: "ratio", value: value}) do
     %{"value_ratio" => Map.take(value, ~w(numerator denominator)a)}
   end
 
-  def render_value(%Value{type: "value_period", value: value}) do
+  def render_value(%Value{type: "period", value: value}) do
     %{"value_period" => render(value)}
   end
 
   def render_value(%Value{type: type, value: value}) do
-    %{type => value}
+    %{("value_" <> type) => value}
   end
 
   def render_source(%Source{type: type, value: value}) do

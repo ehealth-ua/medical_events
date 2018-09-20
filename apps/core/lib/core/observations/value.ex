@@ -16,44 +16,48 @@ defmodule Core.Observations.Value do
   end
 
   def create("value_string", value) do
-    %__MODULE__{type: "value_string", value: value}
+    %__MODULE__{type: "string", value: value}
   end
 
   def create("value_time", value) do
-    %__MODULE__{type: "value_time", value: value}
+    %__MODULE__{type: "time", value: value}
   end
 
   def create("value_boolean", value) do
-    %__MODULE__{type: "value_boolean", value: value}
+    %__MODULE__{type: "boolean", value: value}
   end
 
   def create("value_date_time", value) do
     datetime = create_datetime(value)
-    {:value, %__MODULE__{type: "value_date_time", value: datetime}}
+    {:value, %__MODULE__{type: "date_time", value: datetime}}
   end
 
   def create("value_quantity", value) do
-    %__MODULE__{type: "value_quantity", value: Quantity.create(value)}
+    %__MODULE__{type: "quantity", value: Quantity.create(value)}
   end
 
   def create("value_codeable_concept", value) do
-    %__MODULE__{type: "value_codeable_concept", value: CodeableConcept.create(value)}
+    %__MODULE__{type: "codeable_concept", value: CodeableConcept.create(value)}
   end
 
   def create("value_sampled_data", value) do
-    %__MODULE__{type: "value_sampled_data", value: SampledData.create(value)}
+    %__MODULE__{type: "sampled_data", value: SampledData.create(value)}
   end
 
   def create("value_range", value) do
-    %__MODULE__{type: "value_range", value: Range.create(value)}
+    %__MODULE__{type: "range", value: Range.create(value)}
   end
 
   def create("value_ratio", value) do
-    %__MODULE__{type: "value_ratio", value: Ratio.create(value)}
+    %__MODULE__{type: "ratio", value: Ratio.create(value)}
   end
 
   def create("value_period", value) do
-    %__MODULE__{type: "value_period", value: Period.create(value)}
+    %__MODULE__{type: "period", value: Period.create(value)}
+  end
+
+  def create(type, value) do
+    create("value_#{type}", value)
   end
 end
 

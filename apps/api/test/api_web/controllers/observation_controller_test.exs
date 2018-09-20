@@ -17,10 +17,7 @@ defmodule Api.Web.ObservationControllerTest do
   describe "get observation" do
     test "success", %{conn: conn} do
       patient = insert(:patient)
-
-      observation =
-        insert(:observation, patient_id: patient._id, value: %Value{type: "value_period", value: build(:period)})
-
+      observation = insert(:observation, patient_id: patient._id, value: %Value{type: "period", value: build(:period)})
       expect_get_person_data(patient._id)
 
       response =
