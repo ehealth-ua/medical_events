@@ -59,6 +59,9 @@ defmodule Core.Condition do
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}
 
+        {"asserted_date", nil} ->
+          {:asserted_date, nil}
+
         {"asserted_date", v} ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:asserted_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
