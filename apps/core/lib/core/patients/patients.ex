@@ -6,6 +6,7 @@ defmodule Core.Patients do
   alias Core.Condition
   alias Core.Conditions
   alias Core.DatePeriod
+  alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
@@ -126,6 +127,7 @@ defmodule Core.Patients do
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content) do
         visit_id = if is_map(visit), do: visit.id
+        encounter = Encounters.fill_up_encounter_performer(encounter)
 
         set =
           %{"updated_by" => user_id, "updated_at" => now}
@@ -146,8 +148,34 @@ defmodule Core.Patients do
           |> Mongo.convert_to_uuid("encounters.#{encounter.id}.service_provider.identifier.value")
           |> Mongo.convert_to_uuid("updated_by")
 
+        diagnoses_history =
+          DiagnosesHistory.create(%{
+            "date" => DateTime.utc_now(),
+            "evidence" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter.id
+              }
+            },
+            "is_active" => true
+          })
+
+        diagnoses_history = %{diagnoses_history | diagnoses: encounter.diagnoses}
+
+        push =
+          Mongo.add_to_push(%{}, diagnoses_history, "episodes.#{encounter.episode.identifier.value}.diagnoses_history")
+
         set =
           Enum.reduce(immunizations, set, fn immunization, acc ->
+            immunization = Immunizations.fill_up_immunization_performer(immunization)
+
             acc
             |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.id")
@@ -161,6 +189,8 @@ defmodule Core.Patients do
 
         set =
           Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
+            allergy_intolerance = AllergyIntolerances.fill_up_allergy_intolerance_asserter(allergy_intolerance)
+
             acc
             |> Mongo.add_to_set(allergy_intolerance, "allergy_intolerances.#{allergy_intolerance.id}")
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.id")
@@ -171,7 +201,7 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
-          Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
+          Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set, "$push" => push})
 
         links = [
           %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
@@ -232,6 +262,7 @@ defmodule Core.Patients do
       %{
         episode
         | status_history: [],
+          diagnoses_history: [],
           inserted_by: job.user_id,
           updated_by: job.user_id,
           inserted_at: now,
@@ -252,8 +283,8 @@ defmodule Core.Patients do
           _ ->
             episode =
               episode
-              |> fill_up_episode_care_manager()
-              |> fill_up_episode_managing_organization()
+              |> Episodes.fill_up_episode_care_manager()
+              |> Episodes.fill_up_episode_managing_organization()
 
             set =
               %{"updated_by" => episode.updated_by}
@@ -299,8 +330,8 @@ defmodule Core.Patients do
         [] ->
           episode =
             episode
-            |> fill_up_episode_care_manager()
-            |> fill_up_episode_managing_organization()
+            |> Episodes.fill_up_episode_care_manager()
+            |> Episodes.fill_up_episode_managing_organization()
 
           set =
             %{"updated_by" => episode.updated_by, "updated_at" => now}
@@ -754,30 +785,6 @@ defmodule Core.Patients do
           {:cont, acc}
       end
     end)
-  end
-
-  defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
-      first_name = get_in(employee, ["party", "first_name"])
-      second_name = get_in(employee, ["party", "second_name"])
-      last_name = get_in(employee, ["party", "last_name"])
-
-      %{episode | care_manager: %{care_manager | display_value: "#{first_name} #{second_name} #{last_name}"}}
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for episode")
-        episode
-    end
-  end
-
-  defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode) do
-    with [{_, legal_entity}] <- :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
-      %{episode | managing_organization: %{managing_organization | display_value: Map.get(legal_entity, "public_name")}}
-    else
-      _ ->
-        Logger.warn("Failed to fill up legal_entity value for episode")
-        episode
-    end
   end
 
   defp insert_conditions(links, [], _), do: links

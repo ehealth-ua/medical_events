@@ -6,8 +6,10 @@ defmodule Core.Conditions do
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patients.Encounters
+  alias Core.Reference
   alias Core.Source
   alias Scrivener.Page
+  require Logger
 
   @condition_collection Condition.metadata().collection
 
@@ -43,7 +45,8 @@ defmodule Core.Conditions do
             source
             | value: %{
                 value
-                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)}
+                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)},
+                  display_value: fill_up_condition_asserter(value)
               }
           }
       end
@@ -107,4 +110,18 @@ defmodule Core.Conditions do
   defp add_search_param(search_params, nil, _path, _operator), do: search_params
   defp add_search_param(search_params, [], _path, _operator), do: search_params
   defp add_search_param(search_params, value, path, operator), do: put_in(search_params, path, %{operator => value})
+
+  defp fill_up_condition_asserter(%Reference{identifier: identifier}) do
+    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do
+      first_name = get_in(employee, ["party", "first_name"])
+      second_name = get_in(employee, ["party", "second_name"])
+      last_name = get_in(employee, ["party", "last_name"])
+
+      "#{first_name} #{second_name} #{last_name}"
+    else
+      _ ->
+        Logger.warn("Failed to fill up employee value for condition")
+        nil
+    end
+  end
 end

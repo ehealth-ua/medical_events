@@ -72,7 +72,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
              "id" => id,
              "status" => "APPROVED",
              "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id}
+             "legal_entity" => %{"id" => client_id},
+             "party" => %{
+               "first_name" => "foo",
+               "last_name" => "bar",
+               "second_name" => "baz"
+             }
            }
          }}
       end)
@@ -178,7 +183,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
              "id" => id,
              "status" => "APPROVED",
              "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id}
+             "legal_entity" => %{"id" => client_id},
+             "party" => %{
+               "first_name" => "foo",
+               "last_name" => "bar",
+               "second_name" => "baz"
+             }
            }
          }}
       end)

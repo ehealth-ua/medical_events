@@ -2,9 +2,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
   @moduledoc false
 
   use Core.ModelCase
-
   import Mox
-
+  import Core.Expectations.Employee
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
@@ -21,18 +20,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
-
-      stub(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id}
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -76,23 +64,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       patient = insert(:patient)
       episode_id = UUID.uuid4()
       client_id = UUID.uuid4()
-
-      stub(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,

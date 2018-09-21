@@ -211,6 +211,7 @@ defmodule Core.Factories do
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Episode.status(:active),
       status_history: build_list(1, :status_history),
+      diagnoses_history: [],
       type: "primary_care",
       name: "ОРВИ 2018",
       managing_organization: build(:reference),

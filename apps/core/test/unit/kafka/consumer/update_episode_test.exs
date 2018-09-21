@@ -3,6 +3,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
   use Core.ModelCase
   import Mox
+  import Core.Expectations.Employee
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.EpisodeUpdateJob
@@ -15,18 +16,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       episode = build(:episode, status: Episode.status(:closed))
       patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       client_id = UUID.uuid4()
-
-      stub(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id}
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       job = insert(:job)
       user_id = UUID.uuid4()
@@ -63,23 +53,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       patient = insert(:patient)
       episode_id = patient.episodes |> Map.keys() |> hd
       client_id = UUID.uuid4()
-
-      stub(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "second_name" => "bar",
-               "last_name" => "baz"
-             }
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
