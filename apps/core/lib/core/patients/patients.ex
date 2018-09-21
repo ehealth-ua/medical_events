@@ -1,7 +1,6 @@
 defmodule Core.Patients do
   @moduledoc false
 
-  import Core.Schema, only: [add_validations: 3]
   alias Core.AllergyIntolerance
   alias Core.Condition
   alias Core.Conditions
@@ -37,6 +36,7 @@ defmodule Core.Patients do
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
+  alias Core.Patients.Visits.Validations, as: VisitValidations
   require Logger
 
   @collection Patient.metadata().collection
@@ -161,13 +161,27 @@ defmodule Core.Patients do
                     }
                   ]
                 },
-                "value" => encounter.id
+                "value" => Mongo.string_to_uuid(encounter.id)
               }
             },
             "is_active" => true
           })
 
-        diagnoses_history = %{diagnoses_history | diagnoses: encounter.diagnoses}
+        diagnoses_history = %{
+          diagnoses_history
+          | diagnoses:
+              Enum.map(encounter.diagnoses, fn diagnosis ->
+                condition = diagnosis.condition
+
+                %{
+                  diagnosis
+                  | condition: %{
+                      condition
+                      | identifier: %{condition.identifier | value: Mongo.string_to_uuid(condition.identifier.value)}
+                    }
+                }
+              end)
+        }
 
         push =
           Mongo.add_to_push(%{}, diagnoses_history, "episodes.#{encounter.episode.identifier.value}.diagnoses_history")
@@ -493,41 +507,25 @@ defmodule Core.Patients do
   defp create_visit(%PackageCreateJob{visit: nil}), do: {:ok, nil}
 
   defp create_visit(%PackageCreateJob{patient_id: patient_id, user_id: user_id, visit: visit}) do
-    visit = Visit.create(visit)
     now = DateTime.utc_now()
+    visit = Visit.create(visit)
 
-    period =
-      visit.period
-      |> add_validations(
-        :start,
-        datetime: [less_than_or_equal_to: now, message: "Start date must be in past"]
-      )
-      |> add_validations(
-        :end,
-        presence: true,
-        datetime: [less_than_or_equal_to: now, message: "End date must be in past"],
-        datetime: [greater_than: visit.period.start, message: "End date must be greater than the start date"]
-      )
+    visit =
+      %{visit | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
+      |> VisitValidations.validate_period()
 
-    visit = %{
-      visit
-      | period: period,
-        inserted_by: user_id,
-        updated_by: user_id,
-        inserted_at: now,
-        updated_at: now
-    }
-
-    visit_id = visit.id
-
-    case Vex.errors(visit) do
+    case Vex.errors(%{visit: visit}, visit: [reference: [path: "visit"]]) do
       [] ->
-        case Mongo.find_one(
-               Patient.metadata().collection,
-               %{"_id" => patient_id},
-               projection: ["visits.#{visit.id}": true]
-             ) do
-          %{"visits" => %{^visit_id => %{}}} ->
+        result =
+          Patient.metadata().collection
+          |> Mongo.aggregate([
+            %{"$match" => %{"_id" => patient_id}},
+            %{"$project" => %{"_id" => "$visits.#{visit.id}.id"}}
+          ])
+          |> Enum.to_list()
+
+        case result do
+          [%{"_id" => _}] ->
             {:error, "Visit with such id already exists", 409}
 
           _ ->
@@ -546,7 +544,6 @@ defmodule Core.Patients do
          visit
        ) do
     now = DateTime.utc_now()
-
     encounter = Encounter.create(content["encounter"])
 
     encounter =

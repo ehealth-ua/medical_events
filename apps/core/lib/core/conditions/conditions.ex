@@ -51,19 +51,7 @@ defmodule Core.Conditions do
           }
       end
 
-    evidences =
-      Enum.map(condition.evidences, fn
-        %Evidence{details: nil} = evidence ->
-          evidence
-
-        %Evidence{details: details} = evidence ->
-          details =
-            Enum.map(details, fn detail ->
-              %{detail | identifier: %{detail.identifier | value: Mongo.string_to_uuid(detail.identifier.value)}}
-            end)
-
-          %{evidence | details: details}
-      end)
+    evidences = create_evidences(condition)
 
     %{
       condition
@@ -123,5 +111,22 @@ defmodule Core.Conditions do
         Logger.warn("Failed to fill up employee value for condition")
         nil
     end
+  end
+
+  defp create_evidences(%Condition{evidences: nil}), do: nil
+
+  defp create_evidences(%Condition{evidences: evidences}) do
+    Enum.map(evidences, fn
+      %Evidence{details: nil} = evidence ->
+        evidence
+
+      %Evidence{details: details} = evidence ->
+        details =
+          Enum.map(details, fn detail ->
+            %{detail | identifier: %{detail.identifier | value: Mongo.string_to_uuid(detail.identifier.value)}}
+          end)
+
+        %{evidence | details: details}
+    end)
   end
 end

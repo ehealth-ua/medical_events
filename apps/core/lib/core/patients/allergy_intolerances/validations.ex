@@ -33,7 +33,15 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
       add_validations(
         asserter.identifier,
         :value,
-        employee: [legal_entity_id: client_id]
+        employee: [
+          type: "DOCTOR",
+          status: "APPROVED",
+          legal_entity_id: client_id,
+          messages: [
+            type: "Employee is not an active doctor",
+            status: "Employee is not an active doctor"
+          ]
+        ]
       )
 
     %{asserter | identifier: identifier}
