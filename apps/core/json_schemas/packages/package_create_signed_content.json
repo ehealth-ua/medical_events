@@ -156,17 +156,17 @@
         "factor": {
           "type": "number"
         },
-        "lowerLimit": {
+        "lower_limit": {
           "type": "number"
         },
-        "upperLimit": {
+        "upper_limit": {
           "type": "number"
         },
         "dimensions": {
           "type": "number"
         },
         "data": {
-          "type": "number"
+          "type": "string"
         }
       },
       "required": [
