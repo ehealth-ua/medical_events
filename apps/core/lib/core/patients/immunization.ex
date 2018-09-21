@@ -17,7 +17,7 @@ defmodule Core.Immunization do
   def status(:entered_in_error), do: @status_entered_in_error
 
   embedded_schema do
-    field(:id, presence: true)
+    field(:id, presence: true, mongo_uuid: true)
     field(:status, presence: true)
     field(:not_given, strict_presence: true)
     field(:vaccine_code, presence: true)

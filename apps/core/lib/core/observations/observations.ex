@@ -5,13 +5,14 @@ defmodule Core.Observations do
   alias Core.Observation
   alias Core.Paging
   alias Core.Patients.Encounters
+  alias Core.Source
   alias Scrivener.Page
 
   @observation_collection Observation.metadata().collection
 
-  def get_by_id(patient_id, id) do
+  def get(patient_id, id) do
     @observation_collection
-    |> Mongo.find_one(%{"_id" => id, "patient_id" => patient_id})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id})
     |> case do
       %{} = observation -> {:ok, Observation.create(observation)}
       _ -> nil
@@ -25,6 +26,49 @@ defmodule Core.Observations do
            Paging.paginate(:aggregate, @observation_collection, search_observations_pipe(params), paging_params) do
       {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
     end
+  end
+
+  def create(%Observation{} = observation) do
+    context = observation.context
+
+    source =
+      case observation.source do
+        %Source{type: "report_origin"} = source ->
+          source
+
+        %Source{value: value} = source ->
+          %{
+            source
+            | value: %{
+                value
+                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)}
+              }
+          }
+      end
+
+    based_on =
+      case observation.based_on do
+        nil ->
+          nil
+
+        _ ->
+          Enum.map(observation.based_on, fn item ->
+            %{item | identifier: %{item.identifier | value: Mongo.string_to_uuid(item.identifier.value)}}
+          end)
+      end
+
+    %{
+      observation
+      | _id: Mongo.string_to_uuid(observation._id),
+        inserted_by: Mongo.string_to_uuid(observation.inserted_by),
+        updated_by: Mongo.string_to_uuid(observation.updated_by),
+        context: %{
+          context
+          | identifier: %{context.identifier | value: Mongo.string_to_uuid(context.identifier.value)}
+        },
+        source: source,
+        based_on: based_on
+    }
   end
 
   defp search_observations_pipe(%{"patient_id" => patient_id} = params) do

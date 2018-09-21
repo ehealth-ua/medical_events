@@ -15,7 +15,10 @@ defmodule Core.Validators.ObservationReference do
     if value in observation_ids do
       :ok
     else
-      case Mongo.find_one(Observation.metadata().collection, %{"_id" => value, "patient_id" => patient_id}) do
+      case Mongo.find_one(Observation.metadata().collection, %{
+             "_id" => Mongo.string_to_uuid(value),
+             "patient_id" => patient_id
+           }) do
         nil ->
           error(options, "Observation with such id is not found")
 

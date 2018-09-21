@@ -200,6 +200,7 @@ defmodule Core.Mongo do
     {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
   end
 
+  defp prepare_doc(%BSON.Binary{} = doc), do: doc
   defp prepare_doc(%BSON.ObjectId{} = doc), do: doc
 
   defp prepare_doc(%{} = doc) do
@@ -237,4 +238,44 @@ defmodule Core.Mongo do
 
   def add_to_push(push, nil, _), do: push
   def add_to_push(push, %{__struct__: _} = value, path), do: Map.put(push, path, prepare_doc(value))
+
+  def convert_to_uuid(set, path) do
+    uuid = Map.get(set, path)
+
+    if is_binary(uuid) do
+      Map.replace!(set, path, string_to_uuid(uuid))
+    else
+      set
+    end
+  end
+
+  def convert_to_uuid(set, path, subpath) do
+    put_item = fn uuid, item ->
+      if is_binary(uuid) do
+        put_in(item, subpath, string_to_uuid(uuid))
+      else
+        item
+      end
+    end
+
+    case Map.get(set, path) do
+      nil ->
+        set
+
+      values ->
+        items =
+          Enum.map(values, fn item ->
+            uuid = get_in(item, subpath)
+            put_item.(uuid, item)
+          end)
+
+        Map.replace!(set, path, items)
+    end
+  end
+
+  def string_to_uuid(value) when is_binary(value) do
+    %BSON.Binary{binary: UUID.string_to_binary!(value), subtype: :uuid}
+  rescue
+    _ -> nil
+  end
 end

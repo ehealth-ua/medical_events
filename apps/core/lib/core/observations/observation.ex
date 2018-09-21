@@ -80,6 +80,9 @@ defmodule Core.Observation do
         {"id", v} ->
           {:_id, v}
 
+        {"based_on", v} ->
+          {:based_on, Enum.map(v, &Reference.create/1)}
+
         {"interpretation", nil} ->
           {:interpretation, nil}
 

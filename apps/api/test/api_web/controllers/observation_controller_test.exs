@@ -22,7 +22,7 @@ defmodule Api.Web.ObservationControllerTest do
 
       response =
         conn
-        |> get(observation_path(conn, :show, patient._id, observation._id))
+        |> get(observation_path(conn, :show, patient._id, UUID.binary_to_string!(observation._id.binary)))
         |> json_response(200)
 
       assert_json_schema(response, "observations/observation_show.json")
@@ -36,7 +36,7 @@ defmodule Api.Web.ObservationControllerTest do
       expect_get_person_data(patient._id)
 
       conn
-      |> get(observation_path(conn, :show, patient._id, observation._id))
+      |> get(observation_path(conn, :show, patient._id, UUID.binary_to_string!(observation._id.binary)))
       |> json_response(404)
     end
 
@@ -63,8 +63,14 @@ defmodule Api.Web.ObservationControllerTest do
       patient =
         insert(
           :patient,
-          episodes: %{episode.id => episode, episode2.id => episode2},
-          encounters: %{encounter.id => encounter, encounter2.id => encounter2}
+          episodes: %{
+            UUID.binary_to_string!(episode.id.binary) => episode,
+            UUID.binary_to_string!(episode2.id.binary) => episode2
+          },
+          encounters: %{
+            UUID.binary_to_string!(encounter.id.binary) => encounter,
+            UUID.binary_to_string!(encounter2.id.binary) => encounter2
+          }
         )
 
       expect_get_person_data(patient._id)
@@ -124,7 +130,7 @@ defmodule Api.Web.ObservationControllerTest do
 
     test "success by encounter and episode_id", %{conn: conn} do
       episode = build(:episode)
-      patient = insert(:patient, episodes: %{episode.id => episode})
+      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       expect_get_person_data(patient._id)
       {encounter_id, context} = build_encounter_id()
 
@@ -137,7 +143,7 @@ defmodule Api.Web.ObservationControllerTest do
       insert(:observation, patient_id: patient._id)
 
       request_params = %{
-        "episode_id" => episode.id,
+        "episode_id" => UUID.binary_to_string!(episode.id.binary),
         "encounter_id" => encounter_id
       }
 

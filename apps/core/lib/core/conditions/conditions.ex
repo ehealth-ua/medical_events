@@ -2,16 +2,18 @@ defmodule Core.Conditions do
   @moduledoc false
 
   alias Core.Condition
+  alias Core.Evidence
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patients.Encounters
+  alias Core.Source
   alias Scrivener.Page
 
   @condition_collection Condition.metadata().collection
 
-  def get(patient_id, condition_id) do
+  def get(patient_id, id) do
     @condition_collection
-    |> Mongo.find_one(%{"_id" => condition_id, "patient_id" => patient_id})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id})
     |> case do
       %{} = condition -> {:ok, Condition.create(condition)}
       _ -> nil
@@ -26,6 +28,52 @@ defmodule Core.Conditions do
            Paging.paginate(:aggregate, @condition_collection, pipeline, paging_params) do
       {:ok, %Page{page | entries: Enum.map(conditions, &Condition.create/1)}}
     end
+  end
+
+  def create(%Condition{} = condition) do
+    context = condition.context
+
+    source =
+      case condition.source do
+        %Source{type: "report_origin"} = source ->
+          source
+
+        %Source{value: value} = source ->
+          %{
+            source
+            | value: %{
+                value
+                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)}
+              }
+          }
+      end
+
+    evidences =
+      Enum.map(condition.evidences, fn
+        %Evidence{details: nil} = evidence ->
+          evidence
+
+        %Evidence{details: details} = evidence ->
+          details =
+            Enum.map(details, fn detail ->
+              %{detail | identifier: %{detail.identifier | value: Mongo.string_to_uuid(detail.identifier.value)}}
+            end)
+
+          %{evidence | details: details}
+      end)
+
+    %{
+      condition
+      | _id: Mongo.string_to_uuid(condition._id),
+        inserted_by: Mongo.string_to_uuid(condition.inserted_by),
+        updated_by: Mongo.string_to_uuid(condition.updated_by),
+        context: %{
+          context
+          | identifier: %{context.identifier | value: Mongo.string_to_uuid(context.identifier.value)}
+        },
+        source: source,
+        evidences: evidences
+    }
   end
 
   defp search_conditions_pipe(%{"patient_id" => patient_id} = params) do

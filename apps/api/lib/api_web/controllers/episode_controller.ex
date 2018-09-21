@@ -3,6 +3,7 @@ defmodule Api.Web.EpisodeController do
 
   use ApiWeb, :controller
   alias Api.Web.JobView
+  alias Core.Episode
   alias Core.Patients
   alias Core.Patients.Episodes
   alias Scrivener.Page
@@ -10,11 +11,11 @@ defmodule Api.Web.EpisodeController do
   action_fallback(Api.Web.FallbackController)
 
   def index(conn, %{"patient_id" => patient_id} = params) do
-    with %Page{} = paging <- Episodes.list(params) do
+    with %Page{entries: entries} = paging <- Episodes.list(params) do
       render(
         conn,
         "index.json",
-        paging: paging,
+        paging: %{paging | entries: Enum.map(entries, &Episode.create/1)},
         patient_id: patient_id
       )
     end
@@ -30,7 +31,8 @@ defmodule Api.Web.EpisodeController do
   end
 
   def show(conn, %{"patient_id" => patient_id, "id" => id}) do
-    with {:ok, episode} <- Episodes.get(patient_id, id) do
+    with {:ok, episode} <- Episodes.get(patient_id, id),
+         episode <- Episode.create(episode) do
       render(conn, "show.json", episode: episode, patient_id: patient_id)
     end
   end

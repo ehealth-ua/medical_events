@@ -19,11 +19,13 @@ defmodule Core.Validators.EpisodeContext do
       ])
       |> Enum.to_list()
 
+    episode_mongo_id = Mongo.string_to_uuid(episode_id)
+
     case result do
-      [%{"_id" => ^episode_id, "status" => @status_active}] ->
+      [%{"_id" => ^episode_mongo_id, "status" => @status_active}] ->
         :ok
 
-      [%{"_id" => ^episode_id}] ->
+      [%{"_id" => ^episode_mongo_id}] ->
         error(options, "Episode is not active")
 
       _ ->

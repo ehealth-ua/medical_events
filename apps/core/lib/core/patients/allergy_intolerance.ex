@@ -7,7 +7,7 @@ defmodule Core.AllergyIntolerance do
   alias Core.Source
 
   embedded_schema do
-    field(:id, presence: true)
+    field(:id, presence: true, mongo_uuid: true)
     field(:clinical_status, presence: true)
     field(:verification_status, presence: true)
     field(:type, presence: true)

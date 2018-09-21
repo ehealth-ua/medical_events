@@ -3,6 +3,7 @@ defmodule Api.Web.ConditionView do
 
   use ApiWeb, :view
   alias Api.Web.ReferenceView
+  alias Api.Web.UUIDView
 
   def render("index.json", %{conditions: conditions}) do
     render_many(conditions, __MODULE__, "show.json", as: :condition)
@@ -16,7 +17,7 @@ defmodule Api.Web.ConditionView do
     )a
 
     condition_data = %{
-      id: condition._id,
+      id: UUIDView.render(condition._id),
       body_sites: ReferenceView.render(condition.body_sites),
       severity: ReferenceView.render(condition.severity),
       stage: ReferenceView.render(condition.stage),

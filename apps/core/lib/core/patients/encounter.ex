@@ -14,7 +14,7 @@ defmodule Core.Encounter do
   def status(:entered_in_error), do: @status_entered_in_error
 
   embedded_schema do
-    field(:id, presence: true)
+    field(:id, presence: true, mongo_uuid: true)
     field(:status, presence: true)
     field(:status_history)
     field(:class, presence: true, reference: [path: "class"])

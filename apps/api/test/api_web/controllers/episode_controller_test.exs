@@ -397,12 +397,12 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       episode = build(:episode)
-      patient = insert(:patient, episodes: %{episode.id => episode})
+      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
 
       expect_get_person_data(patient._id)
 
       conn
-      |> get(episode_path(conn, :show, patient._id, episode.id))
+      |> get(episode_path(conn, :show, patient._id, UUID.binary_to_string!(episode.id.binary)))
       |> json_response(200)
       |> Map.get("data")
       |> assert_json_schema("episodes/episode_show.json")
@@ -421,8 +421,7 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       episode = build(:episode)
-      patient = insert(:patient, episodes: %{episode.id => episode})
-
+      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       expect_get_person_data(patient._id)
 
       conn
@@ -501,17 +500,12 @@ defmodule Api.Web.EpisodeControllerTest do
         1..200
         |> Enum.reduce(%{}, fn _, acc ->
           episode = build(:episode)
-          Map.put(acc, episode.id, episode)
+          Map.put(acc, UUID.binary_to_string!(episode.id.binary), episode)
         end)
-        |> Map.put(episode_t.id, episode_t)
-        |> Map.put(episode_y.id, episode_y)
+        |> Map.put(UUID.binary_to_string!(episode_t.id.binary), episode_t)
+        |> Map.put(UUID.binary_to_string!(episode_y.id.binary), episode_y)
 
-      patient =
-        insert(
-          :patient,
-          episodes: episodes
-        )
-
+      patient = insert(:patient, episodes: episodes)
       expect_get_person_data(patient._id)
 
       resp =
@@ -521,7 +515,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert [%{"id" => idt} | _] = resp["data"]
-      assert idt == episode_t.id
+      assert idt == UUID.binary_to_string!(episode_t.id.binary)
       assert %{"page_number" => 1, "total_entries" => 202, "total_pages" => 202, "page_size" => 1} = resp["paging"]
     end
 
@@ -538,17 +532,12 @@ defmodule Api.Web.EpisodeControllerTest do
         1..200
         |> Enum.reduce(%{}, fn _, acc ->
           episode = build(:episode)
-          Map.put(acc, episode.id, episode)
+          Map.put(acc, UUID.binary_to_string!(episode.id.binary), episode)
         end)
-        |> Map.put(episode_t.id, episode_t)
-        |> Map.put(episode_y.id, episode_y)
+        |> Map.put(UUID.binary_to_string!(episode_t.id.binary), episode_t)
+        |> Map.put(UUID.binary_to_string!(episode_y.id.binary), episode_y)
 
-      patient =
-        insert(
-          :patient,
-          episodes: episodes
-        )
-
+      patient = insert(:patient, episodes: episodes)
       expect_get_person_data(patient._id)
 
       resp =
@@ -558,7 +547,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert [_, %{"id" => idy}] = resp["data"]
-      assert idy == episode_y.id
+      assert idy == UUID.binary_to_string!(episode_y.id.binary)
       assert %{"page_number" => 2, "total_entries" => 202, "total_pages" => 2, "page_size" => 200} = resp["paging"]
     end
 

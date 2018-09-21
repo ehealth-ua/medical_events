@@ -82,7 +82,8 @@ config :vex,
       strict_presence: Core.Validators.StrictPresence,
       observation_reference: Core.Validators.ObservationReference,
       source: Core.Validators.Source,
-      unique_ids: Core.Validators.UniqueIds
+      unique_ids: Core.Validators.UniqueIds,
+      mongo_uuid: Core.Validators.MongoUUID
     ],
     Vex.Validators
   ]

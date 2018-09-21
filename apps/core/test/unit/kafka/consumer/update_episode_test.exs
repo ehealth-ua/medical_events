@@ -13,7 +13,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
     test "update with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: Episode.status(:closed))
-      patient = insert(:patient, episodes: %{episode.id => episode})
+      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       client_id = UUID.uuid4()
 
       stub(IlMock, :get_employee, fn id, _ ->
@@ -35,7 +35,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
                  patient_id: patient._id,
-                 id: episode.id,
+                 id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "managing_organization" => %{
                      "identifier" => %{

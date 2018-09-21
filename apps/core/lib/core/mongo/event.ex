@@ -17,8 +17,13 @@ defmodule Core.Mongo.Event do
   end
 
   defp validate(%{type: type, collection: collection, actor_id: actor_id} = event)
-       when type in @allowed_event_types and is_binary(collection) and is_binary(actor_id),
-       do: {:ok, event}
+       when type in @allowed_event_types and is_binary(collection) do
+    case actor_id do
+      %BSON.Binary{subtype: :uuid} -> {:ok, event}
+      value when is_binary(value) -> {:ok, event}
+      _ -> {:error, :invalid_event_params}
+    end
+  end
 
   defp validate(_event), do: {:error, :invalid_event_params}
 

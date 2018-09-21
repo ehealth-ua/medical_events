@@ -3,6 +3,7 @@ defmodule Api.Web.ObservationView do
 
   use ApiWeb, :view
   alias Api.Web.ReferenceView
+  alias Api.Web.UUIDView
 
   def render("index.json", %{observations: observations}) do
     render_many(observations, __MODULE__, "show.json", as: :observation)
@@ -11,7 +12,6 @@ defmodule Api.Web.ObservationView do
   def render("show.json", %{observation: observation}) do
     observation_fields = ~w(
       status
-      based_on
       issued
       primary_source
       comment
@@ -19,14 +19,15 @@ defmodule Api.Web.ObservationView do
     )a
 
     observation_data = %{
-      id: observation._id,
+      id: UUIDView.render(observation._id),
       categories: ReferenceView.render(observation.categories),
       context: ReferenceView.render(observation.context),
       interpretation: ReferenceView.render(observation.interpretation),
       code: ReferenceView.render(observation.code),
       body_site: ReferenceView.render(observation.body_site),
       reference_ranges: ReferenceView.render(observation.reference_ranges),
-      components: ReferenceView.render(observation.components)
+      components: ReferenceView.render(observation.components),
+      based_on: ReferenceView.render(observation.based_on)
     }
 
     observation

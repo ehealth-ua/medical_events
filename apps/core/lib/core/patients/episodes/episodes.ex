@@ -25,10 +25,9 @@ defmodule Core.Patients.Episodes do
       %{"$match" => %{"_id" => patient_id}},
       %{"$project" => %{"episodes" => %{"$objectToArray" => "$episodes"}}},
       %{"$unwind" => "$episodes"},
-      %{
-        "$project" => %{"_id" => "$episodes.k", "episode" => "$episodes.v"}
-      },
-      %{"$sort" => %{"episode.inserted_at" => -1}}
+      %{"$project" => %{"episode" => "$episodes.v"}},
+      %{"$replaceRoot" => %{"newRoot" => "$episode"}},
+      %{"$sort" => %{"inserted_at" => -1}}
     ]
 
     with %Page{} = paging <- Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do

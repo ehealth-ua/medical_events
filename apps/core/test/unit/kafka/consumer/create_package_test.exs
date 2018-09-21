@@ -121,7 +121,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "condition" => %{
                 "identifier" => %{
                   "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
-                  "value" => condition._id
+                  "value" => UUID.binary_to_string!(condition._id.binary)
                 }
               },
               "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
@@ -283,7 +283,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   %{
                     "identifier" => %{
                       "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
-                      "value" => db_observation._id
+                      "value" => UUID.binary_to_string!(db_observation._id.binary)
                     }
                   }
                 ]

@@ -1,8 +1,10 @@
 defmodule Api.Web.ReferenceView do
   @moduledoc false
 
+  alias Api.Web.UUIDView
   alias Core.CodeableConcept
   alias Core.Coding
+  alias Core.DatePeriod
   alias Core.Evidence
   alias Core.Identifier
   alias Core.Observations.Component
@@ -24,7 +26,7 @@ defmodule Api.Web.ReferenceView do
   def render(%Identifier{} = identifier) do
     %{
       type: render(identifier.type),
-      value: identifier.value
+      value: UUIDView.render(identifier.value)
     }
   end
 
@@ -65,6 +67,13 @@ defmodule Api.Web.ReferenceView do
     )a)
   end
 
+  def render(%DatePeriod{} = period) do
+    Map.take(period, ~w(
+      start
+      end
+    )a)
+  end
+
   def render(%Coding{} = coding) do
     Map.take(coding, ~w(
       system
@@ -93,7 +102,7 @@ defmodule Api.Web.ReferenceView do
   end
 
   def render_value(%Value{type: "codeable_concept", value: value}) do
-    %{"value_codeable_concept" => render(value)}
+    %{value_codeable_concept: render(value)}
   end
 
   def render_value(%Value{type: "quantity", value: value}) do
@@ -105,7 +114,7 @@ defmodule Api.Web.ReferenceView do
       code
     )a
 
-    %{"value_quantity" => Map.take(value, fields)}
+    %{value_quantity: Map.take(value, fields)}
   end
 
   def render_value(%Value{type: "sampled_data", value: value}) do
@@ -118,34 +127,34 @@ defmodule Api.Web.ReferenceView do
       dimensions data
     )a
 
-    %{"value_sampled_data" => Map.take(value, fields)}
+    %{value_sampled_data: Map.take(value, fields)}
   end
 
   def render_value(%Value{type: "range", value: value}) do
-    %{"value_range" => Map.take(value, ~w(low high)a)}
+    %{value_range: Map.take(value, ~w(low high)a)}
   end
 
   def render_value(%Value{type: "ratio", value: value}) do
-    %{"value_ratio" => Map.take(value, ~w(numerator denominator)a)}
+    %{value_ratio: Map.take(value, ~w(numerator denominator)a)}
   end
 
   def render_value(%Value{type: "period", value: value}) do
-    %{"value_period" => render(value)}
+    %{value_period: render(value)}
   end
 
   def render_value(%Value{type: type, value: value}) do
-    %{("value_" <> type) => value}
+    %{String.to_atom("value_" <> type) => UUIDView.render(value)}
   end
 
   def render_source(%Source{type: type, value: value}) do
-    %{type => render(value)}
+    %{String.to_atom(type) => render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do
-    %{"effective_date_time" => value}
+    %{effective_date_time: value}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_period", value: value}) do
-    %{"effective_period" => render(value)}
+    %{effective_period: render(value)}
   end
 end

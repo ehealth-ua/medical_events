@@ -156,7 +156,7 @@ defmodule Api.Web.ConditionControllerTest do
       expect_get_person_data(patient._id)
 
       conn
-      |> get(condition_path(conn, :show, patient._id, condition._id))
+      |> get(condition_path(conn, :show, patient._id, UUID.binary_to_string!(condition._id.binary)))
       |> json_response(200)
       |> assert_json_schema("conditions/condition_show.json")
     end
@@ -182,7 +182,8 @@ defmodule Api.Web.ConditionControllerTest do
     encounter_id = UUID.uuid4()
 
     context =
-      build(:reference,
+      build(
+        :reference,
         identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
       )
 

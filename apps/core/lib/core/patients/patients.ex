@@ -4,6 +4,7 @@ defmodule Core.Patients do
   import Core.Schema, only: [add_validations: 3]
   alias Core.AllergyIntolerance
   alias Core.Condition
+  alias Core.Conditions
   alias Core.DatePeriod
   alias Core.Encounter
   alias Core.Episode
@@ -29,6 +30,7 @@ defmodule Core.Patients do
   alias Core.Visit
   alias EView.Views.ValidationError
   alias Core.Conditions.Validations, as: ConditionValidations
+  alias Core.Observations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
@@ -129,10 +131,43 @@ defmodule Core.Patients do
           %{"updated_by" => user_id, "updated_at" => now}
           |> Mongo.add_to_set(visit, "visits.#{visit_id}")
           |> Mongo.add_to_set(encounter, "encounters.#{encounter.id}")
+          |> Mongo.convert_to_uuid("visits.#{visit_id}.id")
+          |> Mongo.convert_to_uuid("visits.#{visit_id}.inserted_by")
+          |> Mongo.convert_to_uuid("visits.#{visit_id}.updated_by")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.id")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.inserted_by")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.updated_by")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.division.identifier.value")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.episode.identifier.value")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.performer.identifier.value")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.visit.identifier.value")
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.diagnoses", ~w(condition identifier value)a)
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.incoming_referrals", ~w(identifier value)a)
+          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.service_provider.identifier.value")
+          |> Mongo.convert_to_uuid("updated_by")
 
         set =
           Enum.reduce(immunizations, set, fn immunization, acc ->
-            Mongo.add_to_set(acc, immunization, "immunizations.#{immunization.id}")
+            acc
+            |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.id")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.inserted_by")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
+          end)
+
+        set =
+          Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
+            acc
+            |> Mongo.add_to_set(allergy_intolerance, "allergy_intolerances.#{allergy_intolerance.id}")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.id")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.inserted_by")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.updated_by")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.context.identifier.value")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value")
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
@@ -196,8 +231,7 @@ defmodule Core.Patients do
     episode =
       %{
         episode
-        | encounters: %{},
-          status_history: [],
+        | status_history: [],
           inserted_by: job.user_id,
           updated_by: job.user_id,
           inserted_at: now,
@@ -221,7 +255,15 @@ defmodule Core.Patients do
               |> fill_up_episode_care_manager()
               |> fill_up_episode_managing_organization()
 
-            set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
+            set =
+              %{"updated_by" => episode.updated_by}
+              |> Mongo.add_to_set(episode, "episodes.#{episode.id}")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.id")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.inserted_by")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
+              |> Mongo.convert_to_uuid("updated_by")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
               Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
@@ -265,6 +307,10 @@ defmodule Core.Patients do
             |> Mongo.add_to_set(episode.care_manager, "episodes.#{episode.id}.care_manager")
             |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
             |> Mongo.add_to_set(episode.managing_organization, "episodes.#{episode.id}.managing_organization")
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
+            |> Mongo.convert_to_uuid("updated_by")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
             Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
@@ -313,12 +359,13 @@ defmodule Core.Patients do
             |> Mongo.add_to_set(episode.closing_reason, "episodes.#{episode.id}.closing_reason")
             |> Mongo.add_to_set(episode.closing_summary, "episodes.#{episode.id}.closing_summary")
             |> Mongo.add_to_set(episode.period.end, "episodes.#{episode.id}.period.end")
+            |> Mongo.convert_to_uuid("updated_by")
 
           status_history =
             StatusHistory.create(%{
               "status" => episode.status,
               "inserted_at" => episode.updated_at,
-              "inserted_by" => episode.updated_by
+              "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
             })
 
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
@@ -376,12 +423,13 @@ defmodule Core.Patients do
               |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
               |> Mongo.add_to_set(episode.explanatory_letter, "episodes.#{episode.id}.explanatory_letter")
               |> Mongo.add_to_set(episode.cancellation_reason, "episodes.#{episode.id}.cancellation_reason")
+              |> Mongo.convert_to_uuid("updated_by")
 
             status_history =
               StatusHistory.create(%{
                 "status" => episode.status,
                 "inserted_at" => episode.updated_at,
-                "inserted_by" => episode.updated_by
+                "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
               })
 
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
@@ -672,7 +720,11 @@ defmodule Core.Patients do
 
   defp validate_observations(observations) do
     Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
-      if Mongo.find_one(Observation.metadata().collection, %{"_id" => observation._id}, projection: %{"_id" => true}) do
+      if Mongo.find_one(
+           Observation.metadata().collection,
+           %{"_id" => Mongo.string_to_uuid(observation._id)},
+           projection: %{"_id" => true}
+         ) do
         {:halt, {:error, "Observation with id '#{observation._id}' already exists", 409}}
       else
         {:cont, acc}
@@ -731,6 +783,7 @@ defmodule Core.Patients do
   defp insert_conditions(links, [], _), do: links
 
   defp insert_conditions(links, conditions, patient_id) do
+    conditions = Enum.map(conditions, &Conditions.create/1)
     {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
 
     Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
@@ -741,6 +794,7 @@ defmodule Core.Patients do
   defp insert_observations(links, [], _), do: links
 
   defp insert_observations(links, observations, patient_id) do
+    observations = Enum.map(observations, &Observations.create/1)
     {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
 
     Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->

@@ -5,7 +5,7 @@ defmodule Core.Visit do
   alias Core.Period
 
   embedded_schema do
-    field(:id, presence: true)
+    field(:id, presence: true, mongo_uuid: true)
     field(:period, reference: [path: "period"])
 
     timestamps()

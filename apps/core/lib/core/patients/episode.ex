@@ -16,7 +16,7 @@ defmodule Core.Episode do
   def status(:cancelled), do: @status_cancelled
 
   embedded_schema do
-    field(:id, presence: true)
+    field(:id, presence: true, mongo_uuid: true)
     field(:name)
     field(:status)
     field(:cancellation_reason)
@@ -28,7 +28,6 @@ defmodule Core.Episode do
     field(:managing_organization, presence: true, reference: [path: "managing_organization"])
     field(:period, presence: true, reference: [path: "period"])
     field(:care_manager, presence: true, reference: [path: "care_manager"])
-    field(:encounters)
 
     timestamps()
     changed_by()

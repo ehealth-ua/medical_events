@@ -22,19 +22,31 @@ defmodule Core.Factories do
   alias Core.Period
   alias Core.Reference
   alias Core.Source
-  alias Core.StatusHistory
   alias Core.Stage
+  alias Core.StatusHistory
   alias Core.Visit
 
   def patient_factory do
     visits = build_list(2, :visit)
-    visits = Enum.into(visits, %{}, fn %{id: id} = visit -> {id, visit} end)
+
+    visits =
+      Enum.into(visits, %{}, fn %{id: %BSON.Binary{binary: id}} = visit ->
+        {UUID.binary_to_string!(id), visit}
+      end)
 
     episodes = build_list(2, :episode)
-    episodes = Enum.into(episodes, %{}, fn %{id: id} = episode -> {id, episode} end)
+
+    episodes =
+      Enum.into(episodes, %{}, fn %{id: %BSON.Binary{binary: id}} = episode ->
+        {UUID.binary_to_string!(id), episode}
+      end)
 
     encounters = build_list(2, :encounter)
-    encounters = Enum.into(encounters, %{}, fn encounter -> {encounter.id, encounter} end)
+
+    encounters =
+      Enum.into(encounters, %{}, fn %{id: %BSON.Binary{binary: id}} = encounter ->
+        {UUID.binary_to_string!(id), encounter}
+      end)
 
     id = UUID.uuid4()
 
@@ -57,11 +69,11 @@ defmodule Core.Factories do
     id = UUID.uuid4()
 
     %Visit{
-      id: id,
+      id: Mongo.string_to_uuid(id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      inserted_by: id,
-      updated_by: id,
+      inserted_by: Mongo.string_to_uuid(id),
+      updated_by: Mongo.string_to_uuid(id),
       period: build(:period)
     }
   end
@@ -91,7 +103,7 @@ defmodule Core.Factories do
     now = DateTime.utc_now()
 
     %Observation{
-      _id: UUID.uuid4(),
+      _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
       categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
       code: codeable_concept_coding(system: "eHealth/observations_codes"),
@@ -130,8 +142,8 @@ defmodule Core.Factories do
         ),
       inserted_at: now,
       updated_at: now,
-      inserted_by: id,
-      updated_by: id
+      inserted_by: Mongo.string_to_uuid(id),
+      updated_by: Mongo.string_to_uuid(id)
     }
   end
 
@@ -177,15 +189,15 @@ defmodule Core.Factories do
     now = DateTime.utc_now()
 
     %Encounter{
-      id: UUID.uuid4(),
+      id: Mongo.string_to_uuid(UUID.uuid4()),
       episode: build(:reference),
       performer: build(:reference),
       visit: build(:visit),
       type: build(:codeable_concept),
       inserted_at: now,
       updated_at: now,
-      inserted_by: id,
-      updated_by: id
+      inserted_by: Mongo.string_to_uuid(id),
+      updated_by: Mongo.string_to_uuid(id)
     }
   end
 
@@ -196,19 +208,18 @@ defmodule Core.Factories do
     date = {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
 
     %Episode{
-      id: UUID.uuid4(),
+      id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Episode.status(:active),
       status_history: build_list(1, :status_history),
       type: "primary_care",
       name: "ОРВИ 2018",
       managing_organization: build(:reference),
       period: build(:period, start: date),
-      encounters: %{},
       care_manager: build(:reference),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      inserted_by: id,
-      updated_by: id
+      inserted_by: Mongo.string_to_uuid(id),
+      updated_by: Mongo.string_to_uuid(id)
     }
   end
 
@@ -239,7 +250,7 @@ defmodule Core.Factories do
   def identifier_factory do
     %Identifier{
       type: build(:codeable_concept),
-      value: UUID.uuid4()
+      value: Mongo.string_to_uuid(UUID.uuid4())
     }
   end
 
@@ -262,7 +273,7 @@ defmodule Core.Factories do
     today = Date.utc_today()
 
     %Condition{
-      _id: UUID.uuid4(),
+      _id: Mongo.string_to_uuid(UUID.uuid4()),
       context: reference_coding(code: "encounter"),
       code: codeable_concept_coding(system: "eHealth/ICD10/conditions"),
       clinical_status: "active",
@@ -280,8 +291,8 @@ defmodule Core.Factories do
         )
       ],
       patient_id: patient_id,
-      inserted_by: id,
-      updated_by: id,
+      inserted_by: Mongo.string_to_uuid(id),
+      updated_by: Mongo.string_to_uuid(id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       source: build(:source, type: "asserter", value: reference_coding(system: "eHealth/resources", code: "employee")),
@@ -293,7 +304,7 @@ defmodule Core.Factories do
     %StatusHistory{
       status: Episode.status(:active),
       inserted_at: DateTime.utc_now(),
-      inserted_by: UUID.uuid4()
+      inserted_by: Mongo.string_to_uuid(UUID.uuid4())
     }
   end
 

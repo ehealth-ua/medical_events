@@ -15,7 +15,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
     test "close with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: @closed)
-      patient = insert(:patient, episodes: %{episode.id => episode})
+      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
@@ -24,7 +24,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                Consumer.consume(%EpisodeCloseJob{
                  _id: to_string(job._id),
                  patient_id: patient._id,
-                 id: episode.id,
+                 id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "period" => %{"end" => to_string(Date.utc_today())},
                    "closing_reason" => %{

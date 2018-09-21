@@ -110,8 +110,8 @@ defmodule Core.Schema do
 
   defmacro changed_by do
     quote do
-      field(:inserted_by, presence: true, uuid: true)
-      field(:updated_by, presence: true, uuid: true)
+      field(:inserted_by, presence: true, mongo_uuid: true)
+      field(:updated_by, presence: true, mongo_uuid: true)
     end
   end
 
@@ -147,6 +147,15 @@ defimpl Vex.Blank, for: NaiveDateTime do
   def blank?(_), do: true
 end
 
+defimpl Vex.Blank, for: BSON.Binary do
+  def blank?(%BSON.Binary{}), do: false
+  def blank?(_), do: true
+end
+
 defimpl String.Chars, for: BSON.ObjectId do
   def to_string(value), do: BSON.ObjectId.encode!(value)
+end
+
+defimpl String.Chars, for: BSON.Binary do
+  def to_string(%BSON.Binary{binary: value, subtype: :uuid}), do: UUID.binary_to_string!(value)
 end

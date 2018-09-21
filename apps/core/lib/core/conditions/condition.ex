@@ -11,7 +11,7 @@ defmodule Core.Condition do
 
   @primary_key :_id
   schema :conditions do
-    field(:_id, uuid: true)
+    field(:_id, presence: true, mongo_uuid: true)
     field(:clinical_status)
     field(:verification_status)
     field(:severity, reference: [path: "severity"])

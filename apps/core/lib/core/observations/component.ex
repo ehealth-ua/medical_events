@@ -27,7 +27,7 @@ defmodule Core.Observations.Component do
         {"value", %{"type" => type, "value" => value}} ->
           {:value, Value.create(type, value)}
 
-        {"value_" <> _ = type, value} ->
+        {"value_" <> type, value} ->
           {:value, Value.create(type, value)}
 
         {"reference_ranges", v} ->
