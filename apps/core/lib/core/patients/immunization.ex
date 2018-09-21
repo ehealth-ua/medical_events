@@ -2,6 +2,7 @@ defmodule Core.Immunization do
   @moduledoc false
 
   use Core.Schema
+
   alias Core.CodeableConcept
   alias Core.Observations.Values.Quantity
   alias Core.Patients.Immunizations.Explanation
@@ -26,7 +27,7 @@ defmodule Core.Immunization do
     field(:primary_source, strict_presence: true)
     field(:source, presence: true, reference: [path: "source"])
     field(:legal_entity, reference: [path: "legal_entity"])
-    field(:manufacturer, reference: [path: "manufacturer"])
+    field(:manufacturer)
     field(:lot_number)
     field(:expiration_date, reference: [path: "expiration_date"])
     field(:site, reference: [path: "site"])
@@ -47,11 +48,11 @@ defmodule Core.Immunization do
         {"context", v} ->
           {:context, Reference.create(v)}
 
-        {"date", v} ->
+        {"date", "" = v} ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 
-        {"issued", v} ->
+        {"issued", "" = v} ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:issued, datetime}
 
@@ -64,10 +65,7 @@ defmodule Core.Immunization do
         {"legal_entity", v} ->
           {:legal_entity, Reference.create(v)}
 
-        {"manufacturer", v} ->
-          {:manufacturer, CodeableConcept.create(v)}
-
-        {"expiration_date", v} ->
+        {"expiration_date", "" = v} ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:expiration_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 
@@ -76,6 +74,9 @@ defmodule Core.Immunization do
 
         {"route", v} ->
           {:route, CodeableConcept.create(v)}
+
+        {"explanation", %{"type" => type, "value" => value}} ->
+          {:explanation, Explanation.create(%{type => value})}
 
         {"explanation", v} ->
           {:explanation, Explanation.create(v)}

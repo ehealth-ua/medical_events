@@ -700,7 +700,10 @@
                 "$ref": "#/definitions/codeable_concept"
               },
               "applies_to": {
-                "$ref": "#/definitions/codeable_concept"
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/codeable_concept"
+                }
               },
               "age": {
                 "type": "object",
@@ -794,7 +797,10 @@
                       "$ref": "#/definitions/codeable_concept"
                     },
                     "applies_to": {
-                      "$ref": "#/definitions/codeable_concept"
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/codeable_concept"
+                      }
                     },
                     "age": {
                       "type": "object",

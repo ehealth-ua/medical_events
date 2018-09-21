@@ -2,8 +2,17 @@ defmodule Api.Web.EncounterControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+
   import Core.Expectations.CasherExpectation
+  import Core.Expectations.DigitalSignatureExpectation
   import Mox
+
+  alias Api.Web.AllergyIntoleranceView
+  alias Api.Web.ConditionView
+  alias Api.Web.EncounterView
+  alias Api.Web.ImmunizationView
+  alias Api.Web.ObservationView
+
   alias Core.Patient
   alias Core.Patients
 
@@ -98,6 +107,7 @@ defmodule Api.Web.EncounterControllerTest do
              } = response
     end
   end
+
 
   describe "show encounter" do
     test "successful show", %{conn: conn} do
@@ -274,6 +284,83 @@ defmodule Api.Web.EncounterControllerTest do
 
       Enum.each(resp["data"], &assert_json_schema(&1, "encounters/encounter_show.json"))
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+  end
+
+  describe "cancel encounter" do
+    setup %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      {:ok, conn: put_consumer_id_header(conn)}
+    end
+
+    @tag :wip
+    test "success", %{conn: conn} do
+      episode = build(:episode)
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+      immunization = build(:immunization, context: context)
+      immunization2 = build(:immunization, context: context)
+      allergy_intolerance = build(:allergy_intolerance, context: context)
+      allergy_intolerance2 = build(:allergy_intolerance)
+
+      patient =
+        insert(
+          :patient,
+          episodes: %{episode.id => episode},
+          encounters: %{encounter.id => encounter},
+          immunizations: %{immunization.id => immunization, immunization2.id => immunization2},
+          allergy_intolerances: %{
+            allergy_intolerance.id => allergy_intolerance,
+            allergy_intolerance2.id => allergy_intolerance2
+          }
+        )
+
+      observation = insert(:observation, patient_id: patient._id, context: context)
+      condition = insert(:condition, patient_id: patient._id, context: context)
+
+      expect_get_person_data(patient._id)
+      expect_signature()
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect(IlMock, :get_employee, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "party" => %{
+               "tax_id" => encounter.performer.identifier.value
+             }
+           }
+         }}
+      end)
+
+      expect(MediaStorageMock, :store_signed_content, fn _, _, _, _, _ ->
+        {:ok, "success"}
+      end)
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
+            "conditions" => [ConditionView.render("show.json", %{condition: condition})],
+            "observations" => [ObservationView.render("show.json", %{observation: observation})],
+            "immunizations" => [ImmunizationView.render("show.json", %{immunization: immunization})],
+            "allergy_intolerances" => [
+              AllergyIntoleranceView.render("show.json", %{allergy_intolerance: allergy_intolerance})
+            ]
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      conn
+      |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+      |> json_response(202)
     end
   end
 end

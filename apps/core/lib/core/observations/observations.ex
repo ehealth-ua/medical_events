@@ -28,6 +28,12 @@ defmodule Core.Observations do
     end
   end
 
+  def get_by_encounter_id(patient_id, encounter_id) do
+    @observation_collection
+    |> Mongo.find(%{"patient_id" => patient_id, "context.identifier.value" => encounter_id})
+    |> Enum.to_list()
+  end
+
   def list(params) do
     paging_params = Map.take(params, ["page", "page_size"])
 

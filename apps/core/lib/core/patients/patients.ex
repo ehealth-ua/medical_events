@@ -16,6 +16,7 @@ defmodule Core.Patients do
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
+  alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
   alias Core.Observation
@@ -30,7 +31,6 @@ defmodule Core.Patients do
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
-  alias EView.Views.ValidationError
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations
   alias Core.Observations.Validations, as: ObservationValidations
@@ -39,6 +39,8 @@ defmodule Core.Patients do
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
+  alias EView.Views.ValidationError
+
   require Logger
 
   @collection Patient.metadata().collection
@@ -123,6 +125,105 @@ defmodule Core.Patients do
          :ok <- @kafka_producer.publish_medical_event(package_create_job) do
       {:ok, job}
     end
+  end
+
+  def produce_cancel_package(%{"patient_id" => patient_id} = params, user_id, client_id) do
+    with :ok <- JsonSchema.validate(:package_cancel, Map.delete(params, "patient_id")),
+         {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
+         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
+         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
+         :ok <- Signature.check_drfo(signer, employee_id) do
+      encounter_id = decoded_content["encounter"]["id"]
+
+      a = create_encounter_package(encounter_id, patient_id)
+      b = create_encounter_package_from_request(decoded_content)
+      a == b
+    end
+
+    # - Compare signed_content to previously created content (exclude statuses, cancellation_reason, explanatory_letter)
+    # - Validate diagnoses
+    # - Validate cancellation_reason
+
+    # job = %PackageCancelJob{}
+
+    with {:ok, job, _package_cancel_job} <-
+           Jobs.create(PackageCancelJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
+         :ok <- @kafka_producer.publish_medical_event(job) do
+      {:ok, job}
+    end
+  end
+
+  defp create_encounter_package(encounter_id, patient_id) do
+    with {:ok, encounter} <- Core.Patients.Encounters.get_by_id(patient_id, encounter_id) do
+      %{
+        "encounter" => encounter |> filter_encounter(),
+        "conditions" => Core.Conditions.get_by_encounter_id(patient_id, encounter_id) |> filter_conditions()
+        # "allergy_intolerances" => Core.Patients.AllergyIntolerances.get_by_encounter_id(patient_id, encounter_id),
+        # "immunizations" => Core.Patients.Immunizations.get_by_encounter_id(patient_id, encounter_id),
+        # "observations" => Core.Observations.get_by_encounter_id(patient_id, encounter_id)
+      }
+    end
+  end
+
+  defp create_encounter_package_from_request(decoded_content) do
+    %{
+      "encounter" => Core.Encounter.create(decoded_content["encounter"]) |> filter_encounter(),
+      "conditions" => Enum.map(decoded_content["conditions"], &Core.Condition.create(&1)) |> filter_conditions()
+    }
+  end
+
+  defp filter_encounter(encounter) do
+    # status
+    %{
+      id: encounter.id,
+      date: Core.ReferenceView.render_date(encounter.date),
+      visit: Core.ReferenceView.render(encounter.visit),
+      episode: Core.ReferenceView.render(encounter.episode),
+      class: Core.ReferenceView.render(encounter.class),
+      type: Core.ReferenceView.render(encounter.type),
+      incoming_referrals: Core.ReferenceView.render(encounter.incoming_referrals),
+      performer: Core.ReferenceView.render(encounter.performer),
+      reasons: Core.ReferenceView.render(encounter.reasons),
+      diagnoses: Core.ReferenceView.render(encounter.diagnoses),
+      actions: Core.ReferenceView.render(encounter.actions),
+      division: Core.ReferenceView.render(encounter.division)
+    }
+  end
+
+  defp filter_conditions(conditions) do
+    # verification_status
+    Enum.map(conditions, fn condition ->
+      %{
+        id: condition._id,
+        primary_source: condition.primary_source,
+        context: Core.ReferenceView.render(condition.context),
+        code: Core.ReferenceView.render(condition.code),
+        clinical_status: condition.clinical_status,
+        severity: Core.ReferenceView.render(condition.severity),
+        body_sites: Core.ReferenceView.render(condition.body_sites),
+        stage: Core.ReferenceView.render(condition.stage),
+        evidences: Core.ReferenceView.render(condition.evidences),
+        asserted_date: Core.ReferenceView.render_date(condition.asserted_date),
+        onset_date: Core.ReferenceView.render_date(condition.onset_date)
+      }
+      |> Map.merge(Core.ReferenceView.render_source(condition.source))
+    end)
+  end
+
+  def filter_allergy_intolerances(allergy_intolerances) do
+    Enum.map(allergy_intolerances, fn allergy_intolerance ->
+      allergy_intolerance
+      |> Map.drop(~w())
+    end)
+  end
+
+  def consume_cancel_package(%PackageCancelJob{signed_data: signed_data, client_id: client_id, user_id: user_id} = job) do
+    # todo:
+    # ---<< Save signed_content to Media Storage
+    # - Set status `entered_in_error` for objects, submitted with status `entered_in_error`
+    # - Set cancellation_reason, explanatory_letter
+    # - Deactivate corresponding diagnoses in the episode
+    :ok
   end
 
   def consume_create_package(%PackageCreateJob{patient_id: patient_id, user_id: user_id} = job) do

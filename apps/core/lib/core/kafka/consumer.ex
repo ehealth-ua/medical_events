@@ -7,12 +7,17 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
+  alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Patients
   require Logger
 
   def consume(%PackageCreateJob{} = package_create_job) do
     do_consume(Patients, :consume_create_package, package_create_job)
+  end
+
+  def consume(%PackageCancelJob{} = package_cancel_job) do
+    do_consume(Patients, :consume_cancel_package, package_cancel_job)
   end
 
   def consume(%EpisodeCreateJob{} = episode_create_job) do

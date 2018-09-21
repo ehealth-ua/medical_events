@@ -2,8 +2,9 @@ defmodule Api.Web.ConditionView do
   @moduledoc false
 
   use ApiWeb, :view
-  alias Api.Web.ReferenceView
+
   alias Api.Web.UUIDView
+  alias Core.ReferenceView
 
   def render("index.json", %{conditions: conditions}) do
     render_many(conditions, __MODULE__, "show.json", as: :condition)
@@ -24,8 +25,8 @@ defmodule Api.Web.ConditionView do
       code: ReferenceView.render(condition.code),
       context: ReferenceView.render(condition.context),
       evidences: ReferenceView.render(condition.evidences),
-      asserted_date: render_date(condition.asserted_date),
-      onset_date: render_date(condition.onset_date)
+      asserted_date: ReferenceView.render_date(condition.asserted_date),
+      onset_date: ReferenceView.render_date(condition.onset_date)
     }
 
     condition
@@ -33,7 +34,4 @@ defmodule Api.Web.ConditionView do
     |> Map.merge(condition_data)
     |> Map.merge(ReferenceView.render_source(condition.source))
   end
-
-  defp render_date(nil), do: nil
-  defp render_date(%DateTime{} = date_time), do: date_time |> DateTime.to_date() |> to_string()
 end

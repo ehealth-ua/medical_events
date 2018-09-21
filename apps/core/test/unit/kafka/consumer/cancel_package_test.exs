@@ -1,70 +1,26 @@
-defmodule Core.Kafka.Consumer.CreatePackageTest do
+defmodule Core.Kafka.Consumer.CancelPackageTest do
   @moduledoc false
 
   use Core.ModelCase
 
-  import Core.Expectations.DigitalSignatureExpectation
   import Mox
+  import Core.Expectations.DigitalSignatureExpectation
 
   alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.PackageCreateJob
+  alias Core.Jobs.PackageCancelJob
   alias Core.Kafka.Consumer
   alias Core.Observation
-  alias Core.Patients
 
+  @moduletag :wipp
 
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
 
-  describe "consume create package event" do
-    test "empty content" do
+  describe "consume cancel package event" do
+    test "success" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
-      job = insert(:job)
-      expect_signature()
-
-      assert :ok =
-               Consumer.consume(%PackageCreateJob{
-                 _id: to_string(job._id),
-                 visit: %{"id" => UUID.uuid4(), "period" => %{}},
-                 signed_data: Base.encode64("")
-               })
-
-      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(to_string(job._id))
-    end
-
-    test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
-      job = insert(:job)
-      expect_signature()
-
-      assert :ok =
-               Consumer.consume(%PackageCreateJob{
-                 _id: to_string(job._id),
-                 visit: %{"id" => UUID.uuid4(), "period" => %{}},
-                 signed_data: Base.encode64(Jason.encode!(%{}))
-               })
-
-      assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(to_string(job._id))
-    end
-
-    test "visit not found" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       client_id = UUID.uuid4()
 
@@ -75,150 +31,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
              "id" => id,
              "status" => "APPROVED",
              "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
-
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
+             "legal_entity" => %{"id" => client_id}
            }
          }}
       end)
 
       encounter_id = UUID.uuid4()
-
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      patient = insert(:patient, _id: patient_id_hash)
-      condition = insert(:condition, patient_id: patient_id_hash)
-      job = insert(:job)
-      expect_signature()
-      visit_id = UUID.uuid4()
-      episode_id = patient.episodes |> Map.keys() |> hd
-
-      signed_content = %{
-        "encounter" => %{
-          "id" => encounter_id,
-          "status" => "finished",
-          "visit" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
-              "value" => UUID.uuid4()
-            }
-          },
-          "episode" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
-              "value" => episode_id
-            }
-          },
-          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
-          "reasons" => [
-            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
-          ],
-          "diagnoses" => [
-            %{
-              "condition" => %{
-                "identifier" => %{
-                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
-                  "value" => UUID.binary_to_string!(condition._id.binary)
-                }
-              },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]}
-            }
-          ],
-          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
-          "division" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
-              "value" => UUID.uuid4()
-            }
-          },
-          "performer" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-              "value" => UUID.uuid4()
-            }
-          }
-        }
-      }
-
-      user_id = UUID.uuid4()
-
-      assert :ok =
-               Consumer.consume(%PackageCreateJob{
-                 _id: to_string(job._id),
-                 patient_id: patient_id,
-                 user_id: user_id,
-                 client_id: client_id,
-                 signed_data: Base.encode64(Jason.encode!(signed_content))
-               })
-
-      assert {:ok,
-              %Core.Job{
-                response_size: 375,
-                status: @status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
-    end
-
-    test "success create package" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
-      client_id = UUID.uuid4()
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
-
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
-
-      encounter_id = UUID.uuid4()
-
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      patient = insert(:patient, _id: patient_id_hash)
-      db_observation = insert(:observation, patient_id: patient_id_hash)
+      patient = insert(:patient)
+      db_observation = insert(:observation, patient_id: patient._id)
       condition_id = UUID.uuid4()
       job = insert(:job)
       expect_signature()
@@ -305,7 +125,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   %{
                     "identifier" => %{
                       "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
-                      "value" => UUID.binary_to_string!(db_observation._id.binary)
+                      "value" => db_observation._id
                     }
                   }
                 ]
@@ -581,26 +401,20 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       user_id = UUID.uuid4()
 
       assert :ok =
-               Consumer.consume(%PackageCreateJob{
-                 _id: to_string(job._id),
-                 visit: %{
-                   "id" => visit_id,
-                   "period" => %{
-                     "start" => DateTime.to_iso8601(DateTime.utc_now()),
-                     "end" => DateTime.to_iso8601(DateTime.utc_now())
-                   }
-                 },
-                 patient_id: patient_id,
+               Consumer.consume(%PackageCancelJob{
+                 _id: job._id,
+                 patient_id: patient._id,
                  user_id: user_id,
                  client_id: client_id,
-                 signed_data: Base.encode64(Jason.encode!(signed_content))
+                 signed_data: Base.encode64(Jason.encode!(signed_content)),
+                 signed_data_decoded: signed_content
                })
 
       assert {:ok,
               %Core.Job{
-                response_size: 831,
+                response_size: _,
                 status: @status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
+              }} = Jobs.get_by_id(job._id)
     end
   end
 end

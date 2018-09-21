@@ -25,7 +25,8 @@ config :core,
   microservices: [
     il: Core.Microservices.Il,
     digital_signature: Core.Microservices.DigitalSignature,
-    casher: Core.Microservices.Casher
+    casher: Core.Microservices.Casher,
+    media_storage: Core.Microservices.MediaStorage
   ],
   cache: [
     validators: Core.Validators.Cache
@@ -35,7 +36,7 @@ config :core,
   ]
 
 config :core, Core.Microservices.Il,
-  endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
+  endpoint: {:system, "IL_ENDPOINT", "http://localhost:4001"},
   hackney_options: [
     connect_timeout: 30_000,
     recv_timeout: 30_000,
@@ -51,7 +52,7 @@ config :core, Core.Microservices.DigitalSignature,
   ]
 
 config :core, Core.Microservices.Casher,
-  endpoint: {:system, "CASHER_ENDPOINT", "http://casher-svc.il"},
+  endpoint: {:system, "CASHER_ENDPOINT", "http://localhost:4002"},
   hackney_options: [
     connect_timeout: 30_000,
     recv_timeout: 30_000,
@@ -59,6 +60,16 @@ config :core, Core.Microservices.Casher,
   ]
 
 config :core, Core.Patients, pk_hash_salt: {:system, "PERSON_PK_HASH_SALT"}
+
+config :core, Core.Microservices.MediaStorage,
+  endpoint: {:system, "MEDIA_STORAGE_ENDPOINT"},
+  enabled?: {:system, :boolean, "MEDIA_STORAGE_ENABLED", false},
+  encounter_data_package_bucket: {:system, "MEDIA_STORAGE_ENCOUNTER_DATA_PACKAGE_BUCKET"},
+  hackney_options: [
+    connect_timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000},
+    recv_timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000},
+    timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000}
+  ]
 
 config :core, Core.Redis,
   host: {:system, "REDIS_HOST", "0.0.0.0"},

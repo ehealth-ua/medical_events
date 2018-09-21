@@ -2,8 +2,9 @@ defmodule Api.Web.EncounterView do
   @moduledoc false
 
   use ApiWeb, :view
-  alias Api.Web.ReferenceView
-  alias Api.Web.UUIDView
+
+  alias Core.ReferenceView
+  alias Core.UUIDView
 
   def render("index.json", %{encounters: encounters}) do
     render_many(encounters, __MODULE__, "show.json", as: :encounter)

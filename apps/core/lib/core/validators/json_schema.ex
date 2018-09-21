@@ -8,6 +8,7 @@ defmodule Core.Validators.JsonSchema do
   alias Core.Validators.SchemaMapper
 
   use_schema(:package_create, "json_schemas/packages/package_create.json")
+  use_schema(:package_cancel, "json_schemas/packages/package_cancel.json")
   use_schema(:package_create_signed_content, "json_schemas/packages/package_create_signed_content.json")
   use_schema(:episode_create, "json_schemas/episodes/episode_create.json")
   use_schema(:episode_update, "json_schemas/episodes/episode_update.json")

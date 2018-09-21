@@ -26,6 +26,12 @@ defmodule Core.Conditions do
     end
   end
 
+  def get_by_encounter_id(patient_id, encounter_id) do
+    @condition_collection
+    |> Mongo.find(%{"patient_id" => patient_id, "context.identifier.value" => encounter_id})
+    |> Enum.map(&Condition.create/1)
+  end
+
   def list(params) do
     paging_params = Map.take(params, ~w(page page_size))
 
