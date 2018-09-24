@@ -56,11 +56,14 @@ defmodule Core.Immunization do
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:issued, datetime}
 
+        {"source", %{"type" => type, "value" => value}} ->
+          {:source, Source.create(type, value)}
+
         {"report_origin", v} ->
-          {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
+          {:source, Source.create("report_origin", v)}
 
         {"performer", v} ->
-          {:source, %Source{type: "performer", value: Reference.create(v)}}
+          {:source, Source.create("performer", v)}
 
         {"legal_entity", v} ->
           {:legal_entity, Reference.create(v)}
@@ -68,6 +71,9 @@ defmodule Core.Immunization do
         {"expiration_date", "" = v} ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:expiration_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+
+        {"vaccine_code", v} ->
+          {:vaccine_code, CodeableConcept.create(v)}
 
         {"site", v} ->
           {:site, CodeableConcept.create(v)}

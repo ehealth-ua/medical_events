@@ -215,7 +215,7 @@ defmodule Core.Factories do
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       effective_at: %EffectiveAt{type: "effective_date_time", value: now},
-      issued: DateTime.utc_now(),
+      issued: now,
       primary_source: true,
       source:
         build(:source,

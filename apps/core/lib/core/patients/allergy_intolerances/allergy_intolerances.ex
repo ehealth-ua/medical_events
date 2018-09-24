@@ -60,6 +60,6 @@ defmodule Core.Patients.AllergyIntolerances do
       %{"$match" => %{"allergy_intolerances.v.context.identifier.value" => encounter_id}},
       %{"$replaceRoot" => %{"newRoot" => "$allergy_intolerances.v"}}
     ])
-    |> Enum.to_list()
+    |> Enum.map(&AllergyIntolerance.create/1)
   end
 end

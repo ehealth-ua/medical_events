@@ -301,7 +301,6 @@ defmodule Api.Web.EncounterControllerTest do
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       context = build(:reference, identifier: build(:identifier, value: encounter.id))
       immunization = build(:immunization, context: context)
-      immunization2 = build(:immunization, context: context)
       allergy_intolerance = build(:allergy_intolerance, context: context)
       allergy_intolerance2 = build(:allergy_intolerance)
 
@@ -310,7 +309,7 @@ defmodule Api.Web.EncounterControllerTest do
           :patient,
           episodes: %{episode.id => episode},
           encounters: %{encounter.id => encounter},
-          immunizations: %{immunization.id => immunization, immunization2.id => immunization2},
+          immunizations: %{immunization.id => immunization},
           allergy_intolerances: %{
             allergy_intolerance.id => allergy_intolerance,
             allergy_intolerance2.id => allergy_intolerance2
@@ -347,9 +346,9 @@ defmodule Api.Web.EncounterControllerTest do
         "signed_data" =>
           %{
             "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
-            "conditions" => [ConditionView.render("show.json", %{condition: condition})],
-            "observations" => [ObservationView.render("show.json", %{observation: observation})],
-            "immunizations" => [ImmunizationView.render("show.json", %{immunization: immunization})],
+            "conditions" => ConditionView.render("index.json", %{conditions: [condition]}),
+            "observations" => ObservationView.render("index.json", %{observations: [observation]}),
+            "immunizations" => ImmunizationView.render("index.json", %{immunizations: [immunization]}),
             "allergy_intolerances" => [
               AllergyIntoleranceView.render("show.json", %{allergy_intolerance: allergy_intolerance})
             ]
@@ -358,9 +357,9 @@ defmodule Api.Web.EncounterControllerTest do
           |> Base.encode64()
       }
 
-      conn
-      |> patch(encounter_path(conn, :cancel, patient._id), request_data)
-      |> json_response(202)
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> json_response(202)
     end
   end
 end

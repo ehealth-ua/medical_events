@@ -28,8 +28,8 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
         {"dose_status_reason", v} ->
           {:dose_status_reason, CodeableConcept.create(v)}
 
-        {"codeable_concept", v} ->
-          {:codeable_concept, CodeableConcept.create(v)}
+        {"authority", v} ->
+          {:authority, CodeableConcept.create(v)}
 
         {k, v} ->
           {String.to_atom(k), v}

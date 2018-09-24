@@ -66,16 +66,14 @@ defmodule Core.ReferenceView do
   end
 
   def render(%VaccinationProtocol{} = vaccination_protocol) do
-    %{
-      dose_sequence: vaccination_protocol.dose_sequence,
-      description: vaccination_protocol.description,
-      series: vaccination_protocol.series,
-      series_doses: vaccination_protocol.series_doses,
+    vaccination_protocol
+    |> Map.take(~w(dose_sequence description series series_doses)a)
+    |> Map.merge(%{
       authority: render(vaccination_protocol.authority),
       target_diseases: render(vaccination_protocol.target_diseases),
       dose_status: render(vaccination_protocol.dose_status),
       dose_status_reason: render(vaccination_protocol.dose_status_reason)
-    }
+    })
   end
 
   def render(%Period{} = period) do
@@ -109,7 +107,7 @@ defmodule Core.ReferenceView do
 
   def render(%Reaction{} = reaction) do
     %{
-      date: reaction.date,
+      date: render_date(reaction.date),
       detail: render(reaction.detail),
       reported: reaction.reported
     }
@@ -128,6 +126,10 @@ defmodule Core.ReferenceView do
       role: render(diagnosis.role),
       code: render(diagnosis.code)
     }
+  end
+
+  def render(%Explanation{type: type, value: value}) do
+    %{type: type, value: render(value)}
   end
 
   def render(%Quantity{} = quantity) do
@@ -150,6 +152,10 @@ defmodule Core.ReferenceView do
   def render_date(date) when is_binary(date), do: date
   def render_date(%Date{} = date), do: to_string(date)
   def render_date(%DateTime{} = date_time), do: date_time |> DateTime.to_date() |> to_string()
+
+  def render_datetime(nil), do: nil
+  def render_datetime(%DateTime{} = date_time), do: date_time |> to_string()
+  def render_datetime(date_time) when is_binary(date_time), do: date_time
 
   def render_value(%Value{type: "codeable_concept", value: value}) do
     %{value_codeable_concept: render(value)}
@@ -212,6 +218,4 @@ defmodule Core.ReferenceView do
   def render_effective_at(%EffectiveAt{type: "effective_period", value: value}) do
     %{effective_period: render(value)}
   end
-
-  def render_explanation(%Explanation{type: type, value: value}), do: %{type: type, value: render(value)}
 end

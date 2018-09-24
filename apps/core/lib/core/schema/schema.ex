@@ -12,7 +12,8 @@ defmodule Core.Schema do
 
       def create_datetime(value) when is_binary(value) do
         {:ok, datetime, _} = DateTime.from_iso8601(value)
-        datetime
+
+        DateTime.truncate(datetime, :millisecond)
       end
     end
   end
@@ -92,7 +93,9 @@ defmodule Core.Schema do
       primary_key = metadata.primary_key
       validations = unquote(validations)
       name = unquote(name)
-      validations = if name == primary_key, do: Keyword.put(validations, :presence, true), else: validations
+
+      validations =
+        if name == primary_key, do: Keyword.put(validations, :presence, true), else: validations
 
       Module.put_attribute(__MODULE__, :__metadata__, %{
         metadata
@@ -122,7 +125,12 @@ defmodule Core.Schema do
 
     %{
       document
-      | __validations__: Map.put(document_validations, field, Map.put(field_value, "validations", field_validations))
+      | __validations__:
+          Map.put(
+            document_validations,
+            field,
+            Map.put(field_value, "validations", field_validations)
+          )
     }
   end
 end

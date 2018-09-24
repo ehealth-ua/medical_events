@@ -34,7 +34,7 @@ defmodule Core.AllergyIntolerance do
     field(:onset_date_time, presence: true)
     field(:asserted_date, presence: true)
     field(:primary_source, strict_presence: true)
-    field(:source, presence: true)
+    field(:source, presence: true, reference: [path: "source"])
     field(:last_occurrence)
     field(:context, presence: true, reference: [path: "context"])
 
@@ -63,6 +63,9 @@ defmodule Core.AllergyIntolerance do
         {"last_occurrence", "" = v} ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:last_occurrence, datetime}
+
+        {"source", %{"type" => type, "value" => value}} ->
+          {:source, Source.create(type, value)}
 
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}

@@ -7,8 +7,8 @@ defmodule Api.Web.AllergyIntoleranceView do
   def render("show.json", %{allergy_intolerance: allergy_intolerance}) do
     allergy_intolerance_fields = ~w(
       verification_status
-      id
       clinical_status
+      id
       type
       category
       criticality
