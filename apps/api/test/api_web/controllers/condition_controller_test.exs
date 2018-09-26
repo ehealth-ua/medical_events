@@ -13,18 +13,45 @@ defmodule Api.Web.ConditionControllerTest do
   end
 
   describe "search conditions" do
-    test "success by code, encounter_id, episode_id", %{conn: conn} do
+    test "success by code, encounter_id, episode_id, onset_date", %{conn: conn} do
       episode = build(:episode)
-      patient = insert(:patient, episodes: [episode])
+      episode2 = build(:episode)
+
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter2 = build(:encounter)
+
+      encounter_id = UUID.binary_to_string!(encounter.id.binary)
+
+      patient =
+        insert(:patient,
+          episodes: %{
+            UUID.binary_to_string!(episode.id.binary) => episode,
+            UUID.binary_to_string!(episode2.id.binary) => episode2
+          },
+          encounters: %{
+            UUID.binary_to_string!(encounter.id.binary) => encounter,
+            UUID.binary_to_string!(encounter2.id.binary) => encounter2
+          }
+        )
+
       expect_get_person_data(patient._id)
 
       {code, condition_code} = build_condition_code()
-      {encounter_id, context} = build_encounter_id()
+      context = build_encounter_context(encounter.id)
 
-      insert(:condition, patient_id: patient._id, context: context, code: condition_code, asserted_date: nil)
-      insert(:condition, patient_id: patient._id, context: context, code: condition_code)
+      {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
+      {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
+
+      insert_list(2, :condition,
+        patient_id: patient._id,
+        context: context,
+        code: condition_code,
+        asserted_date: nil,
+        onset_date: onset_date
+      )
 
       # Missed code, encounter, patient_id
+      insert(:condition, patient_id: patient._id, context: context, onset_date: onset_date2)
       insert(:condition, patient_id: patient._id, context: context)
       insert(:condition, patient_id: patient._id)
       insert(:condition)
@@ -32,7 +59,9 @@ defmodule Api.Web.ConditionControllerTest do
       request_params = %{
         "code" => code,
         "encounter_id" => encounter_id,
-        "episode_id" => episode.id
+        "episode_id" => UUID.binary_to_string!(episode.id.binary),
+        "onset_date_from" => "1990-01-01",
+        "onset_date_to" => "2000-01-01"
       }
 
       response =
@@ -49,16 +78,46 @@ defmodule Api.Web.ConditionControllerTest do
       assert 2 == response["paging"]["total_entries"]
     end
 
+    test "success by onset_date_from, onset_date_to", %{conn: conn} do
+      patient = insert(:patient)
+      expect_get_person_data(patient._id, 8)
+      create_date = &(DateTime.from_iso8601("#{&1} 00:00:00Z") |> elem(1))
+
+      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("1990-01-01"))
+      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("2000-01-01"))
+      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("2010-01-01"))
+      insert_list(10, :condition, patient_id: patient._id, onset_date: DateTime.utc_now())
+
+      call_endpoint = fn request_params ->
+        conn
+        |> get(condition_path(conn, :index, patient._id), request_params)
+        |> json_response(200)
+        |> Map.get("data")
+        |> length()
+      end
+
+      today_date = to_string(Date.utc_today())
+
+      assert 0 == call_endpoint.(%{"onset_date_to" => "1989-01-01"})
+      assert 0 == call_endpoint.(%{"onset_date_from" => "2001-01-01", "onset_date_to" => "2005-01-01"})
+      assert 0 == call_endpoint.(%{"onset_date_from" => "3001-01-01"})
+
+      assert 10 == call_endpoint.(%{"onset_date_from" => "1980-01-01", "onset_date_to" => "1999-01-01"})
+      assert 20 == call_endpoint.(%{"onset_date_from" => "1980-01-01", "onset_date_to" => "2005-01-01"})
+      assert 20 == call_endpoint.(%{"onset_date_from" => "2010-01-01", "onset_date_to" => today_date})
+      assert 40 == call_endpoint.(%{"onset_date_from" => "1990-01-01"})
+      assert 40 == call_endpoint.(%{"onset_date_from" => "1990-01-01", "onset_date_to" => today_date})
+    end
+
     test "success by code", %{conn: conn} do
       episode = build(:episode)
       patient = insert(:patient, episodes: [episode])
       expect_get_person_data(patient._id)
       {code, condition_code} = build_condition_code()
 
-      insert(:condition, patient_id: patient._id, code: condition_code)
-      insert(:condition, patient_id: patient._id, code: condition_code)
+      insert_list(2, :condition, patient_id: patient._id, code: condition_code)
 
-      # Have no code, patient_id
+      # Missed code, patient_id
       insert(:condition, patient_id: patient._id)
       insert(:condition)
 
@@ -76,23 +135,34 @@ defmodule Api.Web.ConditionControllerTest do
       end)
     end
 
-    test "success by encounter and episode_id", %{conn: conn} do
+    test "success by encounter_id and episode_id", %{conn: conn} do
       episode = build(:episode)
-      patient = insert(:patient, episodes: [episode])
+
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter.id)
+
+      patient =
+        insert(:patient,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{
+            UUID.binary_to_string!(encounter.id.binary) => encounter,
+            UUID.binary_to_string!(encounter2.id.binary) => encounter2
+          }
+        )
+
       expect_get_person_data(patient._id)
-      {encounter_id, context} = build_encounter_id()
 
-      insert(:condition, patient_id: patient._id, context: context)
-      insert(:condition, patient_id: patient._id, context: context)
-      insert(:condition, patient_id: patient._id, context: context)
+      insert_list(4, :condition, patient_id: patient._id, context: context)
 
-      # Have no encounter, episode_id
-      insert(:condition, patient_id: patient._id)
-      insert(:condition, patient_id: patient._id)
+      # Missed encounter, episode_id
+      insert_list(5, :condition, patient_id: patient._id)
+      insert_list(5, :condition)
 
       request_params = %{
-        "episode_id" => episode.id,
-        "encounter_id" => encounter_id
+        "episode_id" => UUID.binary_to_string!(episode.id.binary),
+        "encounter_id" => UUID.binary_to_string!(encounter.id.binary)
       }
 
       response =
@@ -100,10 +170,10 @@ defmodule Api.Web.ConditionControllerTest do
         |> get(condition_path(conn, :index, patient._id), request_params)
         |> json_response(200)
 
-      assert 3 == get_in(response, ["paging", "total_entries"])
+      assert 4 == get_in(response, ["paging", "total_entries"])
 
       Enum.each(response["data"], fn %{"context" => %{"identifier" => %{"value" => entity_encounter_id}}} ->
-        assert entity_encounter_id == encounter_id
+        assert entity_encounter_id == UUID.binary_to_string!(encounter.id.binary)
       end)
     end
 
@@ -111,7 +181,7 @@ defmodule Api.Web.ConditionControllerTest do
       patient = insert(:patient)
       expect_get_person_data(patient._id, 2)
 
-      for _ <- 1..11, do: insert(:condition, patient_id: patient._id)
+      insert_list(11, :condition, patient_id: patient._id)
 
       # defaults: paging = 50, page = 1
       assert %{
@@ -178,15 +248,10 @@ defmodule Api.Web.ConditionControllerTest do
     {code, condition_code}
   end
 
-  defp build_encounter_id do
-    encounter_id = UUID.uuid4()
-
-    context =
-      build(
-        :reference,
-        identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
-      )
-
-    {encounter_id, context}
+  defp build_encounter_context(encounter_id) do
+    build(
+      :reference,
+      identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
+    )
   end
 end

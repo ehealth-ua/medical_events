@@ -458,7 +458,7 @@ defmodule Core.Patients do
         [] ->
           all_encounters_canceled =
             patient_id
-            |> Encounters.get_episode_encounters(id, %{"status" => "$encounters.v.status"})
+            |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{"status" => "$encounters.v.status"})
             |> Enum.map(& &1["status"])
             |> Enum.all?(fn status -> status == Encounter.status(:entered_in_error) end)
 

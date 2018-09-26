@@ -75,5 +75,17 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
       assert resp_body =~ "Access denied"
     end
+
+    test "patient not found", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      expect_get_person_data(patient_id)
+
+      assert %Plug.Conn{status: 404, resp_body: resp_body} =
+               conn
+               |> Map.put(:path_params, %{"patient_id" => patient_id})
+               |> AuthorizeParty.call([])
+
+      assert resp_body =~ "not_found"
+    end
   end
 end

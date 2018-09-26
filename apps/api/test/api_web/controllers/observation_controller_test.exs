@@ -53,7 +53,7 @@ defmodule Api.Web.ObservationControllerTest do
   end
 
   describe "search observations" do
-    test "success by code, encounter_id, episode_id", %{conn: conn} do
+    test "success by code, encounter_id, episode_id, issued_from, issued_to", %{conn: conn} do
       episode = build(:episode)
       episode2 = build(:episode)
 
@@ -77,18 +77,24 @@ defmodule Api.Web.ObservationControllerTest do
       {code, observation_code} = build_observation_code()
       context = build(:reference, identifier: build(:identifier, value: encounter.id))
 
-      insert(:observation, patient_id: patient._id, context: context, code: observation_code)
-      insert(:observation, patient_id: patient._id, context: context, code: observation_code)
+      {_, issued, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
+      {_, issued2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
-      # Next observations have no code, encounter, patient_id
+      insert(:observation, patient_id: patient._id, context: context, code: observation_code, issued: issued)
+      insert(:observation, patient_id: patient._id, context: context, code: observation_code, issued: issued)
+
+      # Next observations have no correct code, encounter, patient_id, issued
+      insert(:observation, patient_id: patient._id, context: context, code: observation_code, issued: issued2)
       insert(:observation, patient_id: patient._id, context: context)
       insert(:observation, context: context)
       insert(:observation)
 
       request_params = %{
         "code" => code,
-        "encounter_id" => encounter.id,
-        "episode_id" => episode.id
+        "encounter_id" => UUID.binary_to_string!(encounter.id.binary),
+        "episode_id" => UUID.binary_to_string!(episode.id.binary),
+        "issued_from" => "1980-01-01",
+        "issued_to" => "2000-01-01"
       }
 
       response =
@@ -99,16 +105,46 @@ defmodule Api.Web.ObservationControllerTest do
       assert 2 == response["paging"]["total_entries"]
     end
 
+    test "success by issued_from, issued_to", %{conn: conn} do
+      patient = insert(:patient)
+      expect_get_person_data(patient._id, 8)
+      create_date = &(DateTime.from_iso8601("#{&1} 00:00:00Z") |> elem(1))
+
+      insert_list(10, :observation, patient_id: patient._id, issued: create_date.("1990-01-01"))
+      insert_list(10, :observation, patient_id: patient._id, issued: create_date.("2000-01-01"))
+      insert_list(10, :observation, patient_id: patient._id, issued: create_date.("2010-01-01"))
+      insert_list(10, :observation, patient_id: patient._id, issued: DateTime.utc_now())
+
+      call_endpoint = fn request_params ->
+        conn
+        |> get(observation_path(conn, :index, patient._id), request_params)
+        |> json_response(200)
+        |> Map.get("data")
+        |> length()
+      end
+
+      today_date = to_string(Date.utc_today())
+
+      assert 0 == call_endpoint.(%{"issued_to" => "1989-01-01"})
+      assert 0 == call_endpoint.(%{"issued_from" => "2001-01-01", "issued_to" => "2005-01-01"})
+      assert 0 == call_endpoint.(%{"issued_from" => "3001-01-01"})
+
+      assert 10 == call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "1999-01-01"})
+      assert 20 == call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "2005-01-01"})
+      assert 20 == call_endpoint.(%{"issued_from" => "2010-01-01", "issued_to" => today_date})
+      assert 40 == call_endpoint.(%{"issued_from" => "1990-01-01"})
+      assert 40 == call_endpoint.(%{"issued_from" => "1990-01-01", "issued_to" => today_date})
+    end
+
     test "success by code", %{conn: conn} do
-      episode = build(:episode)
-      patient = insert(:patient, episodes: [episode])
+      patient = insert(:patient)
       expect_get_person_data(patient._id)
       {code, observation_code} = build_observation_code()
 
       insert(:observation, patient_id: patient._id, code: observation_code)
       insert(:observation, patient_id: patient._id, code: observation_code)
 
-      # Next observations have no code, patient_id
+      # Next observations have no correct code, patient_id
       insert(:observation, patient_id: patient._id)
       insert(:observation)
 
@@ -128,22 +164,19 @@ defmodule Api.Web.ObservationControllerTest do
       end)
     end
 
-    test "success by encounter and episode_id", %{conn: conn} do
-      episode = build(:episode)
-      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+    test "success by encounter_id", %{conn: conn} do
+      encounter = build(:encounter)
+      encounter_id = UUID.binary_to_string!(encounter.id.binary)
+      patient = insert(:patient, encounters: %{encounter_id => encounter})
+      context = build_encounter_context(encounter.id)
       expect_get_person_data(patient._id)
-      {encounter_id, context} = build_encounter_id()
 
-      insert(:observation, patient_id: patient._id, context: context)
-      insert(:observation, patient_id: patient._id, context: context)
-      insert(:observation, patient_id: patient._id, context: context)
+      insert_list(3, :observation, patient_id: patient._id, context: context)
 
-      # Next observations have no encounter_id, episode_id
-      insert(:observation, patient_id: patient._id)
-      insert(:observation, patient_id: patient._id)
+      # Next observations have no encounter_id
+      insert_list(2, :observation, patient_id: patient._id)
 
       request_params = %{
-        "episode_id" => UUID.binary_to_string!(episode.id.binary),
         "encounter_id" => encounter_id
       }
 
@@ -159,10 +192,44 @@ defmodule Api.Web.ObservationControllerTest do
       end)
     end
 
+    test "success by episode_id, encounter_id", %{conn: conn} do
+      episode = build(:episode)
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter2 = build(:encounter)
+      context = build_encounter_context(encounter.id)
+      context2 = build_encounter_context(encounter2.id)
+
+      patient =
+        insert(:patient,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{
+            UUID.binary_to_string!(encounter.id.binary) => encounter,
+            UUID.binary_to_string!(encounter2.id.binary) => encounter2
+          }
+        )
+
+      expect_get_person_data(patient._id)
+      insert_list(3, :observation, patient_id: patient._id, context: context)
+
+      # Next observations have no episode_id
+      insert_list(10, :observation, patient_id: patient._id, context: context2)
+
+      request_params = %{
+        "episode_id" => UUID.binary_to_string!(episode.id.binary)
+      }
+
+      response =
+        conn
+        |> get(observation_path(conn, :index, patient._id), request_params)
+        |> json_response(200)
+
+      assert 3 == get_in(response, ["paging", "total_entries"])
+    end
+
     test "success by patient_id with pagination", %{conn: conn} do
       patient = insert(:patient)
       expect_get_person_data(patient._id, 2)
-      for _ <- 1..11, do: insert(:observation, patient_id: patient._id)
+      insert_list(11, :observation, patient_id: patient._id)
       # defaults: paging = 50, page = 1
       assert %{
                "page_number" => 1,
@@ -203,9 +270,7 @@ defmodule Api.Web.ObservationControllerTest do
     {code, observation_code}
   end
 
-  defp build_encounter_id do
-    encounter_id = UUID.uuid4()
-    context = build(:reference, identifier: build(:identifier, value: encounter_id))
-    {encounter_id, context}
+  defp build_encounter_context(%BSON.Binary{} = encounter_id) do
+    build(:reference, identifier: build(:identifier, value: encounter_id))
   end
 end
