@@ -58,6 +58,8 @@ config :core, Core.Microservices.Casher,
     timeout: 30_000
   ]
 
+config :core, Core.Patients, pk_hash_salt: {:system, "PERSON_PK_HASH_SALT"}
+
 config :core, Core.Redis,
   host: {:system, "REDIS_HOST", "0.0.0.0"},
   port: {:system, :integer, "REDIS_PORT", 6379},

@@ -7,6 +7,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
   alias Core.Jobs
   alias Core.Jobs.EpisodeCancelJob
   alias Core.Kafka.Consumer
+  alias Core.Patients
   alias Core.Patients.Episodes
 
   @canceled Episode.status(:cancelled)
@@ -15,7 +16,11 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
     test "cancel with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: @canceled)
-      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
@@ -23,7 +28,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "cancellation_reason" => %{
@@ -41,7 +46,11 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
     test "episode was canceled" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       job = insert(:job)
@@ -51,7 +60,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: episode_id,
                  request_params: %{
                    "cancellation_reason" => %{
@@ -64,7 +73,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"status" => @canceled}} = Episodes.get(patient._id, episode_id)
+      assert {:ok, %{"status" => @canceled}} = Episodes.get(patient_id, episode_id)
     end
   end
 end

@@ -11,7 +11,7 @@ defmodule Core.Patient do
 
   @primary_key :_id
   schema :patients do
-    field(:_id, uuid: true)
+    field(:_id)
     field(:status, presence: true)
     field(:visits)
     field(:episodes)

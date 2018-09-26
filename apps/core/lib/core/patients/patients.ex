@@ -1,6 +1,8 @@
 defmodule Core.Patients do
   @moduledoc false
 
+  use Confex, otp_app: :core
+
   alias Core.AllergyIntolerance
   alias Core.Condition
   alias Core.Conditions
@@ -43,8 +45,17 @@ defmodule Core.Patients do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
+  def get_pk_hash(value) do
+    :sha256
+    |> :crypto.hash_init()
+    |> :crypto.hash_update(value)
+    |> :crypto.hash_update(config()[:pk_hash_salt])
+    |> :crypto.hash_final()
+    |> Base.encode16()
+  end
+
   def get_by_id(id) do
-    Mongo.find_one(@collection, %{"_id" => id})
+    Mongo.find_one(@collection, %{"_id" => get_pk_hash(id)})
   end
 
   def produce_create_episode(%{"patient_id" => patient_id} = params, user_id, client_id) do
@@ -215,7 +226,7 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
-          Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set, "$push" => push})
+          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set, "$push" => push})
 
         links = [
           %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
@@ -311,7 +322,7 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("updated_by")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
+              Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set})
 
             {:ok,
              %{
@@ -358,7 +369,7 @@ defmodule Core.Patients do
             |> Mongo.convert_to_uuid("updated_by")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id}, %{"$set" => set})
+            Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set})
 
           {:ok,
            %{
@@ -416,7 +427,7 @@ defmodule Core.Patients do
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id}, %{
+            Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
               "$set" => set,
               "$push" => push
             })
@@ -480,7 +491,7 @@ defmodule Core.Patients do
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id}, %{
+              Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
                 "$set" => set,
                 "$push" => push
               })
@@ -519,7 +530,7 @@ defmodule Core.Patients do
         result =
           Patient.metadata().collection
           |> Mongo.aggregate([
-            %{"$match" => %{"_id" => patient_id}},
+            %{"$match" => %{"_id" => get_pk_hash(patient_id)}},
             %{"$project" => %{"_id" => "$visits.#{visit.id}.id"}}
           ])
           |> Enum.to_list()
@@ -559,7 +570,7 @@ defmodule Core.Patients do
         result =
           Patient.metadata().collection
           |> Mongo.aggregate([
-            %{"$match" => %{"_id" => patient_id}},
+            %{"$match" => %{"_id" => get_pk_hash(patient_id)}},
             %{"$project" => %{"_id" => "$encounters.#{encounter.id}.id"}}
           ])
           |> Enum.to_list()

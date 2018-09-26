@@ -8,13 +8,18 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
   alias Core.Jobs
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Kafka.Consumer
+  alias Core.Patients
   alias Core.Patients.Episodes
 
   describe "consume update episode event" do
     test "update with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: Episode.status(:closed))
-      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
       client_id = UUID.uuid4()
       expect_doctor(client_id)
 
@@ -24,7 +29,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "managing_organization" => %{
@@ -50,7 +55,11 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
     test "episode was updated" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
       client_id = UUID.uuid4()
       expect_doctor(client_id)
@@ -72,7 +81,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: episode_id,
                  request_params: %{
                    "managing_organization" => %{
@@ -94,7 +103,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient._id, episode_id)
+      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient_id, episode_id)
     end
   end
 end

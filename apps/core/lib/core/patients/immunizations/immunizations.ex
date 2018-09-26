@@ -4,6 +4,7 @@ defmodule Core.Patients.Immunizations do
   alias Core.Immunization
   alias Core.Mongo
   alias Core.Patient
+  alias Core.Patients
   alias Core.Source
   require Logger
 
@@ -11,7 +12,9 @@ defmodule Core.Patients.Immunizations do
 
   def get(patient_id, id) do
     with %{"immunizations" => %{^id => immunization}} <-
-           Mongo.find_one(@collection, %{"_id" => patient_id}, projection: ["immunizations.#{id}": true]) do
+           Mongo.find_one(@collection, %{"_id" => Patients.get_pk_hash(patient_id)},
+             projection: ["immunizations.#{id}": true]
+           ) do
       {:ok, immunization}
     else
       _ ->

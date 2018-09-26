@@ -4,6 +4,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
   use KafkaEx.GenConsumer
   alias Core.Mongo
   alias Core.Patient
+  alias Core.Patients
   alias KafkaEx.Protocol.Fetch.Message
   require Logger
 
@@ -26,7 +27,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
       when status in [@status_active, @status_inactive] do
     Mongo.update_one(
       Patient.metadata().collection,
-      %{"_id" => person_id},
+      %{"_id" => Patients.get_pk_hash(person_id)},
       %{
         "$set" => %{"status" => status, "updated_by" => updated_by},
         "$setOnInsert" => %{

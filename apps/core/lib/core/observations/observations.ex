@@ -5,6 +5,7 @@ defmodule Core.Observations do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Paging
+  alias Core.Patients
   alias Core.Patients.Encounters
   alias Core.Reference
   alias Core.Search
@@ -17,7 +18,7 @@ defmodule Core.Observations do
 
   def get(patient_id, id) do
     @observation_collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => Patients.get_pk_hash(patient_id)})
     |> case do
       %{} = observation -> {:ok, Observation.create(observation)}
       _ -> nil
@@ -80,6 +81,7 @@ defmodule Core.Observations do
     %{
       observation
       | _id: Mongo.string_to_uuid(observation._id),
+        patient_id: Patients.get_pk_hash(observation.patient_id),
         inserted_by: Mongo.string_to_uuid(observation.inserted_by),
         updated_by: Mongo.string_to_uuid(observation.updated_by),
         context: %{
@@ -105,7 +107,7 @@ defmodule Core.Observations do
     encounter_ids =
       Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
-    %{"$match" => %{"patient_id" => patient_id}}
+    %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
     |> Search.add_param(code, ["$match", "code.coding.0.code"])
     |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
     |> Search.add_param(issued_from, ["$match", "issued"], "$gte")

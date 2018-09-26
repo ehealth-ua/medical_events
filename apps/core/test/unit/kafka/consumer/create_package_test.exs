@@ -9,6 +9,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Jobs.PackageCreateJob
   alias Core.Kafka.Consumer
   alias Core.Observation
+  alias Core.Patients
   import Mox
   import Core.Expectations.DigitalSignature
 
@@ -94,8 +95,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       encounter_id = UUID.uuid4()
-      patient = insert(:patient)
-      condition = insert(:condition, patient_id: patient._id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
+      condition = insert(:condition, patient_id: patient_id_hash)
       job = insert(:job)
       signature()
       episode_id = patient.episodes |> Map.keys() |> hd
@@ -154,7 +159,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
@@ -205,8 +210,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       encounter_id = UUID.uuid4()
-      patient = insert(:patient)
-      db_observation = insert(:observation, patient_id: patient._id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
+      db_observation = insert(:observation, patient_id: patient_id_hash)
       condition_id = UUID.uuid4()
       job = insert(:job)
       signature()
@@ -578,7 +587,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                      "end" => DateTime.to_iso8601(DateTime.utc_now())
                    }
                  },
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))

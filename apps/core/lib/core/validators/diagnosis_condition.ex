@@ -4,6 +4,7 @@ defmodule Core.Validators.DiagnosisCondition do
   use Vex.Validator
   alias Core.Condition
   alias Core.Mongo
+  alias Core.Patients
 
   def validate(value, options) do
     conditions = Keyword.get(options, :conditions)
@@ -15,7 +16,7 @@ defmodule Core.Validators.DiagnosisCondition do
     else
       case Mongo.find_one(Condition.metadata().collection, %{
              "_id" => Mongo.string_to_uuid(value),
-             "patient_id" => patient_id
+             "patient_id" => Patients.get_pk_hash(patient_id)
            }) do
         nil ->
           error(options, "Condition with such id is not found")

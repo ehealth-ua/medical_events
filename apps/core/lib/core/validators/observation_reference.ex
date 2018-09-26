@@ -4,6 +4,7 @@ defmodule Core.Validators.ObservationReference do
   use Vex.Validator
   alias Core.Mongo
   alias Core.Observation
+  alias Core.Patients
 
   @status_entered_in_error Observation.status(:entered_in_error)
 
@@ -17,7 +18,7 @@ defmodule Core.Validators.ObservationReference do
     else
       case Mongo.find_one(Observation.metadata().collection, %{
              "_id" => Mongo.string_to_uuid(value),
-             "patient_id" => patient_id
+             "patient_id" => Patients.get_pk_hash(patient_id)
            }) do
         nil ->
           error(options, "Observation with such id is not found")

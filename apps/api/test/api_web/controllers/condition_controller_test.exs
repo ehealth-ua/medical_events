@@ -6,6 +6,8 @@ defmodule Api.Web.ConditionControllerTest do
   import Core.Expectations.CasherExpectation
   import Mox
 
+  alias Core.Patients
+
   setup %{conn: conn} do
     stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -22,19 +24,22 @@ defmodule Api.Web.ConditionControllerTest do
 
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
 
-      patient =
-        insert(:patient,
-          episodes: %{
-            UUID.binary_to_string!(episode.id.binary) => episode,
-            UUID.binary_to_string!(episode2.id.binary) => episode2
-          },
-          encounters: %{
-            UUID.binary_to_string!(encounter.id.binary) => encounter,
-            UUID.binary_to_string!(encounter2.id.binary) => encounter2
-          }
-        )
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect_get_person_data(patient._id)
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{
+          UUID.binary_to_string!(episode.id.binary) => episode,
+          UUID.binary_to_string!(episode2.id.binary) => episode2
+        },
+        encounters: %{
+          UUID.binary_to_string!(encounter.id.binary) => encounter,
+          UUID.binary_to_string!(encounter2.id.binary) => encounter2
+        }
+      )
+
+      expect_get_person_data(patient_id)
 
       {code, condition_code} = build_condition_code()
       context = build_encounter_context(encounter.id)
@@ -43,7 +48,7 @@ defmodule Api.Web.ConditionControllerTest do
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
       insert_list(2, :condition,
-        patient_id: patient._id,
+        patient_id: patient_id_hash,
         context: context,
         code: condition_code,
         asserted_date: nil,
@@ -51,9 +56,9 @@ defmodule Api.Web.ConditionControllerTest do
       )
 
       # Missed code, encounter, patient_id
-      insert(:condition, patient_id: patient._id, context: context, onset_date: onset_date2)
-      insert(:condition, patient_id: patient._id, context: context)
-      insert(:condition, patient_id: patient._id)
+      insert(:condition, patient_id: patient_id_hash, context: context, onset_date: onset_date2)
+      insert(:condition, patient_id: patient_id_hash, context: context)
+      insert(:condition, patient_id: patient_id_hash)
       insert(:condition)
 
       request_params = %{
@@ -66,7 +71,7 @@ defmodule Api.Web.ConditionControllerTest do
 
       response =
         conn
-        |> get(condition_path(conn, :index, patient._id), request_params)
+        |> get(condition_path(conn, :index, patient_id), request_params)
         |> json_response(200)
         |> assert_json_schema("conditions/conditions_list.json")
 
@@ -79,18 +84,21 @@ defmodule Api.Web.ConditionControllerTest do
     end
 
     test "success by onset_date_from, onset_date_to", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id, 8)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id, 8)
       create_date = &(DateTime.from_iso8601("#{&1} 00:00:00Z") |> elem(1))
 
-      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("1990-01-01"))
-      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("2000-01-01"))
-      insert_list(10, :condition, patient_id: patient._id, onset_date: create_date.("2010-01-01"))
-      insert_list(10, :condition, patient_id: patient._id, onset_date: DateTime.utc_now())
+      insert_list(10, :condition, patient_id: patient_id_hash, onset_date: create_date.("1990-01-01"))
+      insert_list(10, :condition, patient_id: patient_id_hash, onset_date: create_date.("2000-01-01"))
+      insert_list(10, :condition, patient_id: patient_id_hash, onset_date: create_date.("2010-01-01"))
+      insert_list(10, :condition, patient_id: patient_id_hash, onset_date: DateTime.utc_now())
 
       call_endpoint = fn request_params ->
         conn
-        |> get(condition_path(conn, :index, patient._id), request_params)
+        |> get(condition_path(conn, :index, patient_id), request_params)
         |> json_response(200)
         |> Map.get("data")
         |> length()
@@ -111,21 +119,25 @@ defmodule Api.Web.ConditionControllerTest do
 
     test "success by code", %{conn: conn} do
       episode = build(:episode)
-      patient = insert(:patient, episodes: [episode])
-      expect_get_person_data(patient._id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: [episode], _id: patient_id_hash)
+      expect_get_person_data(patient_id)
       {code, condition_code} = build_condition_code()
 
-      insert_list(2, :condition, patient_id: patient._id, code: condition_code)
+      insert_list(2, :condition, patient_id: patient_id_hash, code: condition_code)
 
       # Missed code, patient_id
-      insert(:condition, patient_id: patient._id)
+      insert(:condition, patient_id: patient_id_hash)
       insert(:condition)
 
       request_params = %{"code" => code}
 
       response =
         conn
-        |> get(condition_path(conn, :index, patient._id), request_params)
+        |> get(condition_path(conn, :index, patient_id), request_params)
         |> json_response(200)
 
       assert 2 == response["paging"]["total_entries"]
@@ -143,21 +155,24 @@ defmodule Api.Web.ConditionControllerTest do
 
       context = build_encounter_context(encounter.id)
 
-      patient =
-        insert(:patient,
-          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
-          encounters: %{
-            UUID.binary_to_string!(encounter.id.binary) => encounter,
-            UUID.binary_to_string!(encounter2.id.binary) => encounter2
-          }
-        )
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect_get_person_data(patient._id)
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{
+          UUID.binary_to_string!(encounter.id.binary) => encounter,
+          UUID.binary_to_string!(encounter2.id.binary) => encounter2
+        }
+      )
 
-      insert_list(4, :condition, patient_id: patient._id, context: context)
+      expect_get_person_data(patient_id)
+
+      insert_list(4, :condition, patient_id: patient_id_hash, context: context)
 
       # Missed encounter, episode_id
-      insert_list(5, :condition, patient_id: patient._id)
+      insert_list(5, :condition, patient_id: patient_id_hash)
       insert_list(5, :condition)
 
       request_params = %{
@@ -167,7 +182,7 @@ defmodule Api.Web.ConditionControllerTest do
 
       response =
         conn
-        |> get(condition_path(conn, :index, patient._id), request_params)
+        |> get(condition_path(conn, :index, patient_id), request_params)
         |> json_response(200)
 
       assert 4 == get_in(response, ["paging", "total_entries"])
@@ -178,10 +193,13 @@ defmodule Api.Web.ConditionControllerTest do
     end
 
     test "success by patient_id with pagination", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id, 2)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert_list(11, :condition, patient_id: patient._id)
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id, 2)
+
+      insert_list(11, :condition, patient_id: patient_id_hash)
 
       # defaults: paging = 50, page = 1
       assert %{
@@ -191,13 +209,13 @@ defmodule Api.Web.ConditionControllerTest do
                "total_pages" => 1
              } ==
                conn
-               |> get(condition_path(conn, :index, patient._id), %{})
+               |> get(condition_path(conn, :index, patient_id), %{})
                |> json_response(200)
                |> Map.get("paging")
 
       response =
         conn
-        |> get(condition_path(conn, :index, patient._id), %{"page" => "2", "page_size" => "5"})
+        |> get(condition_path(conn, :index, patient_id), %{"page" => "2", "page_size" => "5"})
         |> json_response(200)
 
       assert %{"page_size" => 5, "page_number" => 2, "total_pages" => 3} = response["paging"]
@@ -205,14 +223,17 @@ defmodule Api.Web.ConditionControllerTest do
     end
 
     test "empty results", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       insert(:condition)
 
       assert [] =
                conn
-               |> get(condition_path(conn, :index, patient._id), %{})
+               |> get(condition_path(conn, :index, patient_id), %{})
                |> json_response(200)
                |> get_in(["data"])
     end
@@ -220,23 +241,29 @@ defmodule Api.Web.ConditionControllerTest do
 
   describe "get condition" do
     test "success", %{conn: conn} do
-      patient = insert(:patient)
-      condition = insert(:condition, patient_id: patient._id, asserted_date: nil)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect_get_person_data(patient._id)
+      insert(:patient, _id: patient_id_hash)
+      condition = insert(:condition, patient_id: patient_id_hash, asserted_date: nil)
+
+      expect_get_person_data(patient_id)
 
       conn
-      |> get(condition_path(conn, :show, patient._id, UUID.binary_to_string!(condition._id.binary)))
+      |> get(condition_path(conn, :show, patient_id, UUID.binary_to_string!(condition._id.binary)))
       |> json_response(200)
       |> assert_json_schema("conditions/condition_show.json")
     end
 
     test "condition not found", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       conn
-      |> get(condition_path(conn, :show, patient._id, UUID.uuid4()))
+      |> get(condition_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
     end
   end

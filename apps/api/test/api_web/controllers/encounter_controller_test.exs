@@ -3,6 +3,7 @@ defmodule Api.Web.EncounterControllerTest do
 
   use ApiWeb.ConnCase
   alias Core.Patient
+  alias Core.Patients
   import Mox
 
   describe "create visit" do
@@ -22,9 +23,12 @@ defmodule Api.Web.EncounterControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient, status: Patient.status(:inactive))
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = post(conn, encounter_path(conn, :create, patient._id))
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = post(conn, encounter_path(conn, :create, patient_id))
       assert json_response(conn, 409)
     end
 
@@ -35,9 +39,12 @@ defmodule Api.Web.EncounterControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = post(conn, encounter_path(conn, :create, patient._id))
+      insert(:patient, _id: patient_id_hash)
+
+      conn = post(conn, encounter_path(conn, :create, patient_id))
       assert response = json_response(conn, 422)
 
       assert [
@@ -63,11 +70,14 @@ defmodule Api.Web.EncounterControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
       now = DateTime.utc_now()
 
       conn =
-        post(conn, encounter_path(conn, :create, patient._id), %{
+        post(conn, encounter_path(conn, :create, patient_id), %{
           "visit" => %{
             "id" => UUID.uuid4(),
             "period" => %{"start" => DateTime.to_iso8601(now), "end" => DateTime.to_iso8601(now)}

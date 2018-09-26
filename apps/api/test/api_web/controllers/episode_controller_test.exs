@@ -8,6 +8,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
   alias Core.Episode
   alias Core.Patient
+  alias Core.Patients
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -30,9 +31,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient, status: Patient.status(:inactive))
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = post(conn, episode_path(conn, :create, patient._id))
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = post(conn, episode_path(conn, :create, patient_id))
       assert json_response(conn, 409)
     end
 
@@ -44,9 +48,13 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = insert(:patient)
 
-      conn = post(conn, episode_path(conn, :create, patient._id), %{})
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      conn = post(conn, episode_path(conn, :create, patient_id), %{})
       assert json_response(conn, 422)
     end
 
@@ -58,7 +66,11 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
 
       data = %{
         "id" => UUID.uuid4(),
@@ -80,7 +92,7 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      conn1 = post(conn, episode_path(conn, :create, patient._id), data)
+      conn1 = post(conn, episode_path(conn, :create, patient_id), data)
 
       assert %{
                "data" => %{
@@ -89,7 +101,7 @@ defmodule Api.Web.EpisodeControllerTest do
                }
              } = json_response(conn1, 202)
 
-      conn2 = post(conn, episode_path(conn, :create, patient._id), data)
+      conn2 = post(conn, episode_path(conn, :create, patient_id), data)
 
       href = "/jobs/#{job_id}"
 
@@ -121,9 +133,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :update, patient._id, UUID.uuid4()))
+      insert(:patient, _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :update, patient_id, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
@@ -134,9 +149,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient, status: Patient.status(:inactive))
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :update, patient._id, UUID.uuid4()))
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :update, patient_id, UUID.uuid4()))
       assert json_response(conn, 409)
     end
 
@@ -148,10 +166,14 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
-      conn = patch(conn, episode_path(conn, :update, patient._id, episode_id), %{})
+      conn = patch(conn, episode_path(conn, :update, patient_id, episode_id), %{})
       assert json_response(conn, 422)
     end
 
@@ -163,7 +185,11 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       data = %{
@@ -182,7 +208,7 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      conn1 = patch(conn, episode_path(conn, :update, patient._id, episode_id), data)
+      conn1 = patch(conn, episode_path(conn, :update, patient_id, episode_id), data)
 
       assert %{
                "data" => %{
@@ -191,7 +217,7 @@ defmodule Api.Web.EpisodeControllerTest do
                }
              } = json_response(conn1, 202)
 
-      conn2 = patch(conn, episode_path(conn, :update, patient._id, episode_id), data)
+      conn2 = patch(conn, episode_path(conn, :update, patient_id, episode_id), data)
 
       href = "/jobs/#{job_id}"
 
@@ -223,9 +249,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :close, patient._id, UUID.uuid4()))
+      insert(:patient, _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :close, patient_id, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
@@ -236,9 +265,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient, status: Patient.status(:inactive))
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :close, patient._id, UUID.uuid4()))
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :close, patient_id, UUID.uuid4()))
       assert json_response(conn, 409)
     end
 
@@ -250,10 +282,14 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
-      conn = patch(conn, episode_path(conn, :close, patient._id, episode_id), %{})
+      conn = patch(conn, episode_path(conn, :close, patient_id, episode_id), %{})
       assert json_response(conn, 422)
     end
 
@@ -264,8 +300,11 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
-      patient = insert(:patient)
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       data = %{
@@ -275,7 +314,7 @@ defmodule Api.Web.EpisodeControllerTest do
         "closing_reason" => %{"coding" => [%{"system" => "eHealth/episode_closing_reasons", "code" => "legal_entity"}]}
       }
 
-      conn1 = patch(conn, episode_path(conn, :close, patient._id, episode_id), data)
+      conn1 = patch(conn, episode_path(conn, :close, patient_id, episode_id), data)
 
       assert %{
                "data" => %{
@@ -284,7 +323,7 @@ defmodule Api.Web.EpisodeControllerTest do
                }
              } = json_response(conn1, 202)
 
-      conn2 = patch(conn, episode_path(conn, :close, patient._id, episode_id), data)
+      conn2 = patch(conn, episode_path(conn, :close, patient_id, episode_id), data)
 
       href = "/jobs/#{job_id}"
 
@@ -316,9 +355,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :cancel, patient._id, UUID.uuid4()))
+      insert(:patient, _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :cancel, patient_id, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
@@ -329,9 +371,12 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      patient = insert(:patient, status: Patient.status(:inactive))
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      conn = patch(conn, episode_path(conn, :cancel, patient._id, UUID.uuid4()))
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = patch(conn, episode_path(conn, :cancel, patient_id, UUID.uuid4()))
       assert json_response(conn, 409)
     end
 
@@ -343,10 +388,14 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
-      conn = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), %{})
+      conn = patch(conn, episode_path(conn, :cancel, patient_id, episode_id), %{})
       assert json_response(conn, 422)
     end
 
@@ -358,7 +407,11 @@ defmodule Api.Web.EpisodeControllerTest do
       end)
 
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       data = %{
@@ -368,7 +421,7 @@ defmodule Api.Web.EpisodeControllerTest do
         "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"
       }
 
-      conn1 = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), data)
+      conn1 = patch(conn, episode_path(conn, :cancel, patient_id, episode_id), data)
 
       assert %{
                "data" => %{
@@ -377,7 +430,7 @@ defmodule Api.Web.EpisodeControllerTest do
                }
              } = json_response(conn1, 202)
 
-      conn2 = patch(conn, episode_path(conn, :cancel, patient._id, episode_id), data)
+      conn2 = patch(conn, episode_path(conn, :cancel, patient_id, episode_id), data)
 
       href = "/jobs/#{job_id}"
 
@@ -397,12 +450,16 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       episode = build(:episode)
-      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
 
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
 
       conn
-      |> get(episode_path(conn, :show, patient._id, UUID.binary_to_string!(episode.id.binary)))
+      |> get(episode_path(conn, :show, patient_id, UUID.binary_to_string!(episode.id.binary)))
       |> json_response(200)
       |> Map.get("data")
       |> assert_json_schema("episodes/episode_show.json")
@@ -421,22 +478,30 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       episode = build(:episode)
-      patient = insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
-      expect_get_person_data(patient._id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
 
       conn
-      |> get(episode_path(conn, :show, patient._id, "invalid-episode-uuid"))
+      |> get(episode_path(conn, :show, patient_id, "invalid-episode-uuid"))
       |> json_response(404)
     end
 
     test "get episode when no episodes", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      patient = insert(:patient, episodes: %{})
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{}, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       conn
-      |> get(episode_path(conn, :show, patient._id, UUID.uuid4()))
+      |> get(episode_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
     end
   end
@@ -445,12 +510,15 @@ defmodule Api.Web.EpisodeControllerTest do
     test "get episodes success", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id))
+        |> get(episode_path(conn, :index, patient_id))
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -460,12 +528,15 @@ defmodule Api.Web.EpisodeControllerTest do
     test "get episodes no episodes", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      patient = insert(:patient, episodes: %{})
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: %{}, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id))
+        |> get(episode_path(conn, :index, patient_id))
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -475,12 +546,15 @@ defmodule Api.Web.EpisodeControllerTest do
     test "get episodes is nil", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      patient = insert(:patient, episodes: nil)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: nil, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id))
+        |> get(episode_path(conn, :index, patient_id))
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -505,12 +579,16 @@ defmodule Api.Web.EpisodeControllerTest do
         |> Map.put(UUID.binary_to_string!(episode_t.id.binary), episode_t)
         |> Map.put(UUID.binary_to_string!(episode_y.id.binary), episode_y)
 
-      patient = insert(:patient, episodes: episodes)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "1"})
+        |> get(episode_path(conn, :index, patient_id), %{"page_size" => "1"})
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -537,12 +615,16 @@ defmodule Api.Web.EpisodeControllerTest do
         |> Map.put(UUID.binary_to_string!(episode_t.id.binary), episode_t)
         |> Map.put(UUID.binary_to_string!(episode_y.id.binary), episode_y)
 
-      patient = insert(:patient, episodes: episodes)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "200", "page" => "2"})
+        |> get(episode_path(conn, :index, patient_id), %{"page_size" => "200", "page" => "2"})
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
@@ -554,12 +636,15 @@ defmodule Api.Web.EpisodeControllerTest do
     test "get episodes paging string instead of int", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(episode_path(conn, :index, patient._id), %{"page_size" => "1"})
+        |> get(episode_path(conn, :index, patient_id), %{"page_size" => "1"})
         |> json_response(200)
 
       Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))

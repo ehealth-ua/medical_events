@@ -6,6 +6,7 @@ defmodule Core.Conditions do
   alias Core.Maybe
   alias Core.Mongo
   alias Core.Paging
+  alias Core.Patients
   alias Core.Patients.Encounters
   alias Core.Reference
   alias Core.Search
@@ -18,7 +19,7 @@ defmodule Core.Conditions do
 
   def get(patient_id, id) do
     @condition_collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => Patients.get_pk_hash(patient_id)})
     |> case do
       %{} = condition -> {:ok, Condition.create(condition)}
       _ -> nil
@@ -59,6 +60,7 @@ defmodule Core.Conditions do
     %{
       condition
       | _id: Mongo.string_to_uuid(condition._id),
+        patient_id: Patients.get_pk_hash(condition.patient_id),
         inserted_by: Mongo.string_to_uuid(condition.inserted_by),
         updated_by: Mongo.string_to_uuid(condition.updated_by),
         context: %{
@@ -81,7 +83,7 @@ defmodule Core.Conditions do
     encounter_ids =
       Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
-    %{"$match" => %{"patient_id" => patient_id}}
+    %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
     |> Search.add_param(code, ["$match", "code.coding.0.code"])
     |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
     |> Search.add_param(onset_date_from, ["$match", "onset_date"], "$gte")

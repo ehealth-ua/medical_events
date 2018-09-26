@@ -19,6 +19,7 @@ defmodule Core.Factories do
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity
   alias Core.Patient
+  alias Core.Patients
   alias Core.Period
   alias Core.Reference
   alias Core.Source
@@ -48,7 +49,8 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), encounter}
       end)
 
-    id = UUID.uuid4()
+    id = Patients.get_pk_hash(UUID.uuid4())
+    user_id = UUID.uuid4()
 
     %Patient{
       _id: id,
@@ -60,8 +62,8 @@ defmodule Core.Factories do
       allergy_intolerances: %{},
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      inserted_by: id,
-      updated_by: id
+      inserted_by: user_id,
+      updated_by: user_id
     }
   end
 
@@ -99,7 +101,7 @@ defmodule Core.Factories do
   end
 
   def observation_factory do
-    id = UUID.uuid4()
+    user_id = UUID.uuid4()
     now = DateTime.utc_now()
 
     %Observation{
@@ -108,7 +110,7 @@ defmodule Core.Factories do
       categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
       code: codeable_concept_coding(system: "eHealth/observations_codes"),
       comment: "some comment",
-      patient_id: UUID.uuid4(),
+      patient_id: Patients.get_pk_hash(UUID.uuid4()),
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       effective_at: %EffectiveAt{type: "effective_date_time", value: now},
@@ -142,8 +144,8 @@ defmodule Core.Factories do
         ),
       inserted_at: now,
       updated_at: now,
-      inserted_by: Mongo.string_to_uuid(id),
-      updated_by: Mongo.string_to_uuid(id)
+      inserted_by: Mongo.string_to_uuid(user_id),
+      updated_by: Mongo.string_to_uuid(user_id)
     }
   end
 
@@ -269,8 +271,8 @@ defmodule Core.Factories do
   end
 
   def condition_factory do
-    id = UUID.uuid4()
-    patient_id = UUID.uuid4()
+    patient_id = Patients.get_pk_hash(UUID.uuid4())
+    user_id = UUID.uuid4()
     today = Date.utc_today()
 
     %Condition{
@@ -292,8 +294,8 @@ defmodule Core.Factories do
         )
       ],
       patient_id: patient_id,
-      inserted_by: Mongo.string_to_uuid(id),
-      updated_by: Mongo.string_to_uuid(id),
+      inserted_by: Mongo.string_to_uuid(user_id),
+      updated_by: Mongo.string_to_uuid(user_id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       source: build(:source, type: "asserter", value: reference_coding(system: "eHealth/resources", code: "employee")),

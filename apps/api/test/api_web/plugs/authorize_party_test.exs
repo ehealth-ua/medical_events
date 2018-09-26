@@ -8,6 +8,7 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
   alias Api.Web.Plugs.AuthorizeParty
   alias Api.Web.Plugs.Headers
+  alias Core.Patients
   alias Core.Redis
   alias Core.Redis.StorageKeys
 
@@ -30,29 +31,38 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
     end
 
     test "success from casher", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       assert %Plug.Conn{status: nil} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient._id})
+               |> Map.put(:path_params, %{"patient_id" => patient_id})
                |> AuthorizeParty.call([])
     end
 
     test "success from redis", %{conn: conn, user_id: user_id, client_id: client_id} do
-      patient = insert(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      Redis.setnx(StorageKeys.person_data(user_id, client_id), [patient._id])
+      insert(:patient, _id: patient_id_hash)
+
+      Redis.setnx(StorageKeys.person_data(user_id, client_id), [patient_id])
 
       assert %Plug.Conn{status: nil} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient._id})
+               |> Map.put(:path_params, %{"patient_id" => patient_id})
                |> AuthorizeParty.call([])
     end
 
     test "access denied: patient_id not found from redis and casher", %{conn: conn} do
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       assert %Plug.Conn{status: 401, resp_body: resp_body} =
                conn
@@ -65,12 +75,15 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
     test "access denied: empty patient_ids list from redis", %{conn: conn, user_id: user_id, client_id: client_id} do
       Redis.setnx(StorageKeys.person_data(user_id, client_id), [])
 
-      patient = insert(:patient)
-      expect_get_person_data(patient._id)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
 
       assert %Plug.Conn{status: 401, resp_body: resp_body} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient._id})
+               |> Map.put(:path_params, %{"patient_id" => patient_id})
                |> AuthorizeParty.call([])
 
       assert resp_body =~ "Access denied"

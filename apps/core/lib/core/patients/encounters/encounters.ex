@@ -4,6 +4,7 @@ defmodule Core.Patients.Encounters do
   alias Core.Encounter
   alias Core.Mongo
   alias Core.Patient
+  alias Core.Patients
 
   require Logger
 
@@ -20,7 +21,7 @@ defmodule Core.Patients.Encounters do
     pipeline = [
       %{
         "$match" => %{
-          "_id" => patient_id
+          "_id" => Patients.get_pk_hash(patient_id)
         }
       },
       %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}},

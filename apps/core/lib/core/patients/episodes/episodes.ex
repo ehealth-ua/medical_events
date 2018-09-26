@@ -5,6 +5,7 @@ defmodule Core.Patients.Episodes do
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patient
+  alias Core.Patients
   alias Scrivener.Page
   require Logger
 
@@ -12,7 +13,9 @@ defmodule Core.Patients.Episodes do
 
   def get(patient_id, id) do
     with %{"episodes" => %{^id => episode}} <-
-           Mongo.find_one(@collection, %{"_id" => patient_id}, projection: ["episodes.#{id}": true]) do
+           Mongo.find_one(@collection, %{"_id" => Patients.get_pk_hash(patient_id)},
+             projection: ["episodes.#{id}": true]
+           ) do
       {:ok, episode}
     else
       _ ->
@@ -23,7 +26,7 @@ defmodule Core.Patients.Episodes do
   def list(%{"patient_id" => patient_id} = params) do
     # TODO: filter by code
     pipeline = [
-      %{"$match" => %{"_id" => patient_id}},
+      %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
       %{"$project" => %{"episodes" => %{"$objectToArray" => "$episodes"}}},
       %{"$unwind" => "$episodes"},
       %{"$project" => %{"episode" => "$episodes.v"}},

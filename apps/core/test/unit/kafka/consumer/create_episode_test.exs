@@ -10,11 +10,16 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
   alias Core.Kafka.Consumer
   alias Core.Mongo
   alias Core.Patient
+  alias Core.Patients
 
   describe "consume create episode event" do
     test "episode already exists" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       job = insert(:job)
@@ -36,7 +41,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: episode_id,
                  user_id: user_id,
                  client_id: client_id,
@@ -61,7 +66,11 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
     test "episode was created" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      patient = insert(:patient)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
       episode_id = UUID.uuid4()
       client_id = UUID.uuid4()
       expect_doctor(client_id)
@@ -83,7 +92,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id,
                  id: episode_id,
                  type: "primary_care",
                  name: "ОРВИ 2018",
@@ -106,7 +115,9 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                })
 
       assert %{"episodes" => episodes} =
-               Mongo.find_one(Patient.metadata().collection, %{"_id" => patient._id}, projection: [episodes: true])
+               Mongo.find_one(Patient.metadata().collection, %{"_id" => Patients.get_pk_hash(patient_id)},
+                 projection: [episodes: true]
+               )
 
       assert Map.has_key?(episodes, episode_id)
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))

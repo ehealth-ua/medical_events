@@ -11,6 +11,7 @@ defmodule Core.AuditLogTest do
   alias Core.Mongo, as: CoreMongo
   alias Core.Mongo.AuditLog
   alias Core.Mongo.Event
+  alias Core.Patients
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -35,7 +36,10 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      patient = build(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = build(:patient, _id: patient_id_hash)
       actor_id = patient.updated_by
       assert {:ok, %{inserted_id: id}} = CoreMongo.insert_one(patient, actor_id: actor_id)
       assert %{"_id" => id} = CoreMongo.find_one("patients", %{"_id" => id})
@@ -431,7 +435,10 @@ defmodule Core.AuditLogTest do
         :ok
       end)
 
-      patient = build(:patient)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = build(:patient, _id: patient_id_hash)
       actor_id = patient.updated_by
 
       # actor_id fetched from data set
