@@ -125,15 +125,15 @@ defmodule Api.Web.ObservationControllerTest do
 
       today_date = to_string(Date.utc_today())
 
-      assert 0 = call_endpoint.(%{"issued_to" => "1989-01-01"})
-      assert 0 = call_endpoint.(%{"issued_from" => "2001-01-01", "issued_to" => "2005-01-01"})
-      assert 0 = call_endpoint.(%{"issued_from" => "3001-01-01"})
+      assert 0 == call_endpoint.(%{"issued_to" => "1989-01-01"})
+      assert 0 == call_endpoint.(%{"issued_from" => "2001-01-01", "issued_to" => "2005-01-01"})
+      assert 0 == call_endpoint.(%{"issued_from" => "3001-01-01"})
 
-      assert 10 = call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "1999-01-01"})
-      assert 20 = call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "2005-01-01"})
-      assert 20 = call_endpoint.(%{"issued_from" => "2010-01-01", "issued_to" => today_date})
-      assert 40 = call_endpoint.(%{"issued_from" => "1990-01-01"})
-      assert 40 = call_endpoint.(%{"issued_from" => "1990-01-01", "issued_to" => today_date})
+      assert 10 == call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "1999-01-01"})
+      assert 20 == call_endpoint.(%{"issued_from" => "1980-01-01", "issued_to" => "2005-01-01"})
+      assert 20 == call_endpoint.(%{"issued_from" => "2010-01-01", "issued_to" => today_date})
+      assert 40 == call_endpoint.(%{"issued_from" => "1990-01-01"})
+      assert 40 == call_endpoint.(%{"issued_from" => "1990-01-01", "issued_to" => today_date})
     end
 
     test "success by code", %{conn: conn} do
