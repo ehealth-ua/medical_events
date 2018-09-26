@@ -4,13 +4,14 @@ defmodule Core.Patients.Encounters do
   alias Core.Encounter
   alias Core.Mongo
   alias Core.Patient
+
   require Logger
 
   @patient_collection Patient.metadata().collection
 
   def get_episode_encounters(
         patient_id,
-        episode_id,
+        %BSON.Binary{} = episode_id,
         project \\ %{
           "episode_id" => "$encounters.v.episode.identifier.value",
           "encounter_id" => "$encounters.v.id"

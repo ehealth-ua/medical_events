@@ -3,12 +3,15 @@ defmodule Core.Conditions do
 
   alias Core.Condition
   alias Core.Evidence
+  alias Core.Maybe
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patients.Encounters
   alias Core.Reference
+  alias Core.Search
   alias Core.Source
   alias Scrivener.Page
+
   require Logger
 
   @condition_collection Condition.metadata().collection
@@ -69,21 +72,31 @@ defmodule Core.Conditions do
 
   defp search_conditions_pipe(%{"patient_id" => patient_id} = params) do
     code = params["code"]
-    episode_id = params["episode_id"]
+    onset_date_from = filter_date(params["onset_date_from"])
+    onset_date_to = filter_date(params["onset_date_to"], true)
 
+    episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
     encounter_ids = get_encounter_ids(patient_id, episode_id)
 
     encounter_ids =
-      case params["encounter_id"] do
-        nil -> encounter_ids
-        encounter_id -> Enum.uniq([encounter_id | encounter_ids])
-      end
+      Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
     %{"$match" => %{"patient_id" => patient_id}}
-    |> add_search_param(code, ["$match", "code.coding.0.code"])
-    |> add_search_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+    |> Search.add_param(code, ["$match", "code.coding.0.code"])
+    |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+    |> Search.add_param(onset_date_from, ["$match", "onset_date"], "$gte")
+    |> Search.add_param(onset_date_to, ["$match", "onset_date"], "$lte")
     |> List.wrap()
     |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+  end
+
+  defp filter_date(date, end_day_time? \\ false) do
+    time = (end_day_time? && "23:59:59") || "00:00:00"
+
+    case DateTime.from_iso8601("#{date} #{time}Z") do
+      {:ok, date_time, _} -> date_time
+      _ -> nil
+    end
   end
 
   def get_encounter_ids(_patient_id, nil), do: []
@@ -93,11 +106,6 @@ defmodule Core.Conditions do
     |> Encounters.get_episode_encounters(episode_id)
     |> Enum.map(& &1["encounter_id"])
   end
-
-  defp add_search_param(search_params, value, path, operator \\ "$eq")
-  defp add_search_param(search_params, nil, _path, _operator), do: search_params
-  defp add_search_param(search_params, [], _path, _operator), do: search_params
-  defp add_search_param(search_params, value, path, operator), do: put_in(search_params, path, %{operator => value})
 
   defp fill_up_condition_asserter(%Reference{identifier: identifier}) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do

@@ -1,13 +1,16 @@
 defmodule Core.Observations do
   @moduledoc false
 
+  alias Core.Maybe
   alias Core.Mongo
   alias Core.Observation
   alias Core.Paging
   alias Core.Patients.Encounters
   alias Core.Reference
+  alias Core.Search
   alias Core.Source
   alias Scrivener.Page
+
   require Logger
 
   @observation_collection Observation.metadata().collection
@@ -25,7 +28,12 @@ defmodule Core.Observations do
     paging_params = Map.take(params, ["page", "page_size"])
 
     with %Page{entries: observations} = page <-
-           Paging.paginate(:aggregate, @observation_collection, search_observations_pipe(params), paging_params) do
+           Paging.paginate(
+             :aggregate,
+             @observation_collection,
+             search_observations_pipe(params),
+             paging_params
+           ) do
       {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
     end
   end
@@ -43,7 +51,10 @@ defmodule Core.Observations do
             source
             | value: %{
                 value
-                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)},
+                | identifier: %{
+                    value.identifier
+                    | value: Mongo.string_to_uuid(value.identifier.value)
+                  },
                   display_value: fill_up_observation_performer(value)
               }
           }
@@ -56,7 +67,13 @@ defmodule Core.Observations do
 
         _ ->
           Enum.map(observation.based_on, fn item ->
-            %{item | identifier: %{item.identifier | value: Mongo.string_to_uuid(item.identifier.value)}}
+            %{
+              item
+              | identifier: %{
+                  item.identifier
+                  | value: Mongo.string_to_uuid(item.identifier.value)
+                }
+            }
           end)
       end
 
@@ -67,7 +84,10 @@ defmodule Core.Observations do
         updated_by: Mongo.string_to_uuid(observation.updated_by),
         context: %{
           context
-          | identifier: %{context.identifier | value: Mongo.string_to_uuid(context.identifier.value)}
+          | identifier: %{
+              context.identifier
+              | value: Mongo.string_to_uuid(context.identifier.value)
+            }
         },
         source: source,
         based_on: based_on
@@ -76,20 +96,31 @@ defmodule Core.Observations do
 
   defp search_observations_pipe(%{"patient_id" => patient_id} = params) do
     code = params["code"]
-    episode_id = params["episode_id"]
+    issued_from = filter_date(params["issued_from"])
+    issued_to = filter_date(params["issued_to"], true)
+
+    episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
     encounter_ids = get_encounter_ids(patient_id, episode_id)
 
     encounter_ids =
-      case params["encounter_id"] do
-        nil -> encounter_ids
-        encounter_id -> Enum.uniq([encounter_id | encounter_ids])
-      end
+      Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
     %{"$match" => %{"patient_id" => patient_id}}
-    |> add_search_param(code, ["$match", "code.coding.0.code"])
-    |> add_search_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+    |> Search.add_param(code, ["$match", "code.coding.0.code"])
+    |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+    |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
+    |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
     |> List.wrap()
     |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+  end
+
+  defp filter_date(date, end_day_time? \\ false) do
+    time = (end_day_time? && "23:59:59") || "00:00:00"
+
+    case DateTime.from_iso8601("#{date} #{time}Z") do
+      {:ok, date_time, _} -> date_time
+      _ -> nil
+    end
   end
 
   def get_encounter_ids(_patient_id, nil), do: []
@@ -99,11 +130,6 @@ defmodule Core.Observations do
     |> Encounters.get_episode_encounters(episode_id)
     |> Enum.map(& &1["encounter_id"])
   end
-
-  defp add_search_param(search_params, value, path, operator \\ "$eq")
-  defp add_search_param(search_params, nil, _path, _operator), do: search_params
-  defp add_search_param(search_params, [], _path, _operator), do: search_params
-  defp add_search_param(search_params, value, path, operator), do: put_in(search_params, path, %{operator => value})
 
   defp fill_up_observation_performer(%Reference{identifier: identifier}) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do

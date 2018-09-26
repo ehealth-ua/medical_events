@@ -6,6 +6,7 @@ defmodule Api.Web.Plugs.AuthorizeParty do
   import Plug.Conn
 
   alias Api.Web.FallbackController
+  alias Core.Patients
   alias Core.Redis
   alias Core.Redis.StorageKeys
   alias Plug.Conn
@@ -20,9 +21,15 @@ defmodule Api.Web.Plugs.AuthorizeParty do
     patient_id = Map.fetch!(params, "patient_id")
 
     with {:ok, patient_ids} <- get_patient_ids(user_id, client_id),
-         true <- passes_auth?(patient_id, patient_ids) do
+         true <- passes_auth?(patient_id, patient_ids),
+         {_, %{}} <- {:patient_exists, Patients.get_by_id(patient_id)} do
       conn
     else
+      {:patient_exists, _} ->
+        conn
+        |> FallbackController.call(nil)
+        |> halt()
+
       _ ->
         conn
         |> FallbackController.call(

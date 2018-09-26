@@ -332,6 +332,10 @@ defmodule Core.Factories do
     |> insert_entity()
   end
 
+  def insert_list(count, factory, args \\ []) do
+    for _ <- 1..count, do: insert(factory, args)
+  end
+
   defp insert_entity(entity) do
     {:ok, _} = Mongo.insert_one(entity)
     entity
