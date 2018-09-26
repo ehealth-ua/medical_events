@@ -178,8 +178,7 @@ defmodule Core.Factories do
       target_diseases: [
         codeable_concept_coding(system: "eHealth/vaccination_target_diseases", code: "1857005")
       ],
-      dose_status:
-        codeable_concept_coding(system: "eHealth/vaccination_dose_statuses", code: "count"),
+      dose_status: codeable_concept_coding(system: "eHealth/vaccination_dose_statuses", code: "count"),
       dose_status_reason:
         codeable_concept_coding(
           system: "eHealth/vaccination_dose_statuse_reasons",

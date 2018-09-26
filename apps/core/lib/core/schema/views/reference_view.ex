@@ -204,11 +204,6 @@ defmodule Core.ReferenceView do
 
   def render_source(%Source{type: type, value: value}) do
     %{String.to_atom(type) => render(value)}
-    %{:"value_#{type}" => value}
-  end
-
-  def render_source(%Source{type: type, value: value}) do
-    %{:"#{type}" => render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do
