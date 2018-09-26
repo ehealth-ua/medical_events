@@ -1,4 +1,4 @@
-defmodule Api.Web.UUIDView do
+defmodule Core.UUIDView do
   @moduledoc false
 
   def render(%BSON.Binary{binary: binary, subtype: :uuid}) do

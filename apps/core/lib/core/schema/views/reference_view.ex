@@ -1,7 +1,6 @@
 defmodule Core.ReferenceView do
   @moduledoc false
 
-  alias Api.Web.UUIDView
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.DatePeriod
@@ -20,6 +19,7 @@ defmodule Core.ReferenceView do
   alias Core.Reference
   alias Core.Source
   alias Core.Stage
+  alias Core.UUIDView
 
   def render(%Reference{} = reference) do
     %{

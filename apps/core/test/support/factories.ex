@@ -95,12 +95,12 @@ defmodule Core.Factories do
   end
 
   def allergy_intolerance_factory do
-    id = UUID.uuid4()
+    id = Mongo.string_to_uuid(UUID.uuid4())
     now = DateTime.utc_now()
     today = DateTime.utc_now()
 
     %AllergyIntolerance{
-      id: UUID.uuid4(),
+      id: id,
       clinical_status: AllergyIntolerance.clinical_status(:active),
       verification_status: AllergyIntolerance.verification_status(:confirmed),
       type: "allergy",
@@ -128,7 +128,7 @@ defmodule Core.Factories do
     today = DateTime.utc_now()
 
     %Immunization{
-      id: UUID.uuid4(),
+      id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Immunization.status(:completed),
       not_given: false,
       vaccine_code: codeable_concept_coding(system: "http://snomed.info/sct"),

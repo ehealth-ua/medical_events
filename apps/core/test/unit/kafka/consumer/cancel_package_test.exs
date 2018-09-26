@@ -18,6 +18,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
 
+  @tag :pending
   describe "consume cancel package event" do
     test "success" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -406,8 +407,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  patient_id: patient._id,
                  user_id: user_id,
                  client_id: client_id,
-                 signed_data: Base.encode64(Jason.encode!(signed_content)),
-                 signed_data_decoded: signed_content
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
       assert {:ok,

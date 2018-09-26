@@ -94,8 +94,7 @@ defmodule Core.Schema do
       validations = unquote(validations)
       name = unquote(name)
 
-      validations =
-        if name == primary_key, do: Keyword.put(validations, :presence, true), else: validations
+      validations = if name == primary_key, do: Keyword.put(validations, :presence, true), else: validations
 
       Module.put_attribute(__MODULE__, :__metadata__, %{
         metadata

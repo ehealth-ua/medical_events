@@ -10,7 +10,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
   @encounter_entered_in_error Encounter.status(:entered_in_error)
 
-  def cancel(decoded_content, encounter_id, patient_id) do
+  def validate_cancellation(decoded_content, encounter_id, patient_id) do
     entities_to_load = get_entities_to_load(decoded_content)
 
     {entities, encounter_package} = create_encounter_package(encounter_id, patient_id, entities_to_load)
@@ -34,17 +34,23 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   defp create_encounter_package(encounter_id, patient_id, entities_to_load) do
+    encounter_uuid = Core.Mongo.string_to_uuid(encounter_id)
+
     entities_resolvers = %{
-      "conditions" => fn -> Conditions.get_by_encounter_id(patient_id, encounter_id) end,
-      "allergy_intolerances" => fn -> AllergyIntolerances.get_by_encounter_id(patient_id, encounter_id) end,
-      "immunizations" => fn -> Immunizations.get_by_encounter_id(patient_id, encounter_id) end,
-      "observations" => fn -> Observations.get_by_encounter_id(patient_id, encounter_id) end
+      "conditions" => fn -> Conditions.get_by_encounter_id(patient_id, encounter_uuid) end,
+      "allergy_intolerances" => fn ->
+        AllergyIntolerances.get_by_encounter_id(patient_id, encounter_uuid)
+      end,
+      "immunizations" => fn -> Immunizations.get_by_encounter_id(patient_id, encounter_uuid) end,
+      "observations" => fn -> Observations.get_by_encounter_id(patient_id, encounter_uuid) end
     }
 
     with {:ok, encounter} <- Encounters.get_by_id(patient_id, encounter_id) do
       entities =
         entities_to_load
-        |> Enum.map(fn entity_key -> {String.to_atom(entity_key), entities_resolvers[entity_key].()} end)
+        |> Enum.map(fn entity_key ->
+          {String.to_atom(entity_key), entities_resolvers[entity_key].()}
+        end)
         |> Enum.into(%{})
         |> Map.put(:encounter, encounter)
 
@@ -82,13 +88,13 @@ defmodule Core.Patients.Encounters.Cancel do
     if package1 == package2 do
       :ok
     else
-      {:error, "Submitted signed content does not correspond to previously created content"}
+      {:error, {:conflict, "Submitted signed content does not correspond to previously created content"}}
     end
   end
 
   defp validate_conditions(%{"encounter" => %{"status" => @encounter_entered_in_error}}), do: :ok
 
-  defp validate_conditions(%{"encounter" => %{"diagnoses" => diagnoses}, "conditions" => conditions} = decoded_content)
+  defp validate_conditions(%{"encounter" => %{"diagnoses" => [] = diagnoses}, "conditions" => conditions})
        when is_list(conditions) and is_list(diagnoses) do
     conditions_id =
       conditions
@@ -106,8 +112,11 @@ defmodule Core.Patients.Encounters.Cancel do
     |> MapSet.size()
     |> Kernel.!=(0)
     |> case do
-      true -> {:error, "The condition can not be canceled while encounter is not canceled"}
-      _ -> :ok
+      true ->
+        {:error, {:conflict, "The condition can not be canceled while encounter is not canceled"}}
+
+      _ ->
+        :ok
     end
   end
 
@@ -120,7 +129,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> get_in(["encounter", "cancellation_reason", "coding", Access.filter(check_system_field)])
     |> length()
     |> case do
-      0 -> {:error, "Invalid cancellation_reason conding"}
+      0 -> {:error, {:"422", "Invalid cancellation_reason conding"}}
       _ -> :ok
     end
   end
@@ -128,7 +137,7 @@ defmodule Core.Patients.Encounters.Cancel do
   defp filter(:encounter, encounter) do
     # status
     %{
-      id: encounter.id,
+      id: Core.UUIDView.render(encounter.id),
       date: Core.ReferenceView.render_date(encounter.date),
       visit: Core.ReferenceView.render(encounter.visit),
       episode: Core.ReferenceView.render(encounter.episode),
@@ -147,7 +156,7 @@ defmodule Core.Patients.Encounters.Cancel do
     # verification_status
     Enum.map(conditions, fn condition ->
       %{
-        id: condition._id,
+        id: Core.UUIDView.render(condition._id),
         primary_source: condition.primary_source,
         context: Core.ReferenceView.render(condition.context),
         code: Core.ReferenceView.render(condition.code),
@@ -165,8 +174,9 @@ defmodule Core.Patients.Encounters.Cancel do
   defp filter(:allergy_intolerances, allergy_intolerances) do
     Enum.map(allergy_intolerances, fn allergy_intolerance ->
       allergy_intolerance
-      |> Map.take(~w(id type category criticality primary_source)a)
+      |> Map.take(~w(type category criticality primary_source)a)
       |> Map.merge(%{
+        id: Core.UUIDView.render(allergy_intolerance.id),
         context: Core.ReferenceView.render(allergy_intolerance.context),
         code: Core.ReferenceView.render(allergy_intolerance.code),
         onset_date_time: Core.ReferenceView.render_date(allergy_intolerance.onset_date_time),
@@ -182,13 +192,13 @@ defmodule Core.Patients.Encounters.Cancel do
     Enum.map(immunizations, fn immunization ->
       immunization
       |> Map.take(~w(
-        id
         not_given
         primary_source
         manufacturer
         lot_number
       )a)
       |> Map.merge(%{
+        id: Core.UUIDView.render(immunization.id),
         vaccine_code: Core.ReferenceView.render(immunization.vaccine_code),
         context: Core.ReferenceView.render(immunization.context),
         date: Core.ReferenceView.render_date(immunization.date),
@@ -211,7 +221,7 @@ defmodule Core.Patients.Encounters.Cancel do
       observation
       |> Map.take(~w(primary_source comment)a)
       |> Map.merge(%{
-        id: observation._id,
+        id: Core.UUIDView.render(observation._id),
         issued: Core.ReferenceView.render_datetime(observation.issued),
         based_on: Core.ReferenceView.render(observation.based_on),
         method: Core.ReferenceView.render(observation.method),

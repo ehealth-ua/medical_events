@@ -2,7 +2,9 @@ defmodule Api.Web.ImmunizationView do
   @moduledoc false
 
   use ApiWeb, :view
+
   alias Core.ReferenceView
+  alias Core.UUIDView
 
   def render("index.json", %{immunizations: immunizations}) do
     render_many(immunizations, __MODULE__, "show.json", as: :immunization)
@@ -10,7 +12,6 @@ defmodule Api.Web.ImmunizationView do
 
   def render("show.json", %{immunization: immunization}) do
     immunization_fields = ~w(
-      id
       status
       not_given
       primary_source
@@ -19,6 +20,7 @@ defmodule Api.Web.ImmunizationView do
     )a
 
     immunization_data = %{
+      id: UUIDView.render(immunization.id),
       vaccine_code: ReferenceView.render(immunization.vaccine_code),
       context: ReferenceView.render(immunization.context),
       date: ReferenceView.render_date(immunization.date),

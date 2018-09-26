@@ -2,13 +2,14 @@ defmodule Api.Web.AllergyIntoleranceView do
   @moduledoc false
 
   use ApiWeb, :view
+
   alias Core.ReferenceView
+  alias Core.UUIDView
 
   def render("show.json", %{allergy_intolerance: allergy_intolerance}) do
     allergy_intolerance_fields = ~w(
       verification_status
       clinical_status
-      id
       type
       category
       criticality
@@ -16,6 +17,7 @@ defmodule Api.Web.AllergyIntoleranceView do
     )a
 
     allergy_intolerance_data = %{
+      id: UUIDView.render(allergy_intolerance.id),
       context: ReferenceView.render(allergy_intolerance.context),
       code: ReferenceView.render(allergy_intolerance.code),
       onset_date_time: ReferenceView.render_date(allergy_intolerance.onset_date_time),

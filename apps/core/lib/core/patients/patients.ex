@@ -154,20 +154,20 @@ defmodule Core.Patients do
            @digital_signature.decode(params["signed_data"], []),
          {:ok, %{"content" => decoded_content, "signer" => signer}} <-
            Signature.validate(signed_data_decoded),
+         # todo: validate json schema
          employee_id <-
            get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id = decoded_content["encounter"]["id"],
          :ok <- Signature.check_drfo(signer, employee_id),
-         {:ok, entities} <- CancelEncounter.cancel(decoded_content, encounter_id, patient_id) do
+         {:ok, _entities} <-
+           CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
       job_data =
         params
         |> Map.put("user_id", user_id)
         |> Map.put("client_id", client_id)
-        |> Map.put("signed_data_decoded", decoded_content)
-        |> Map.put("entities", entities)
 
-      with {:ok, job, _package_cancel_job} <- Jobs.create(PackageCancelJob, job_data),
-           :ok <- @kafka_producer.publish_medical_event(job) do
+      with {:ok, job, package_cancel_job} <- Jobs.create(PackageCancelJob, job_data),
+           :ok <- @kafka_producer.publish_medical_event(package_cancel_job) do
         {:ok, job}
       end
     end
@@ -312,7 +312,10 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
-          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set, "$push" => push})
+          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
+            "$set" => set,
+            "$push" => push
+          })
 
         links = [
           %{

@@ -3,9 +3,10 @@ defmodule Api.Web.EpisodeView do
 
   use ApiWeb, :view
 
+
   alias Api.Web.DiagnosesHistoryView
-  alias Core.UUIDView
   alias Core.ReferenceView
+  alias Core.UUIDView
   alias Scrivener.Page
 
   def render("index.json", %{paging: %Page{entries: episodes}, patient_id: patient_id}) do

@@ -307,12 +307,12 @@ defmodule Api.Web.EncounterControllerTest do
       patient =
         insert(
           :patient,
-          episodes: %{episode.id => episode},
-          encounters: %{encounter.id => encounter},
-          immunizations: %{immunization.id => immunization},
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+          immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization},
           allergy_intolerances: %{
-            allergy_intolerance.id => allergy_intolerance,
-            allergy_intolerance2.id => allergy_intolerance2
+            UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance,
+            UUID.binary_to_string!(allergy_intolerance2.id.binary) => allergy_intolerance2
           }
         )
 

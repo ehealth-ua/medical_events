@@ -3,8 +3,8 @@ defmodule Api.Web.ConditionView do
 
   use ApiWeb, :view
 
-  alias Api.Web.UUIDView
   alias Core.ReferenceView
+  alias Core.UUIDView
 
   def render("index.json", %{conditions: conditions}) do
     render_many(conditions, __MODULE__, "show.json", as: :condition)

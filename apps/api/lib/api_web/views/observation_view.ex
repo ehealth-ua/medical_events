@@ -3,8 +3,8 @@ defmodule Api.Web.ObservationView do
 
   use ApiWeb, :view
 
-  alias Api.Web.UUIDView
   alias Core.ReferenceView
+  alias Core.UUIDView
 
   def render("index.json", %{observations: observations}) do
     render_many(observations, __MODULE__, "show.json", as: :observation)

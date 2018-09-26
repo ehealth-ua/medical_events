@@ -105,12 +105,6 @@ defmodule Core.Observation do
         {"method", v} ->
           {:method, CodeableConcept.create(v)}
 
-        {"based_on", nil} ->
-          {:based_on, nil}
-
-        {"based_on", v} ->
-          {:based_on, Enum.map(v, &Reference.create/1)}
-
         {"reference_ranges", v} ->
           {:reference_ranges, Maybe.map_list(v, &ReferenceRange.create/1)}
 
