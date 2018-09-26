@@ -94,21 +94,24 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp validate_conditions(%{"encounter" => %{"status" => @encounter_entered_in_error}}), do: :ok
 
-  defp validate_conditions(%{"encounter" => %{"diagnoses" => [] = diagnoses}, "conditions" => conditions})
-       when is_list(conditions) and is_list(diagnoses) do
+  defp validate_conditions(%{
+         "encounter" => %{"diagnoses" => diagnoses},
+         "conditions" => conditions
+       })
+       when is_list(diagnoses) and is_list(conditions) do
     conditions_id =
       conditions
+      |> Enum.filter(&(&1["verification_status"] == "entered_in_error"))
       |> Enum.map(& &1["id"])
-      |> Enum.reject(&(&1 == nil))
       |> MapSet.new()
 
     diagnoses_conditions_id =
       diagnoses
       |> Enum.map(& &1["condition"]["identifier"]["value"])
-      |> Enum.reject(&(&1 == nil))
       |> MapSet.new()
 
-    MapSet.intersection(conditions_id, diagnoses_conditions_id)
+    conditions_id
+    |> MapSet.intersection(diagnoses_conditions_id)
     |> MapSet.size()
     |> Kernel.!=(0)
     |> case do
@@ -129,7 +132,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> get_in(["encounter", "cancellation_reason", "coding", Access.filter(check_system_field)])
     |> length()
     |> case do
-      0 -> {:error, {:"422", "Invalid cancellation_reason conding"}}
+      0 -> {:error, {:"422", "Invalid cancellation_reason coding"}}
       _ -> :ok
     end
   end

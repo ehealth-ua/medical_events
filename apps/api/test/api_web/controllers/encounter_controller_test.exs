@@ -12,9 +12,11 @@ defmodule Api.Web.EncounterControllerTest do
   alias Api.Web.EncounterView
   alias Api.Web.ImmunizationView
   alias Api.Web.ObservationView
-
+  alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
+
+  @status_error "entered_in_error"
 
   describe "create visit" do
     test "patient not found", %{conn: conn} do
@@ -292,15 +294,20 @@ defmodule Api.Web.EncounterControllerTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
+      expect_signature()
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
       {:ok, conn: put_consumer_id_header(conn)}
     end
 
-    @tag :wip
     test "success", %{conn: conn} do
       episode = build(:episode)
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       context = build(:reference, identifier: build(:identifier, value: encounter.id))
-      immunization = build(:immunization, context: context)
+      immunization = build(:immunization, context: context, status: @status_error)
       allergy_intolerance = build(:allergy_intolerance, context: context)
       allergy_intolerance2 = build(:allergy_intolerance)
 
@@ -316,31 +323,11 @@ defmodule Api.Web.EncounterControllerTest do
           }
         )
 
+      condition = insert(:condition, patient_id: patient._id, context: context, verification_status: @status_error)
       observation = insert(:observation, patient_id: patient._id, context: context)
-      condition = insert(:condition, patient_id: patient._id, context: context)
 
       expect_get_person_data(patient._id)
       expect_signature()
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "party" => %{
-               "tax_id" => encounter.performer.identifier.value
-             }
-           }
-         }}
-      end)
-
-      expect(MediaStorageMock, :store_signed_content, fn _, _, _, _, _ ->
-        {:ok, "success"}
-      end)
 
       request_data = %{
         "signed_data" =>
@@ -360,6 +347,108 @@ defmodule Api.Web.EncounterControllerTest do
       assert conn
              |> patch(encounter_path(conn, :cancel, patient._id), request_data)
              |> json_response(202)
+    end
+
+    test "fail on signed content", %{conn: conn} do
+      episode = build(:episode)
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+      immunization = build(:immunization, context: context, status: @status_error)
+
+      patient =
+        insert(
+          :patient,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+          immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization}
+        )
+
+      expect_get_person_data(patient._id)
+
+      immunization_updated = Map.put(immunization, :lot_number, "lot_number")
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
+            "immunizations" => ImmunizationView.render("index.json", %{immunizations: [immunization_updated]})
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> json_response(409)
+             |> get_in(["error", "message"])
+             |> Kernel.==("Submitted signed content does not correspond to previously created content")
+    end
+
+    test "fail on validate diagnoses", %{conn: conn} do
+      episode = build(:episode)
+      condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
+      diagnosis = build(:diagnosis, condition: build(:reference, identifier: build(:identifier, value: condition_uuid)))
+
+      encounter =
+        build(:encounter,
+          diagnoses: [diagnosis],
+          episode: build(:reference, identifier: build(:identifier, value: episode.id))
+        )
+
+      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+
+      patient =
+        insert(
+          :patient,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+        )
+
+      condition =
+        insert(:condition,
+          _id: condition_uuid,
+          patient_id: patient._id,
+          context: context,
+          verification_status: @status_error
+        )
+
+      expect_get_person_data(patient._id)
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
+            "conditions" => ConditionView.render("index.json", %{conditions: [condition]})
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> json_response(409)
+             |> get_in(["error", "message"])
+             |> Kernel.==("The condition can not be canceled while encounter is not canceled")
+    end
+
+    test "fail on invalid cancellation reason coding", %{conn: conn} do
+      encounter = build(:encounter, cancellation_reason: codeable_concept_coding(system: "invalid system"))
+      patient = insert(:patient, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter})
+
+      expect_get_person_data(patient._id)
+
+      request_data = %{
+        "signed_data" =>
+          %{"encounter" => EncounterView.render("show.json", %{encounter: encounter})}
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> json_response(422)
+             |> get_in(["error", "message"])
+             |> Kernel.==("Invalid cancellation_reason coding")
     end
   end
 end
