@@ -11,6 +11,12 @@ defmodule Api.Web.JobView do
     |> Map.merge(%{id: to_string(id), status: Job.status_to_string(status)})
   end
 
+  def render("cancel.json", %{job: %Job{_id: id, status: status} = job}) do
+    job
+    |> Map.take(~w(inserted_at updated_at)a)
+    |> Map.merge(%{id: to_string(id), status: Job.status_to_string(status)})
+  end
+
   def render("details.json", %{job: job}) do
     %{
       eta: job.eta,

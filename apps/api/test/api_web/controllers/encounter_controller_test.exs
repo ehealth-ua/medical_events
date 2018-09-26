@@ -347,6 +347,8 @@ defmodule Api.Web.EncounterControllerTest do
       assert conn
              |> patch(encounter_path(conn, :cancel, patient._id), request_data)
              |> json_response(202)
+             |> get_in(["data", "status"])
+             |> Kernel.==("pending")
     end
 
     test "fail on signed content", %{conn: conn} do
