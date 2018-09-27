@@ -27,12 +27,14 @@ defmodule Core.Conditions do
   end
 
   def list(params) do
-    pipeline = search_conditions_pipe(params)
     paging_params = Map.take(params, ~w(page page_size))
 
-    with %Page{entries: conditions} = page <-
+    with [_ | _] = pipeline <- search_conditions_pipe(params),
+         %Page{entries: conditions} = page <-
            Paging.paginate(:aggregate, @condition_collection, pipeline, paging_params) do
       {:ok, %Page{page | entries: Enum.map(conditions, &Condition.create/1)}}
+    else
+      _ -> {:ok, Paging.create()}
     end
   end
 
@@ -80,16 +82,20 @@ defmodule Core.Conditions do
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
     encounter_ids = get_encounter_ids(patient_id, episode_id)
 
-    encounter_ids =
-      Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
+    if episode_id != nil and encounter_ids == [] do
+      []
+    else
+      encounter_ids =
+        Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
-    %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
-    |> Search.add_param(code, ["$match", "code.coding.0.code"])
-    |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
-    |> Search.add_param(onset_date_from, ["$match", "onset_date"], "$gte")
-    |> Search.add_param(onset_date_to, ["$match", "onset_date"], "$lte")
-    |> List.wrap()
-    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+      %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
+      |> Search.add_param(code, ["$match", "code.coding.0.code"])
+      |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+      |> Search.add_param(onset_date_from, ["$match", "onset_date"], "$gte")
+      |> Search.add_param(onset_date_to, ["$match", "onset_date"], "$lte")
+      |> List.wrap()
+      |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+    end
   end
 
   defp filter_date(date, end_day_time? \\ false) do

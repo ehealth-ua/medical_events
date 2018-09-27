@@ -283,6 +283,34 @@ defmodule Api.Web.ObservationControllerTest do
       assert 5 == length(response["data"])
     end
 
+    test "empty result on invalid episode id", %{conn: conn} do
+      episode = build(:episode)
+      encounter = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      expect_get_person_data(patient_id)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+      )
+
+      context = build_encounter_context(encounter.id)
+      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+
+      request_data = %{
+        "episode_id" => UUID.binary_to_string!(episode.id.binary)
+      }
+
+      assert conn
+             |> get(observation_path(conn, :index, patient_id), request_data)
+             |> json_response(200)
+             |> Map.get("data")
+             |> Kernel.==([])
+    end
+
     test "empty results", %{conn: conn} do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
