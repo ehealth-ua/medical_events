@@ -4,6 +4,7 @@ defmodule Core.Observation do
   use Core.Schema
 
   alias Core.CodeableConcept
+  alias Core.Maybe
   alias Core.Observations.Component
   alias Core.Observations.EffectiveAt
   alias Core.Observations.ReferenceRange
@@ -59,6 +60,9 @@ defmodule Core.Observation do
         {"effective_period", v} ->
           {:effective_at, %EffectiveAt{type: "effective_period", value: Period.create(v)}}
 
+        {"effective_at", nil} ->
+          {:effective_at, nil}
+
         {"effective_at", %{"type" => type, "value" => value}} ->
           {:effective_at, EffectiveAt.create(type, value)}
 
@@ -80,23 +84,14 @@ defmodule Core.Observation do
         {"id", v} ->
           {:_id, v}
 
-        {"based_on", nil} ->
-          {:based_on, nil}
-
         {"based_on", v} ->
-          {:based_on, Enum.map(v, &Reference.create/1)}
-
-        {"interpretation", nil} ->
-          {:interpretation, nil}
+          {:based_on, Maybe.map_list(v, &Reference.create/1)}
 
         {"interpretation", v} ->
-          {:interpretation, CodeableConcept.create(v)}
-
-        {"body_site", nil} ->
-          {:body_site, nil}
+          {:interpretation, Maybe.map(v, &CodeableConcept.create/1)}
 
         {"body_site", v} ->
-          {:body_site, CodeableConcept.create(v)}
+          {:body_site, Maybe.map(v, &CodeableConcept.create/1)}
 
         {"value", %{"type" => type, "value" => value}} ->
           {:value, Value.create(type, value)}
@@ -105,10 +100,10 @@ defmodule Core.Observation do
           {:value, Value.create(type, value)}
 
         {"reference_ranges", v} ->
-          {:reference_ranges, Enum.map(v, &ReferenceRange.create/1)}
+          {:reference_ranges, Maybe.map_list(v, &ReferenceRange.create/1)}
 
         {"components", v} ->
-          {:components, Enum.map(v, &Component.create/1)}
+          {:components, Maybe.map_list(v, &Component.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

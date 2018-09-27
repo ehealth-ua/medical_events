@@ -5,6 +5,7 @@ defmodule Core.Condition do
 
   alias Core.CodeableConcept
   alias Core.Evidence
+  alias Core.Maybe
   alias Core.Reference
   alias Core.Source
   alias Core.Stage
@@ -35,19 +36,19 @@ defmodule Core.Condition do
       __MODULE__,
       Enum.map(data, fn
         {"evidences", v} ->
-          {:evidences, Enum.map(v, &Evidence.create/1)}
+          {:evidences, Maybe.map_list(v, &Evidence.create/1)}
 
         {"stage", v} ->
-          {:stage, Stage.create(v)}
+          {:stage, Maybe.map(v, &Stage.create/1)}
 
         {"onset_date", v} ->
-          {:onset_date, create_date(v)}
+          {:onset_date, Maybe.map(v, &create_date/1)}
 
         {"body_sites", v} ->
-          {:body_sites, Enum.map(v, &CodeableConcept.create/1)}
+          {:body_sites, Maybe.map_list(v, &CodeableConcept.create/1)}
 
         {"severity", v} ->
-          {:severity, CodeableConcept.create(v)}
+          {:severity, Maybe.map(v, &CodeableConcept.create/1)}
 
         {"context", v} ->
           {:context, Reference.create(v)}
@@ -59,7 +60,7 @@ defmodule Core.Condition do
           {:source, Source.create(type, value)}
 
         {"asserted_date", v} ->
-          {:asserted_date, create_date(v)}
+          {:asserted_date, Maybe.map(v, &create_date/1)}
 
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
@@ -76,7 +77,6 @@ defmodule Core.Condition do
     )
   end
 
-  defp create_date(nil), do: nil
   defp create_date(%DateTime{} = date), do: date
 
   defp create_date(date) when is_binary(date) do

@@ -18,7 +18,10 @@ defmodule Core.Observations do
 
   def get(patient_id, id) do
     @observation_collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => Patients.get_pk_hash(patient_id)})
+    |> Mongo.find_one(%{
+      "_id" => Mongo.string_to_uuid(id),
+      "patient_id" => Patients.get_pk_hash(patient_id)
+    })
     |> case do
       %{} = observation -> {:ok, Observation.create(observation)}
       _ -> nil
@@ -28,14 +31,17 @@ defmodule Core.Observations do
   def list(params) do
     paging_params = Map.take(params, ["page", "page_size"])
 
-    with %Page{entries: observations} = page <-
+    with [_ | _] = pipeline <- search_observations_pipe(params),
+         %Page{entries: observations} = page <-
            Paging.paginate(
              :aggregate,
              @observation_collection,
-             search_observations_pipe(params),
+             pipeline,
              paging_params
            ) do
       {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
+    else
+      _ -> {:ok, Paging.create()}
     end
   end
 
@@ -104,16 +110,24 @@ defmodule Core.Observations do
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
     encounter_ids = get_encounter_ids(patient_id, episode_id)
 
-    encounter_ids =
-      Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
+    if episode_id != nil and encounter_ids == [] do
+      []
+    else
+      encounter_ids =
+        Maybe.map(
+          params["encounter_id"],
+          &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]),
+          encounter_ids
+        )
 
-    %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
-    |> Search.add_param(code, ["$match", "code.coding.0.code"])
-    |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
-    |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
-    |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
-    |> List.wrap()
-    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+      %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
+      |> Search.add_param(code, ["$match", "code.coding.0.code"])
+      |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+      |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
+      |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
+      |> List.wrap()
+      |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+    end
   end
 
   defp filter_date(date, end_day_time? \\ false) do

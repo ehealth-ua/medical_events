@@ -4,6 +4,16 @@ defmodule Core.Paging do
   alias Core.Mongo
   alias Scrivener.Page
 
+  def create do
+    %Page{
+      entries: [],
+      page_number: 1,
+      page_size: 50,
+      total_entries: 0,
+      total_pages: 0
+    }
+  end
+
   def paginate(:aggregate, collection, pipeline, paging) do
     [page_number: page_number, limit: page_size, offset: offset] = page_options(paging)
     paging_pipeline = pipeline ++ [%{"$skip" => offset}, %{"$limit" => page_size}]
