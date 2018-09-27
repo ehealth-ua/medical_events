@@ -150,17 +150,13 @@ defmodule Core.Patients do
     with :ok <- JsonSchema.validate(:package_cancel, Map.delete(params, "patient_id")),
          %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
-         {:ok, %{"data" => signed_data_decoded}} <-
-           @digital_signature.decode(params["signed_data"], []),
-         {:ok, %{"content" => decoded_content, "signer" => signer}} <-
-           Signature.validate(signed_data_decoded),
+         {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
+         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
          # todo: validate json schema
-         employee_id <-
-           get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
+         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id = decoded_content["encounter"]["id"],
          :ok <- Signature.check_drfo(signer, employee_id),
-         {:ok, _entities} <-
-           CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
+         {:ok, _entities} <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
       job_data =
         params
         |> Map.put("user_id", user_id)
@@ -173,14 +169,12 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_cancel_package(
-        %PackageCancelJob{signed_data: signed_data, client_id: client_id, user_id: user_id} = job
-      ) do
-    # todo:
-    # - Set status `entered_in_error` for objects, submitted with status `entered_in_error`
-    # - Set cancellation_reason, explanatory_letter
-    # - Deactivate corresponding diagnoses in the episode
-    :ok
+  def consume_cancel_package(%PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
+    with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
+         {:ok, %{"content" => package_data, "signer" => _signer}} <- Signature.validate(data),
+         resp <- CancelEncounter.proccess_cancellation(patient_id, user_id, package_data) do
+      {:ok, resp, 200}
+    end
   end
 
   def consume_create_package(%PackageCreateJob{patient_id: patient_id, user_id: user_id} = job) do
@@ -278,12 +272,8 @@ defmodule Core.Patients do
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.inserted_by")
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
-            |> Mongo.convert_to_uuid(
-              "immunizations.#{immunization.id}.legal_entity.identifier.value"
-            )
-            |> Mongo.convert_to_uuid(
-              "immunizations.#{immunization.id}.source.value.identifier.value"
-            )
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
+            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
             |> Mongo.convert_to_uuid(
               "immunizations.#{immunization.id}.reactions",
               ~w(detail identifier value)a
@@ -292,8 +282,7 @@ defmodule Core.Patients do
 
         set =
           Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
-            allergy_intolerance =
-              AllergyIntolerances.fill_up_allergy_intolerance_asserter(allergy_intolerance)
+            allergy_intolerance = AllergyIntolerances.fill_up_allergy_intolerance_asserter(allergy_intolerance)
 
             acc
             |> Mongo.add_to_set(
@@ -303,12 +292,8 @@ defmodule Core.Patients do
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.id")
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.inserted_by")
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.updated_by")
-            |> Mongo.convert_to_uuid(
-              "allergy_intolerances.#{allergy_intolerance.id}.context.identifier.value"
-            )
-            |> Mongo.convert_to_uuid(
-              "allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value"
-            )
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.context.identifier.value")
+            |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value")
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
@@ -346,8 +331,7 @@ defmodule Core.Patients do
               [
                 %{
                   "entity" => "allergy_intolerance",
-                  "href" =>
-                    "/api/patients/#{patient_id}/allergy_intolerances/#{allergy_intolerance.id}"
+                  "href" => "/api/patients/#{patient_id}/allergy_intolerances/#{allergy_intolerance.id}"
                 }
               ]
           end)
@@ -372,9 +356,7 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_episode(
-        %EpisodeCreateJob{patient_id: patient_id, client_id: client_id} = job
-      ) do
+  def consume_create_episode(%EpisodeCreateJob{patient_id: patient_id, client_id: client_id} = job) do
     now = DateTime.utc_now()
 
     episode =
@@ -418,9 +400,7 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("episodes.#{episode.id}.inserted_by")
               |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
               |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-              |> Mongo.convert_to_uuid(
-                "episodes.#{episode.id}.managing_organization.identifier.value"
-              )
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
               |> Mongo.convert_to_uuid("updated_by")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
@@ -442,9 +422,7 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_update_episode(
-        %EpisodeUpdateJob{patient_id: patient_id, id: id, client_id: client_id} = job
-      ) do
+  def consume_update_episode(%EpisodeUpdateJob{patient_id: patient_id, id: id, client_id: client_id} = job) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
@@ -478,9 +456,7 @@ defmodule Core.Patients do
             )
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-            |> Mongo.convert_to_uuid(
-              "episodes.#{episode.id}.managing_organization.identifier.value"
-            )
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
             |> Mongo.convert_to_uuid("updated_by")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
@@ -887,9 +863,7 @@ defmodule Core.Patients do
 
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
-      if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id},
-           projection: %{"_id" => true}
-         ) do
+      if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
         {:halt, {:error, "Condition with id '#{condition._id}' already exists", 409}}
       else
         {:cont, acc}
@@ -924,12 +898,10 @@ defmodule Core.Patients do
   end
 
   defp validate_allergy_intolerances(patient_id, allergy_intolerances) do
-    Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance,
-                                                                            acc ->
+    Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance, acc ->
       case AllergyIntolerances.get(patient_id, allergy_intolerance.id) do
         {:ok, _} ->
-          {:halt,
-           {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
+          {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}
@@ -942,8 +914,7 @@ defmodule Core.Patients do
   defp insert_conditions(links, conditions, patient_id) do
     conditions = Enum.map(conditions, &Conditions.create/1)
 
-    {:ok, %{inserted_ids: condition_ids}} =
-      Mongo.insert_many(Condition.metadata().collection, conditions, [])
+    {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
 
     Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
       acc ++
@@ -961,8 +932,7 @@ defmodule Core.Patients do
   defp insert_observations(links, observations, patient_id) do
     observations = Enum.map(observations, &Observations.create/1)
 
-    {:ok, %{inserted_ids: observation_ids}} =
-      Mongo.insert_many(Observation.metadata().collection, observations, [])
+    {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
 
     Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
       acc ++

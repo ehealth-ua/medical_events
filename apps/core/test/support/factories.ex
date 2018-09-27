@@ -9,6 +9,7 @@ defmodule Core.Factories do
   alias Core.Condition
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
+  alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
@@ -327,6 +328,15 @@ defmodule Core.Factories do
     }
   end
 
+  def diagnoses_history_factory do
+    %DiagnosesHistory{
+      date: DateTime.utc_now(),
+      evidence: build(:reference),
+      diagnoses: build_list(2, :diagnosis),
+      is_active: true
+    }
+  end
+
   def episode_factory do
     id = UUID.uuid4()
 
@@ -463,6 +473,10 @@ defmodule Core.Factories do
 
   def reference_coding(attrs) do
     build(:reference, identifier: build(:identifier, type: codeable_concept_coding(attrs)))
+  end
+
+  def reference_value(value) do
+    build(:reference, identifier: build(:identifier, value: value))
   end
 
   def codeable_concept_coding(attrs) do
