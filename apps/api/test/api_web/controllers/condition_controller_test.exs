@@ -192,14 +192,30 @@ defmodule Api.Web.ConditionControllerTest do
       end)
     end
 
-    test "success by patient_id with pagination", %{conn: conn} do
+    test "success by encounter_id with pagination", %{conn: conn} do
+      encounter = build(:encounter)
+
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, _id: patient_id_hash)
+      insert(:patient, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}, _id: patient_id_hash)
+      context = build_encounter_context(encounter.id)
       expect_get_person_data(patient_id, 2)
 
-      insert_list(11, :condition, patient_id: patient_id_hash)
+      insert_list(11, :condition, patient_id: patient_id_hash, context: context)
+
+      # Missed context
+      insert_list(2, :condition, patient_id: patient_id_hash)
+      insert_list(3, :condition)
+
+      request_params = %{
+        "encounter_id" => UUID.binary_to_string!(encounter.id.binary)
+      }
+
+      response =
+        conn
+        |> get(condition_path(conn, :index, patient_id), request_params)
+        |> json_response(200)
 
       # defaults: paging = 50, page = 1
       assert %{
@@ -207,11 +223,7 @@ defmodule Api.Web.ConditionControllerTest do
                "page_size" => 50,
                "total_entries" => 11,
                "total_pages" => 1
-             } ==
-               conn
-               |> get(condition_path(conn, :index, patient_id), %{})
-               |> json_response(200)
-               |> Map.get("paging")
+             } = response["paging"]
 
       response =
         conn
