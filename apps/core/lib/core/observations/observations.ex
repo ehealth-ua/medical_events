@@ -30,7 +30,7 @@ defmodule Core.Observations do
 
   def get_by_encounter_id(patient_id, encounter_id) do
     @observation_collection
-    |> Mongo.find(%{"patient_id" => patient_id, "context.identifier.value" => encounter_id})
+    |> Mongo.find(%{"patient_id" => Patients.get_pk_hash(patient_id), "context.identifier.value" => encounter_id})
     |> Enum.map(&Observation.create/1)
   end
 

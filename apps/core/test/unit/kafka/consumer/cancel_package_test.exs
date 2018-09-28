@@ -12,6 +12,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
   alias Core.Jobs.PackageCancelJob
   alias Core.Kafka.Consumer
   alias Core.Observation
+  alias Core.Patients
 
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
@@ -45,8 +46,12 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       context = reference_value(encounter.id)
       allergy_intolerance = build(:allergy_intolerance, context: context)
 
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
       patient =
         insert(:patient,
+          _id: patient_id_hash,
           episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
           encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
           allergy_intolerances: %{
@@ -54,8 +59,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           }
         )
 
-      condition = insert(:condition, patient_id: patient._id, context: context)
-      observation = insert(:observation, patient_id: patient._id, context: context)
+      condition = insert(:condition, patient_id: patient_id_hash, context: context)
+      observation = insert(:observation, patient_id: patient_id_hash, context: context)
 
       allergy_intolerance_id = UUID.binary_to_string!(allergy_intolerance.id.binary)
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
@@ -130,7 +135,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         "conditions" => [
           %{
             "id" => condition_id,
-            "patient_id" => patient._id,
+            "patient_id" => patient_id_hash,
             "context" => %{
               "identifier" => %{
                 "type" => %{
@@ -196,7 +201,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           %{
             "id" => observation_id,
             "status" => @entered_in_error,
-            "patient_id" => patient._id,
+            "patient_id" => patient_id_hash,
             "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "context" => %{
               "identifier" => %{
@@ -495,7 +500,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
-                 patient_id: patient._id,
+                 patient_id: patient_id_hash,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: signed_content |> Jason.encode!() |> Base.encode64()

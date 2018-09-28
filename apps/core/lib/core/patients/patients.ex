@@ -61,6 +61,11 @@ defmodule Core.Patients do
     Mongo.find_one(@collection, %{"_id" => get_pk_hash(id)})
   end
 
+  # todo: remove it after patient_id hashing put into plug
+  def get_by_id_hashfree(id) do
+    Mongo.find_one(@collection, %{"_id" => id})
+  end
+
   def produce_create_episode(%{"patient_id" => patient_id} = params, user_id, client_id) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
@@ -156,7 +161,7 @@ defmodule Core.Patients do
          employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id = decoded_content["encounter"]["id"],
          :ok <- Signature.check_drfo(signer, employee_id),
-         {:ok, _entities} <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
+         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
       job_data =
         params
         |> Map.put("user_id", user_id)

@@ -311,22 +311,25 @@ defmodule Api.Web.EncounterControllerTest do
       allergy_intolerance = build(:allergy_intolerance, context: context)
       allergy_intolerance2 = build(:allergy_intolerance)
 
-      patient =
-        insert(
-          :patient,
-          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
-          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
-          immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization},
-          allergy_intolerances: %{
-            UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance,
-            UUID.binary_to_string!(allergy_intolerance2.id.binary) => allergy_intolerance2
-          }
-        )
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      condition = insert(:condition, patient_id: patient._id, context: context, verification_status: @status_error)
-      observation = insert(:observation, patient_id: patient._id, context: context)
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+        immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization},
+        allergy_intolerances: %{
+          UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance,
+          UUID.binary_to_string!(allergy_intolerance2.id.binary) => allergy_intolerance2
+        }
+      )
 
-      expect_get_person_data(patient._id)
+      condition = insert(:condition, patient_id: patient_id_hash, context: context, verification_status: @status_error)
+      observation = insert(:observation, patient_id: patient_id_hash, context: context)
+
+      expect_get_person_data(patient_id)
       expect_signature()
 
       request_data = %{
@@ -345,7 +348,7 @@ defmodule Api.Web.EncounterControllerTest do
       }
 
       assert conn
-             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(202)
              |> get_in(["data", "status"])
              |> Kernel.==("pending")
@@ -357,15 +360,18 @@ defmodule Api.Web.EncounterControllerTest do
       context = build(:reference, identifier: build(:identifier, value: encounter.id))
       immunization = build(:immunization, context: context, status: @status_error)
 
-      patient =
-        insert(
-          :patient,
-          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
-          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
-          immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization}
-        )
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect_get_person_data(patient._id)
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+        immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization}
+      )
+
+      expect_get_person_data(patient_id)
 
       immunization_updated = Map.put(immunization, :lot_number, "lot_number")
 
@@ -380,7 +386,7 @@ defmodule Api.Web.EncounterControllerTest do
       }
 
       assert conn
-             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(409)
              |> get_in(["error", "message"])
              |> Kernel.==("Submitted signed content does not correspond to previously created content")
@@ -399,22 +405,25 @@ defmodule Api.Web.EncounterControllerTest do
 
       context = build(:reference, identifier: build(:identifier, value: encounter.id))
 
-      patient =
-        insert(
-          :patient,
-          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
-          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
-        )
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+      )
 
       condition =
         insert(:condition,
           _id: condition_uuid,
-          patient_id: patient._id,
+          patient_id: patient_id_hash,
           context: context,
           verification_status: @status_error
         )
 
-      expect_get_person_data(patient._id)
+      expect_get_person_data(patient_id)
 
       request_data = %{
         "signed_data" =>
@@ -427,7 +436,7 @@ defmodule Api.Web.EncounterControllerTest do
       }
 
       assert conn
-             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(409)
              |> get_in(["error", "message"])
              |> Kernel.==("The condition can not be canceled while encounter is not canceled")
@@ -435,9 +444,15 @@ defmodule Api.Web.EncounterControllerTest do
 
     test "fail on invalid cancellation reason coding", %{conn: conn} do
       encounter = build(:encounter, cancellation_reason: codeable_concept_coding(system: "invalid system"))
-      patient = insert(:patient, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter})
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect_get_person_data(patient._id)
+      insert(:patient,
+        _id: patient_id_hash,
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+      )
+
+      expect_get_person_data(patient_id)
 
       request_data = %{
         "signed_data" =>
@@ -447,7 +462,7 @@ defmodule Api.Web.EncounterControllerTest do
       }
 
       assert conn
-             |> patch(encounter_path(conn, :cancel, patient._id), request_data)
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(422)
              |> get_in(["error", "message"])
              |> Kernel.==("Invalid cancellation_reason coding")

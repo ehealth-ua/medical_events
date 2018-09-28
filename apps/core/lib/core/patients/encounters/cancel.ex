@@ -27,14 +27,13 @@ defmodule Core.Patients.Encounters.Cancel do
   def validate_cancellation(decoded_content, encounter_id, patient_id) do
     entities_to_load = get_entities_to_load(decoded_content)
 
-    {entities, encounter_package} = create_encounter_package(encounter_id, patient_id, entities_to_load)
-
     encounter_request_package = create_encounter_package_from_request(decoded_content, entities_to_load)
 
-    with :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
+    with {:ok, encounter_package} <- create_encounter_package(encounter_id, patient_id, entities_to_load),
+         :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content),
          :ok <- validate_cancelation_reason(decoded_content) do
-      {:ok, entities}
+      :ok
     end
   end
 
@@ -106,15 +105,14 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp update_patient_entities(patient_id, user_id, %{"encounter" => encounter}, entities_data) do
     user_uuid = Mongo.string_to_uuid(user_id)
-    patient = Patients.get_by_id(patient_id)
 
-    updated_patient =
-      patient
-      |> update_allergies_immunizations(user_uuid, entities_data)
-      |> update_diagnoses(encounter)
-      |> update_encounter(user_uuid, encounter)
-
-    with {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient_id}, updated_patient) do
+    with %{} = patient <- Patients.get_by_id_hashfree(patient_id),
+         updated_patient <-
+           patient
+           |> update_allergies_immunizations(user_uuid, entities_data)
+           |> update_diagnoses(encounter)
+           |> update_encounter(user_uuid, encounter),
+         {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient_id}, updated_patient) do
       :ok
     else
       err ->
@@ -189,10 +187,10 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   defp create_encounter_package(encounter_id, patient_id, entities_to_load) do
-    encounter_uuid = Core.Mongo.string_to_uuid(encounter_id)
+    encounter_uuid = Mongo.string_to_uuid(encounter_id)
 
     with {:ok, encounter} <- Encounters.get_by_id(patient_id, encounter_id) do
-      entities =
+      encounter_package =
         entities_to_load
         |> Enum.map(fn entity_key ->
           {String.to_atom(entity_key), get_entities(entity_key, patient_id, encounter_uuid)}
@@ -200,12 +198,10 @@ defmodule Core.Patients.Encounters.Cancel do
         |> Enum.into(%{})
         |> Map.put(:encounter, encounter)
 
-      encounter_package =
-        entities
-        |> Enum.map(fn {entity_key, entities} -> {entity_key, filter(entity_key, entities)} end)
-        |> Enum.into(%{})
-
-      {entities, encounter_package}
+      encounter_package
+      |> Enum.map(fn {entity_key, entities} -> {entity_key, filter(entity_key, entities)} end)
+      |> Enum.into(%{})
+      |> wrap_ok()
     end
   end
 

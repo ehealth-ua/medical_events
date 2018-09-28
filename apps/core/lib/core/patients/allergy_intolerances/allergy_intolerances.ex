@@ -54,7 +54,7 @@ defmodule Core.Patients.AllergyIntolerances do
   def get_by_encounter_id(patient_id, encounter_id) do
     @collection
     |> Mongo.aggregate([
-      %{"$match" => %{"_id" => patient_id}},
+      %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
       %{"$project" => %{"allergy_intolerances" => %{"$objectToArray" => "$allergy_intolerances"}}},
       %{"$unwind" => "$allergy_intolerances"},
       %{"$match" => %{"allergy_intolerances.v.context.identifier.value" => encounter_id}},

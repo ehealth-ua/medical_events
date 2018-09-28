@@ -52,7 +52,7 @@ defmodule Core.Patients.Immunizations do
   def get_by_encounter_id(patient_id, encounter_id) do
     @collection
     |> Mongo.aggregate([
-      %{"$match" => %{"_id" => patient_id}},
+      %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
       %{"$project" => %{"immunizations" => %{"$objectToArray" => "$immunizations"}}},
       %{"$unwind" => "$immunizations"},
       %{"$match" => %{"immunizations.v.context.identifier.value" => encounter_id}},

@@ -14,7 +14,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Observation
   alias Core.Patients
 
-
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
 
