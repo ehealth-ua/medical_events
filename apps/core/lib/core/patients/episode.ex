@@ -22,6 +22,7 @@ defmodule Core.Episode do
     field(:status)
     field(:cancellation_reason)
     field(:closing_reason)
+    field(:closing_summary)
     field(:explanatory_letter)
     field(:status_history)
     field(:type)
@@ -38,16 +39,35 @@ defmodule Core.Episode do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"managing_organization", v} -> {:managing_organization, Reference.create(v)}
-        {"period", v} -> {:period, DatePeriod.create(v)}
-        {"care_manager", v} -> {:care_manager, Reference.create(v)}
-        {"cancellation_reason", v} -> {:cancellation_reason, CodeableConcept.create(v)}
-        {"closing_reason", v} -> {:closing_reason, CodeableConcept.create(v)}
-        {"status_history", nil} -> {:status_history, nil}
-        {"status_history", v} -> {:status_history, Enum.map(v, &StatusHistory.create/1)}
-        {"diagnoses_history", nil} -> {:diagnoses_history, nil}
-        {"diagnoses_history", v} -> {:diagnoses_history, Enum.map(v, &DiagnosesHistory.create/1)}
-        {k, v} -> {String.to_atom(k), v}
+        {"managing_organization", v} ->
+          {:managing_organization, Reference.create(v)}
+
+        {"period", v} ->
+          {:period, DatePeriod.create(v)}
+
+        {"care_manager", v} ->
+          {:care_manager, Reference.create(v)}
+
+        {"cancellation_reason", v} ->
+          {:cancellation_reason, CodeableConcept.create(v)}
+
+        {"closing_reason", v} ->
+          {:closing_reason, CodeableConcept.create(v)}
+
+        {"status_history", nil} ->
+          {:status_history, nil}
+
+        {"status_history", v} ->
+          {:status_history, Enum.map(v, &StatusHistory.create/1)}
+
+        {"diagnoses_history", nil} ->
+          {:diagnoses_history, nil}
+
+        {"diagnoses_history", v} ->
+          {:diagnoses_history, Enum.map(v, &DiagnosesHistory.create/1)}
+
+        {k, v} ->
+          {String.to_atom(k), v}
       end)
     )
   end

@@ -16,10 +16,20 @@ defmodule Core.DiagnosesHistory do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"evidence", v} -> {:evidence, Reference.create(v)}
-        {"date", v} -> {:date, create_datetime(v)}
-        {"diagnoses", v} -> {:diagnoses, Enum.map(v, &Diagnosis.create/1)}
-        {k, v} -> {String.to_atom(k), v}
+        {"evidence", v} ->
+          {:evidence, Reference.create(v)}
+
+        {"date", v} ->
+          {:date, create_datetime(v)}
+
+        {"diagnoses", v} ->
+          {:diagnoses, Enum.map(v, &Diagnosis.create/1)}
+
+        {"is_active", v} ->
+          {:is_active, v}
+
+        {k, v} ->
+          {String.to_atom(k), v}
       end)
     )
   end

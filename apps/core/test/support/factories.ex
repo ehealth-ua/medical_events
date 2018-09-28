@@ -6,6 +6,8 @@ defmodule Core.Factories do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
+  alias Core.DiagnosesHistory
+  alias Core.Diagnosis
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
@@ -212,8 +214,12 @@ defmodule Core.Factories do
     %Episode{
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Episode.status(:active),
+      closing_summary: "closing summary",
+      closing_reason: build(:codeable_concept),
+      cancellation_reason: build(:codeable_concept),
+      explanatory_letter: "explanatory letter",
       status_history: build_list(1, :status_history),
-      diagnoses_history: [],
+      diagnoses_history: build_list(1, :diagnoses_history),
       type: "primary_care",
       name: "ОРВИ 2018",
       managing_organization: build(:reference),
@@ -223,6 +229,24 @@ defmodule Core.Factories do
       updated_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(id),
       updated_by: Mongo.string_to_uuid(id)
+    }
+  end
+
+  def diagnoses_history_factory do
+    %DiagnosesHistory{
+      date: DateTime.utc_now(),
+      is_active: true,
+      evidence: build(:reference),
+      diagnoses: build_list(1, :diagnosis)
+    }
+  end
+
+  def diagnosis_factory do
+    %Diagnosis{
+      condition: build(:reference),
+      role: build(:codeable_concept),
+      rank: Enum.random(1..1000),
+      code: build(:codeable_concept)
     }
   end
 
