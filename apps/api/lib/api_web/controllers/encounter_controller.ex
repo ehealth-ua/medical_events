@@ -4,7 +4,6 @@ defmodule Api.Web.EncounterController do
   use ApiWeb, :controller
 
   alias Api.Web.JobView
-  alias Core.Encounter
   alias Core.Patients
   alias Core.Patients.Encounters
   alias Scrivener.Page

@@ -289,9 +289,6 @@ defmodule Api.Web.EncounterControllerTest do
 
   describe "cancel encounter" do
     setup %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-
       expect_signature()
 
       expect(IlMock, :get_dictionaries, 2, fn _, _ ->
@@ -317,6 +314,9 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "success", %{conn: conn, test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
       immunization = build(:immunization, context: context, status: @status_error)
       allergy_intolerance = build(:allergy_intolerance, context: context)
       allergy_intolerance2 = build(:allergy_intolerance)
@@ -368,7 +368,11 @@ defmodule Api.Web.EncounterControllerTest do
              |> Kernel.==("pending")
     end
 
+
     test "fail on signed content", %{conn: conn, test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
       immunization = build(:immunization, context: context, status: @status_error)
 
       patient_id = UUID.uuid4()
@@ -404,6 +408,9 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "fail on validate diagnoses", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
       episode = build(:episode)
       condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
 
