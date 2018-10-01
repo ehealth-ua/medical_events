@@ -52,10 +52,6 @@ defmodule Core.Immunization do
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 
-        {"issued", "" = v} ->
-          {:ok, datetime, _} = DateTime.from_iso8601(v)
-          {:issued, datetime}
-
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}
 

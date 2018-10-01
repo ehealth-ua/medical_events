@@ -6,24 +6,27 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
   import Mox
   import Core.Expectations.DigitalSignatureExpectation
 
-  alias Core.Immunization
+  alias Core.Conditions
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCancelJob
   alias Core.Kafka.Consumer
   alias Core.Observation
+  alias Core.Observations
   alias Core.Patients
 
   @status_processed Job.status(:processed)
-  @status_valid Observation.status(:valid)
   @entered_in_error "entered_in_error"
 
   describe "consume cancel package event" do
-    @tag :wip
     test "success" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       client_id = UUID.uuid4()
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
 
       expect(IlMock, :get_employee, fn id, _ ->
         {:ok,
@@ -40,11 +43,15 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       encounter_uuid = Mongo.string_to_uuid(UUID.uuid4())
 
       episode =
-        build(:episode, diagnoses_history: build_list(1, :diagnoses_history, evidence: reference_value(encounter_uuid)))
+        build(:episode,
+          diagnoses_history: build_list(1, :diagnoses_history, evidence: reference_value(encounter_uuid))
+        )
 
       encounter = build(:encounter, id: encounter_uuid, episode: reference_value(episode.id))
       context = reference_value(encounter.id)
+
       allergy_intolerance = build(:allergy_intolerance, context: context)
+      allergy_intolerance_id = UUID.binary_to_string!(allergy_intolerance.id.binary)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -55,30 +62,33 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
           encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
           allergy_intolerances: %{
-            UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance
+            allergy_intolerance_id => allergy_intolerance
           }
         )
 
       condition = insert(:condition, patient_id: patient_id_hash, context: context)
       observation = insert(:observation, patient_id: patient_id_hash, context: context)
 
-      allergy_intolerance_id = UUID.binary_to_string!(allergy_intolerance.id.binary)
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
       observation_id = UUID.binary_to_string!(observation._id.binary)
       condition_id = UUID.binary_to_string!(condition._id.binary)
+
       job = insert(:job)
       expect_signature()
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       employee_id = UUID.uuid4()
 
+      explanatory_letter = "Я, Шевченко Наталія Олександрівна, здійснила механічну помилку"
+
       signed_content = %{
         "encounter" => %{
           "id" => encounter_id,
           "status" => @entered_in_error,
-          "explanatory_letter" => "Я, Шевченко Наталія Олександрівна, здійснила механічну помилку",
+          "date" => to_string(Date.utc_today()),
+          "explanatory_letter" => explanatory_letter,
           "cancellation_reason" => %{
-            "coding" => [%{"code" => "misspelling", "system" => "eHealth"}],
+            "coding" => [%{"code" => "misspelling", "system" => "eHealth/cancellation_reasons"}],
             "text" => "some text"
           },
           "visit" => %{
@@ -135,7 +145,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         "conditions" => [
           %{
             "id" => condition_id,
-            "patient_id" => patient_id_hash,
             "context" => %{
               "identifier" => %{
                 "type" => %{
@@ -201,7 +210,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           %{
             "id" => observation_id,
             "status" => @entered_in_error,
-            "patient_id" => patient_id_hash,
             "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "context" => %{
               "identifier" => %{
@@ -298,7 +306,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           },
           %{
             "id" => UUID.uuid4(),
-            "status" => @status_valid,
+            "status" => Observation.status(:valid),
             "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "context" => %{
               "identifier" => %{
@@ -332,7 +340,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         "immunizations" => [
           %{
             "id" => UUID.uuid4(),
-            "status" => Immunization.status(:completed),
             "not_given" => false,
             "vaccine_code" => %{
               "coding" => [
@@ -365,7 +372,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
             },
             "primary_source" => true,
             "date" => to_string(Date.utc_today()),
-            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
             "route" => %{
               "coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]
@@ -500,7 +506,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
-                 patient_id: patient_id_hash,
+                 patient_id: patient_id,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: signed_content |> Jason.encode!() |> Base.encode64()
@@ -511,6 +517,153 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                 response_size: _,
                 status: @status_processed
               }} = Jobs.get_by_id(to_string(job._id))
+
+      patient = Patients.get_by_id(patient_id)
+
+      assert @entered_in_error == patient["allergy_intolerances"][allergy_intolerance_id]["verification_status"]
+
+      encounter = patient["encounters"][encounter_id]
+
+      assert @entered_in_error == encounter["status"]
+      assert explanatory_letter == encounter["explanatory_letter"]
+      assert encounter["cancellation_reason"] != nil
+
+      assert @entered_in_error ==
+               patient_id
+               |> Conditions.get(condition_id)
+               |> elem(1)
+               |> Map.get(:verification_status)
+
+      assert @entered_in_error ==
+               patient_id
+               |> Observations.get(observation_id)
+               |> elem(1)
+               |> Map.get(:status)
+    end
+
+    @tag :wip
+    test "diagnosis deactivated" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      client_id = UUID.uuid4()
+
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect_signature()
+
+      encounter_uuid = Mongo.string_to_uuid(UUID.uuid4())
+
+      episode =
+        build(:episode,
+          diagnoses_history:
+            build_list(1, :diagnoses_history, is_active: true, evidence: reference_value(encounter_uuid))
+        )
+
+      encounter = build(:encounter, id: encounter_uuid, episode: reference_value(episode.id))
+      encounter_id = UUID.binary_to_string!(encounter.id.binary)
+      context = reference_value(encounter.id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient =
+        insert(:patient,
+          _id: patient_id_hash,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+        )
+
+      condition = insert(:condition, patient_id: patient_id_hash, context: context)
+      condition_id = UUID.binary_to_string!(condition._id.binary)
+
+      job = insert(:job)
+
+      visit_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+      employee_id = UUID.uuid4()
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "date" => to_string(Date.utc_today()),
+          "explanatory_letter" => "Я, Шевченко Наталія Олександрівна, здійснила механічну помилку",
+          "cancellation_reason" => %{
+            "coding" => [%{"code" => "misspelling", "system" => "eHealth/cancellation_reasons"}],
+            "text" => "some text"
+          },
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]
+                  },
+                  "value" => condition_id
+                }
+              },
+              "role" => %{
+                "coding" => [
+                  %{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}
+                ]
+              },
+              "code" => %{
+                "coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]
+              }
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "division" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
+          },
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => employee_id
+            }
+          }
+        }
+      }
+
+      assert :ok =
+               Consumer.consume(%PackageCancelJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 user_id: UUID.uuid4(),
+                 client_id: client_id,
+                 signed_data: signed_content |> Jason.encode!() |> Base.encode64()
+               })
+
+      assert {:ok,
+              %Core.Job{
+                response_size: _,
+                status: @status_processed
+              }} = Jobs.get_by_id(to_string(job._id))
+
+      patient = Patients.get_by_id(patient_id)
+
+      assert [%{"is_active" => false} | _] = patient["episodes"][episode_id]["diagnoses_history"]
     end
   end
 end

@@ -4,6 +4,7 @@ defmodule Core.ReferenceView do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.DatePeriod
+  alias Core.DateView
   alias Core.Diagnosis
   alias Core.Evidence
   alias Core.Identifier
@@ -107,7 +108,7 @@ defmodule Core.ReferenceView do
 
   def render(%Reaction{} = reaction) do
     %{
-      date: render_date(reaction.date),
+      date: DateView.render_date(reaction.date),
       detail: render(reaction.detail),
       reported: reaction.reported
     }
@@ -147,15 +148,6 @@ defmodule Core.ReferenceView do
   def render(references) when is_list(references) do
     Enum.map(references, &render/1)
   end
-
-  def render_date(nil), do: nil
-  def render_date(date) when is_binary(date), do: date
-  def render_date(%Date{} = date), do: to_string(date)
-  def render_date(%DateTime{} = date_time), do: date_time |> DateTime.to_date() |> to_string()
-
-  def render_datetime(nil), do: nil
-  def render_datetime(%DateTime{} = date_time), do: date_time |> to_string()
-  def render_datetime(date_time) when is_binary(date_time), do: date_time
 
   def render_value(%Value{type: "codeable_concept", value: value}) do
     %{value_codeable_concept: render(value)}

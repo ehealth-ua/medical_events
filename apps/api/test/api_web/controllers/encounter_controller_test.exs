@@ -296,17 +296,29 @@ defmodule Api.Web.EncounterControllerTest do
 
       expect_signature()
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
+      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
 
-      {:ok, conn: put_consumer_id_header(conn)}
+      episode = build(:episode)
+
+      encounter =
+        build(:encounter,
+          episode:
+            build(:reference,
+              identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
+            )
+        )
+
+      context =
+        build(:reference,
+          identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
+        )
+
+      {:ok, conn: put_consumer_id_header(conn), test_data: {episode, encounter, context}}
     end
 
-    test "success", %{conn: conn} do
-      episode = build(:episode)
-      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
-      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+    test "success", %{conn: conn, test_data: {episode, encounter, context}} do
       immunization = build(:immunization, context: context, status: @status_error)
       allergy_intolerance = build(:allergy_intolerance, context: context)
       allergy_intolerance2 = build(:allergy_intolerance)
@@ -326,7 +338,13 @@ defmodule Api.Web.EncounterControllerTest do
         }
       )
 
-      condition = insert(:condition, patient_id: patient_id_hash, context: context, verification_status: @status_error)
+      condition =
+        insert(:condition,
+          patient_id: patient_id_hash,
+          context: context,
+          verification_status: @status_error
+        )
+
       observation = insert(:observation, patient_id: patient_id_hash, context: context)
 
       expect_get_person_data(patient_id)
@@ -335,12 +353,14 @@ defmodule Api.Web.EncounterControllerTest do
       request_data = %{
         "signed_data" =>
           %{
-            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
-            "conditions" => ConditionView.render("index.json", %{conditions: [condition]}),
-            "observations" => ObservationView.render("index.json", %{observations: [observation]}),
-            "immunizations" => ImmunizationView.render("index.json", %{immunizations: [immunization]}),
+            "encounter" => EncounterView.render("cancel_encounter.json", %{encounter: encounter}),
+            "conditions" => ConditionView.render("cancel_encounter.json", %{conditions: [condition]}),
+            "observations" => ObservationView.render("cancel_encounter.json", %{observations: [observation]}),
+            "immunizations" => ImmunizationView.render("cancel_encounter.json", %{immunizations: [immunization]}),
             "allergy_intolerances" => [
-              AllergyIntoleranceView.render("show.json", %{allergy_intolerance: allergy_intolerance})
+              AllergyIntoleranceView.render("cancel_encounter.json", %{
+                allergy_intolerance: allergy_intolerance
+              })
             ]
           }
           |> Jason.encode!()
@@ -354,10 +374,7 @@ defmodule Api.Web.EncounterControllerTest do
              |> Kernel.==("pending")
     end
 
-    test "fail on signed content", %{conn: conn} do
-      episode = build(:episode)
-      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
-      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+    test "fail on signed content", %{conn: conn, test_data: {episode, encounter, context}} do
       immunization = build(:immunization, context: context, status: @status_error)
 
       patient_id = UUID.uuid4()
@@ -378,8 +395,11 @@ defmodule Api.Web.EncounterControllerTest do
       request_data = %{
         "signed_data" =>
           %{
-            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
-            "immunizations" => ImmunizationView.render("index.json", %{immunizations: [immunization_updated]})
+            "encounter" => EncounterView.render("cancel_encounter.json", %{encounter: encounter}),
+            "immunizations" =>
+              ImmunizationView.render("cancel_encounter.json", %{
+                immunizations: [immunization_updated]
+              })
           }
           |> Jason.encode!()
           |> Base.encode64()
@@ -395,15 +415,28 @@ defmodule Api.Web.EncounterControllerTest do
     test "fail on validate diagnoses", %{conn: conn} do
       episode = build(:episode)
       condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
-      diagnosis = build(:diagnosis, condition: build(:reference, identifier: build(:identifier, value: condition_uuid)))
+
+      diagnosis =
+        build(:diagnosis,
+          condition:
+            build(:reference,
+              identifier: build(:identifier, value: condition_uuid, type: codeable_concept_coding(code: "condition"))
+            )
+        )
 
       encounter =
         build(:encounter,
           diagnoses: [diagnosis],
-          episode: build(:reference, identifier: build(:identifier, value: episode.id))
+          episode:
+            build(:reference,
+              identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
+            )
         )
 
-      context = build(:reference, identifier: build(:identifier, value: encounter.id))
+      context =
+        build(:reference,
+          identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
+        )
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -428,8 +461,8 @@ defmodule Api.Web.EncounterControllerTest do
       request_data = %{
         "signed_data" =>
           %{
-            "encounter" => EncounterView.render("show.json", %{encounter: encounter}),
-            "conditions" => ConditionView.render("index.json", %{conditions: [condition]})
+            "encounter" => EncounterView.render("cancel_encounter.json", %{encounter: encounter}),
+            "conditions" => ConditionView.render("cancel_encounter.json", %{conditions: [condition]})
           }
           |> Jason.encode!()
           |> Base.encode64()
@@ -440,32 +473,6 @@ defmodule Api.Web.EncounterControllerTest do
              |> json_response(409)
              |> get_in(["error", "message"])
              |> Kernel.==("The condition can not be canceled while encounter is not canceled")
-    end
-
-    test "fail on invalid cancellation reason coding", %{conn: conn} do
-      encounter = build(:encounter, cancellation_reason: codeable_concept_coding(system: "invalid system"))
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      insert(:patient,
-        _id: patient_id_hash,
-        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
-      )
-
-      expect_get_person_data(patient_id)
-
-      request_data = %{
-        "signed_data" =>
-          %{"encounter" => EncounterView.render("show.json", %{encounter: encounter})}
-          |> Jason.encode!()
-          |> Base.encode64()
-      }
-
-      assert conn
-             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
-             |> json_response(422)
-             |> get_in(["error", "message"])
-             |> Kernel.==("Invalid cancellation_reason coding")
     end
   end
 end

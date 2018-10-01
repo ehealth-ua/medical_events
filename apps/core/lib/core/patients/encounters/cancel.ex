@@ -2,6 +2,8 @@ defmodule Core.Patients.Encounters.Cancel do
   @moduledoc false
 
   alias Core.Conditions
+  alias Core.DateView
+  alias Core.Maybe
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients
@@ -31,8 +33,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
     with {:ok, encounter_package} <- create_encounter_package(encounter_id, patient_id, entities_to_load),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
-         :ok <- validate_conditions(decoded_content),
-         :ok <- validate_cancelation_reason(decoded_content) do
+         :ok <- validate_conditions(decoded_content) do
       :ok
     end
   end
@@ -52,10 +53,9 @@ defmodule Core.Patients.Encounters.Cancel do
       [status: status_field] = @entities_meta[key]
 
       entities_id =
-        get_in(package_data[key], [
-          Access.filter(&(&1[status_field] == @entered_in_error)),
-          "id"
-        ])
+        package_data[key]
+        |> Maybe.map(& &1, [])
+        |> get_in([Access.filter(&(&1[status_field] == @entered_in_error)), "id"])
 
       {key, entities_id}
     end)
@@ -106,13 +106,14 @@ defmodule Core.Patients.Encounters.Cancel do
   defp update_patient_entities(patient_id, user_id, %{"encounter" => encounter}, entities_data) do
     user_uuid = Mongo.string_to_uuid(user_id)
 
-    with %{} = patient <- Patients.get_by_id_hashfree(patient_id),
+    with %{} = patient <- Patients.get_by_id(patient_id),
          updated_patient <-
            patient
            |> update_allergies_immunizations(user_uuid, entities_data)
            |> update_diagnoses(encounter)
            |> update_encounter(user_uuid, encounter),
-         {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient_id}, updated_patient) do
+         {:ok, _} <-
+           Mongo.replace_one(@patient_collection, %{"_id" => Patients.get_pk_hash(patient_id)}, updated_patient) do
       :ok
     else
       err ->
@@ -141,6 +142,8 @@ defmodule Core.Patients.Encounters.Cancel do
     end)
   end
 
+  defp update_diagnoses(patient_data, %{"status" => @entered_in_error}), do: patient_data
+
   defp update_diagnoses(patient_data, encounter) do
     encounter_uuid = Mongo.string_to_uuid(encounter["id"])
     episode_path = ["encounters", encounter["id"], "episode", "identifier", "value"]
@@ -161,21 +164,23 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  defp update_encounter(patient_data, user_uuid, %{"status" => @entered_in_error} = encounter) do
-    update_in(
-      patient_data,
-      ["encounters", encounter["id"]],
-      &Map.merge(&1, %{
-        "cancellation_reason" => encounter["cancellation_reason"],
-        "explanatory_letter" => encounter["explanatory_letter"],
-        "status" => @entered_in_error,
-        "updated_by" => user_uuid,
-        "updated_at" => DateTime.utc_now()
-      })
-    )
-  end
+  defp update_encounter(patient_data, user_uuid, encounter) do
+    update_data = %{
+      "cancellation_reason" => encounter["cancellation_reason"],
+      "explanatory_letter" => encounter["explanatory_letter"],
+      "updated_by" => user_uuid,
+      "updated_at" => DateTime.utc_now()
+    }
 
-  defp update_encounter(patient_data, _user_uuid, _), do: patient_data
+    update_data =
+      if encounter["status"] == @entered_in_error do
+        Map.merge(update_data, %{"status" => @entered_in_error})
+      else
+        update_data
+      end
+
+    update_in(patient_data, ["encounters", encounter["id"]], &Map.merge(&1, update_data))
+  end
 
   defp get_entities_to_load(decoded_content) do
     available_entities = ["conditions", "allergy_intolerances", "immunizations", "observations"]
@@ -267,18 +272,6 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp validate_conditions(_), do: :ok
 
-  defp validate_cancelation_reason(decoded_content) do
-    check_system_field = &(&1["system"] == "eHealth/cancellation_reasons")
-
-    decoded_content
-    |> get_in(["encounter", "cancellation_reason", "coding", Access.filter(check_system_field)])
-    |> length()
-    |> case do
-      0 -> {:error, {:"422", "Invalid cancellation_reason coding"}}
-      _ -> :ok
-    end
-  end
-
   defp get_entities("conditions", patient_id, encounter_uuid),
     do: Conditions.get_by_encounter_id(patient_id, encounter_uuid)
 
@@ -294,7 +287,7 @@ defmodule Core.Patients.Encounters.Cancel do
   defp filter(:encounter, encounter) do
     %{
       id: Core.UUIDView.render(encounter.id),
-      date: Core.ReferenceView.render_date(encounter.date),
+      date: DateView.render_date(encounter.date),
       visit: Core.ReferenceView.render(encounter.visit),
       episode: Core.ReferenceView.render(encounter.episode),
       class: Core.ReferenceView.render(encounter.class),
@@ -319,8 +312,8 @@ defmodule Core.Patients.Encounters.Cancel do
         body_sites: Core.ReferenceView.render(condition.body_sites),
         stage: Core.ReferenceView.render(condition.stage),
         evidences: Core.ReferenceView.render(condition.evidences),
-        asserted_date: Core.ReferenceView.render_date(condition.asserted_date),
-        onset_date: Core.ReferenceView.render_date(condition.onset_date)
+        asserted_date: DateView.render_date(condition.asserted_date),
+        onset_date: DateView.render_date(condition.onset_date)
       }
       |> Map.merge(Core.ReferenceView.render_source(condition.source))
     end)
@@ -334,9 +327,9 @@ defmodule Core.Patients.Encounters.Cancel do
         id: Core.UUIDView.render(allergy_intolerance.id),
         context: Core.ReferenceView.render(allergy_intolerance.context),
         code: Core.ReferenceView.render(allergy_intolerance.code),
-        onset_date_time: Core.ReferenceView.render_date(allergy_intolerance.onset_date_time),
-        asserted_date: Core.ReferenceView.render_date(allergy_intolerance.asserted_date),
-        last_occurrence: Core.ReferenceView.render_date(allergy_intolerance.last_occurrence)
+        onset_date_time: DateView.render_datetime(allergy_intolerance.onset_date_time),
+        asserted_date: DateView.render_datetime(allergy_intolerance.asserted_date),
+        last_occurrence: DateView.render_datetime(allergy_intolerance.last_occurrence)
       })
       |> Map.merge(Core.ReferenceView.render_source(allergy_intolerance.source))
     end)
@@ -355,9 +348,9 @@ defmodule Core.Patients.Encounters.Cancel do
         id: Core.UUIDView.render(immunization.id),
         vaccine_code: Core.ReferenceView.render(immunization.vaccine_code),
         context: Core.ReferenceView.render(immunization.context),
-        date: Core.ReferenceView.render_date(immunization.date),
+        date: DateView.render_date(immunization.date),
         legal_entity: Core.ReferenceView.render(immunization.legal_entity),
-        expiration_date: Core.ReferenceView.render_date(immunization.expiration_date),
+        expiration_date: DateView.render_date(immunization.expiration_date),
         site: Core.ReferenceView.render(immunization.site),
         route: Core.ReferenceView.render(immunization.route),
         dose_quantity: Core.ReferenceView.render(immunization.dose_quantity),
@@ -375,7 +368,7 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Map.take(~w(primary_source comment)a)
       |> Map.merge(%{
         id: Core.UUIDView.render(observation._id),
-        issued: Core.ReferenceView.render_datetime(observation.issued),
+        issued: DateView.render_datetime(observation.issued),
         based_on: Core.ReferenceView.render(observation.based_on),
         method: Core.ReferenceView.render(observation.method),
         categories: Core.ReferenceView.render(observation.categories),

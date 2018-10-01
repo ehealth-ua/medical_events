@@ -132,7 +132,7 @@ defmodule Core.Factories do
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Immunization.status(:completed),
       not_given: false,
-      vaccine_code: codeable_concept_coding(system: "http://snomed.info/sct"),
+      vaccine_code: codeable_concept_coding(system: "eHealth/vaccines_codes"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       date: today,
       primary_source: true,
@@ -171,11 +171,11 @@ defmodule Core.Factories do
 
   def vaccination_protocol_factory do
     %VaccinationProtocol{
-      dose_sequence: "1",
+      dose_sequence: 1,
       description: "Vaccination Protocol Sequence 1",
       authority: codeable_concept_coding(system: "eHealth/vaccination_authorities", code: "WVO"),
       series: "Vaccination Series 1",
-      series_doses: "2",
+      series_doses: 2,
       target_diseases: [
         codeable_concept_coding(system: "eHealth/vaccination_target_diseases", code: "1857005")
       ],
@@ -229,21 +229,23 @@ defmodule Core.Factories do
       reference_ranges: [
         build(
           :reference_range,
-          type: codeable_concept_coding(system: "eHealth/resources"),
-          applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+          type: codeable_concept_coding(system: "eHealth/reference_range_types"),
+          applies_to: [codeable_concept_coding(system: "eHealth/reference_range_applications")]
         )
       ],
       components:
         build_list(
           2,
           :component,
-          code: codeable_concept_coding(system: "eHealth/resources"),
+          code: codeable_concept_coding(system: "eHealth/observations_codes"),
           interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
           reference_ranges: [
             build(
               :reference_range,
-              type: codeable_concept_coding(system: "eHealth/resources"),
-              applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+              type: codeable_concept_coding(system: "eHealth/reference_range_types"),
+              applies_to: [
+                codeable_concept_coding(system: "eHealth/reference_range_applications")
+              ]
             )
           ]
         ),
@@ -303,11 +305,15 @@ defmodule Core.Factories do
       class: build(:coding, system: "http://hl7.org/fhir/v3/ActCode", code: "AMB"),
       performer: reference_coding(system: "eHealth/resources", code: "employee"),
       visit: reference_coding(system: "eHealth/resources", code: "visit"),
-      type: build(:codeable_concept),
-      incoming_referrals: [reference_coding(system: "eHealth/resources", code: "referral")],
-      reasons: build_list(2, :codeable_concept),
+      class: build(:coding, system: "eHealth/encounter_classes", code: "AMB"),
+      type: codeable_concept_coding(system: "eHealth/encounter_types"),
+      reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons")],
       diagnoses: [build(:diagnosis)],
-      actions: build_list(2, :codeable_concept),
+      status: Encounter.status(:finished),
+      explanatory_letter: "some explanations",
+      cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
+      incoming_referrals: [reference_coding(system: "eHealth/resources", code: "referral")],
+      actions: [codeable_concept_coding(system: "eHealth/actions")],
       division: reference_coding(system: "eHealth/resources", code: "division"),
       service_provider: build(:reference),
       explanatory_letter: "some explanations",

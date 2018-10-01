@@ -459,7 +459,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "primary_source" => true,
             "date" => to_string(Date.utc_today()),
-            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{

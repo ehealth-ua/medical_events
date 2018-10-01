@@ -61,11 +61,6 @@ defmodule Core.Patients do
     Mongo.find_one(@collection, %{"_id" => get_pk_hash(id)})
   end
 
-  # todo: remove it after patient_id hashing put into plug
-  def get_by_id_hashfree(id) do
-    Mongo.find_one(@collection, %{"_id" => id})
-  end
-
   def produce_create_episode(%{"patient_id" => patient_id} = params, user_id, client_id) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
@@ -157,7 +152,7 @@ defmodule Core.Patients do
          :ok <- Validators.is_active(patient),
          {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
          {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
-         # todo: validate json schema
+         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
          employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id = decoded_content["encounter"]["id"],
          :ok <- Signature.check_drfo(signer, employee_id),
@@ -176,9 +171,10 @@ defmodule Core.Patients do
 
   def consume_cancel_package(%PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
-         {:ok, %{"content" => package_data, "signer" => _signer}} <- Signature.validate(data),
-         resp <- CancelEncounter.proccess_cancellation(patient_id, user_id, package_data) do
-      {:ok, resp, 200}
+         {:ok, %{"content" => decoded_content, "signer" => _signer}} <- Signature.validate(data),
+         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
+         :ok <- CancelEncounter.proccess_cancellation(patient_id, user_id, decoded_content) do
+      {:ok, %{}, 200}
     end
   end
 
