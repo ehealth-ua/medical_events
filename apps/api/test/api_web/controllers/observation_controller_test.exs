@@ -27,14 +27,14 @@ defmodule Api.Web.ObservationControllerTest do
 
       expect_get_person_data(patient_id)
 
-      response =
+      response_data =
         conn
         |> get(observation_path(conn, :show, patient_id, UUID.binary_to_string!(observation._id.binary)))
         |> json_response(200)
+        |> Map.get("data")
+        |> assert_json_schema("observations/observation_show.json")
 
-      assert_json_schema(response, "observations/observation_show.json")
-
-      assert %{"start" => _, "end" => _} = response["data"]["value_period"]
+      assert %{"start" => _, "end" => _} = response_data["value_period"]
     end
 
     test "not found - invalid patient", %{conn: conn} do
@@ -177,7 +177,7 @@ defmodule Api.Web.ObservationControllerTest do
         |> get(observation_path(conn, :index, patient_id), request_params)
         |> json_response(200)
 
-      assert_json_schema(response, "observations/observations_list.json")
+      assert_json_schema(response["data"], "observations/observations_list.json")
 
       assert 2 == response["paging"]["total_entries"]
 

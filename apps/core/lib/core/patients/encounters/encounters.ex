@@ -11,6 +11,18 @@ defmodule Core.Patients.Encounters do
 
   @patient_collection Patient.metadata().collection
 
+  def get_by_id(patient_id, id) do
+    with %{"encounters" => %{^id => encounter}} <-
+           Mongo.find_one(@patient_collection, %{"_id" => Patients.get_pk_hash(patient_id)},
+             projection: ["encounters.#{id}": true]
+           ) do
+      {:ok, Encounter.create(encounter)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def get_episode_encounters(
         patient_id,
         %BSON.Binary{} = episode_id,

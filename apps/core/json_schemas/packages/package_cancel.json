@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "signed_data": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "required": [
+    "signed_data"
+  ],
+  "additionalProperties": false
+}

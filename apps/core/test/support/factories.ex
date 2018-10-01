@@ -3,15 +3,18 @@ defmodule Core.Factories do
 
   use ExMachina
 
+  alias Core.AllergyIntolerance
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
+  alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
   alias Core.Identifier
+  alias Core.Immunization
   alias Core.Job
   alias Core.Mongo
   alias Core.Observation
@@ -22,6 +25,9 @@ defmodule Core.Factories do
   alias Core.Observations.Values.Quantity
   alias Core.Patient
   alias Core.Patients
+  alias Core.Patients.Immunizations.Explanation
+  alias Core.Patients.Immunizations.Reaction
+  alias Core.Patients.Immunizations.VaccinationProtocol
   alias Core.Period
   alias Core.Reference
   alias Core.Source
@@ -89,6 +95,99 @@ defmodule Core.Factories do
     }
   end
 
+  def allergy_intolerance_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
+    now = DateTime.utc_now()
+    today = DateTime.utc_now()
+
+    %AllergyIntolerance{
+      id: id,
+      clinical_status: AllergyIntolerance.clinical_status(:active),
+      verification_status: AllergyIntolerance.verification_status(:confirmed),
+      type: "allergy",
+      category: "food",
+      criticality: "low",
+      code: codeable_concept_coding(system: "eHealth/allergy_intolerances_codes"),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      onset_date_time: today,
+      asserted_date: today,
+      last_occurrence: today,
+      primary_source: true,
+      source:
+        build(:source,
+          type: "asserter",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
+  def immunization_factory do
+    today = DateTime.utc_now()
+
+    %Immunization{
+      id: Mongo.string_to_uuid(UUID.uuid4()),
+      status: Immunization.status(:completed),
+      not_given: false,
+      vaccine_code: codeable_concept_coding(system: "eHealth/vaccines_codes"),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      date: today,
+      primary_source: true,
+      source:
+        build(:source,
+          type: "performer",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
+      manufacturer: "VacinePro Manufacturer",
+      lot_number: "AAJN11K",
+      expiration_date: today,
+      legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
+      site: codeable_concept_coding(system: "eHealth/body_sites", code: "LA"),
+      route: codeable_concept_coding(system: "eHealth/vaccination_routes", code: "IM"),
+      dose_quantity: build(:quantity, system: "eHealth/dose_quantities"),
+      explanation: build(:explanation),
+      reactions: [build(:reaction)],
+      vaccination_protocols: [build(:vaccination_protocol)]
+    }
+  end
+
+  def explanation_factory do
+    %Explanation{
+      type: "reasons",
+      value: [build(:codeable_concept)]
+    }
+  end
+
+  def reaction_factory do
+    %Reaction{
+      date: DateTime.utc_now(),
+      detail: reference_coding(system: "eHealth/resources", code: "observation"),
+      reported: true
+    }
+  end
+
+  def vaccination_protocol_factory do
+    %VaccinationProtocol{
+      dose_sequence: 1,
+      description: "Vaccination Protocol Sequence 1",
+      authority: codeable_concept_coding(system: "eHealth/vaccination_authorities", code: "WVO"),
+      series: "Vaccination Series 1",
+      series_doses: 2,
+      target_diseases: [
+        codeable_concept_coding(system: "eHealth/vaccination_target_diseases", code: "1857005")
+      ],
+      dose_status: codeable_concept_coding(system: "eHealth/vaccination_dose_statuses", code: "count"),
+      dose_status_reason:
+        codeable_concept_coding(
+          system: "eHealth/vaccination_dose_statuse_reasons",
+          code: "coldchbrk"
+        )
+    }
+  end
+
   def job_factory do
     %Job{
       _id: Mongo.generate_id(),
@@ -116,9 +215,13 @@ defmodule Core.Factories do
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       effective_at: %EffectiveAt{type: "effective_date_time", value: now},
-      issued: DateTime.utc_now(),
+      issued: now,
       primary_source: true,
-      source: build(:source, type: "performer", value: reference_coding(system: "eHealth/resources", code: "employee")),
+      source:
+        build(:source,
+          type: "performer",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
       interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
       method: codeable_concept_coding(system: "eHealth/observation_methods"),
       value: build(:value),
@@ -126,21 +229,23 @@ defmodule Core.Factories do
       reference_ranges: [
         build(
           :reference_range,
-          type: codeable_concept_coding(system: "eHealth/resources"),
-          applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+          type: codeable_concept_coding(system: "eHealth/reference_range_types"),
+          applies_to: [codeable_concept_coding(system: "eHealth/reference_range_applications")]
         )
       ],
       components:
         build_list(
           2,
           :component,
-          code: codeable_concept_coding(system: "eHealth/resources"),
+          code: codeable_concept_coding(system: "eHealth/observations_codes"),
           interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
           reference_ranges: [
             build(
               :reference_range,
-              type: codeable_concept_coding(system: "eHealth/resources"),
-              applies_to: [codeable_concept_coding(system: "eHealth/resources")]
+              type: codeable_concept_coding(system: "eHealth/reference_range_types"),
+              applies_to: [
+                codeable_concept_coding(system: "eHealth/reference_range_applications")
+              ]
             )
           ]
         ),
@@ -195,18 +300,20 @@ defmodule Core.Factories do
     %Encounter{
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Encounter.status(:finished),
-      date: Date.utc_today(),
-      episode: build(:reference),
-      class: build(:coding),
-      performer: build(:reference),
-      visit: build(:reference),
-      type: build(:codeable_concept),
-      incoming_referrals: build_list(1, :reference),
-      reasons: build_list(2, :codeable_concept),
-      diagnoses: build_list(1, :diagnosis),
-      actions: build_list(2, :codeable_concept),
-      division: build(:reference),
+      date: now,
+      episode: reference_coding(system: "eHealth/resources", code: "episode"),
+      performer: reference_coding(system: "eHealth/resources", code: "employee"),
+      visit: reference_coding(system: "eHealth/resources", code: "visit"),
+      class: build(:coding, system: "eHealth/encounter_classes", code: "AMB"),
+      type: codeable_concept_coding(system: "eHealth/encounter_types"),
+      reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons")],
+      diagnoses: [build(:diagnosis)],
+      cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
+      incoming_referrals: [reference_coding(system: "eHealth/resources", code: "referral")],
+      actions: [codeable_concept_coding(system: "eHealth/actions")],
+      division: reference_coding(system: "eHealth/resources", code: "division"),
       service_provider: build(:reference),
+      explanatory_letter: "some explanations",
       inserted_at: now,
       updated_at: now,
       inserted_by: Mongo.string_to_uuid(id),
@@ -214,20 +321,9 @@ defmodule Core.Factories do
     }
   end
 
-  def diagnosis_factory do
-    %Diagnosis{
-      condition: build(:reference),
-      code: build(:codeable_concept),
-      role: build(:codeable_concept),
-      rank: 1
-    }
-  end
-
   def episode_factory do
     id = UUID.uuid4()
-
-    date = Date.to_erl(Date.utc_today())
-    date = {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+    date = to_string(Date.utc_today())
 
     %Episode{
       id: Mongo.string_to_uuid(UUID.uuid4()),
@@ -240,9 +336,9 @@ defmodule Core.Factories do
       diagnoses_history: build_list(1, :diagnoses_history),
       type: "primary_care",
       name: "ОРВИ 2018",
-      managing_organization: build(:reference),
-      period: build(:period, start: date),
-      care_manager: build(:reference),
+      managing_organization: reference_coding(code: "legal_entity"),
+      period: build(:period, start: date, end: date),
+      care_manager: reference_coding(code: "employee"),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(id),
@@ -253,18 +349,18 @@ defmodule Core.Factories do
   def diagnoses_history_factory do
     %DiagnosesHistory{
       date: DateTime.utc_now(),
-      is_active: true,
       evidence: build(:reference),
-      diagnoses: build_list(1, :diagnosis)
+      diagnoses: build_list(2, :diagnosis),
+      is_active: true
     }
   end
 
   def diagnosis_factory do
     %Diagnosis{
-      condition: build(:reference),
-      role: build(:codeable_concept),
-      rank: Enum.random(1..1000),
-      code: build(:codeable_concept)
+      condition: reference_coding(system: "eHealth/resources", code: "condition"),
+      role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
+      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A20"),
+      rank: Enum.random(1..1000)
     }
   end
 
@@ -340,7 +436,11 @@ defmodule Core.Factories do
       updated_by: Mongo.string_to_uuid(user_id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      source: build(:source, type: "asserter", value: reference_coding(system: "eHealth/resources", code: "employee")),
+      source:
+        build(:source,
+          type: "asserter",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
       primary_source: true
     }
   end
@@ -355,6 +455,10 @@ defmodule Core.Factories do
 
   def reference_coding(attrs) do
     build(:reference, identifier: build(:identifier, type: codeable_concept_coding(attrs)))
+  end
+
+  def reference_value(value) do
+    build(:reference, identifier: build(:identifier, value: value))
   end
 
   def codeable_concept_coding(attrs) do

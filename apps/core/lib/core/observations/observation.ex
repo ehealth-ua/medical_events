@@ -99,6 +99,9 @@ defmodule Core.Observation do
         {"value_" <> type, value} ->
           {:value, Value.create(type, value)}
 
+        {"method", v} ->
+          {:method, Maybe.map(v, &CodeableConcept.create(&1))}
+
         {"reference_ranges", v} ->
           {:reference_ranges, Maybe.map_list(v, &ReferenceRange.create/1)}
 

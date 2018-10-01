@@ -2,10 +2,19 @@ defmodule Api.Web.EncounterControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+
   import Core.Expectations.CasherExpectation
+  import Core.Expectations.DigitalSignatureExpectation
   import Mox
+
+  alias Core.DateView
+  alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
+  alias Core.ReferenceView
+  alias Core.UUIDView
+
+  @status_error "entered_in_error"
 
   describe "create visit" do
     test "patient not found", %{conn: conn} do
@@ -274,6 +283,327 @@ defmodule Api.Web.EncounterControllerTest do
 
       Enum.each(resp["data"], &assert_json_schema(&1, "encounters/encounter_show.json"))
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+  end
+
+  describe "cancel encounter" do
+    setup %{conn: conn} do
+      expect_signature()
+
+      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      episode = build(:episode)
+
+      encounter =
+        build(:encounter,
+          episode:
+            build(:reference,
+              identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
+            )
+        )
+
+      context =
+        build(:reference,
+          identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
+        )
+
+      {:ok, conn: put_consumer_id_header(conn), test_data: {episode, encounter, context}}
+    end
+
+    test "success", %{conn: conn, test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      immunization = build(:immunization, context: context, status: @status_error)
+      allergy_intolerance = build(:allergy_intolerance, context: context)
+      allergy_intolerance2 = build(:allergy_intolerance)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+        immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization},
+        allergy_intolerances: %{
+          UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance,
+          UUID.binary_to_string!(allergy_intolerance2.id.binary) => allergy_intolerance2
+        }
+      )
+
+      condition =
+        insert(:condition,
+          patient_id: patient_id_hash,
+          context: context,
+          verification_status: @status_error
+        )
+
+      observation = insert(:observation, patient_id: patient_id_hash, context: context)
+
+      expect_get_person_data(patient_id)
+      expect_signature()
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => render(:encounter, encounter),
+            "conditions" => render(:conditions, [condition]),
+            "observations" => render(:observations, [observation]),
+            "immunizations" => render(:immunizations, [immunization]),
+            "allergy_intolerances" => render(:allergy_intolerances, [allergy_intolerance])
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
+             |> json_response(202)
+             |> get_in(["data", "status"])
+             |> Kernel.==("pending")
+    end
+
+    test "fail on signed content", %{conn: conn, test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      immunization = build(:immunization, context: context, status: @status_error)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
+        immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization}
+      )
+
+      expect_get_person_data(patient_id)
+
+      immunization_updated = Map.put(immunization, :lot_number, "lot_number")
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => render(:encounter, encounter),
+            "immunizations" => render(:immunizations, [immunization_updated])
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
+             |> json_response(409)
+             |> get_in(["error", "message"])
+             |> Kernel.==("Submitted signed content does not correspond to previously created content")
+    end
+
+    test "fail on validate diagnoses", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      episode = build(:episode)
+      condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
+
+      diagnosis =
+        build(:diagnosis,
+          condition:
+            build(:reference,
+              identifier: build(:identifier, value: condition_uuid, type: codeable_concept_coding(code: "condition"))
+            )
+        )
+
+      encounter =
+        build(:encounter,
+          diagnoses: [diagnosis],
+          episode:
+            build(:reference,
+              identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
+            )
+        )
+
+      context =
+        build(:reference,
+          identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
+        )
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
+      )
+
+      condition =
+        insert(:condition,
+          _id: condition_uuid,
+          patient_id: patient_id_hash,
+          context: context,
+          verification_status: @status_error
+        )
+
+      expect_get_person_data(patient_id)
+
+      request_data = %{
+        "signed_data" =>
+          %{
+            "encounter" => render(:encounter, encounter),
+            "conditions" => render(:conditions, [condition])
+          }
+          |> Jason.encode!()
+          |> Base.encode64()
+      }
+
+      assert conn
+             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
+             |> json_response(409)
+             |> get_in(["error", "message"])
+             |> Kernel.==("The condition can not be canceled while encounter is not canceled")
+    end
+  end
+
+  defp render(:encounter, encounter) do
+    %{
+      id: UUIDView.render(encounter.id),
+      date: Date.to_string(encounter.date),
+      explanatory_letter: encounter.explanatory_letter,
+      cancellation_reason: ReferenceView.render(encounter.cancellation_reason),
+      visit: encounter.visit |> ReferenceView.render() |> Map.delete(:display_value),
+      episode: encounter.episode |> ReferenceView.render() |> Map.delete(:display_value),
+      class: ReferenceView.render(encounter.class),
+      type: ReferenceView.render(encounter.type),
+      incoming_referrals:
+        encounter.incoming_referrals |> ReferenceView.render() |> Enum.map(&Map.delete(&1, :display_value)),
+      performer: ReferenceView.render(encounter.performer),
+      reasons: ReferenceView.render(encounter.reasons),
+      diagnoses: ReferenceView.render(encounter.diagnoses),
+      actions: ReferenceView.render(encounter.actions),
+      division: ReferenceView.render(encounter.division)
+    }
+  end
+
+  defp render(:conditions, conditions) do
+    condition_fields = ~w(
+      clinical_status
+      verification_status
+      primary_source
+    )a
+
+    for condition <- conditions do
+      condition_data = %{
+        id: UUIDView.render(condition._id),
+        body_sites: ReferenceView.render(condition.body_sites),
+        severity: ReferenceView.render(condition.severity),
+        stage: ReferenceView.render(condition.stage),
+        code: ReferenceView.render(condition.code),
+        context: ReferenceView.render(condition.context),
+        evidences: ReferenceView.render(condition.evidences),
+        asserted_date: DateView.render_date(condition.asserted_date),
+        onset_date: DateView.render_date(condition.onset_date)
+      }
+
+      condition
+      |> Map.take(condition_fields)
+      |> Map.merge(condition_data)
+      |> Map.merge(ReferenceView.render_source(condition.source))
+    end
+  end
+
+  defp render(:observations, observations) do
+    observation_fields = ~w(
+      primary_source
+      comment
+      issued
+    )a
+
+    for observation <- observations do
+      observation_data = %{
+        id: UUIDView.render(observation._id),
+        based_on: ReferenceView.render(observation.based_on),
+        method: ReferenceView.render(observation.method),
+        categories: ReferenceView.render(observation.categories),
+        context: ReferenceView.render(observation.context),
+        interpretation: ReferenceView.render(observation.interpretation),
+        code: ReferenceView.render(observation.code),
+        body_site: ReferenceView.render(observation.body_site),
+        reference_ranges: ReferenceView.render(observation.reference_ranges),
+        components: ReferenceView.render(observation.components)
+      }
+
+      observation
+      |> Map.take(observation_fields)
+      |> Map.merge(observation_data)
+      |> Map.merge(ReferenceView.render_effective_at(observation.effective_at))
+      |> Map.merge(ReferenceView.render_source(observation.source))
+      |> Map.merge(ReferenceView.render_value(observation.value))
+    end
+  end
+
+  defp render(:immunizations, immunizations) do
+    immunization_fields = ~w(
+      not_given
+      primary_source
+      manufacturer
+      lot_number
+    )a
+
+    for immunization <- immunizations do
+      immunization_data = %{
+        id: UUIDView.render(immunization.id),
+        vaccine_code: ReferenceView.render(immunization.vaccine_code),
+        context: ReferenceView.render(immunization.context),
+        date: DateView.render_date(immunization.date),
+        legal_entity: immunization.legal_entity |> ReferenceView.render() |> Map.delete(:display_value),
+        expiration_date: DateView.render_date(immunization.expiration_date),
+        site: ReferenceView.render(immunization.site),
+        route: ReferenceView.render(immunization.route),
+        dose_quantity: ReferenceView.render(immunization.dose_quantity),
+        reactions: ReferenceView.render(immunization.reactions),
+        vaccination_protocols: ReferenceView.render(immunization.vaccination_protocols),
+        explanation: ReferenceView.render(immunization.explanation)
+      }
+
+      immunization
+      |> Map.take(immunization_fields)
+      |> Map.merge(immunization_data)
+      |> Map.merge(ReferenceView.render_source(immunization.source))
+    end
+  end
+
+  defp render(:allergy_intolerances, allergy_intolerances) do
+    allergy_intolerance_fields = ~w(
+      verification_status
+      clinical_status
+      type
+      category
+      criticality
+      primary_source
+    )a
+
+    for allergy_intolerance <- allergy_intolerances do
+      allergy_intolerance_data = %{
+        id: UUIDView.render(allergy_intolerance.id),
+        context: ReferenceView.render(allergy_intolerance.context),
+        code: ReferenceView.render(allergy_intolerance.code),
+        asserted_date: DateView.render_datetime(allergy_intolerance.asserted_date),
+        onset_date_time: DateView.render_datetime(allergy_intolerance.onset_date_time),
+        last_occurrence: DateView.render_datetime(allergy_intolerance.last_occurrence)
+      }
+
+      allergy_intolerance
+      |> Map.take(allergy_intolerance_fields)
+      |> Map.merge(allergy_intolerance_data)
+      |> Map.merge(ReferenceView.render_source(allergy_intolerance.source))
     end
   end
 end

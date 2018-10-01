@@ -32,6 +32,8 @@ defmodule Core.Encounter do
     field(:episode, presence: true, reference: [path: "episode"])
     field(:visit, presence: true, reference: [path: "visit"])
     field(:date)
+    field(:explanatory_letter)
+    field(:cancellation_reason)
 
     timestamps()
     changed_by()
@@ -75,7 +77,7 @@ defmodule Core.Encounter do
           {:service_provider, Reference.create(v)}
 
         {"date", v} ->
-          {:date, create_date(v)}
+          {:date, Maybe.map(v, &create_date(&1))}
 
         {k, v} ->
           {String.to_atom(k), v}
@@ -83,7 +85,6 @@ defmodule Core.Encounter do
     )
   end
 
-  defp create_date(nil), do: nil
   defp create_date(%DateTime{} = value), do: value
   defp create_date(%Date{} = value), do: do_create_date(value)
 

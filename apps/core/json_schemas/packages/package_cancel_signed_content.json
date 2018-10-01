@@ -1156,7 +1156,6 @@
         "context",
         "code",
         "clinical_status",
-        "verification_status",
         "onset_date"
       ],
       "additionalProperties": false
@@ -1168,10 +1167,7 @@
           "$ref": "#/definitions/uuid"
         },
         "status": {
-          "type": "string",
-          "enum": [
-            "finished"
-          ]
+          "type": "string"
         },
         "episode": {
           "type": "object",
@@ -1381,6 +1377,52 @@
             "$ref": "#/definitions/action"
           }
         },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "explanatory_letter": {
+          "type": "string"
+        },
+        "cancellation_reason": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/cancellation_reasons"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "misspelling"
+                    ],
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
         "division": {
           "type": "object",
           "properties": {
@@ -1441,7 +1483,6 @@
       },
       "required": [
         "id",
-        "status",
         "episode",
         "visit",
         "class",
@@ -1450,7 +1491,10 @@
         "reasons",
         "diagnoses",
         "actions",
-        "division"
+        "division",
+        "date",
+        "explanatory_letter",
+        "cancellation_reason"
       ],
       "additionalProperties": false
     },
@@ -1470,8 +1514,7 @@
           "$ref": "#/definitions/performer"
         },
         "status": {
-          "type": "string",
-          "description": "Dictionary: TBD"
+          "type": "string"
         },
         "context": {
           "type": "object",
@@ -1927,7 +1970,6 @@
       },
       "required": [
         "id",
-        "status",
         "context",
         "categories",
         "code",
@@ -1942,15 +1984,14 @@
         "id": {
           "$ref": "#/definitions/uuid"
         },
-        "status": {
-          "type": "string",
-          "description": "Dictionary: TBD"
-        },
         "not_given": {
           "type": "boolean"
         },
         "report_origin": {
           "$ref": "#/definitions/report_origin"
+        },
+        "status": {
+          "type": "string"
         },
         "vaccine_code": {
           "type": "object",
@@ -2344,7 +2385,6 @@
       },
       "required": [
         "id",
-        "status",
         "not_given",
         "vaccine_code",
         "context",
@@ -2502,7 +2542,6 @@
       "required": [
         "id",
         "clinical_status",
-        "verification_status",
         "type",
         "category",
         "criticality",

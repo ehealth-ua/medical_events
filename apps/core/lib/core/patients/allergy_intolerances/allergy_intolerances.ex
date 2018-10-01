@@ -50,4 +50,16 @@ defmodule Core.Patients.AllergyIntolerances do
         allergy_intolerance
     end
   end
+
+  def get_by_encounter_id(patient_id, encounter_id) do
+    @collection
+    |> Mongo.aggregate([
+      %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
+      %{"$project" => %{"allergy_intolerances" => %{"$objectToArray" => "$allergy_intolerances"}}},
+      %{"$unwind" => "$allergy_intolerances"},
+      %{"$match" => %{"allergy_intolerances.v.context.identifier.value" => encounter_id}},
+      %{"$replaceRoot" => %{"newRoot" => "$allergy_intolerances.v"}}
+    ])
+    |> Enum.map(&AllergyIntolerance.create/1)
+  end
 end

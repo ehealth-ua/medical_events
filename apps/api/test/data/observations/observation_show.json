@@ -300,6 +300,115 @@
       ],
       "additionalProperties": false
     },
+    "reference_range": {
+      "type": "object",
+      "properties": {
+        "low": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "high": {
+          "$ref": "#/definitions/value_quantity"
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/reference_range_types"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  },
+                  "display": {
+                    "type": "string",
+                    "description": "Representation defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "applies_to": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "coding": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/reference_range_applications"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Symbol in syntax defined by the system"
+                    },
+                    "display": {
+                      "type": "string",
+                      "description": "Representation defined by the system"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "system"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "coding"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "age": {
+          "type": "object",
+          "properties": {
+            "low": {
+              "$ref": "#/definitions/value_quantity"
+            },
+            "high": {
+              "$ref": "#/definitions/value_quantity"
+            }
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "observation": {
       "type": "object",
       "properties": {
@@ -688,35 +797,7 @@
         "reference_ranges": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "low": {
-                "$ref": "#/definitions/value_quantity"
-              },
-              "high": {
-                "$ref": "#/definitions/value_quantity"
-              },
-              "type": {
-                "$ref": "#/definitions/codeable_concept"
-              },
-              "applies_to": {
-                "$ref": "#/definitions/codeable_concept"
-              },
-              "age": {
-                "type": "object",
-                "properties": {
-                  "low": {
-                    "$ref": "#/definitions/value_quantity"
-                  },
-                  "high": {
-                    "$ref": "#/definitions/value_quantity"
-                  }
-                }
-              },
-              "text": {
-                "type": "string"
-              }
-            }
+            "$ref": "#/definitions/reference_range"
           }
         },
         "components": {
@@ -726,7 +807,44 @@
             "type": "object",
             "properties": {
               "code": {
-                "$ref": "#/definitions/codeable_concept"
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/observations_codes"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "description": "Symbol in syntax defined by the system"
+                        },
+                        "display": {
+                          "type": "string",
+                          "description": "Representation defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
               },
               "value_quantity": {
                 "$ref": "#/definitions/value_quantity"
@@ -782,35 +900,7 @@
               "reference_ranges": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "properties": {
-                    "low": {
-                      "$ref": "#/definitions/value_quantity"
-                    },
-                    "high": {
-                      "$ref": "#/definitions/value_quantity"
-                    },
-                    "type": {
-                      "$ref": "#/definitions/codeable_concept"
-                    },
-                    "applies_to": {
-                      "$ref": "#/definitions/codeable_concept"
-                    },
-                    "age": {
-                      "type": "object",
-                      "properties": {
-                        "low": {
-                          "$ref": "#/definitions/value_quantity"
-                        },
-                        "high": {
-                          "$ref": "#/definitions/value_quantity"
-                        }
-                      }
-                    },
-                    "text": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/definitions/reference_range"
                 }
               }
             }
@@ -915,14 +1005,6 @@
       "additionalProperties": false
     }
   },
-  "type": "object",
-  "properties": {
-    "data": {
-      "$ref": "#/definitions/observation"
-    }
-  },
-  "required": [
-    "data"
-  ],
+  "$ref": "#/definitions/observation",
   "additionalProperties": true
 }

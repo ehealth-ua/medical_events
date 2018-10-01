@@ -1,10 +1,10 @@
-defmodule Api.Web.ReferenceView do
+defmodule Core.ReferenceView do
   @moduledoc false
 
-  alias Api.Web.UUIDView
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.DatePeriod
+  alias Core.DateView
   alias Core.Diagnosis
   alias Core.Evidence
   alias Core.Identifier
@@ -12,10 +12,15 @@ defmodule Api.Web.ReferenceView do
   alias Core.Observations.EffectiveAt
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
+  alias Core.Observations.Values.Quantity
+  alias Core.Patients.Immunizations.Explanation
+  alias Core.Patients.Immunizations.Reaction
+  alias Core.Patients.Immunizations.VaccinationProtocol
   alias Core.Period
   alias Core.Reference
   alias Core.Source
   alias Core.Stage
+  alias Core.UUIDView
 
   def render(%Reference{} = reference) do
     %{
@@ -32,17 +37,17 @@ defmodule Api.Web.ReferenceView do
   end
 
   def render(%ReferenceRange{} = reference_range) do
-    fields = ~w(
-      low
-      high
-      age
-      text
-    )a
-
-    reference_range
-    |> Map.take(fields)
-    |> Map.put(:type, render(reference_range.type))
-    |> Map.put(:applies_to, render(reference_range.type))
+    %{
+      low: render(reference_range.low),
+      high: render(reference_range.high),
+      age: %{
+        low: render(reference_range.age.low),
+        high: render(reference_range.age.high)
+      },
+      type: render(reference_range.type),
+      applies_to: render(reference_range.applies_to),
+      text: reference_range.text
+    }
   end
 
   def render(%CodeableConcept{} = codeable_concept) do
@@ -59,6 +64,17 @@ defmodule Api.Web.ReferenceView do
       reference_ranges: render(component.reference_ranges)
     }
     |> Map.merge(render_value(component.value))
+  end
+
+  def render(%VaccinationProtocol{} = vaccination_protocol) do
+    vaccination_protocol
+    |> Map.take(~w(dose_sequence description series series_doses)a)
+    |> Map.merge(%{
+      authority: render(vaccination_protocol.authority),
+      target_diseases: render(vaccination_protocol.target_diseases),
+      dose_status: render(vaccination_protocol.dose_status),
+      dose_status_reason: render(vaccination_protocol.dose_status_reason)
+    })
   end
 
   def render(%Period{} = period) do
@@ -90,6 +106,14 @@ defmodule Api.Web.ReferenceView do
     }
   end
 
+  def render(%Reaction{} = reaction) do
+    %{
+      date: DateView.render_date(reaction.date),
+      detail: render(reaction.detail),
+      reported: reaction.reported
+    }
+  end
+
   def render(%Stage{} = stage) do
     %{
       summary: render(stage.summary)
@@ -103,6 +127,20 @@ defmodule Api.Web.ReferenceView do
       role: render(diagnosis.role),
       code: render(diagnosis.code)
     }
+  end
+
+  def render(%Explanation{type: type, value: value}) do
+    %{type: type, value: render(value)}
+  end
+
+  def render(%Quantity{} = quantity) do
+    Map.take(quantity, ~w(
+      value
+      comparator
+      unit
+      system
+      code
+    )a)
   end
 
   def render(nil), do: nil

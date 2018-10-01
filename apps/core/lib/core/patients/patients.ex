@@ -16,6 +16,7 @@ defmodule Core.Patients do
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
+  alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Mongo
   alias Core.Observation
@@ -30,15 +31,17 @@ defmodule Core.Patients do
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
-  alias EView.Views.ValidationError
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
+  alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
+  alias EView.Views.ValidationError
+
   require Logger
 
   @collection Patient.metadata().collection
@@ -63,13 +66,20 @@ defmodule Core.Patients do
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:episode_create, Map.delete(params, "patient_id")),
          {:ok, job, episode_create_job} <-
-           Jobs.create(EpisodeCreateJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
+           Jobs.create(
+             EpisodeCreateJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
          :ok <- @kafka_producer.publish_medical_event(episode_create_job) do
       {:ok, job}
     end
   end
 
-  def produce_update_episode(%{"patient_id" => patient_id, "id" => id} = url_params, request_params, conn_params) do
+  def produce_update_episode(
+        %{"patient_id" => patient_id, "id" => id} = url_params,
+        request_params,
+        conn_params
+      ) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
          {:ok, _} <- Episodes.get(patient_id, id),
@@ -84,7 +94,11 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_close_episode(%{"patient_id" => patient_id, "id" => id} = url_params, request_params, conn_params) do
+  def produce_close_episode(
+        %{"patient_id" => patient_id, "id" => id} = url_params,
+        request_params,
+        conn_params
+      ) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
          {:ok, _} <- Episodes.get(patient_id, id),
@@ -99,7 +113,11 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_cancel_episode(%{"patient_id" => patient_id, "id" => id} = url_params, request_params, conn_params) do
+  def produce_cancel_episode(
+        %{"patient_id" => patient_id, "id" => id} = url_params,
+        request_params,
+        conn_params
+      ) do
     with %{} = patient <- get_by_id(patient_id),
          :ok <- Validators.is_active(patient),
          {:ok, _} <- Episodes.get(patient_id, id),
@@ -119,9 +137,44 @@ defmodule Core.Patients do
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:package_create, Map.delete(params, "patient_id")),
          {:ok, job, package_create_job} <-
-           Jobs.create(PackageCreateJob, params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)),
+           Jobs.create(
+             PackageCreateJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
          :ok <- @kafka_producer.publish_medical_event(package_create_job) do
       {:ok, job}
+    end
+  end
+
+  def produce_cancel_package(%{"patient_id" => patient_id} = params, user_id, client_id) do
+    with :ok <- JsonSchema.validate(:package_cancel, Map.delete(params, "patient_id")),
+         %{} = patient <- get_by_id(patient_id),
+         :ok <- Validators.is_active(patient),
+         {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
+         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
+         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
+         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
+         encounter_id = decoded_content["encounter"]["id"],
+         :ok <- Signature.check_drfo(signer, employee_id),
+         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
+      job_data =
+        params
+        |> Map.put("user_id", user_id)
+        |> Map.put("client_id", client_id)
+
+      with {:ok, job, package_cancel_job} <- Jobs.create(PackageCancelJob, job_data),
+           :ok <- @kafka_producer.publish_medical_event(package_cancel_job) do
+        {:ok, job}
+      end
+    end
+  end
+
+  def consume_cancel_package(%PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
+    with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
+         {:ok, %{"content" => decoded_content, "signer" => _signer}} <- Signature.validate(data),
+         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
+         :ok <- CancelEncounter.proccess_cancellation(patient_id, user_id, decoded_content) do
+      {:ok, %{}, 200}
     end
   end
 
@@ -154,8 +207,14 @@ defmodule Core.Patients do
           |> Mongo.convert_to_uuid("encounters.#{encounter.id}.episode.identifier.value")
           |> Mongo.convert_to_uuid("encounters.#{encounter.id}.performer.identifier.value")
           |> Mongo.convert_to_uuid("encounters.#{encounter.id}.visit.identifier.value")
-          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.diagnoses", ~w(condition identifier value)a)
-          |> Mongo.convert_to_uuid("encounters.#{encounter.id}.incoming_referrals", ~w(identifier value)a)
+          |> Mongo.convert_to_uuid(
+            "encounters.#{encounter.id}.diagnoses",
+            ~w(condition identifier value)a
+          )
+          |> Mongo.convert_to_uuid(
+            "encounters.#{encounter.id}.incoming_referrals",
+            ~w(identifier value)a
+          )
           |> Mongo.convert_to_uuid("encounters.#{encounter.id}.service_provider.identifier.value")
           |> Mongo.convert_to_uuid("updated_by")
 
@@ -188,14 +247,21 @@ defmodule Core.Patients do
                   diagnosis
                   | condition: %{
                       condition
-                      | identifier: %{condition.identifier | value: Mongo.string_to_uuid(condition.identifier.value)}
+                      | identifier: %{
+                          condition.identifier
+                          | value: Mongo.string_to_uuid(condition.identifier.value)
+                        }
                     }
                 }
               end)
         }
 
         push =
-          Mongo.add_to_push(%{}, diagnoses_history, "episodes.#{encounter.episode.identifier.value}.diagnoses_history")
+          Mongo.add_to_push(
+            %{},
+            diagnoses_history,
+            "episodes.#{encounter.episode.identifier.value}.diagnoses_history"
+          )
 
         set =
           Enum.reduce(immunizations, set, fn immunization, acc ->
@@ -209,7 +275,10 @@ defmodule Core.Patients do
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
             |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
-            |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
+            |> Mongo.convert_to_uuid(
+              "immunizations.#{immunization.id}.reactions",
+              ~w(detail identifier value)a
+            )
           end)
 
         set =
@@ -217,7 +286,10 @@ defmodule Core.Patients do
             allergy_intolerance = AllergyIntolerances.fill_up_allergy_intolerance_asserter(allergy_intolerance)
 
             acc
-            |> Mongo.add_to_set(allergy_intolerance, "allergy_intolerances.#{allergy_intolerance.id}")
+            |> Mongo.add_to_set(
+              allergy_intolerance,
+              "allergy_intolerances.#{allergy_intolerance.id}"
+            )
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.id")
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.inserted_by")
             |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.updated_by")
@@ -226,10 +298,16 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
-          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set, "$push" => push})
+          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
+            "$set" => set,
+            "$push" => push
+          })
 
         links = [
-          %{"entity" => "encounter", "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"}
+          %{
+            "entity" => "encounter",
+            "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"
+          }
         ]
 
         links =
@@ -240,7 +318,12 @@ defmodule Core.Patients do
         links =
           Enum.reduce(immunizations, links, fn immunization, acc ->
             acc ++
-              [%{"entity" => "immunization", "href" => "/api/patients/#{patient_id}/immunizations/#{immunization.id}"}]
+              [
+                %{
+                  "entity" => "immunization",
+                  "href" => "/api/patients/#{patient_id}/immunizations/#{immunization.id}"
+                }
+              ]
           end)
 
         links =
@@ -327,7 +410,10 @@ defmodule Core.Patients do
             {:ok,
              %{
                "links" => [
-                 %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+                 %{
+                   "entity" => "episode",
+                   "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+                 }
                ]
              }, 200}
         end
@@ -348,7 +434,10 @@ defmodule Core.Patients do
       episode =
         %{episode | updated_by: job.user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_managing_organization(job.request_params["managing_organization"], client_id)
+        |> EpisodeValidations.validate_managing_organization(
+          job.request_params["managing_organization"],
+          client_id
+        )
         |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
 
       case Vex.errors(episode) do
@@ -362,7 +451,10 @@ defmodule Core.Patients do
             %{"updated_by" => episode.updated_by, "updated_at" => now}
             |> Mongo.add_to_set(episode.care_manager, "episodes.#{episode.id}.care_manager")
             |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
-            |> Mongo.add_to_set(episode.managing_organization, "episodes.#{episode.id}.managing_organization")
+            |> Mongo.add_to_set(
+              episode.managing_organization,
+              "episodes.#{episode.id}.managing_organization"
+            )
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
@@ -374,7 +466,10 @@ defmodule Core.Patients do
           {:ok,
            %{
              "links" => [
-               %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+               %{
+                 "entity" => "episode",
+                 "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+               }
              ]
            }, 200}
 
@@ -435,7 +530,10 @@ defmodule Core.Patients do
           {:ok,
            %{
              "links" => [
-               %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+               %{
+                 "entity" => "episode",
+                 "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+               }
              ]
            }, 200}
 
@@ -469,7 +567,9 @@ defmodule Core.Patients do
         [] ->
           all_encounters_canceled =
             patient_id
-            |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{"status" => "$encounters.v.status"})
+            |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{
+              "status" => "$encounters.v.status"
+            })
             |> Enum.map(& &1["status"])
             |> Enum.all?(fn status -> status == Encounter.status(:entered_in_error) end)
 
@@ -477,8 +577,14 @@ defmodule Core.Patients do
             set =
               %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
               |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
-              |> Mongo.add_to_set(episode.explanatory_letter, "episodes.#{episode.id}.explanatory_letter")
-              |> Mongo.add_to_set(episode.cancellation_reason, "episodes.#{episode.id}.cancellation_reason")
+              |> Mongo.add_to_set(
+                episode.explanatory_letter,
+                "episodes.#{episode.id}.explanatory_letter"
+              )
+              |> Mongo.add_to_set(
+                episode.cancellation_reason,
+                "episodes.#{episode.id}.cancellation_reason"
+              )
               |> Mongo.convert_to_uuid("updated_by")
 
             status_history =
@@ -499,7 +605,10 @@ defmodule Core.Patients do
             {:ok,
              %{
                "links" => [
-                 %{"entity" => "episode", "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"}
+                 %{
+                   "entity" => "episode",
+                   "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+                 }
                ]
              }, 200}
           else
@@ -510,8 +619,11 @@ defmodule Core.Patients do
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
       end
     else
-      {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be canceled", 422}
-      nil -> {:error, "Failed to get episode", 404}
+      {:ok, %{"status" => status}} ->
+        {:ok, "Episode in status #{status} can not be canceled", 422}
+
+      nil ->
+        {:error, "Failed to get episode", 404}
     end
   end
 
@@ -735,7 +847,10 @@ defmodule Core.Patients do
 
     case Vex.errors(
            %{allergy_intolerances: allergy_intolerances},
-           allergy_intolerances: [unique_ids: [field: :id], reference: [path: "allergy_intolerances"]]
+           allergy_intolerances: [
+             unique_ids: [field: :id],
+             reference: [path: "allergy_intolerances"]
+           ]
          ) do
       [] ->
         validate_allergy_intolerances(patient_id, allergy_intolerances)
@@ -799,10 +914,17 @@ defmodule Core.Patients do
 
   defp insert_conditions(links, conditions, patient_id) do
     conditions = Enum.map(conditions, &Conditions.create/1)
+
     {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
 
     Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-      acc ++ [%{"entity" => "condition", "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"}]
+      acc ++
+        [
+          %{
+            "entity" => "condition",
+            "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
+          }
+        ]
     end)
   end
 
@@ -810,10 +932,17 @@ defmodule Core.Patients do
 
   defp insert_observations(links, observations, patient_id) do
     observations = Enum.map(observations, &Observations.create/1)
+
     {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
 
     Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-      acc ++ [%{"entity" => "observation", "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"}]
+      acc ++
+        [
+          %{
+            "entity" => "observation",
+            "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
+          }
+        ]
     end)
   end
 end

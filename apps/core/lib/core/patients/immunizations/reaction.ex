@@ -14,7 +14,7 @@ defmodule Core.Patients.Immunizations.Reaction do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"date", v} ->
+        {"date", v} when is_binary(v) ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 

@@ -62,13 +62,19 @@
       "additionalProperties": false
     },
     "codeable_concept": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "properties": {
         "coding": {
           "$ref": "#/definitions/coding"
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -99,10 +105,83 @@
           "$ref": "#/definitions/reference"
         },
         "role": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/diagnoses_roles"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "code": {
-          "$ref": "#/definitions/codeable_concept"
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/ICPC2/conditions",
+                      "eHealth/ICD10/conditions"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         },
         "rank": {
           "type": "integer",
@@ -162,24 +241,171 @@
       "minLength": 1
     },
     "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "C? Starting time with inclusive boundary"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
     },
     "managing_organization": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "legal_entity"
+                        ],
+                        "description": "Symbol in syntax defined by the system"
+                      },
+                      "display": {
+                        "type": "string",
+                        "description": "Representation defined by the system"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      }
     },
     "care_manager": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "employee"
+                        ],
+                        "description": "Symbol in syntax defined by the system"
+                      },
+                      "display": {
+                        "type": "string",
+                        "description": "Representation defined by the system"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      }
     },
     "patient_id": {
       "description": "Patient's id"
     },
     "closing_summary": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Closing summary"
     },
     "explanatory_letter": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Explanatory letter"
-    },
-    "closing_reason": {
-      "description": "Closing reason"
     },
     "closing_reason": {
       "$ref": "#/definitions/codeable_concept"

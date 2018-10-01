@@ -3,6 +3,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
   use Core.ModelCase
 
+  import Core.Expectations.DigitalSignatureExpectation
+  import Mox
+
   alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
@@ -10,8 +13,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Kafka.Consumer
   alias Core.Observation
   alias Core.Patients
-  import Mox
-  import Core.Expectations.DigitalSignature
 
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
@@ -25,7 +26,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       job = insert(:job)
-      signature()
+      expect_signature()
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -45,7 +46,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       job = insert(:job)
-      signature()
+      expect_signature()
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -102,7 +103,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       patient = insert(:patient, _id: patient_id_hash)
       condition = insert(:condition, patient_id: patient_id_hash)
       job = insert(:job)
-      signature()
+      expect_signature()
       episode_id = patient.episodes |> Map.keys() |> hd
 
       signed_content = %{
@@ -218,11 +219,20 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       db_observation = insert(:observation, patient_id: patient_id_hash)
       condition_id = UUID.uuid4()
       job = insert(:job)
-      signature()
+      expect_signature()
       visit_id = UUID.uuid4()
-      episode_id = patient.episodes |> Map.keys() |> hd
+      episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
       employee_id = UUID.uuid4()
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
 
       signed_content = %{
         "encounter" => %{
@@ -333,8 +343,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             ],
             "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
             "effective_period" => %{
-              "start" => DateTime.to_iso8601(DateTime.utc_now()),
-              "end" => DateTime.to_iso8601(DateTime.utc_now())
+              "start" => start_datetime,
+              "end" => end_datetime
             },
             "primary_source" => true,
             "performer" => %{
@@ -353,8 +363,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "coding" => [%{"code" => "category", "system" => "eHealth/observation_methods"}]
             },
             "value_period" => %{
-              "start" => DateTime.to_iso8601(DateTime.utc_now()),
-              "end" => DateTime.to_iso8601(DateTime.utc_now())
+              "start" => start_datetime,
+              "end" => end_datetime
             },
             "reference_ranges" => [
               %{
@@ -372,8 +382,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "coding" => [%{"code" => "category", "system" => "eHealth/observations_codes"}]
                 },
                 "value_period" => %{
-                  "start" => DateTime.to_iso8601(DateTime.utc_now()),
-                  "end" => DateTime.to_iso8601(DateTime.utc_now())
+                  "start" => start_datetime,
+                  "end" => end_datetime
                 },
                 "interpretation" => %{
                   "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
@@ -405,8 +415,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             ],
             "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
             "effective_period" => %{
-              "start" => DateTime.to_iso8601(DateTime.utc_now()),
-              "end" => DateTime.to_iso8601(DateTime.utc_now())
+              "start" => start_datetime,
+              "end" => end_datetime
             },
             "primary_source" => false,
             "report_origin" => %{
@@ -449,7 +459,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "primary_source" => true,
             "date" => to_string(Date.utc_today()),
-            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{
@@ -583,8 +592,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  visit: %{
                    "id" => visit_id,
                    "period" => %{
-                     "start" => DateTime.to_iso8601(DateTime.utc_now()),
-                     "end" => DateTime.to_iso8601(DateTime.utc_now())
+                     "start" => start_datetime,
+                     "end" => end_datetime
                    }
                  },
                  patient_id: patient_id,

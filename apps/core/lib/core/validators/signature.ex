@@ -24,9 +24,15 @@ defmodule Core.Validators.Signature do
   end
 
   @doc """
-  TODO: termorary function until we 
+  TODO: termorary function until we
   """
-  def check_drfo(_, _, _), do: :ok
+  def check_drfo(_signer, _employee_id), do: :ok
+
+  # {:ok, %{"data" => employee_data}} <- @il_microservice.get_employee(employee_id, headers),
+  # {:ok, %{"data" => %{"content" => signed_data_decoded, "signatures" => [%{"signer" => %{"drfo" => drfo}}] = sign}}}
+  # <- @digital_signature.decode(params["signed_data"], []),
+  # employee_id <- get_in(signed_data_decoded, ["encounter", "performer", "identifier", "value"]),
+  # check: drfo == get_in(employee_data, ["party", "tax_id"])
 
   # def check_drfo(%{"drfo" => drfo}, user_id, process) when not is_nil(drfo) do
   #   drfo = String.replace(drfo, " ", "")
