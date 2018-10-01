@@ -52,15 +52,15 @@ defmodule Core.AllergyIntolerance do
         {"code", v} ->
           {:code, CodeableConcept.create(v)}
 
-        {"onset_date_time", "" = v} ->
+        {"onset_date_time", v} when is_binary(v) ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:onset_date_time, datetime}
 
-        {"asserted_date", "" = v} ->
+        {"asserted_date", v} when is_binary(v) ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:asserted_date, datetime}
 
-        {"last_occurrence", "" = v} ->
+        {"last_occurrence", v} when is_binary(v) ->
           {:ok, datetime, _} = DateTime.from_iso8601(v)
           {:last_occurrence, datetime}
 

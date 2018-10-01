@@ -48,7 +48,7 @@ defmodule Core.Immunization do
         {"context", v} ->
           {:context, Reference.create(v)}
 
-        {"date", "" = v} ->
+        {"date", v} when is_binary(v) ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 
@@ -64,7 +64,7 @@ defmodule Core.Immunization do
         {"legal_entity", v} ->
           {:legal_entity, Reference.create(v)}
 
-        {"expiration_date", "" = v} ->
+        {"expiration_date", v} when is_binary(v) ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
           {:expiration_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
 
