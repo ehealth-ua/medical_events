@@ -462,6 +462,7 @@ defmodule Api.Web.EpisodeControllerTest do
       |> get(episode_path(conn, :show, patient_id, UUID.binary_to_string!(episode.id.binary)))
       |> json_response(200)
       |> Map.get("data")
+
       # todo: fix json schema
       # |> assert_json_schema("episodes/episode_show.json")
     end

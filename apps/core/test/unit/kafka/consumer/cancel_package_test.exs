@@ -541,7 +541,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                |> Map.get(:status)
     end
 
-    @tag :wip
     test "diagnosis deactivated" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
