@@ -2,9 +2,10 @@ defmodule Api.Web.DiagnosesHistoryView do
   @moduledoc false
 
   use ApiWeb, :view
+
   alias Api.Web.DiagnosisView
-  alias Api.Web.ReferenceView
   alias Core.DiagnosesHistory
+  alias Core.ReferenceView
 
   def render("diagnoses_history.json", %{diagnoses_history: diagnoses_history}) do
     render_many(diagnoses_history, __MODULE__, "show.json", as: :diagnos_history)

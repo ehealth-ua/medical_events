@@ -3,7 +3,6 @@ defmodule Api.Web.EpisodeView do
 
   use ApiWeb, :view
 
-
   alias Api.Web.DiagnosesHistoryView
   alias Core.ReferenceView
   alias Core.UUIDView

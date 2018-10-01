@@ -325,24 +325,6 @@ defmodule Core.Factories do
     }
   end
 
-  def diagnosis_factory do
-    %Diagnosis{
-      condition: reference_coding(system: "eHealth/resources", code: "condition"),
-      role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
-      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A20"),
-      rank: 1
-    }
-  end
-
-  def diagnoses_history_factory do
-    %DiagnosesHistory{
-      date: DateTime.utc_now(),
-      evidence: build(:reference),
-      diagnoses: build_list(2, :diagnosis),
-      is_active: true
-    }
-  end
-
   def episode_factory do
     id = UUID.uuid4()
 
@@ -373,18 +355,18 @@ defmodule Core.Factories do
   def diagnoses_history_factory do
     %DiagnosesHistory{
       date: DateTime.utc_now(),
-      is_active: true,
       evidence: build(:reference),
-      diagnoses: build_list(1, :diagnosis)
+      diagnoses: build_list(2, :diagnosis),
+      is_active: true
     }
   end
 
   def diagnosis_factory do
     %Diagnosis{
-      condition: build(:reference),
-      role: build(:codeable_concept),
-      rank: Enum.random(1..1000),
-      code: build(:codeable_concept)
+      condition: reference_coding(system: "eHealth/resources", code: "condition"),
+      role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
+      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A20"),
+      rank: Enum.random(1..1000)
     }
   end
 
