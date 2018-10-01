@@ -5,6 +5,7 @@ defmodule Api.Web.ReferenceView do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.DatePeriod
+  alias Core.Diagnosis
   alias Core.Evidence
   alias Core.Identifier
   alias Core.Observations.Component
@@ -92,6 +93,15 @@ defmodule Api.Web.ReferenceView do
   def render(%Stage{} = stage) do
     %{
       summary: render(stage.summary)
+    }
+  end
+
+  def render(%Diagnosis{} = diagnosis) do
+    %{
+      rank: diagnosis.rank,
+      condition: render(diagnosis.condition),
+      role: render(diagnosis.role),
+      code: render(diagnosis.code)
     }
   end
 

@@ -5,6 +5,7 @@ defmodule Core.Encounter do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Diagnosis
+  alias Core.Maybe
   alias Core.Reference
 
   @status_finished "finished"
@@ -19,7 +20,7 @@ defmodule Core.Encounter do
     field(:status_history)
     field(:class, presence: true, reference: [path: "class"])
     field(:type, presence: true, reference: [path: "type"])
-    field(:incoming_referrals)
+    field(:incoming_referrals, reference: [path: "incoming_referrals"])
     field(:duration)
     field(:reasons, presence: true, reference: [path: "reasons"])
     field(:diagnoses, presence: true, reference: [path: "diagnoses"])
@@ -30,6 +31,7 @@ defmodule Core.Encounter do
     field(:performer, presence: true, reference: [path: "performer"])
     field(:episode, presence: true, reference: [path: "episode"])
     field(:visit, presence: true, reference: [path: "visit"])
+    field(:date)
 
     timestamps()
     changed_by()
@@ -39,17 +41,67 @@ defmodule Core.Encounter do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"episode", v} -> {:episode, Reference.create(v)}
-        {"visit", v} -> {:visit, Reference.create(v)}
-        {"division", v} -> {:division, Reference.create(v)}
-        {"diagnoses", v} -> {:diagnoses, Enum.map(v, &Diagnosis.create/1)}
-        {"actions", v} -> {:actions, Enum.map(v, &CodeableConcept.create/1)}
-        {"reasons", v} -> {:reasons, Enum.map(v, &CodeableConcept.create/1)}
-        {"class", v} -> {:class, Coding.create(v)}
-        {"type", v} -> {:type, CodeableConcept.create(v)}
-        {"performer", v} -> {:performer, Reference.create(v)}
-        {k, v} -> {String.to_atom(k), v}
+        {"episode", v} ->
+          {:episode, Reference.create(v)}
+
+        {"visit", v} ->
+          {:visit, Reference.create(v)}
+
+        {"division", v} ->
+          {:division, Reference.create(v)}
+
+        {"diagnoses", v} ->
+          {:diagnoses, Enum.map(v, &Diagnosis.create/1)}
+
+        {"actions", v} ->
+          {:actions, Enum.map(v, &CodeableConcept.create/1)}
+
+        {"reasons", v} ->
+          {:reasons, Enum.map(v, &CodeableConcept.create/1)}
+
+        {"class", v} ->
+          {:class, Coding.create(v)}
+
+        {"type", v} ->
+          {:type, CodeableConcept.create(v)}
+
+        {"performer", v} ->
+          {:performer, Reference.create(v)}
+
+        {"incoming_referrals", v} ->
+          {:incoming_referrals, Maybe.map_list(v, &Reference.create/1)}
+
+        {"service_provider", v} ->
+          {:service_provider, Reference.create(v)}
+
+        {"date", v} ->
+          {:date, create_date(v)}
+
+        {k, v} ->
+          {String.to_atom(k), v}
       end)
     )
+  end
+
+  defp create_date(nil), do: nil
+  defp create_date(%DateTime{} = value), do: value
+  defp create_date(%Date{} = value), do: do_create_date(value)
+
+  defp create_date(value) when is_binary(value) do
+    case Date.from_iso8601(value) do
+      {:ok, date} ->
+        do_create_date(date)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp do_create_date(date) do
+    erl_date = Date.to_erl(date)
+
+    {erl_date, {0, 0, 0}}
+    |> NaiveDateTime.from_erl!()
+    |> DateTime.from_naive!("Etc/UTC")
   end
 end

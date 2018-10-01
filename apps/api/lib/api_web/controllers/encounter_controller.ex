@@ -3,7 +3,10 @@ defmodule Api.Web.EncounterController do
 
   use ApiWeb, :controller
   alias Api.Web.JobView
+  alias Core.Encounter
   alias Core.Patients
+  alias Core.Patients.Encounters
+  alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
 
@@ -13,6 +16,18 @@ defmodule Api.Web.EncounterController do
       |> put_status(202)
       |> put_view(JobView)
       |> render("create.json", job: job)
+    end
+  end
+
+  def index(conn, params) do
+    with {:ok, %Page{entries: encounters} = paging} <- Encounters.list(params) do
+      render(conn, "index.json", encounters: encounters, paging: paging)
+    end
+  end
+
+  def show(conn, %{"patient_id" => patient_id, "id" => encounter_id}) do
+    with {:ok, encounter} <- Encounters.get(patient_id, encounter_id) do
+      render(conn, "show.json", encounter: encounter)
     end
   end
 end

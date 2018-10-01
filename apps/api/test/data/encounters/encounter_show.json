@@ -1,0 +1,613 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"definitions": {
+		"uuid": {
+			"type": "string",
+			"pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+		},
+		"identifier": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"$ref": "#/definitions/codeable_concept"
+				},
+				"value": {
+					"type": "string",
+					"description": "The value that is unique"
+				}
+			},
+			"required": [
+				"value"
+			],
+			"additionalProperties": false
+		},
+		"reference": {
+			"type": "object",
+			"properties": {
+				"identifier": {
+					"$ref": "#/definitions/identifier"
+				},
+				"display_value": {
+					"type": [
+						"string",
+						"null"
+					],
+					"description": "presentation text"
+				}
+			},
+			"required": [
+				"identifier"
+			],
+			"additionalProperties": false
+		},
+		"performer": {
+			"type": "object",
+			"properties": {
+				"identifier": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "object",
+							"properties": {
+								"coding": {
+									"type": "array",
+									"minItems": 1,
+									"items": {
+										"type": "object",
+										"properties": {
+											"system": {
+												"type": "string"
+											},
+											"code": {
+												"type": "string"
+											}
+										},
+										"required": [
+											"code",
+											"system"
+										],
+										"additionalProperties": false
+									}
+								},
+								"text": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"coding"
+							],
+							"additionalProperties": false
+						},
+						"value": {
+							"type": "string",
+							"description": "The value that is unique"
+						}
+					},
+					"required": [
+						"value"
+					],
+					"additionalProperties": false
+				},
+				"display_value": {
+					"type": [
+						"string",
+						"null"
+					]
+				}
+			}
+		},
+		"action": {
+			"type": "object",
+			"properties": {
+				"coding": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "object",
+						"properties": {
+							"system": {
+								"type": "string"
+							},
+							"code": {
+								"type": "string",
+								"description": "Symbol in syntax defined by the system"
+							}
+						},
+						"required": [
+							"code",
+							"system"
+						],
+						"additionalProperties": false
+					}
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"coding"
+			],
+			"additionalProperties": false
+		},
+		"reason": {
+			"type": "object",
+			"properties": {
+				"coding": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "object",
+						"properties": {
+							"system": {
+								"type": "string"
+							},
+							"code": {
+								"type": "string",
+								"description": "Symbol in syntax defined by the system"
+							}
+						},
+						"required": [
+							"code",
+							"system"
+						],
+						"additionalProperties": false
+					}
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"coding"
+			],
+			"additionalProperties": false
+		},
+		"diagnosis": {
+			"type": "object",
+			"properties": {
+				"condition": {
+					"type": "object",
+					"properties": {
+						"identifier": {
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "object",
+									"properties": {
+										"coding": {
+											"type": "array",
+											"minItems": 1,
+											"maxItems": 1,
+											"items": {
+												"type": "object",
+												"properties": {
+													"system": {
+														"type": "string"
+													},
+													"code": {
+														"type": "string",
+														"description": "Symbol in syntax defined by the system"
+													}
+												},
+												"required": [
+													"code",
+													"system"
+												],
+												"additionalProperties": false
+											}
+										},
+										"text": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"coding"
+									],
+									"additionalProperties": false
+								},
+								"value": {
+									"type": "string",
+									"description": "The value that is unique"
+								}
+							},
+							"required": [
+								"value"
+							],
+							"additionalProperties": false
+						},
+						"display_value": {
+							"type": [
+								"string",
+								"null"
+							]
+						}
+					},
+					"description": "should be filled one of: condition or condition_id"
+				},
+				"code": {
+					"type": "object",
+					"properties": {
+						"coding": {
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"type": "object",
+								"properties": {
+									"system": {
+										"type": "string"
+									},
+									"code": {
+										"type": "string",
+										"description": "Symbol in syntax defined by the system"
+									}
+								},
+								"required": [
+									"code",
+									"system"
+								],
+								"additionalProperties": false
+							}
+						},
+						"text": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"coding"
+					],
+					"additionalProperties": false
+				},
+				"role": {
+					"type": "object",
+					"properties": {
+						"coding": {
+							"type": "array",
+							"minItems": 1,
+							"items": {
+								"type": "object",
+								"properties": {
+									"system": {
+										"type": "string"
+									},
+									"code": {
+										"type": "string",
+										"description": "Symbol in syntax defined by the system"
+									}
+								},
+								"required": [
+									"code",
+									"system"
+								],
+								"additionalProperties": false
+							}
+						},
+						"text": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"coding"
+					],
+					"additionalProperties": false
+				},
+				"rank": {
+					"type": "number",
+					"description": "Ranking of the diagnosis (for each role type)"
+				}
+			},
+			"required": [
+				"code",
+				"condition",
+				"role"
+			],
+			"additionalProperties": false
+		},
+		"coding_item": {
+			"type": "object",
+			"properties": {
+				"system": {
+					"type": "string"
+				},
+				"code": {
+					"type": "string",
+					"description": "Symbol in syntax defined by the system"
+				}
+			},
+			"required": [
+				"code",
+				"system"
+			],
+			"additionalProperties": false
+		},
+		"coding": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"$ref": "#/definitions/coding_item"
+			}
+		},
+		"codeable_concept": {
+			"type": "object",
+			"properties": {
+				"coding": {
+					"$ref": "#/definitions/coding"
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"coding"
+			],
+			"additionalProperties": false
+		}
+	},
+	"type": "object",
+	"properties": {
+		"id": {
+			"$ref": "#/definitions/uuid"
+		},
+		"status": {
+			"type": "string"
+		},
+		"episode": {
+			"type": "object",
+			"properties": {
+				"identifier": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "object",
+							"properties": {
+								"coding": {
+									"type": "array",
+									"minItems": 1,
+									"items": {
+										"type": "object",
+										"properties": {
+											"system": {
+												"type": "string"
+											},
+											"code": {
+												"type": "string",
+												"description": "Symbol in syntax defined by the system"
+											}
+										},
+										"required": [
+											"code",
+											"system"
+										],
+										"additionalProperties": false
+									}
+								},
+								"text": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"coding"
+							],
+							"additionalProperties": false
+						},
+						"value": {
+							"type": "string",
+							"description": "The value that is unique"
+						}
+					},
+					"required": [
+						"value"
+					],
+					"additionalProperties": false
+				},
+				"display_value": {
+					"type": [
+						"string",
+						"null"
+					]
+				}
+			},
+			"required": [
+				"identifier"
+			],
+			"additionalProperties": false
+		},
+		"visit": {
+			"type": "object",
+			"properties": {
+				"identifier": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "object",
+							"properties": {
+								"coding": {
+									"type": "array",
+									"minItems": 1,
+									"items": {
+										"type": "object",
+										"properties": {
+											"system": {
+												"type": "string"
+											},
+											"code": {
+												"type": "string",
+												"description": "Symbol in syntax defined by the system"
+											}
+										},
+										"required": [
+											"code",
+											"system"
+										],
+										"additionalProperties": false
+									}
+								},
+								"text": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"coding"
+							],
+							"additionalProperties": false
+						},
+						"value": {
+							"type": "string",
+							"description": "The value that is unique"
+						}
+					},
+					"required": [
+						"value"
+					],
+					"additionalProperties": false
+				},
+				"display_value": {
+					"type": [
+						"string",
+						"null"
+					]
+				}
+			},
+			"required": [
+				"identifier"
+			],
+			"additionalProperties": false
+		},
+		"class": {
+			"type": "object",
+			"properties": {
+				"system": {
+					"type": "string"
+				},
+				"code": {
+					"type": "string",
+					"description": "Symbol in syntax defined by the system"
+				}
+			},
+			"required": [
+				"code",
+				"system"
+			],
+			"additionalProperties": false
+		},
+		"type": {
+			"type": "object",
+			"properties": {
+				"coding": {
+					"type": "array",
+					"minItems": 1,
+					"items": {
+						"type": "object",
+						"properties": {
+							"system": {
+								"type": "string"
+							},
+							"code": {
+								"type": "string",
+								"description": "Symbol in syntax defined by the system"
+							}
+						},
+						"required": [
+							"code",
+							"system"
+						],
+						"additionalProperties": false
+					}
+				},
+				"text": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"coding"
+			],
+			"additionalProperties": false
+		},
+		"incoming_referrals": {
+			"type": "array",
+			"items": {
+				"$ref": "#/definitions/reference"
+			}
+		},
+		"performer": {
+			"$ref": "#/definitions/performer"
+		},
+		"reasons": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"$ref": "#/definitions/reason"
+			}
+		},
+		"diagnoses": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"$ref": "#/definitions/diagnosis"
+			}
+		},
+		"actions": {
+			"type": "array",
+			"minItems": 1,
+			"items": {
+				"$ref": "#/definitions/action"
+			}
+		},
+		"division": {
+			"type": "object",
+			"properties": {
+				"identifier": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"type": "object",
+							"properties": {
+								"coding": {
+									"type": "array",
+									"minItems": 1,
+									"items": {
+										"type": "object",
+										"properties": {
+											"system": {
+												"type": "string"
+											},
+											"code": {
+												"type": "string",
+												"description": "Symbol in syntax defined by the system"
+											}
+										},
+										"required": [
+											"code",
+											"system"
+										],
+										"additionalProperties": false
+									}
+								},
+								"text": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"coding"
+							],
+							"additionalProperties": false
+						},
+						"value": {
+							"type": "string",
+							"description": "The value that is unique"
+						}
+					},
+					"required": [
+						"value"
+					],
+					"additionalProperties": false
+				},
+				"display_value": {
+					"type": [
+						"string",
+						"null"
+					]
+				}
+			}
+		}
+	}
+}

@@ -194,14 +194,32 @@ defmodule Core.Factories do
 
     %Encounter{
       id: Mongo.string_to_uuid(UUID.uuid4()),
+      status: Encounter.status(:finished),
+      date: Date.utc_today(),
       episode: build(:reference),
+      class: build(:coding),
       performer: build(:reference),
-      visit: build(:visit),
+      visit: build(:reference),
       type: build(:codeable_concept),
+      incoming_referrals: build_list(1, :reference),
+      reasons: build_list(2, :codeable_concept),
+      diagnoses: build_list(1, :diagnosis),
+      actions: build_list(2, :codeable_concept),
+      division: build(:reference),
+      service_provider: build(:reference),
       inserted_at: now,
       updated_at: now,
       inserted_by: Mongo.string_to_uuid(id),
       updated_by: Mongo.string_to_uuid(id)
+    }
+  end
+
+  def diagnosis_factory do
+    %Diagnosis{
+      condition: build(:reference),
+      code: build(:codeable_concept),
+      role: build(:codeable_concept),
+      rank: 1
     }
   end
 
