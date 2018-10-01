@@ -323,9 +323,7 @@ defmodule Core.Factories do
 
   def episode_factory do
     id = UUID.uuid4()
-
-    date = Date.to_erl(Date.utc_today())
-    date = {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+    date = to_string(Date.utc_today())
 
     %Episode{
       id: Mongo.string_to_uuid(UUID.uuid4()),
@@ -338,9 +336,9 @@ defmodule Core.Factories do
       diagnoses_history: build_list(1, :diagnoses_history),
       type: "primary_care",
       name: "ОРВИ 2018",
-      managing_organization: build(:reference),
-      period: build(:period, start: date),
-      care_manager: build(:reference),
+      managing_organization: reference_coding(code: "legal_entity"),
+      period: build(:period, start: date, end: date),
+      care_manager: reference_coding(code: "employee"),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(id),

@@ -462,9 +462,7 @@ defmodule Api.Web.EpisodeControllerTest do
       |> get(episode_path(conn, :show, patient_id, UUID.binary_to_string!(episode.id.binary)))
       |> json_response(200)
       |> Map.get("data")
-
-      # todo: fix json schema
-      # |> assert_json_schema("episodes/episode_show.json")
+      |> assert_json_schema("episodes/episode_show.json")
     end
 
     test "get episode invalid patient uuid", %{conn: conn} do
@@ -523,8 +521,7 @@ defmodule Api.Web.EpisodeControllerTest do
         |> get(episode_path(conn, :index, patient_id))
         |> json_response(200)
 
-      # todo: fix json schema
-      # Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
     end
 
@@ -594,8 +591,7 @@ defmodule Api.Web.EpisodeControllerTest do
         |> get(episode_path(conn, :index, patient_id), %{"page_size" => "1"})
         |> json_response(200)
 
-      # todo: fix json schema
-      # Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert [%{"id" => idt} | _] = resp["data"]
       assert idt == UUID.binary_to_string!(episode_t.id.binary)
       assert %{"page_number" => 1, "total_entries" => 202, "total_pages" => 202, "page_size" => 1} = resp["paging"]
@@ -631,8 +627,7 @@ defmodule Api.Web.EpisodeControllerTest do
         |> get(episode_path(conn, :index, patient_id), %{"page_size" => "200", "page" => "2"})
         |> json_response(200)
 
-      # todo: fix json schema
-      # Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert [_, %{"id" => idy}] = resp["data"]
       assert idy == UUID.binary_to_string!(episode_y.id.binary)
       assert %{"page_number" => 2, "total_entries" => 202, "total_pages" => 2, "page_size" => 200} = resp["paging"]
@@ -652,8 +647,7 @@ defmodule Api.Web.EpisodeControllerTest do
         |> get(episode_path(conn, :index, patient_id), %{"page_size" => "1"})
         |> json_response(200)
 
-      # todo: fix json schema
-      # Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 2, "page_size" => 1} = resp["paging"]
     end
   end
