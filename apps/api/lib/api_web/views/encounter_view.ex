@@ -6,7 +6,6 @@ defmodule Api.Web.EncounterView do
   alias Core.ReferenceView
   alias Core.UUIDView
 
-
   def render("index.json", %{encounters: encounters}) do
     render_many(encounters, __MODULE__, "show.json", as: :encounter)
   end

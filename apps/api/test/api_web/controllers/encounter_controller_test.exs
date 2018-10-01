@@ -108,7 +108,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
   end
 
-
   describe "show encounter" do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -367,7 +366,6 @@ defmodule Api.Web.EncounterControllerTest do
              |> get_in(["data", "status"])
              |> Kernel.==("pending")
     end
-
 
     test "fail on signed content", %{conn: conn, test_data: {episode, encounter, context}} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
