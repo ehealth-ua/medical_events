@@ -4,7 +4,6 @@ defmodule Core.Patients.Immunizations.Validations do
   import Core.Schema, only: [add_validations: 3]
 
   alias Core.Immunization
-  alias Core.Maybe
   alias Core.Reference
   alias Core.Source
 
@@ -54,11 +53,12 @@ defmodule Core.Patients.Immunizations.Validations do
     %{performer | identifier: identifier}
   end
 
-  def validate_reactions(%Immunization{reactions: reactions} = immunization, observations, patient_id) do
+  def validate_reactions(%Immunization{} = immunization, observations, patient_id) do
     now = DateTime.utc_now()
+    reactions = immunization.reactions || []
 
     reactions =
-      Maybe.map_list(reactions, fn reaction ->
+      Enum.map(reactions, fn reaction ->
         detail = reaction.detail
 
         identifier =
