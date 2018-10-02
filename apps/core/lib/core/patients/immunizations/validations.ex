@@ -1,10 +1,11 @@
 defmodule Core.Patients.Immunizations.Validations do
   @moduledoc false
 
+  import Core.Schema, only: [add_validations: 3]
+
   alias Core.Immunization
   alias Core.Reference
   alias Core.Source
-  import Core.Schema, only: [add_validations: 3]
 
   def validate_date(%Immunization{} = immunization) do
     now = DateTime.utc_now()
@@ -54,7 +55,7 @@ defmodule Core.Patients.Immunizations.Validations do
 
   def validate_reactions(%Immunization{} = immunization, observations, patient_id) do
     now = DateTime.utc_now()
-    reactions = immunization.reactions
+    reactions = immunization.reactions || []
 
     reactions =
       Enum.map(reactions, fn reaction ->

@@ -1,10 +1,11 @@
 defmodule Core.Patients.AllergyIntolerances.Validations do
   @moduledoc false
 
+  import Core.Schema, only: [add_validations: 3]
+
   alias Core.AllergyIntolerance
   alias Core.Reference
   alias Core.Source
-  import Core.Schema, only: [add_validations: 3]
 
   def validate_context(%AllergyIntolerance{context: context} = allergy_intolerance, encounter_id) do
     identifier = add_validations(context.identifier, :value, value: [equals: encounter_id])

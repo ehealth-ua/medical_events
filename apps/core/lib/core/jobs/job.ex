@@ -11,14 +11,17 @@ defmodule Core.Job do
   @status_pending 0
   @status_processed 1
   @status_failed 2
+  @status_failed_with_error 3
 
   def status_to_string(@status_pending), do: "pending"
   def status_to_string(@status_processed), do: "processed"
   def status_to_string(@status_failed), do: "failed"
+  def status_to_string(@status_failed_with_error), do: "failed_with_error"
 
   def status(:pending), do: @status_pending
   def status(:processed), do: @status_processed
   def status(:failed), do: @status_failed
+  def status(:failed_with_error), do: @status_failed_with_error
 
   @primary_key :_id
   schema :jobs do
