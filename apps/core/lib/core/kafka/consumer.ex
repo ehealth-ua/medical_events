@@ -60,6 +60,7 @@ defmodule Core.Kafka.Consumer do
           end
         rescue
           error ->
+            Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
         end
 
