@@ -50,6 +50,6 @@ defmodule Core.Job do
   end
 
   def decode_response(%__MODULE__{response: response, response_size: response_size} = job) do
-    %{job | response: Jason.decode!(String.slice(response, 0, response_size))}
+    %{job | response: Jason.decode!(binary_part(response, 0, response_size))}
   end
 end
