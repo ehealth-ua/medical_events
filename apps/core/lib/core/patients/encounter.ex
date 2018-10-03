@@ -2,6 +2,7 @@ defmodule Core.Encounter do
   @moduledoc false
 
   use Core.Schema
+
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Diagnosis
@@ -31,7 +32,7 @@ defmodule Core.Encounter do
     field(:performer, presence: true, reference: [path: "performer"])
     field(:episode, presence: true, reference: [path: "episode"])
     field(:visit, presence: true, reference: [path: "visit"])
-    field(:date)
+    field(:date, presence: true)
     field(:explanatory_letter)
     field(:cancellation_reason)
 
@@ -77,7 +78,7 @@ defmodule Core.Encounter do
           {:service_provider, Reference.create(v)}
 
         {"date", v} ->
-          {:date, Maybe.map(v, &create_date(&1))}
+          {:date, create_date(v)}
 
         {k, v} ->
           {String.to_atom(k), v}

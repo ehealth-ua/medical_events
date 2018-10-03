@@ -1381,6 +1381,10 @@
             "$ref": "#/definitions/action"
           }
         },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
         "division": {
           "type": "object",
           "properties": {
@@ -1446,6 +1450,7 @@
         "visit",
         "class",
         "type",
+        "date",
         "performer",
         "reasons",
         "diagnoses",
