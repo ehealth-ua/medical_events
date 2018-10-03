@@ -507,6 +507,14 @@ defmodule Api.Web.EpisodeControllerTest do
   end
 
   describe "list episodes" do
+    setup conn do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      conn
+    end
+
     test "get episodes success", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
@@ -631,6 +639,162 @@ defmodule Api.Web.EpisodeControllerTest do
       assert [_, %{"id" => idy}] = resp["data"]
       assert idy == UUID.binary_to_string!(episode_y.id.binary)
       assert %{"page_number" => 2, "total_entries" => 202, "total_pages" => 2, "page_size" => 200} = resp["paging"]
+    end
+
+    test "get episodes by period_from", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      tomorrow = Date.utc_today() |> Date.add(1) |> Date.to_string()
+      yesterday = Date.utc_today() |> Date.add(-1) |> Date.to_string()
+
+      yesterday_episodes = build_list(3, :episode, period: build(:period, start: yesterday, end: tomorrow))
+
+      tomorrow_episodes = build_list(2, :episode, period: build(:period, start: tomorrow, end: tomorrow))
+
+      episodes =
+        tomorrow_episodes
+        |> Enum.concat(yesterday_episodes)
+        |> Enum.reduce(%{}, fn episode, acc ->
+          Map.put(acc, UUID.binary_to_string!(episode.id.binary), episode)
+        end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => tomorrow})
+        |> json_response(200)
+
+      Enum.each(resp["data"], fn data ->
+        assert_json_schema(data, "episodes/episode_show.json")
+
+        assert data["id"] in Enum.reduce(tomorrow_episodes, [], fn episode, acc ->
+                 [UUID.binary_to_string!(episode.id.binary) | acc]
+               end)
+      end)
+
+      assert %{"total_entries" => 2} = resp["paging"]
+    end
+
+    test "get episodes by period_to", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      tomorrow = Date.utc_today() |> Date.add(1) |> Date.to_string()
+      yesterday = Date.utc_today() |> Date.add(-1) |> Date.to_string()
+      week_ago = Date.utc_today() |> Date.add(-7) |> Date.to_string()
+
+      yesterday_episodes = build_list(3, :episode, period: build(:period, start: week_ago, end: yesterday))
+
+      tomorrow_episodes = build_list(2, :episode, period: build(:period, start: week_ago, end: tomorrow))
+
+      episodes =
+        tomorrow_episodes
+        |> Enum.concat(yesterday_episodes)
+        |> Enum.reduce(%{}, fn episode, acc ->
+          Map.put(acc, UUID.binary_to_string!(episode.id.binary), episode)
+        end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_to" => yesterday})
+        |> json_response(200)
+
+      Enum.each(resp["data"], fn data ->
+        assert_json_schema(data, "episodes/episode_show.json")
+
+        assert data["id"] in Enum.reduce(yesterday_episodes, [], fn episode, acc ->
+                 [UUID.binary_to_string!(episode.id.binary) | acc]
+               end)
+      end)
+
+      assert %{"total_entries" => 3} = resp["paging"]
+    end
+
+    test "get episodes by period_from, period_to", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      today = Date.to_string(Date.utc_today())
+      tomorrow = Date.utc_today() |> Date.add(1) |> Date.to_string()
+      yesterday = Date.utc_today() |> Date.add(-1) |> Date.to_string()
+      last_week = Date.utc_today() |> Date.add(-7) |> Date.to_string()
+
+      actual_episodes = [
+        build(:episode, period: build(:period, start: yesterday, end: today)),
+        build(:episode, period: build(:period, start: yesterday, end: yesterday))
+      ]
+
+      tomorrow_episodes = build_list(2, :episode, period: build(:period, start: today, end: tomorrow))
+
+      yesterday_episodes = build_list(2, :episode, period: build(:period, start: last_week, end: yesterday))
+
+      episodes =
+        actual_episodes
+        |> Enum.concat(tomorrow_episodes)
+        |> Enum.concat(yesterday_episodes)
+        |> Enum.reduce(%{}, fn episode, acc ->
+          Map.put(acc, UUID.binary_to_string!(episode.id.binary), episode)
+        end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{
+          "period_from" => yesterday,
+          "period_to" => today
+        })
+        |> json_response(200)
+
+      Enum.each(resp["data"], fn data ->
+        assert_json_schema(data, "episodes/episode_show.json")
+
+        assert data["id"] in Enum.reduce(actual_episodes, [], fn episode, acc ->
+                 [UUID.binary_to_string!(episode.id.binary) | acc]
+               end)
+      end)
+
+      assert %{"total_entries" => 2} = resp["paging"]
+    end
+
+    test "get episodes by invalid params", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      expect_get_person_data(patient_id)
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: [], _id: patient_id_hash)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "invalid", "period_to" => "2017-01-01"})
+        |> json_response(422)
+
+      assert [
+               %{
+                 "rules" => [
+                   %{
+                     "description" => "expected \"invalid\" to be a valid ISO 8601 date",
+                     "rule" => "date"
+                   }
+                 ]
+               }
+             ] = resp["error"]["invalid"]
     end
 
     test "get episodes paging string instead of int", %{conn: conn} do

@@ -114,7 +114,8 @@ defmodule Core.Factories do
       last_occurrence: today,
       primary_source: true,
       source:
-        build(:source,
+        build(
+          :source,
           type: "asserter",
           value: reference_coding(system: "eHealth/resources", code: "employee")
         ),
@@ -137,7 +138,8 @@ defmodule Core.Factories do
       date: today,
       primary_source: true,
       source:
-        build(:source,
+        build(
+          :source,
           type: "performer",
           value: reference_coding(system: "eHealth/resources", code: "employee")
         ),
@@ -218,7 +220,8 @@ defmodule Core.Factories do
       issued: now,
       primary_source: true,
       source:
-        build(:source,
+        build(
+          :source,
           type: "performer",
           value: reference_coding(system: "eHealth/resources", code: "employee")
         ),
@@ -437,7 +440,8 @@ defmodule Core.Factories do
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       source:
-        build(:source,
+        build(
+          :source,
           type: "asserter",
           value: reference_coding(system: "eHealth/resources", code: "employee")
         ),

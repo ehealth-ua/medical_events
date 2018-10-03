@@ -4,8 +4,8 @@ defmodule Api.Web.DiagnosisView do
   use ApiWeb, :view
   alias Core.ReferenceView
 
-  def render("diagnoses.json", %{diagnoses: diagnosises}) do
-    render_many(diagnosises, __MODULE__, "show.json", as: :diagnosis)
+  def render("diagnoses.json", %{diagnoses: diagnoses}) do
+    render_many(diagnoses, __MODULE__, "show.json", as: :diagnosis)
   end
 
   def render("show.json", %{diagnosis: diagnosis}) do

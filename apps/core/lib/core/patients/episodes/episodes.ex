@@ -5,6 +5,7 @@ defmodule Core.Patients.Episodes do
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patient
+  alias Core.Patients
   alias Scrivener.Page
   require Logger
 
@@ -12,7 +13,10 @@ defmodule Core.Patients.Episodes do
 
   def get(patient_id_hash, id) do
     with %{"episodes" => %{^id => episode}} <-
-           Mongo.find_one(@collection, %{"_id" => patient_id_hash}, projection: ["episodes.#{id}": true]) do
+           Mongo.find_one(@collection, %{
+             "_id" => patient_id_hash,
+             "episodes.#{id}" => %{"$exists" => true}
+           }) do
       {:ok, episode}
     else
       _ ->
@@ -21,19 +25,52 @@ defmodule Core.Patients.Episodes do
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
-    # TODO: filter by code
-    pipeline = [
-      %{"$match" => %{"_id" => patient_id_hash}},
-      %{"$project" => %{"episodes" => %{"$objectToArray" => "$episodes"}}},
-      %{"$unwind" => "$episodes"},
-      %{"$project" => %{"episode" => "$episodes.v"}},
-      %{"$replaceRoot" => %{"newRoot" => "$episode"}},
-      %{"$sort" => %{"inserted_at" => -1}}
-    ]
+    pipeline =
+      [
+        %{"$match" => %{"_id" => patient_id_hash}},
+        %{"$project" => %{"episodes" => %{"$objectToArray" => "$episodes"}}},
+        %{"$unwind" => "$episodes"},
+        %{"$project" => %{"episode" => "$episodes.v"}},
+        %{"$replaceRoot" => %{"newRoot" => "$episode"}}
+      ]
+      |> search_condition(params)
+      |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
 
     with %Page{} = paging <- Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do
       paging
     end
+  end
+
+  defp search_condition(pipeline, params) do
+    pipeline
+    |> search_period("period_from", Map.get(params, "period_from"))
+    |> search_period("period_to", Map.get(params, "period_to"))
+    |> search_code(Map.get(params, "code"))
+  end
+
+  defp search_period(pipeline, _, nil), do: pipeline
+
+  defp search_period(pipeline, period, date) do
+    {compare_function, field} = period_compare_function(period)
+
+    pipeline ++
+      [
+        %{"$addFields" => %{period => %{compare_function => [field, date]}}},
+        %{"$match" => %{period => true}},
+        %{"$project" => %{period => 0}}
+      ]
+  end
+
+  defp period_compare_function("period_from"), do: {"$gte", "$period.start"}
+  defp period_compare_function("period_to"), do: {"$lte", "$period.end"}
+
+  defp search_code(pipeline, nil), do: pipeline
+
+  defp search_code(pipeline, _code) do
+    pipeline ++
+      [
+        # TODO: implement search by code
+      ]
   end
 
   def fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do

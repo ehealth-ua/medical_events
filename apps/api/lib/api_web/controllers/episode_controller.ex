@@ -6,12 +6,14 @@ defmodule Api.Web.EpisodeController do
   alias Core.Episode
   alias Core.Patients
   alias Core.Patients.Episodes
+  alias Core.Validators.JsonSchema
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
 
-  def index(conn, params) do
-    with %Page{entries: entries} = paging <- Episodes.list(params) do
+  def index(conn, %{"patient_id_hash" => patient_id_hash} = params) do
+    with :ok <- JsonSchema.validate(:episode_get, params),
+         %Page{entries: entries} = paging <- Episodes.list(params) do
       render(
         conn,
         "index.json",
