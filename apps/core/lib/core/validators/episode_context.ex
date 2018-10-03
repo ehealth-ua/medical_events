@@ -5,17 +5,16 @@ defmodule Core.Validators.EpisodeContext do
   alias Core.Episode
   alias Core.Mongo
   alias Core.Patient
-  alias Core.Patients
 
   @status_active Episode.status(:active)
 
   def validate(episode_id, options) do
-    patient_id = Keyword.get(options, :patient_id)
+    patient_id_hash = Keyword.get(options, :patient_id_hash)
 
     result =
       Patient.metadata().collection
       |> Mongo.aggregate([
-        %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
+        %{"$match" => %{"_id" => patient_id_hash}},
         %{"$project" => %{"_id" => "$episodes.#{episode_id}.id", "status" => "$episodes.#{episode_id}.status"}}
       ])
       |> Enum.to_list()

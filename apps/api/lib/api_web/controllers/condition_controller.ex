@@ -14,8 +14,8 @@ defmodule Api.Web.ConditionController do
     end
   end
 
-  def show(conn, %{"patient_id" => patient_id, "id" => condition_id}) do
-    with {:ok, condition} <- Conditions.get(patient_id, condition_id) do
+  def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => condition_id}) do
+    with {:ok, condition} <- Conditions.get(patient_id_hash, condition_id) do
       render(conn, "show.json", condition: condition)
     end
   end

@@ -29,6 +29,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                Consumer.consume(%EpisodeCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "cancellation_reason" => %{
@@ -61,6 +62,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                Consumer.consume(%EpisodeCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: episode_id,
                  request_params: %{
                    "cancellation_reason" => %{
@@ -73,7 +75,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"status" => @canceled}} = Episodes.get(patient_id, episode_id)
+      assert {:ok, %{"status" => @canceled}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

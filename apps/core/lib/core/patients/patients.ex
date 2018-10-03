@@ -48,6 +48,8 @@ defmodule Core.Patients do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
+  def get_pk_hash(nil), do: nil
+
   def get_pk_hash(value) do
     :sha256
     |> :crypto.hash_init()
@@ -58,13 +60,13 @@ defmodule Core.Patients do
   end
 
   def get_by_id(id) do
-    Mongo.find_one(@collection, %{"_id" => get_pk_hash(id)})
+    Mongo.find_one(@collection, %{"_id" => id})
   end
 
-  def produce_create_episode(%{"patient_id" => patient_id} = params, user_id, client_id) do
-    with %{} = patient <- get_by_id(patient_id),
+  def produce_create_episode(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:episode_create, Map.delete(params, "patient_id")),
+         :ok <- JsonSchema.validate(:episode_create, Map.drop(params, ~w(patient_id patient_id_hash))),
          {:ok, job, episode_create_job} <-
            Jobs.create(
              EpisodeCreateJob,
@@ -76,13 +78,13 @@ defmodule Core.Patients do
   end
 
   def produce_update_episode(
-        %{"patient_id" => patient_id, "id" => id} = url_params,
+        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
         request_params,
         conn_params
       ) do
-    with %{} = patient <- get_by_id(patient_id),
+    with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id, id),
+         {:ok, _} <- Episodes.get(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_update, request_params),
          {:ok, job, episode_update_job} <-
            Jobs.create(
@@ -95,13 +97,13 @@ defmodule Core.Patients do
   end
 
   def produce_close_episode(
-        %{"patient_id" => patient_id, "id" => id} = url_params,
+        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
         request_params,
         conn_params
       ) do
-    with %{} = patient <- get_by_id(patient_id),
+    with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id, id),
+         {:ok, _} <- Episodes.get(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_close, request_params),
          {:ok, job, episode_close_job} <-
            Jobs.create(
@@ -114,13 +116,13 @@ defmodule Core.Patients do
   end
 
   def produce_cancel_episode(
-        %{"patient_id" => patient_id, "id" => id} = url_params,
+        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
         request_params,
         conn_params
       ) do
-    with %{} = patient <- get_by_id(patient_id),
+    with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id, id),
+         {:ok, _} <- Episodes.get(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_cancel, request_params),
          {:ok, job, episode_cancel_job} <-
            Jobs.create(
@@ -132,10 +134,10 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_create_package(%{"patient_id" => patient_id} = params, user_id, client_id) do
-    with %{} = patient <- get_by_id(patient_id),
+  def produce_create_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:package_create, Map.delete(params, "patient_id")),
+         :ok <- JsonSchema.validate(:package_create, Map.drop(params, ~w(patient_id patient_id_hash))),
          {:ok, job, package_create_job} <-
            Jobs.create(
              PackageCreateJob,
@@ -146,9 +148,9 @@ defmodule Core.Patients do
     end
   end
 
-  def produce_cancel_package(%{"patient_id" => patient_id} = params, user_id, client_id) do
-    with :ok <- JsonSchema.validate(:package_cancel, Map.delete(params, "patient_id")),
-         %{} = patient <- get_by_id(patient_id),
+  def produce_cancel_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with :ok <- JsonSchema.validate(:package_cancel, Map.drop(params, ~w(patient_id patient_id_hash))),
+         %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
          {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
          {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
@@ -156,7 +158,7 @@ defmodule Core.Patients do
          employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id = decoded_content["encounter"]["id"],
          :ok <- Signature.check_drfo(signer, employee_id),
-         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id) do
+         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id_hash) do
       job_data =
         params
         |> Map.put("user_id", user_id)
@@ -169,16 +171,18 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_cancel_package(%PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
+  def consume_cancel_package(%PackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job) do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
          {:ok, %{"content" => decoded_content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
-         :ok <- CancelEncounter.proccess_cancellation(patient_id, user_id, decoded_content) do
+         :ok <- CancelEncounter.proccess_cancellation(patient_id_hash, user_id, decoded_content) do
       {:ok, %{}, 200}
     end
   end
 
-  def consume_create_package(%PackageCreateJob{patient_id: patient_id, user_id: user_id} = job) do
+  def consume_create_package(
+        %PackageCreateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, user_id: user_id} = job
+      ) do
     now = DateTime.utc_now()
 
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
@@ -298,7 +302,7 @@ defmodule Core.Patients do
           end)
 
         {:ok, %{matched_count: 1, modified_count: 1}} =
-          Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
+          Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
             "$set" => set,
             "$push" => push
           })
@@ -357,7 +361,9 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_episode(%EpisodeCreateJob{patient_id: patient_id, client_id: client_id} = job) do
+  def consume_create_episode(
+        %EpisodeCreateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, client_id: client_id} = job
+      ) do
     now = DateTime.utc_now()
 
     episode =
@@ -384,7 +390,7 @@ defmodule Core.Patients do
 
     case Vex.errors(episode) do
       [] ->
-        case Episodes.get(patient_id, episode_id) do
+        case Episodes.get(patient_id_hash, episode_id) do
           {:ok, _} ->
             {:ok, %{"error" => "Episode with such id already exists"}, 422}
 
@@ -405,7 +411,7 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("updated_by")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set})
+              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
 
             {:ok,
              %{
@@ -423,11 +429,13 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_update_episode(%EpisodeUpdateJob{patient_id: patient_id, id: id, client_id: client_id} = job) do
+  def consume_update_episode(
+        %EpisodeUpdateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id, client_id: client_id} = job
+      ) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id, id) do
+    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       changes = Map.take(job.request_params, ~w(name managing_organization care_manager))
       episode = Episode.create(episode)
 
@@ -461,7 +469,7 @@ defmodule Core.Patients do
             |> Mongo.convert_to_uuid("updated_by")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{"$set" => set})
+            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
 
           {:ok,
            %{
@@ -482,11 +490,11 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_close_episode(%EpisodeCloseJob{patient_id: patient_id, id: id} = job) do
+  def consume_close_episode(%EpisodeCloseJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id, id) do
+    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
       new_period = DatePeriod.create(job.request_params["period"])
       changes = Map.take(job.request_params, ~w(closing_summary closing_reason))
@@ -522,7 +530,7 @@ defmodule Core.Patients do
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
+            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
               "$set" => set,
               "$push" => push
             })
@@ -546,11 +554,11 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, id: id} = job) do
+  def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id, id) do
+    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
       changes = Map.take(job.request_params, ~w(explanatory_letter cancellation_reason))
 
@@ -566,7 +574,7 @@ defmodule Core.Patients do
       case Vex.errors(episode) do
         [] ->
           all_encounters_canceled =
-            patient_id
+            patient_id_hash
             |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{
               "status" => "$encounters.v.status"
             })
@@ -597,7 +605,7 @@ defmodule Core.Patients do
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
             {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => get_pk_hash(patient_id)}, %{
+              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
                 "$set" => set,
                 "$push" => push
               })
@@ -629,7 +637,7 @@ defmodule Core.Patients do
 
   defp create_visit(%PackageCreateJob{visit: nil}), do: {:ok, nil}
 
-  defp create_visit(%PackageCreateJob{patient_id: patient_id, user_id: user_id, visit: visit}) do
+  defp create_visit(%PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, visit: visit}) do
     now = DateTime.utc_now()
     visit = Visit.create(visit)
 
@@ -642,7 +650,7 @@ defmodule Core.Patients do
         result =
           Patient.metadata().collection
           |> Mongo.aggregate([
-            %{"$match" => %{"_id" => get_pk_hash(patient_id)}},
+            %{"$match" => %{"_id" => patient_id_hash}},
             %{"$project" => %{"_id" => "$visits.#{visit.id}.id"}}
           ])
           |> Enum.to_list()
@@ -661,7 +669,11 @@ defmodule Core.Patients do
   end
 
   defp create_encounter(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
          content,
          conditions,
          visit
@@ -671,18 +683,18 @@ defmodule Core.Patients do
 
     encounter =
       %{encounter | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
-      |> EncounterValidations.validate_episode(patient_id)
-      |> EncounterValidations.validate_visit(visit, patient_id)
+      |> EncounterValidations.validate_episode(patient_id_hash)
+      |> EncounterValidations.validate_visit(visit, patient_id_hash)
       |> EncounterValidations.validate_performer(client_id)
       |> EncounterValidations.validate_division(client_id)
-      |> EncounterValidations.validate_diagnoses(conditions, patient_id)
+      |> EncounterValidations.validate_diagnoses(conditions, patient_id_hash)
 
     case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do
       [] ->
         result =
           Patient.metadata().collection
           |> Mongo.aggregate([
-            %{"$match" => %{"_id" => get_pk_hash(patient_id)}},
+            %{"$match" => %{"_id" => patient_id_hash}},
             %{"$project" => %{"_id" => "$encounters.#{encounter.id}.id"}}
           ])
           |> Enum.to_list()
@@ -701,7 +713,11 @@ defmodule Core.Patients do
   end
 
   defp create_conditions(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
          %{"conditions" => _} = content,
          observations
        ) do
@@ -718,11 +734,11 @@ defmodule Core.Patients do
             updated_at: now,
             inserted_by: user_id,
             updated_by: user_id,
-            patient_id: patient_id
+            patient_id: patient_id_hash
         }
         |> ConditionValidations.validate_onset_date()
         |> ConditionValidations.validate_context(encounter_id)
-        |> ConditionValidations.validate_evidences(observations, patient_id)
+        |> ConditionValidations.validate_evidences(observations, patient_id_hash)
         |> ConditionValidations.validate_source(client_id)
       end)
 
@@ -741,7 +757,7 @@ defmodule Core.Patients do
   defp create_conditions(_, _, _), do: {:ok, []}
 
   defp create_observations(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
          %{"observations" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -757,7 +773,7 @@ defmodule Core.Patients do
             updated_at: now,
             inserted_by: user_id,
             updated_by: user_id,
-            patient_id: patient_id
+            patient_id: patient_id_hash
         }
         |> ObservationValidations.validate_issued()
         |> ObservationValidations.validate_effective_at()
@@ -782,7 +798,7 @@ defmodule Core.Patients do
   defp create_observations(_, _), do: {:ok, []}
 
   defp create_immunizations(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
          %{"immunizations" => _} = content,
          observations
        ) do
@@ -803,7 +819,7 @@ defmodule Core.Patients do
         |> ImmunizationValidations.validate_date()
         |> ImmunizationValidations.validate_context(encounter_id)
         |> ImmunizationValidations.validate_source(client_id)
-        |> ImmunizationValidations.validate_reactions(observations, patient_id)
+        |> ImmunizationValidations.validate_reactions(observations, patient_id_hash)
       end)
 
     case Vex.errors(
@@ -811,7 +827,7 @@ defmodule Core.Patients do
            immunizations: [unique_ids: [field: :id], reference: [path: "immunizations"]]
          ) do
       [] ->
-        validate_immunizations(patient_id, immunizations)
+        validate_immunizations(patient_id_hash, immunizations)
 
       errors ->
         {:error, errors}
@@ -821,7 +837,7 @@ defmodule Core.Patients do
   defp create_immunizations(_, _, _), do: {:ok, []}
 
   defp create_allergy_intolerances(
-         %PackageCreateJob{patient_id: patient_id, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
          %{"allergy_intolerances" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -853,7 +869,7 @@ defmodule Core.Patients do
            ]
          ) do
       [] ->
-        validate_allergy_intolerances(patient_id, allergy_intolerances)
+        validate_allergy_intolerances(patient_id_hash, allergy_intolerances)
 
       errors ->
         {:error, errors}
@@ -886,9 +902,9 @@ defmodule Core.Patients do
     end)
   end
 
-  defp validate_immunizations(patient_id, immunizations) do
+  defp validate_immunizations(patient_id_hash, immunizations) do
     Enum.reduce_while(immunizations, {:ok, immunizations}, fn immunization, acc ->
-      case Immunizations.get(patient_id, immunization.id) do
+      case Immunizations.get(patient_id_hash, immunization.id) do
         {:ok, _} ->
           {:halt, {:error, "Immunization with id '#{immunization.id}' already exists", 409}}
 
@@ -898,9 +914,9 @@ defmodule Core.Patients do
     end)
   end
 
-  defp validate_allergy_intolerances(patient_id, allergy_intolerances) do
+  defp validate_allergy_intolerances(patient_id_hash, allergy_intolerances) do
     Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance, acc ->
-      case AllergyIntolerances.get(patient_id, allergy_intolerance.id) do
+      case AllergyIntolerances.get(patient_id_hash, allergy_intolerance.id) do
         {:ok, _} ->
           {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
 

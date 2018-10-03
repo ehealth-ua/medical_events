@@ -5,17 +5,14 @@ defmodule Core.Patients.Encounters do
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patient
-  alias Core.Patients
   alias Scrivener.Page
   require Logger
 
   @patient_collection Patient.metadata().collection
 
-  def get_by_id(patient_id, id) do
+  def get_by_id(patient_id_hash, id) do
     with %{"encounters" => %{^id => encounter}} <-
-           Mongo.find_one(@patient_collection, %{"_id" => Patients.get_pk_hash(patient_id)},
-             projection: ["encounters.#{id}": true]
-           ) do
+           Mongo.find_one(@patient_collection, %{"_id" => patient_id_hash}, projection: ["encounters.#{id}": true]) do
       {:ok, Encounter.create(encounter)}
     else
       _ ->
@@ -24,7 +21,7 @@ defmodule Core.Patients.Encounters do
   end
 
   def get_episode_encounters(
-        patient_id,
+        patient_id_hash,
         %BSON.Binary{} = episode_id,
         project \\ %{
           "episode_id" => "$encounters.v.episode.identifier.value",
@@ -34,7 +31,7 @@ defmodule Core.Patients.Encounters do
     pipeline = [
       %{
         "$match" => %{
-          "_id" => Patients.get_pk_hash(patient_id)
+          "_id" => patient_id_hash
         }
       },
       %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}},
@@ -68,10 +65,10 @@ defmodule Core.Patients.Encounters do
     end
   end
 
-  def get(patient_id, id) do
+  def get(patient_id_hash, id) do
     with %{"encounters" => %{^id => encounter}} <-
            Mongo.find_one(@patient_collection, %{
-             "_id" => Patients.get_pk_hash(patient_id),
+             "_id" => patient_id_hash,
              "encounters.#{id}" => %{"$exists" => true}
            }) do
       {:ok, Encounter.create(encounter)}
@@ -81,7 +78,7 @@ defmodule Core.Patients.Encounters do
     end
   end
 
-  def list(%{"patient_id" => patient_id} = params) do
+  def list(%{"patient_id_hash" => patient_id_hash} = params) do
     episode_id = params["episode_id"]
     date_from = get_filter_date(:from, params["date_from"])
     date_to = get_filter_date(:to, params["date_to"])
@@ -94,7 +91,7 @@ defmodule Core.Patients.Encounters do
 
     pipeline =
       [
-        %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
+        %{"$match" => %{"_id" => patient_id_hash}},
         %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}}
       ] ++
         search_params_pipeline ++

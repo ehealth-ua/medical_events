@@ -59,7 +59,7 @@ defmodule Core.Conditions.Validations do
 
   def validate_evidences(%Condition{evidences: nil} = condition, _, _), do: condition
 
-  def validate_evidences(%Condition{} = condition, observations, patient_id) do
+  def validate_evidences(%Condition{} = condition, observations, patient_id_hash) do
     evidences =
       Enum.map(condition.evidences, fn evidence ->
         details =
@@ -68,7 +68,7 @@ defmodule Core.Conditions.Validations do
               add_validations(
                 detail.identifier,
                 :value,
-                observation_reference: [patient_id: patient_id, observations: observations]
+                observation_reference: [patient_id_hash: patient_id_hash, observations: observations]
               )
 
             %{detail | identifier: identifier}

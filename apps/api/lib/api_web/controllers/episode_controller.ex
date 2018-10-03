@@ -10,13 +10,12 @@ defmodule Api.Web.EpisodeController do
 
   action_fallback(Api.Web.FallbackController)
 
-  def index(conn, %{"patient_id" => patient_id} = params) do
+  def index(conn, params) do
     with %Page{entries: entries} = paging <- Episodes.list(params) do
       render(
         conn,
         "index.json",
-        paging: %{paging | entries: Enum.map(entries, &Episode.create/1)},
-        patient_id: patient_id
+        paging: %{paging | entries: Enum.map(entries, &Episode.create/1)}
       )
     end
   end
@@ -30,10 +29,10 @@ defmodule Api.Web.EpisodeController do
     end
   end
 
-  def show(conn, %{"patient_id" => patient_id, "id" => id}) do
-    with {:ok, episode} <- Episodes.get(patient_id, id),
+  def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => id}) do
+    with {:ok, episode} <- Episodes.get(patient_id_hash, id),
          episode <- Episode.create(episode) do
-      render(conn, "show.json", episode: episode, patient_id: patient_id)
+      render(conn, "show.json", episode: episode)
     end
   end
 
@@ -70,9 +69,9 @@ defmodule Api.Web.EpisodeController do
     end
   end
 
-  defp get_params(conn, %{"id" => id, "patient_id" => patient_id} = params) do
-    url_params = %{"id" => id, "patient_id" => patient_id}
-    request_params = Map.drop(params, ~w(id patient_id))
+  defp get_params(conn, %{"id" => id, "patient_id_hash" => patient_id_hash} = params) do
+    url_params = %{"id" => id, "patient_id_hash" => patient_id_hash}
+    request_params = Map.drop(params, ~w(id patient_id patient_id_hash))
     conn_params = %{"user_id" => conn.private[:user_id], "client_id" => conn.private[:client_id]}
     {url_params, request_params, conn_params}
   end

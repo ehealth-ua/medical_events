@@ -39,7 +39,10 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
       assert %Plug.Conn{status: nil} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient_id})
+               |> Map.update!(
+                 :params,
+                 &Map.merge(&1, %{"patient_id" => patient_id, "patient_id_hash" => patient_id_hash})
+               )
                |> AuthorizeParty.call([])
     end
 
@@ -53,7 +56,10 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
       assert %Plug.Conn{status: nil} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient_id})
+               |> Map.update!(
+                 :params,
+                 &Map.merge(&1, %{"patient_id" => patient_id, "patient_id_hash" => patient_id_hash})
+               )
                |> AuthorizeParty.call([])
     end
 
@@ -64,9 +70,15 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
       insert(:patient, _id: patient_id_hash)
       expect_get_person_data(patient_id)
 
+      invalid_patient_id = UUID.uuid4()
+      invalid_patient_id_hash = Patients.get_pk_hash(invalid_patient_id)
+
       assert %Plug.Conn{status: 401, resp_body: resp_body} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => UUID.uuid4()})
+               |> Map.update!(
+                 :params,
+                 &Map.merge(&1, %{"patient_id" => invalid_patient_id, "patient_id_hash" => invalid_patient_id_hash})
+               )
                |> AuthorizeParty.call([])
 
       assert resp_body =~ "Access denied"
@@ -83,7 +95,10 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
       assert %Plug.Conn{status: 401, resp_body: resp_body} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient_id})
+               |> Map.update!(
+                 :params,
+                 &Map.merge(&1, %{"patient_id" => patient_id, "patient_id_hash" => patient_id_hash})
+               )
                |> AuthorizeParty.call([])
 
       assert resp_body =~ "Access denied"
@@ -91,11 +106,15 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
 
     test "patient not found", %{conn: conn} do
       patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
       expect_get_person_data(patient_id)
 
       assert %Plug.Conn{status: 404, resp_body: resp_body} =
                conn
-               |> Map.put(:path_params, %{"patient_id" => patient_id})
+               |> Map.update!(
+                 :params,
+                 &Map.merge(&1, %{"patient_id" => patient_id, "patient_id_hash" => patient_id_hash})
+               )
                |> AuthorizeParty.call([])
 
       assert resp_body =~ "not_found"

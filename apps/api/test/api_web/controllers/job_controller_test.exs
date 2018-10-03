@@ -5,6 +5,7 @@ defmodule Api.Web.JobControllerTest do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
+  alias Core.Patients
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -12,9 +13,13 @@ defmodule Api.Web.JobControllerTest do
 
   describe "get job by id" do
     test "status: pending", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
       data = %{
         "_id" => UUID.uuid4(),
-        "patient_id" => UUID.uuid4(),
+        "patient_id" => patient_id,
+        "patient_id_hash" => patient_id_hash,
         "visit" => [],
         "signed_data" => [],
         "user_id" => UUID.uuid4(),

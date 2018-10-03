@@ -162,6 +162,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
@@ -599,6 +600,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                    }
                  },
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))

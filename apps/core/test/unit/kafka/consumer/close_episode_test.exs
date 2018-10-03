@@ -29,6 +29,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                Consumer.consume(%EpisodeCloseJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "period" => %{"end" => to_string(Date.utc_today())},
@@ -61,6 +62,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                Consumer.consume(%EpisodeCloseJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: episode_id,
                  request_params: %{
                    "period" => %{"end" => to_string(Date.utc_today())},
@@ -74,7 +76,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"status" => @closed}} = Episodes.get(patient_id, episode_id)
+      assert {:ok, %{"status" => @closed}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

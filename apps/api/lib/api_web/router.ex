@@ -8,6 +8,7 @@ defmodule ApiWeb.Router do
     plug(:required_header, "x-consumer-id")
     plug(:put_user_id)
     plug(:put_client_id)
+    plug(Api.Web.Plugs.PatientIdHasher)
   end
 
   pipeline :authorize_party do

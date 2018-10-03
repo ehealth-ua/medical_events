@@ -4,13 +4,12 @@ defmodule Core.Validators.VisitContext do
   use Vex.Validator
   alias Core.Mongo
   alias Core.Patient
-  alias Core.Patients
   alias Core.Visit
 
   def validate(visit_id, options) do
     visit = Keyword.get(options, :visit)
-    patient_id = Keyword.get(options, :patient_id)
-    validate_visit(visit_id, visit, patient_id, options)
+    patient_id_hash = Keyword.get(options, :patient_id_hash)
+    validate_visit(visit_id, visit, patient_id_hash, options)
   end
 
   defp validate_visit(visit_id, %Visit{id: id}, _, options) do
@@ -21,11 +20,11 @@ defmodule Core.Validators.VisitContext do
     end
   end
 
-  defp validate_visit(visit_id, nil, patient_id, options) do
+  defp validate_visit(visit_id, nil, patient_id_hash, options) do
     result =
       Patient.metadata().collection
       |> Mongo.aggregate([
-        %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
+        %{"$match" => %{"_id" => patient_id_hash}},
         %{"$project" => %{"_id" => "$visits.#{visit_id}.id"}}
       ])
       |> Enum.to_list()

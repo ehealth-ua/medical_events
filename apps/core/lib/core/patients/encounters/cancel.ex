@@ -26,22 +26,22 @@ defmodule Core.Patients.Encounters.Cancel do
     "observations" => [status: "status"]
   }
 
-  def validate_cancellation(decoded_content, encounter_id, patient_id) do
+  def validate_cancellation(decoded_content, encounter_id, patient_id_hash) do
     entities_to_load = get_entities_to_load(decoded_content)
 
     encounter_request_package = create_encounter_package_from_request(decoded_content, entities_to_load)
 
-    with {:ok, encounter_package} <- create_encounter_package(encounter_id, patient_id, entities_to_load),
+    with {:ok, encounter_package} <- create_encounter_package(encounter_id, patient_id_hash, entities_to_load),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
       :ok
     end
   end
 
-  def proccess_cancellation(patient_id, user_id, package_data) do
+  def proccess_cancellation(patient_id_hash, user_id, package_data) do
     with {:ok, entities_to_update} <- filter_entities_to_update(package_data),
          :ok <- update_observations_conditions_status(user_id, entities_to_update),
-         :ok <- update_patient_entities(patient_id, user_id, package_data, entities_to_update) do
+         :ok <- update_patient_entities(patient_id_hash, user_id, package_data, entities_to_update) do
       :ok
     end
   end
@@ -103,17 +103,16 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  defp update_patient_entities(patient_id, user_id, %{"encounter" => encounter}, entities_data) do
+  defp update_patient_entities(patient_id_hash, user_id, %{"encounter" => encounter}, entities_data) do
     user_uuid = Mongo.string_to_uuid(user_id)
 
-    with %{} = patient <- Patients.get_by_id(patient_id),
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
          updated_patient <-
            patient
            |> update_allergies_immunizations(user_uuid, entities_data)
            |> update_diagnoses(encounter)
            |> update_encounter(user_uuid, encounter),
-         {:ok, _} <-
-           Mongo.replace_one(@patient_collection, %{"_id" => Patients.get_pk_hash(patient_id)}, updated_patient) do
+         {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient_id_hash}, updated_patient) do
       :ok
     else
       err ->
@@ -191,14 +190,14 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(&1 in available_entities))
   end
 
-  defp create_encounter_package(encounter_id, patient_id, entities_to_load) do
+  defp create_encounter_package(encounter_id, patient_id_hash, entities_to_load) do
     encounter_uuid = Mongo.string_to_uuid(encounter_id)
 
-    with {:ok, encounter} <- Encounters.get_by_id(patient_id, encounter_id) do
+    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, encounter_id) do
       encounter_package =
         entities_to_load
         |> Enum.map(fn entity_key ->
-          {String.to_atom(entity_key), get_entities(entity_key, patient_id, encounter_uuid)}
+          {String.to_atom(entity_key), get_entities(entity_key, patient_id_hash, encounter_uuid)}
         end)
         |> Enum.into(%{})
         |> Map.put(:encounter, encounter)
@@ -272,17 +271,17 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp validate_conditions(_), do: :ok
 
-  defp get_entities("conditions", patient_id, encounter_uuid),
-    do: Conditions.get_by_encounter_id(patient_id, encounter_uuid)
+  defp get_entities("conditions", patient_id_hash, encounter_uuid),
+    do: Conditions.get_by_encounter_id(patient_id_hash, encounter_uuid)
 
-  defp get_entities("allergy_intolerances", patient_id, encounter_uuid),
-    do: AllergyIntolerances.get_by_encounter_id(patient_id, encounter_uuid)
+  defp get_entities("allergy_intolerances", patient_id_hash, encounter_uuid),
+    do: AllergyIntolerances.get_by_encounter_id(patient_id_hash, encounter_uuid)
 
-  defp get_entities("immunizations", patient_id, encounter_uuid),
-    do: Immunizations.get_by_encounter_id(patient_id, encounter_uuid)
+  defp get_entities("immunizations", patient_id_hash, encounter_uuid),
+    do: Immunizations.get_by_encounter_id(patient_id_hash, encounter_uuid)
 
-  defp get_entities("observations", patient_id, encounter_uuid),
-    do: Observations.get_by_encounter_id(patient_id, encounter_uuid)
+  defp get_entities("observations", patient_id_hash, encounter_uuid),
+    do: Observations.get_by_encounter_id(patient_id_hash, encounter_uuid)
 
   defp filter(:encounter, encounter) do
     %{

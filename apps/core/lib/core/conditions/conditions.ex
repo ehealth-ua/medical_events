@@ -6,7 +6,6 @@ defmodule Core.Conditions do
   alias Core.Maybe
   alias Core.Mongo
   alias Core.Paging
-  alias Core.Patients
   alias Core.Patients.Encounters
   alias Core.Reference
   alias Core.Search
@@ -17,18 +16,18 @@ defmodule Core.Conditions do
 
   @condition_collection Condition.metadata().collection
 
-  def get(patient_id, id) do
+  def get(patient_id_hash, id) do
     @condition_collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => Patients.get_pk_hash(patient_id)})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id_hash})
     |> case do
       %{} = condition -> {:ok, Condition.create(condition)}
       _ -> nil
     end
   end
 
-  def get_by_encounter_id(patient_id, encounter_id) do
+  def get_by_encounter_id(patient_id_hash, encounter_id) do
     @condition_collection
-    |> Mongo.find(%{"patient_id" => Patients.get_pk_hash(patient_id), "context.identifier.value" => encounter_id})
+    |> Mongo.find(%{"patient_id" => patient_id_hash, "context.identifier.value" => encounter_id})
     |> Enum.map(&Condition.create/1)
   end
 
@@ -68,7 +67,6 @@ defmodule Core.Conditions do
     %{
       condition
       | _id: Mongo.string_to_uuid(condition._id),
-        patient_id: Patients.get_pk_hash(condition.patient_id),
         inserted_by: Mongo.string_to_uuid(condition.inserted_by),
         updated_by: Mongo.string_to_uuid(condition.updated_by),
         context: %{
@@ -80,13 +78,13 @@ defmodule Core.Conditions do
     }
   end
 
-  defp search_conditions_pipe(%{"patient_id" => patient_id} = params) do
+  defp search_conditions_pipe(%{"patient_id_hash" => patient_id_hash} = params) do
     code = params["code"]
     onset_date_from = filter_date(params["onset_date_from"])
     onset_date_to = filter_date(params["onset_date_to"], true)
 
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
-    encounter_ids = get_encounter_ids(patient_id, episode_id)
+    encounter_ids = get_encounter_ids(patient_id_hash, episode_id)
 
     if episode_id != nil and encounter_ids == [] do
       []
@@ -94,7 +92,7 @@ defmodule Core.Conditions do
       encounter_ids =
         Maybe.map(params["encounter_id"], &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]), encounter_ids)
 
-      %{"$match" => %{"patient_id" => Patients.get_pk_hash(patient_id)}}
+      %{"$match" => %{"patient_id" => patient_id_hash}}
       |> Search.add_param(code, ["$match", "code.coding.0.code"])
       |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
       |> Search.add_param(onset_date_from, ["$match", "onset_date"], "$gte")
@@ -113,10 +111,10 @@ defmodule Core.Conditions do
     end
   end
 
-  def get_encounter_ids(_patient_id, nil), do: []
+  def get_encounter_ids(_patient_id_hash, nil), do: []
 
-  def get_encounter_ids(patient_id, episode_id) do
-    patient_id
+  def get_encounter_ids(patient_id_hash, episode_id) do
+    patient_id_hash
     |> Encounters.get_episode_encounters(episode_id)
     |> Enum.map(& &1["encounter_id"])
   end

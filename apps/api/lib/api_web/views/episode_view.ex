@@ -8,18 +8,17 @@ defmodule Api.Web.EpisodeView do
   alias Core.UUIDView
   alias Scrivener.Page
 
-  def render("index.json", %{paging: %Page{entries: episodes}, patient_id: patient_id}) do
-    render_many(episodes, __MODULE__, "show.json", as: :episode, patient_id: patient_id)
+  def render("index.json", %{paging: %Page{entries: episodes}}) do
+    render_many(episodes, __MODULE__, "show.json", as: :episode)
   end
 
-  def render("show.json", %{episode: episode, patient_id: patient_id}) do
+  def render("show.json", %{episode: episode}) do
     episode
     |> Map.take(~w(type status name explanatory_letter closing_summary inserted_at)a)
     |> Map.put(:cancellation_reason, ReferenceView.render(episode.cancellation_reason))
     |> Map.put(:closing_reason, ReferenceView.render(episode.closing_reason))
     |> Map.put(:id, UUIDView.render(episode.id))
     |> Map.put(:period, ReferenceView.render(episode.period))
-    |> Map.put(:patient_id, patient_id)
     |> Map.put(
       :diagnoses_history,
       DiagnosesHistoryView.render("diagnoses_history.json", diagnoses_history: episode.diagnoses_history)

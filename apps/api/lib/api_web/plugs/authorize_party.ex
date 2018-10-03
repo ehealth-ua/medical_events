@@ -15,14 +15,15 @@ defmodule Api.Web.Plugs.AuthorizeParty do
 
   def init(opts), do: opts
 
-  def call(%Conn{private: conn_data, path_params: params} = conn, _opts) do
+  def call(%Conn{private: conn_data, params: params} = conn, _opts) do
     user_id = conn_data[:user_id]
     client_id = conn_data[:client_id]
     patient_id = Map.fetch!(params, "patient_id")
+    patient_id_hash = Map.fetch!(params, "patient_id_hash")
 
     with {:ok, patient_ids} <- get_patient_ids(user_id, client_id),
          true <- passes_auth?(patient_id, patient_ids),
-         {_, %{}} <- {:patient_exists, Patients.get_by_id(patient_id)} do
+         {_, %{}} <- {:patient_exists, Patients.get_by_id(patient_id_hash)} do
       conn
     else
       {:patient_exists, _} ->

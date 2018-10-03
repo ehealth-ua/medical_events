@@ -4,23 +4,23 @@ defmodule Core.Patients.Encounters.Validations do
   alias Core.Encounter
   import Core.Schema, only: [add_validations: 3]
 
-  def validate_episode(%Encounter{episode: episode} = encounter, patient_id) do
+  def validate_episode(%Encounter{episode: episode} = encounter, patient_id_hash) do
     identifier =
       add_validations(
         episode.identifier,
         :value,
-        episode_context: [patient_id: patient_id]
+        episode_context: [patient_id_hash: patient_id_hash]
       )
 
     %{encounter | episode: %{episode | identifier: identifier}}
   end
 
-  def validate_visit(%Encounter{visit: visit} = encounter, current_visit, patient_id) do
+  def validate_visit(%Encounter{visit: visit} = encounter, current_visit, patient_id_hash) do
     identifier =
       add_validations(
         visit.identifier,
         :value,
-        visit_context: [visit: current_visit, patient_id: patient_id]
+        visit_context: [visit: current_visit, patient_id_hash: patient_id_hash]
       )
 
     %{encounter | visit: %{visit | identifier: identifier}}
@@ -68,7 +68,7 @@ defmodule Core.Patients.Encounters.Validations do
     %{encounter | division: %{division | identifier: identifier}}
   end
 
-  def validate_diagnoses(%Encounter{} = encounter, conditions, patient_id) do
+  def validate_diagnoses(%Encounter{} = encounter, conditions, patient_id_hash) do
     diagnoses = encounter.diagnoses
 
     diagnoses =
@@ -79,7 +79,7 @@ defmodule Core.Patients.Encounters.Validations do
           add_validations(
             condition.identifier,
             :value,
-            diagnosis_condition: [conditions: conditions, patient_id: patient_id]
+            diagnosis_condition: [conditions: conditions, patient_id_hash: patient_id_hash]
           )
 
         %{diagnosis | condition: %{condition | identifier: identifier}}

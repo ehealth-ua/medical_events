@@ -390,9 +390,6 @@
         }
       }
     },
-    "patient_id": {
-      "description": "Patient's id"
-    },
     "closing_summary": {
       "type": [
         "string",
@@ -425,7 +422,6 @@
     "period",
     "managing_organization",
     "care_manager",
-    "patient_id",
     "diagnoses_history",
     "inserted_at",
     "closing_summary",

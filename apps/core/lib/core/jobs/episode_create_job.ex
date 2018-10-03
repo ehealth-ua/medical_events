@@ -1,12 +1,13 @@
 defmodule Core.Jobs.EpisodeCreateJob do
   @moduledoc """
   Struct for creating episode request.
-  _id is a binded Request id. 
+  _id is a binded Request id.
   """
 
   defstruct [
     :_id,
     :patient_id,
+    :patient_id_hash,
     :id,
     :name,
     :type,

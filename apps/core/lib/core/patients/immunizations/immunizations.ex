@@ -4,17 +4,14 @@ defmodule Core.Patients.Immunizations do
   alias Core.Immunization
   alias Core.Mongo
   alias Core.Patient
-  alias Core.Patients
   alias Core.Source
   require Logger
 
   @collection Patient.metadata().collection
 
-  def get(patient_id, id) do
+  def get(patient_id_hash, id) do
     with %{"immunizations" => %{^id => immunization}} <-
-           Mongo.find_one(@collection, %{"_id" => Patients.get_pk_hash(patient_id)},
-             projection: ["immunizations.#{id}": true]
-           ) do
+           Mongo.find_one(@collection, %{"_id" => patient_id_hash}, projection: ["immunizations.#{id}": true]) do
       {:ok, immunization}
     else
       _ ->
@@ -49,10 +46,10 @@ defmodule Core.Patients.Immunizations do
     end
   end
 
-  def get_by_encounter_id(patient_id, encounter_id) do
+  def get_by_encounter_id(patient_id_hash, encounter_id) do
     @collection
     |> Mongo.aggregate([
-      %{"$match" => %{"_id" => Patients.get_pk_hash(patient_id)}},
+      %{"$match" => %{"_id" => patient_id_hash}},
       %{"$project" => %{"immunizations" => %{"$objectToArray" => "$immunizations"}}},
       %{"$unwind" => "$immunizations"},
       %{"$match" => %{"immunizations.v.context.identifier.value" => encounter_id}},

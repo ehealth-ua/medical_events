@@ -30,6 +30,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "managing_organization" => %{
@@ -82,6 +83,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: episode_id,
                  request_params: %{
                    "managing_organization" => %{
@@ -103,7 +105,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient_id, episode_id)
+      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

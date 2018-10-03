@@ -42,6 +42,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                Consumer.consume(%EpisodeCreateJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: episode_id,
                  user_id: user_id,
                  client_id: client_id,
@@ -93,6 +94,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                Consumer.consume(%EpisodeCreateJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  id: episode_id,
                  type: "primary_care",
                  name: "ОРВИ 2018",

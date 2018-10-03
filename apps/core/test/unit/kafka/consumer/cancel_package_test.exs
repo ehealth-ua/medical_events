@@ -507,6 +507,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  user_id: user_id,
                  client_id: client_id,
                  signed_data: signed_content |> Jason.encode!() |> Base.encode64()
@@ -518,7 +519,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                 status: @status_processed
               }} = Jobs.get_by_id(to_string(job._id))
 
-      patient = Patients.get_by_id(patient_id)
+      patient = Patients.get_by_id(patient_id_hash)
 
       assert @entered_in_error == patient["allergy_intolerances"][allergy_intolerance_id]["verification_status"]
 
@@ -529,13 +530,13 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert encounter["cancellation_reason"] != nil
 
       assert @entered_in_error ==
-               patient_id
+               patient_id_hash
                |> Conditions.get(condition_id)
                |> elem(1)
                |> Map.get(:verification_status)
 
       assert @entered_in_error ==
-               patient_id
+               patient_id_hash
                |> Observations.get(observation_id)
                |> elem(1)
                |> Map.get(:status)
@@ -649,6 +650,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
                  user_id: UUID.uuid4(),
                  client_id: client_id,
                  signed_data: signed_content |> Jason.encode!() |> Base.encode64()
@@ -660,7 +662,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                 status: @status_processed
               }} = Jobs.get_by_id(to_string(job._id))
 
-      patient = Patients.get_by_id(patient_id)
+      patient = Patients.get_by_id(patient_id_hash)
 
       assert [%{"is_active" => false} | _] = patient["episodes"][episode_id]["diagnoses_history"]
     end
