@@ -149,16 +149,14 @@ defmodule Core.Patients do
   end
 
   def produce_cancel_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with :ok <- JsonSchema.validate(:package_cancel, Map.drop(params, ~w(patient_id patient_id_hash))),
+    with :ok <- JsonSchema.validate(:package_cancel, Map.take(params, ["signed_data"])),
          %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
          {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
          {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
          employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
-         encounter_id = decoded_content["encounter"]["id"],
-         :ok <- Signature.check_drfo(signer, employee_id),
-         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter_id, patient_id_hash) do
+         :ok <- Signature.check_drfo(signer, employee_id) do
       job_data =
         params
         |> Map.put("user_id", user_id)
@@ -175,8 +173,16 @@ defmodule Core.Patients do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
          {:ok, %{"content" => decoded_content, "signer" => _signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
-         :ok <- CancelEncounter.proccess_cancellation(patient_id_hash, user_id, decoded_content) do
+         encounter_id <- decoded_content["encounter"]["id"],
+         {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
+         {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
+         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter, patient_id_hash),
+         :ok <- CancelEncounter.proccess_cancellation(patient, user_id, decoded_content) do
       {:ok, %{}, 200}
+    else
+      {:patient, _} -> {:ok, "Failed to get patient", 404}
+      {:encounter, _} -> {:ok, "Failed to get encounter", 404}
+      err -> err
     end
   end
 

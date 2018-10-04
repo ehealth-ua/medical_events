@@ -2,6 +2,7 @@ defmodule Api.Web.EpisodeController do
   @moduledoc false
 
   use ApiWeb, :controller
+
   alias Api.Web.JobView
   alias Core.Episode
   alias Core.Patients
@@ -11,7 +12,7 @@ defmodule Api.Web.EpisodeController do
 
   action_fallback(Api.Web.FallbackController)
 
-  def index(conn, %{"patient_id_hash" => patient_id_hash} = params) do
+  def index(conn, params) do
     with :ok <- JsonSchema.validate(:episode_get, params),
          %Page{entries: entries} = paging <- Episodes.list(params) do
       render(
