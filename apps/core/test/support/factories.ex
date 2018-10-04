@@ -457,12 +457,10 @@ defmodule Core.Factories do
     }
   end
 
-  def reference_coding(attrs) do
-    build(:reference, identifier: build(:identifier, type: codeable_concept_coding(attrs)))
-  end
+  def reference_coding(value \\ nil, attrs) do
+    value = value || Mongo.string_to_uuid(UUID.uuid4())
 
-  def reference_value(value) do
-    build(:reference, identifier: build(:identifier, value: value))
+    build(:reference, identifier: build(:identifier, type: codeable_concept_coding(attrs), value: value))
   end
 
   def codeable_concept_coding(attrs) do

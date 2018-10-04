@@ -3,12 +3,11 @@ defmodule Core.Patients.Encounters.Cancel do
 
   alias Core.Conditions
   alias Core.DateView
+  alias Core.Encounter
   alias Core.Maybe
   alias Core.Mongo
   alias Core.Observations
-  alias Core.Patients
   alias Core.Patients.AllergyIntolerances
-  alias Core.Patients.Encounters
   alias Core.Patients.Immunizations
 
   require Logger
@@ -26,22 +25,26 @@ defmodule Core.Patients.Encounters.Cancel do
     "observations" => [status: "status"]
   }
 
-  def validate_cancellation(decoded_content, encounter_id, patient_id_hash) do
+  @doc """
+  Performs validation by comparing encounter packages which created retrieved from job signed data and database
+  Package entities except `encounter` are MapSet's to ignore position in list
+  """
+  def validate_cancellation(decoded_content, %Encounter{} = encounter, patient_id_hash) do
     entities_to_load = get_entities_to_load(decoded_content)
 
     encounter_request_package = create_encounter_package_from_request(decoded_content, entities_to_load)
 
-    with {:ok, encounter_package} <- create_encounter_package(encounter_id, patient_id_hash, entities_to_load),
+    with {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, entities_to_load),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
       :ok
     end
   end
 
-  def proccess_cancellation(patient_id_hash, user_id, package_data) do
+  def proccess_cancellation(patient, user_id, package_data) do
     with {:ok, entities_to_update} <- filter_entities_to_update(package_data),
          :ok <- update_observations_conditions_status(user_id, entities_to_update),
-         :ok <- update_patient_entities(patient_id_hash, user_id, package_data, entities_to_update) do
+         :ok <- update_patient_entities(patient, user_id, package_data, entities_to_update) do
       :ok
     end
   end
@@ -103,21 +106,17 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  defp update_patient_entities(patient_id_hash, user_id, %{"encounter" => encounter}, entities_data) do
+  defp update_patient_entities(patient, user_id, %{"encounter" => encounter}, entities_data) do
     user_uuid = Mongo.string_to_uuid(user_id)
 
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
-         updated_patient <-
-           patient
-           |> update_allergies_immunizations(user_uuid, entities_data)
-           |> update_diagnoses(encounter)
-           |> update_encounter(user_uuid, encounter),
-         {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient_id_hash}, updated_patient) do
+    updated_patient =
+      patient
+      |> update_allergies_immunizations(user_uuid, entities_data)
+      |> update_diagnoses(encounter)
+      |> update_encounter(user_uuid, encounter)
+
+    with {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient["_id"]}, updated_patient) do
       :ok
-    else
-      err ->
-        Logger.error("Fail to update patient entities: #{inspect(err)}")
-        err
     end
   end
 
@@ -190,23 +189,17 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(&1 in available_entities))
   end
 
-  defp create_encounter_package(encounter_id, patient_id_hash, entities_to_load) do
-    encounter_uuid = Mongo.string_to_uuid(encounter_id)
+  defp create_encounter_package(%Encounter{id: encounter_uuid} = encounter, patient_id_hash, entities_to_load) do
+    entities_to_load
+    |> Enum.reduce(%{}, fn entity_key, acc ->
+      entity_key_atom = String.to_atom(entity_key)
+      entities = get_entities(entity_key, patient_id_hash, encounter_uuid)
+      entities = entity_key_atom |> filter(entities) |> MapSet.new()
 
-    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, encounter_id) do
-      encounter_package =
-        entities_to_load
-        |> Enum.map(fn entity_key ->
-          {String.to_atom(entity_key), get_entities(entity_key, patient_id_hash, encounter_uuid)}
-        end)
-        |> Enum.into(%{})
-        |> Map.put(:encounter, encounter)
-
-      encounter_package
-      |> Enum.map(fn {entity_key, entities} -> {entity_key, filter(entity_key, entities)} end)
-      |> Enum.into(%{})
-      |> wrap_ok()
-    end
+      Map.put(acc, entity_key_atom, entities)
+    end)
+    |> Map.put(:encounter, filter(:encounter, encounter))
+    |> wrap_ok()
   end
 
   defp create_encounter_package_from_request(decoded_content, entities_to_load) do
@@ -218,12 +211,13 @@ defmodule Core.Patients.Encounters.Cancel do
     }
 
     entities_to_load
-    |> Enum.map(fn entity_key ->
+    |> Enum.reduce(%{}, fn entity_key, acc ->
+      entity_key_atom = String.to_atom(entity_key)
       entities = Enum.map(decoded_content[entity_key], &entity_creators[entity_key].(&1))
+      entities = entity_key_atom |> filter(entities) |> MapSet.new()
 
-      {:"#{entity_key}", filter(:"#{entity_key}", entities)}
+      Map.put(acc, entity_key_atom, entities)
     end)
-    |> Enum.into(%{})
     |> Map.put(
       :encounter,
       filter(:encounter, Core.Encounter.create(decoded_content["encounter"]))
@@ -234,7 +228,7 @@ defmodule Core.Patients.Encounters.Cancel do
     if package1 == package2 do
       :ok
     else
-      {:error, {:conflict, "Submitted signed content does not correspond to previously created content"}}
+      {:ok, %{"error" => "Submitted signed content does not correspond to previously created content"}, 409}
     end
   end
 
@@ -262,7 +256,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Kernel.!=(0)
     |> case do
       true ->
-        {:error, {:conflict, "The condition can not be canceled while encounter is not canceled"}}
+        {:ok, %{"error" => "The condition can not be canceled while encounter is not canceled"}, 409}
 
       _ ->
         :ok

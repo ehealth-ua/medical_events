@@ -5,7 +5,6 @@ defmodule Core.Patients.Episodes do
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patient
-  alias Core.Patients
   alias Scrivener.Page
   require Logger
 
