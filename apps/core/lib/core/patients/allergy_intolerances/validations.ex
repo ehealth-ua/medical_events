@@ -54,9 +54,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
 
     max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:allergy_intolerance_max_days_passed]
 
-    add_validations(allergy_intolerance, :onset_date_time,
-      by: &DateValidator.validate_expiration(&1, max_days_passed)
-    )
+    add_validations(allergy_intolerance, :onset_date_time, by: &DateValidator.validate_expiration(&1, max_days_passed))
   end
 
   def validate_asserted_date(%AllergyIntolerance{} = allergy_intolerance) do
