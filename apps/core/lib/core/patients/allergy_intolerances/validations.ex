@@ -6,6 +6,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
   alias Core.AllergyIntolerance
   alias Core.Reference
   alias Core.Source
+  alias Core.Validators.Date, as: DateValidator
 
   def validate_context(%AllergyIntolerance{context: context} = allergy_intolerance, encounter_id) do
     identifier = add_validations(context.identifier, :value, value: [equals: encounter_id])
@@ -50,6 +51,10 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
 
   def validate_onset_date_time(%AllergyIntolerance{} = allergy_intolerance) do
     validate_date(allergy_intolerance, :onset_date_time, "Onset date time must be in past")
+
+    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:allergy_intolerance_max_days_passed]
+
+    add_validations(allergy_intolerance, :onset_date_time, by: &DateValidator.validate_expiration(&1, max_days_passed))
   end
 
   def validate_asserted_date(%AllergyIntolerance{} = allergy_intolerance) do
