@@ -18,7 +18,7 @@ defmodule Core.Validators.Date do
 
   def validate(_, _), do: :ok
 
-  def validate_expiration(date, days_from_now) when is_integer(days_from_now) do
+  def validate_expiration(date, days_from_now) do
     today = Date.utc_today()
     days_passed = Date.diff(today, get_date(date))
 
