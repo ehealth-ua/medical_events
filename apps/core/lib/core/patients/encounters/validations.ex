@@ -1,8 +1,10 @@
 defmodule Core.Patients.Encounters.Validations do
   @moduledoc false
 
-  alias Core.Encounter
   import Core.Schema, only: [add_validations: 3]
+
+  alias Core.Encounter
+  alias Core.Validators.Date, as: DateValidator
 
   def validate_episode(%Encounter{episode: episode} = encounter, patient_id_hash) do
     identifier =
@@ -90,5 +92,11 @@ defmodule Core.Patients.Encounters.Validations do
       :diagnoses,
       diagnoses_role: [type: "chief_complaint", message: "Encounter must have at least one chief complaint"]
     )
+  end
+
+  def validate_date(%Encounter{} = encounter) do
+    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:encounter_max_days_passed]
+
+    add_validations(encounter, :date, by: &DateValidator.validate_expiration(&1, max_days_passed))
   end
 end

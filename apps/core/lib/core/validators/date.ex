@@ -18,6 +18,19 @@ defmodule Core.Validators.Date do
 
   def validate(_, _), do: :ok
 
+  def validate_expiration(date, days_from_now) when is_integer(days_from_now) do
+    today = Date.utc_today()
+    days_passed = Date.diff(today, get_date(date))
+
+    if days_from_now > days_passed do
+      :ok
+    else
+      greater_date = Date.add(today, -days_passed)
+
+      {:error, "Date must be greater than #{greater_date}"}
+    end
+  end
+
   def error(options, error_message) do
     {:error, message(options, error_message)}
   end
