@@ -25,7 +25,7 @@ defmodule Core.Validators.Date do
     if days_from_now > days_passed do
       :ok
     else
-      greater_date = Date.add(today, -days_passed)
+      greater_date = Date.add(today, -days_from_now)
 
       {:error, "Date must be greater than #{greater_date}"}
     end
