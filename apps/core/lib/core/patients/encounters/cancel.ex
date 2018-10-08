@@ -228,6 +228,10 @@ defmodule Core.Patients.Encounters.Cancel do
     if package1 == package2 do
       :ok
     else
+      # todo: remove after test
+      Logger.info(fn -> "encounter package from db: #{inspect(package1)}" end)
+      Logger.info(fn -> "encounter package from request: #{inspect(package2)}" end)
+
       {:ok, %{"error" => "Submitted signed content does not correspond to previously created content"}, 409}
     end
   end
