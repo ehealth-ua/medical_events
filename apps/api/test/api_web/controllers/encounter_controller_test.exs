@@ -202,9 +202,9 @@ defmodule Api.Web.EncounterControllerTest do
       date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
       date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
 
-      encounter_in = build(:encounter, date: Date.utc_today() |> Date.add(-15), episode: episode)
-      encounter_out_1 = build(:encounter, date: Date.utc_today() |> Date.add(-15))
-      encounter_out_2 = build(:encounter, date: Date.utc_today())
+      encounter_in = build(:encounter, date: get_datetime(-15), episode: episode)
+      encounter_out_1 = build(:encounter, date: get_datetime(-15))
+      encounter_out_2 = build(:encounter, date: get_datetime())
 
       encounters =
         [encounter_in, encounter_out_1, encounter_out_2]
@@ -216,7 +216,7 @@ defmodule Api.Web.EncounterControllerTest do
       expect_get_person_data(patient_id)
 
       search_params = %{
-        "episode_id" => episode.identifier.value,
+        "episode_id" => UUID.binary_to_string!(episode.identifier.value.binary),
         "date_from" => date_from,
         "date_to" => date_to
       }
@@ -231,6 +231,8 @@ defmodule Api.Web.EncounterControllerTest do
 
       encounter = hd(resp["data"])
       assert encounter["id"] == UUID.binary_to_string!(encounter_in.id.binary)
+      refute encounter["id"] == UUID.binary_to_string!(encounter_out_1.id.binary)
+      refute encounter["id"] == UUID.binary_to_string!(encounter_out_2.id.binary)
 
       assert Date.compare(Date.from_iso8601!(date_from), Date.from_iso8601!(encounter["date"])) in [:lt, :eq]
       assert Date.compare(Date.from_iso8601!(date_to), Date.from_iso8601!(encounter["date"])) in [:gt, :eq]
@@ -322,7 +324,8 @@ defmodule Api.Web.EncounterControllerTest do
       )
 
       condition =
-        insert(:condition,
+        insert(
+          :condition,
           patient_id: patient_id_hash,
           context: context,
           verification_status: @status_error
@@ -375,5 +378,10 @@ defmodule Api.Web.EncounterControllerTest do
              |> get_in(["error", "message"])
              |> String.contains?("Validation failed.")
     end
+  end
+
+  defp get_datetime(day_shift \\ 0) do
+    date = Date.utc_today() |> Date.add(day_shift) |> Date.to_erl()
+    {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
   end
 end

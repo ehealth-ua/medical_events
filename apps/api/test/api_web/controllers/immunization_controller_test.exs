@@ -411,6 +411,15 @@ defmodule Api.Web.ImmunizationControllerTest do
       assert get_in(resp, ~w(context identifier value)) == encounter_id_1
     end
 
+    test "invalid patient uuid", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      expect_get_person_data_empty()
+
+      conn
+      |> get(immunization_path(conn, :index, UUID.uuid4()))
+      |> json_response(401)
+    end
+
     test "get patient when no immunizations", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 

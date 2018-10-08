@@ -2,9 +2,11 @@ defmodule Core.Patients.Encounters do
   @moduledoc false
 
   alias Core.Encounter
+  alias Core.Maybe
   alias Core.Mongo
   alias Core.Paging
   alias Core.Patient
+  alias Core.Search
   alias Scrivener.Page
   require Logger
 
@@ -79,32 +81,43 @@ defmodule Core.Patients.Encounters do
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
-    episode_id = params["episode_id"]
-    date_from = get_filter_date(:from, params["date_from"])
-    date_to = get_filter_date(:to, params["date_to"])
-
-    search_params_pipeline =
-      []
-      |> add_search_param(episode_id, "episode.identifier.value", "$eq")
-      |> add_search_param(date_from, "date", "$gte")
-      |> add_search_param(date_to, "date", "$lt")
-
     pipeline =
       [
         %{"$match" => %{"_id" => patient_id_hash}},
-        %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}}
-      ] ++
-        search_params_pipeline ++
-        [
-          %{"$unwind" => "$encounters"},
-          %{"$project" => %{"encounter" => "$encounters.v"}},
-          %{"$replaceRoot" => %{"newRoot" => "$encounter"}},
-          %{"$sort" => %{"inserted_at" => -1}}
-        ]
+        %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}},
+        %{"$unwind" => "$encounters"}
+      ]
+      |> add_search_pipeline(params)
+      |> Enum.concat([
+        %{"$project" => %{"encounter" => "$encounters.v"}},
+        %{"$replaceRoot" => %{"newRoot" => "$encounter"}},
+        %{"$sort" => %{"inserted_at" => -1}}
+      ])
 
     with %Page{entries: encounters} = paging <-
            Paging.paginate(:aggregate, @patient_collection, pipeline, Map.take(params, ~w(page page_size))) do
       {:ok, %Page{paging | entries: Enum.map(encounters, &Encounter.create/1)}}
+    end
+  end
+
+  defp add_search_pipeline(pipeline, params) do
+    path = "encounters.v"
+    episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
+    date_from = get_filter_date(:from, params["date_from"])
+    date_to = get_filter_date(:to, params["date_to"])
+
+    search_pipeline =
+      %{"$match" => %{}}
+      |> Search.add_param(episode_id, ["$match", "#{path}.episode.identifier.value"])
+      |> Search.add_param(date_from, ["$match", "#{path}.date"], "$gte")
+      |> Search.add_param(date_to, ["$match", "#{path}.date"], "$lt")
+
+    search_pipeline
+    |> Map.get("$match", %{})
+    |> Map.keys()
+    |> case do
+      [] -> pipeline
+      _ -> pipeline ++ [search_pipeline]
     end
   end
 
