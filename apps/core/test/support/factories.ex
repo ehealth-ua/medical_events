@@ -57,6 +57,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), encounter}
       end)
 
+    immunizations = build_list(2, :immunization)
+
+    immunizations =
+      Enum.into(immunizations, %{}, fn %{id: %BSON.Binary{binary: id}} = immunization ->
+        {UUID.binary_to_string!(id), immunization}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -66,7 +73,7 @@ defmodule Core.Factories do
       visits: visits,
       episodes: episodes,
       encounters: encounters,
-      immunizations: %{},
+      immunizations: immunizations,
       allergy_intolerances: %{},
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),

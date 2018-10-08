@@ -4,6 +4,7 @@ defmodule Core.Immunization do
   use Core.Schema
 
   alias Core.CodeableConcept
+  alias Core.Maybe
   alias Core.Observations.Values.Quantity
   alias Core.Patients.Immunizations.Explanation
   alias Core.Patients.Immunizations.Reaction
@@ -62,7 +63,7 @@ defmodule Core.Immunization do
           {:source, Source.create("performer", v)}
 
         {"legal_entity", v} ->
-          {:legal_entity, Reference.create(v)}
+          {:legal_entity, Maybe.map(v, &Reference.create/1)}
 
         {"expiration_date", v} when is_binary(v) ->
           date = v |> Date.from_iso8601!() |> Date.to_erl()
@@ -72,25 +73,25 @@ defmodule Core.Immunization do
           {:vaccine_code, CodeableConcept.create(v)}
 
         {"site", v} ->
-          {:site, CodeableConcept.create(v)}
+          {:site, Maybe.map(v, &CodeableConcept.create/1)}
 
         {"route", v} ->
-          {:route, CodeableConcept.create(v)}
+          {:route, Maybe.map(v, &CodeableConcept.create/1)}
 
         {"explanation", %{"type" => type, "value" => value}} ->
           {:explanation, Explanation.create(%{type => value})}
 
         {"explanation", v} ->
-          {:explanation, Explanation.create(v)}
+          {:explanation, Maybe.map(v, &Explanation.create/1)}
 
         {"dose_quantity", v} ->
-          {:dose_quantity, Quantity.create(v)}
+          {:dose_quantity, Maybe.map(v, &Quantity.create/1)}
 
         {"reactions", v} ->
-          {:reactions, Enum.map(v, &Reaction.create/1)}
+          {:reactions, Maybe.map_list(v, &Reaction.create/1)}
 
         {"vaccination_protocols", v} ->
-          {:vaccination_protocols, Enum.map(v, &VaccinationProtocol.create/1)}
+          {:vaccination_protocols, Maybe.map_list(v, &VaccinationProtocol.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}
