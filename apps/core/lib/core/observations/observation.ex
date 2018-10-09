@@ -84,8 +84,11 @@ defmodule Core.Observation do
         {"id", v} ->
           {:_id, v}
 
+        {"based_on", nil} ->
+          {:based_on, nil}
+
         {"based_on", v} ->
-          {:based_on, Maybe.map_list(v, &Reference.create/1)}
+          {:based_on, Enum.map(v, &Reference.create/1)}
 
         {"interpretation", v} ->
           {:interpretation, Maybe.map(v, &CodeableConcept.create/1)}
@@ -102,11 +105,17 @@ defmodule Core.Observation do
         {"method", v} ->
           {:method, Maybe.map(v, &CodeableConcept.create(&1))}
 
+        {"reference_ranges", nil} ->
+          {:reference_ranges, nil}
+
         {"reference_ranges", v} ->
-          {:reference_ranges, Maybe.map_list(v, &ReferenceRange.create/1)}
+          {:reference_ranges, Enum.map(v, &ReferenceRange.create/1)}
+
+        {"components", nil} ->
+          {:components, nil}
 
         {"components", v} ->
-          {:components, Maybe.map_list(v, &Component.create/1)}
+          {:components, Enum.map(v, &Component.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

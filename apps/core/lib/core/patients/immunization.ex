@@ -87,11 +87,17 @@ defmodule Core.Immunization do
         {"dose_quantity", v} ->
           {:dose_quantity, Maybe.map(v, &Quantity.create/1)}
 
+        {"reactions", nil} ->
+          {:reactions, nil}
+
         {"reactions", v} ->
-          {:reactions, Maybe.map_list(v, &Reaction.create/1)}
+          {:reactions, Enum.map(v, &Reaction.create/1)}
+
+        {"vaccination_protocols", nil} ->
+          {:vaccination_protocols, nil}
 
         {"vaccination_protocols", v} ->
-          {:vaccination_protocols, Maybe.map_list(v, &VaccinationProtocol.create/1)}
+          {:vaccination_protocols, Enum.map(v, &VaccinationProtocol.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

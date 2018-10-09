@@ -6,7 +6,6 @@ defmodule Core.Encounter do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Diagnosis
-  alias Core.Maybe
   alias Core.Reference
 
   @status_finished "finished"
@@ -71,8 +70,11 @@ defmodule Core.Encounter do
         {"performer", v} ->
           {:performer, Reference.create(v)}
 
+        {"incoming_referrals", nil} ->
+          {:incoming_referrals, nil}
+
         {"incoming_referrals", v} ->
-          {:incoming_referrals, Maybe.map_list(v, &Reference.create/1)}
+          {:incoming_referrals, Enum.map(v, &Reference.create/1)}
 
         {"service_provider", v} ->
           {:service_provider, Reference.create(v)}

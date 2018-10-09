@@ -35,8 +35,11 @@ defmodule Core.Condition do
     struct(
       __MODULE__,
       Enum.map(data, fn
+        {"evidences", nil} ->
+          {:evidences, nil}
+
         {"evidences", v} ->
-          {:evidences, Maybe.map_list(v, &Evidence.create/1)}
+          {:evidences, Enum.map(v, &Evidence.create/1)}
 
         {"stage", v} ->
           {:stage, Maybe.map(v, &Stage.create/1)}
@@ -44,8 +47,11 @@ defmodule Core.Condition do
         {"onset_date", v} ->
           {:onset_date, Maybe.map(v, &create_date/1)}
 
+        {"body_sites", nil} ->
+          {:body_sites, nil}
+
         {"body_sites", v} ->
-          {:body_sites, Maybe.map_list(v, &CodeableConcept.create/1)}
+          {:body_sites, Enum.map(v, &CodeableConcept.create/1)}
 
         {"severity", v} ->
           {:severity, Maybe.map(v, &CodeableConcept.create/1)}

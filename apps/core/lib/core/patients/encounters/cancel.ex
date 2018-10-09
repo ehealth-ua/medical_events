@@ -9,6 +9,8 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Immunizations
+  alias Core.ReferenceView
+  alias Core.UUIDView
 
   require Logger
 
@@ -232,9 +234,6 @@ defmodule Core.Patients.Encounters.Cancel do
       IO.puts("encounter package from db: #{inspect(package1)}")
       IO.puts("encounter package from request: #{inspect(package2)}")
 
-      Logger.error("encounter package from db: #{inspect(package1)}")
-      Logger.error("encounter package from request: #{inspect(package2)}")
-
       {:ok, %{"error" => "Submitted signed content does not correspond to previously created content"}, 409}
     end
   end
@@ -286,36 +285,36 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp filter(:encounter, encounter) do
     %{
-      id: Core.UUIDView.render(encounter.id),
+      id: UUIDView.render(encounter.id),
       date: DateView.render_date(encounter.date),
-      visit: Core.ReferenceView.render(encounter.visit),
-      episode: Core.ReferenceView.render(encounter.episode),
-      class: Core.ReferenceView.render(encounter.class),
-      type: Core.ReferenceView.render(encounter.type),
-      incoming_referrals: Core.ReferenceView.render(encounter.incoming_referrals),
-      performer: Core.ReferenceView.render(encounter.performer),
-      reasons: Core.ReferenceView.render(encounter.reasons),
-      diagnoses: Core.ReferenceView.render(encounter.diagnoses),
-      actions: Core.ReferenceView.render(encounter.actions),
-      division: Core.ReferenceView.render(encounter.division)
+      visit: ReferenceView.render(encounter.visit),
+      episode: ReferenceView.render(encounter.episode),
+      class: ReferenceView.render(encounter.class),
+      type: ReferenceView.render(encounter.type),
+      incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
+      performer: render(encounter.performer),
+      reasons: ReferenceView.render(encounter.reasons),
+      diagnoses: ReferenceView.render(encounter.diagnoses),
+      actions: ReferenceView.render(encounter.actions),
+      division: ReferenceView.render(encounter.division)
     }
   end
 
   defp filter(:conditions, conditions) do
     Enum.map(conditions, fn condition ->
       %{
-        id: Core.UUIDView.render(condition._id),
+        id: UUIDView.render(condition._id),
         primary_source: condition.primary_source,
-        context: Core.ReferenceView.render(condition.context),
-        code: Core.ReferenceView.render(condition.code),
-        severity: Core.ReferenceView.render(condition.severity),
-        body_sites: Core.ReferenceView.render(condition.body_sites),
-        stage: Core.ReferenceView.render(condition.stage),
-        evidences: Core.ReferenceView.render(condition.evidences),
+        context: ReferenceView.render(condition.context),
+        code: ReferenceView.render(condition.code),
+        severity: ReferenceView.render(condition.severity),
+        body_sites: ReferenceView.render(condition.body_sites),
+        stage: ReferenceView.render(condition.stage),
+        evidences: ReferenceView.render(condition.evidences),
         asserted_date: DateView.render_date(condition.asserted_date),
         onset_date: DateView.render_date(condition.onset_date)
       }
-      |> Map.merge(Core.ReferenceView.render_source(condition.source))
+      |> Map.merge(render_source(condition.source))
     end)
   end
 
@@ -324,14 +323,14 @@ defmodule Core.Patients.Encounters.Cancel do
       allergy_intolerance
       |> Map.take(~w(type category criticality primary_source)a)
       |> Map.merge(%{
-        id: Core.UUIDView.render(allergy_intolerance.id),
-        context: Core.ReferenceView.render(allergy_intolerance.context),
-        code: Core.ReferenceView.render(allergy_intolerance.code),
+        id: UUIDView.render(allergy_intolerance.id),
+        context: ReferenceView.render(allergy_intolerance.context),
+        code: ReferenceView.render(allergy_intolerance.code),
         onset_date_time: DateView.render_datetime(allergy_intolerance.onset_date_time),
         asserted_date: DateView.render_datetime(allergy_intolerance.asserted_date),
         last_occurrence: DateView.render_datetime(allergy_intolerance.last_occurrence)
       })
-      |> Map.merge(Core.ReferenceView.render_source(allergy_intolerance.source))
+      |> Map.merge(render_source(allergy_intolerance.source))
     end)
   end
 
@@ -345,20 +344,20 @@ defmodule Core.Patients.Encounters.Cancel do
         lot_number
       )a)
       |> Map.merge(%{
-        id: Core.UUIDView.render(immunization.id),
-        vaccine_code: Core.ReferenceView.render(immunization.vaccine_code),
-        context: Core.ReferenceView.render(immunization.context),
+        id: UUIDView.render(immunization.id),
+        vaccine_code: ReferenceView.render(immunization.vaccine_code),
+        context: ReferenceView.render(immunization.context),
         date: DateView.render_date(immunization.date),
-        legal_entity: Core.ReferenceView.render(immunization.legal_entity),
+        legal_entity: ReferenceView.render(immunization.legal_entity),
         expiration_date: DateView.render_date(immunization.expiration_date),
-        site: Core.ReferenceView.render(immunization.site),
-        route: Core.ReferenceView.render(immunization.route),
-        dose_quantity: Core.ReferenceView.render(immunization.dose_quantity),
-        reactions: Core.ReferenceView.render(immunization.reactions),
-        vaccination_protocols: Core.ReferenceView.render(immunization.vaccination_protocols),
-        explanation: Core.ReferenceView.render(immunization.explanation)
+        site: ReferenceView.render(immunization.site),
+        route: ReferenceView.render(immunization.route),
+        dose_quantity: ReferenceView.render(immunization.dose_quantity),
+        reactions: ReferenceView.render(immunization.reactions),
+        vaccination_protocols: ReferenceView.render(immunization.vaccination_protocols),
+        explanation: ReferenceView.render(immunization.explanation)
       })
-      |> Map.merge(Core.ReferenceView.render_source(immunization.source))
+      |> Map.merge(render_source(immunization.source))
     end)
   end
 
@@ -367,22 +366,32 @@ defmodule Core.Patients.Encounters.Cancel do
       observation
       |> Map.take(~w(primary_source comment)a)
       |> Map.merge(%{
-        id: Core.UUIDView.render(observation._id),
+        id: UUIDView.render(observation._id),
         issued: DateView.render_datetime(observation.issued),
-        based_on: Core.ReferenceView.render(observation.based_on),
-        method: Core.ReferenceView.render(observation.method),
-        categories: Core.ReferenceView.render(observation.categories),
-        context: Core.ReferenceView.render(observation.context),
-        interpretation: Core.ReferenceView.render(observation.interpretation),
-        code: Core.ReferenceView.render(observation.code),
-        body_site: Core.ReferenceView.render(observation.body_site),
-        reference_ranges: Core.ReferenceView.render(observation.reference_ranges),
-        components: Core.ReferenceView.render(observation.components)
+        based_on: ReferenceView.render(observation.based_on),
+        method: ReferenceView.render(observation.method),
+        categories: ReferenceView.render(observation.categories),
+        context: ReferenceView.render(observation.context),
+        interpretation: ReferenceView.render(observation.interpretation),
+        code: ReferenceView.render(observation.code),
+        body_site: ReferenceView.render(observation.body_site),
+        reference_ranges: ReferenceView.render(observation.reference_ranges),
+        components: ReferenceView.render(observation.components)
       })
-      |> Map.merge(Core.ReferenceView.render_effective_at(observation.effective_at))
-      |> Map.merge(Core.ReferenceView.render_source(observation.source))
-      |> Map.merge(Core.ReferenceView.render_value(observation.value))
+      |> Map.merge(ReferenceView.render_effective_at(observation.effective_at))
+      |> Map.merge(render_source(observation.source))
+      |> Map.merge(ReferenceView.render_value(observation.value))
     end)
+  end
+
+  def render(%Core.Reference{} = reference), do: %{identifier: ReferenceView.render(reference.identifier)}
+  def render(value), do: value
+
+  def render_source(%Core.Source{type: "performer", value: value}), do: %{performer: render(value)}
+  def render_source(%Core.Source{type: "asserter", value: value}), do: %{asserter: render(value)}
+
+  def render_source(%Core.Source{type: type, value: value}) do
+    %{String.to_atom(type) => ReferenceView.render(value)}
   end
 
   defp wrap_ok(value), do: {:ok, value}
