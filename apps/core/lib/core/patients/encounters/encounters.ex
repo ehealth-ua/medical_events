@@ -142,6 +142,7 @@ defmodule Core.Patients.Encounters do
     end
   end
 
+  defp add_search_param(nil, _, _, _), do: []
   defp add_search_param(pipeline, nil, _, _) when is_list(pipeline), do: pipeline
 
   defp add_search_param(pipeline, value, path, operator) when is_list(pipeline) do
@@ -160,6 +161,4 @@ defmodule Core.Patients.Encounters do
         }
       ]
   end
-
-  defp add_search_param(_, _, _, _), do: []
 end

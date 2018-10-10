@@ -32,16 +32,19 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       episode = build(:episode)
 
       encounter =
-        build(:encounter,
+        build(
+          :encounter,
           explanatory_letter: @explanatory_letter,
           episode:
-            build(:reference,
+            build(
+              :reference,
               identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
             )
         )
 
       context =
-        build(:reference,
+        build(
+          :reference,
           identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
         )
 
@@ -79,7 +82,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       )
 
       condition =
-        insert(:condition,
+        insert(
+          :condition,
           patient_id: patient_id_hash,
           context: context,
           verification_status: @entered_in_error
@@ -200,24 +204,29 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
 
       diagnosis =
-        build(:diagnosis,
+        build(
+          :diagnosis,
           condition:
-            build(:reference,
+            build(
+              :reference,
               identifier: build(:identifier, value: condition_uuid, type: codeable_concept_coding(code: "condition"))
             )
         )
 
       encounter =
-        build(:encounter,
+        build(
+          :encounter,
           diagnoses: [diagnosis],
           episode:
-            build(:reference,
+            build(
+              :reference,
               identifier: build(:identifier, value: episode.id, type: codeable_concept_coding(code: "episode"))
             )
         )
 
       context =
-        build(:reference,
+        build(
+          :reference,
           identifier: build(:identifier, value: encounter.id, type: codeable_concept_coding(code: "encounter"))
         )
 
@@ -232,7 +241,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       )
 
       condition =
-        insert(:condition,
+        insert(
+          :condition,
           _id: condition_uuid,
           patient_id: patient_id_hash,
           context: context,
@@ -281,7 +291,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       encounter_uuid = Mongo.string_to_uuid(encounter_id)
 
       episode =
-        build(:episode,
+        build(
+          :episode,
           diagnoses_history:
             build_list(1, :diagnoses_history, is_active: true, evidence: reference_coding(encounter_uuid, []))
         )
@@ -289,7 +300,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
 
       encounter =
-        build(:encounter,
+        build(
+          :encounter,
           id: encounter_uuid,
           episode: reference_coding(episode.id, code: "episode"),
           diagnoses: build_list(1, :diagnosis, condition: reference_coding(condition_uuid, code: "condition"))
@@ -301,7 +313,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       patient =
-        insert(:patient,
+        insert(
+          :patient,
           _id: patient_id_hash,
           episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
           encounters: %{encounter_id => encounter}

@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "report_origin": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/report_origins",
+                  "eHealth/information_sources"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              },
+              "display": {
+                "type": "string",
+                "description": "Representation defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "allergy_intolerance": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "clinical_status": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dictionary: TBD"
+        },
+        "verification_status": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dictionary: TBD"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criticality": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "description": "should be filled one of: condition or condition_id"
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/allergy_intolerances_codes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
+        },
+        "onset_date_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "asserter": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "$ref": "#/definitions/identifier"
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "last_occurrence": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "allOf": [
+        {
+          "required": [
+            "id",
+            "clinical_status",
+            "verification_status",
+            "type",
+            "category",
+            "criticality",
+            "context",
+            "code",
+            "onset_date_time",
+            "asserted_date",
+            "primary_source"
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "report_origin"
+              ]
+            },
+            {
+              "required": [
+                "asserter"
+              ]
+            }
+          ]
+        }
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/allergy_intolerance"
+      }
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "additionalProperties": false
+}

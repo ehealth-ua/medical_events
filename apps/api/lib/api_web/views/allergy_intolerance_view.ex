@@ -7,6 +7,10 @@ defmodule Api.Web.AllergyIntoleranceView do
   alias Core.ReferenceView
   alias Core.UUIDView
 
+  def render("index.json", %{allergy_intolerances: allergy_intolerances}) do
+    render_many(allergy_intolerances, __MODULE__, "show.json", as: :allergy_intolerance)
+  end
+
   def render("show.json", %{allergy_intolerance: allergy_intolerance}) do
     allergy_intolerance_fields = ~w(
       verification_status

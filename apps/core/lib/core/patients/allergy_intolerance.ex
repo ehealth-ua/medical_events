@@ -4,7 +4,6 @@ defmodule Core.AllergyIntolerance do
   use Core.Schema
 
   alias Core.CodeableConcept
-  alias Core.Maybe
   alias Core.Reference
   alias Core.Source
 
@@ -54,13 +53,13 @@ defmodule Core.AllergyIntolerance do
           {:code, CodeableConcept.create(v)}
 
         {"onset_date_time", v} ->
-          {:onset_date_time, Maybe.map(v, &create_datetime(&1))}
+          {:onset_date_time, create_datetime(v)}
 
         {"asserted_date", v} ->
-          {:asserted_date, Maybe.map(v, &create_datetime(&1))}
+          {:asserted_date, create_datetime(v)}
 
         {"last_occurrence", v} ->
-          {:last_occurrence, Maybe.map(v, &create_datetime(&1))}
+          {:last_occurrence, create_datetime(v)}
 
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}

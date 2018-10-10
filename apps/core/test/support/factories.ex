@@ -64,6 +64,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), immunization}
       end)
 
+    allergy_intolerances = build_list(2, :allergy_intolerance)
+
+    allergy_intolerances =
+      Enum.into(allergy_intolerances, %{}, fn %{id: %BSON.Binary{binary: id}} = allergy_intolerance ->
+        {UUID.binary_to_string!(id), allergy_intolerance}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -74,7 +81,7 @@ defmodule Core.Factories do
       episodes: episodes,
       encounters: encounters,
       immunizations: immunizations,
-      allergy_intolerances: %{},
+      allergy_intolerances: allergy_intolerances,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: user_id,

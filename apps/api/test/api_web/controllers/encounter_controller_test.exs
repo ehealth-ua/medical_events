@@ -347,6 +347,8 @@ defmodule Api.Web.EncounterControllerTest do
           |> Base.encode64()
       }
 
+      expect_get_person_data(patient_id)
+
       assert conn
              |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(202)
@@ -368,6 +370,8 @@ defmodule Api.Web.EncounterControllerTest do
           |> Jason.encode!()
           |> Base.encode64()
       }
+
+      expect_get_person_data(patient_id)
 
       assert conn
              |> patch(encounter_path(conn, :cancel, patient_id), request_data)

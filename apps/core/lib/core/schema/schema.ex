@@ -11,9 +11,19 @@ defmodule Core.Schema do
       def create_datetime(%DateTime{} = value), do: value
 
       def create_datetime(value) when is_binary(value) do
-        {:ok, datetime, _} = DateTime.from_iso8601(value)
+        case DateTime.from_iso8601(value) do
+          {:ok, datetime, _} ->
+            DateTime.truncate(datetime, :millisecond)
 
-        DateTime.truncate(datetime, :millisecond)
+          _ ->
+            case Date.from_iso8601(value) do
+              {:ok, date} ->
+                {Date.to_erl(date), {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+
+              _ ->
+                nil
+            end
+        end
       end
     end
   end
