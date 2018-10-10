@@ -243,7 +243,7 @@ defmodule Core.Patients.Encounters.Cancel do
       :ok
     else
       # todo: remove after test
-      if Mix.env() == :prod do
+      if Mix.env() != :test do
         IO.puts("encounter package from db: #{inspect(package1)}")
         IO.puts("encounter package from request: #{inspect(package2)}")
       end
