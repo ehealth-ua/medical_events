@@ -332,8 +332,6 @@ defmodule Api.Web.EncounterControllerTest do
         )
 
       observation = insert(:observation, patient_id: patient_id_hash, context: context)
-
-      expect_get_person_data(patient_id)
       expect_signature()
 
       request_data = %{
@@ -363,7 +361,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       request_data = %{
         "signed_data" =>

@@ -60,7 +60,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       allergy_intolerance = build(:allergy_intolerance, context: context, verification_status: @entered_in_error)
       allergy_intolerance_id = UUID.binary_to_string!(allergy_intolerance.id.binary)
-      allergy_intolerance2 = build(:allergy_intolerance)
+      allergy_intolerance2 = build(:allergy_intolerance, context: context)
       allergy_intolerance2_id = UUID.binary_to_string!(allergy_intolerance2.id.binary)
 
       patient_id = UUID.uuid4()

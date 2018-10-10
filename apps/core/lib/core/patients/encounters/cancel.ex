@@ -4,7 +4,6 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Conditions
   alias Core.DateView
   alias Core.Encounter
-  alias Core.Maybe
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
@@ -21,9 +20,9 @@ defmodule Core.Patients.Encounters.Cancel do
   @entered_in_error "entered_in_error"
 
   @entities_meta %{
-    "conditions" => [status: "verification_status"],
     "allergy_intolerances" => [status: "verification_status"],
     "immunizations" => [status: "status"],
+    "conditions" => [status: "verification_status"],
     "observations" => [status: "status"]
   }
 
@@ -32,11 +31,9 @@ defmodule Core.Patients.Encounters.Cancel do
   Package entities except `encounter` are MapSet's to ignore position in list
   """
   def validate_cancellation(decoded_content, %Encounter{} = encounter, patient_id_hash) do
-    entities_to_load = get_entities_to_load(decoded_content)
+    encounter_request_package = create_encounter_package_from_request(decoded_content)
 
-    encounter_request_package = create_encounter_package_from_request(decoded_content, entities_to_load)
-
-    with {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, entities_to_load),
+    with {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
       :ok
@@ -58,8 +55,8 @@ defmodule Core.Patients.Encounters.Cancel do
       [status: status_field] = @entities_meta[key]
 
       entities_id =
-        package_data[key]
-        |> Maybe.map(& &1, [])
+        package_data
+        |> Map.get(key, [])
         |> get_in([Access.filter(&(&1[status_field] == @entered_in_error)), "id"])
 
       {key, entities_id}
@@ -110,80 +107,82 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp update_patient_entities(patient, user_id, %{"encounter" => encounter}, entities_data) do
     user_uuid = Mongo.string_to_uuid(user_id)
+    update_data = %{"updated_by" => user_uuid, "updated_at" => DateTime.utc_now()}
 
-    updated_patient =
-      patient
+    update_patient_data =
+      update_data
       |> update_allergies_immunizations(user_uuid, entities_data)
-      |> update_diagnoses(encounter)
+      |> update_diagnoses(patient, encounter)
       |> update_encounter(user_uuid, encounter)
 
-    with {:ok, _} <- Mongo.replace_one(@patient_collection, %{"_id" => patient["_id"]}, updated_patient) do
+    with {:ok, _} <- Mongo.update_one(@patient_collection, %{"_id" => patient["_id"]}, %{"$set" => update_patient_data}) do
       :ok
     end
   end
 
-  defp update_allergies_immunizations(patient_data, user_uuid, entities_data) do
-    entities_data
-    |> Map.take(["allergy_intolerances", "immunizations"])
-    |> Enum.reduce(patient_data, fn {key, entities_id}, patient_acc ->
-      status_field = @entities_meta[key][:status]
+  defp update_allergies_immunizations(update_data, user_uuid, entities_data) do
+    entities_data = Map.take(entities_data, ["allergy_intolerances", "immunizations"])
 
-      Enum.reduce(entities_id, patient_acc, fn id, patient_nested_acc ->
-        update_in(
-          patient_nested_acc,
-          [key, id],
-          &Map.merge(&1, %{
-            status_field => @entered_in_error,
-            "updated_by" => user_uuid,
-            "updated_at" => DateTime.utc_now()
-          })
-        )
-      end)
-    end)
+    for {entity_key, entities_ids} <- entities_data, id <- entities_ids do
+      status_field = @entities_meta[entity_key][:status]
+      add_path = &("#{entity_key}.#{id}." <> &1)
+
+      %{
+        add_path.(status_field) => @entered_in_error,
+        add_path.("updated_by") => user_uuid,
+        add_path.("updated_at") => DateTime.utc_now()
+      }
+    end
+    |> Enum.reduce(update_data, fn change, acc -> Map.merge(acc, change) end)
   end
 
-  defp update_diagnoses(patient_data, %{"status" => @entered_in_error}), do: patient_data
+  defp update_diagnoses(update_data, _patient, %{"status" => @entered_in_error}), do: update_data
 
-  defp update_diagnoses(patient_data, encounter) do
+  defp update_diagnoses(update_data, patient, encounter) do
     encounter_uuid = Mongo.string_to_uuid(encounter["id"])
     episode_path = ["encounters", encounter["id"], "episode", "identifier", "value"]
 
-    with %BSON.Binary{} = episode_uuid <- get_in(patient_data, episode_path) do
-      update_in(
-        patient_data,
-        [
-          "episodes",
-          UUID.binary_to_string!(episode_uuid.binary),
-          "diagnoses_history",
-          Access.filter(&(&1["evidence"]["identifier"]["value"] == encounter_uuid))
-        ],
-        &Map.put(&1, "is_active", false)
-      )
+    with %BSON.Binary{} = episode_uuid <- get_in(patient, episode_path) do
+      episode_id = UUID.binary_to_string!(episode_uuid.binary)
+      diagnoses_history = patient["episodes"][episode_id]["diagnoses_history"]
+
+      updated_diagnoses_history =
+        Enum.map(diagnoses_history, fn diagnos ->
+          if diagnos["evidence"]["identifier"]["value"] == encounter_uuid do
+            %{diagnos | "is_active" => false}
+          else
+            diagnos
+          end
+        end)
+
+      Map.merge(update_data, %{"episodes.#{episode_id}.diagnoses_history" => updated_diagnoses_history})
     else
-      _ -> patient_data
+      _ -> update_data
     end
   end
 
-  defp update_encounter(patient_data, user_uuid, encounter) do
-    update_data = %{
-      "cancellation_reason" => encounter["cancellation_reason"],
-      "explanatory_letter" => encounter["explanatory_letter"],
-      "updated_by" => user_uuid,
-      "updated_at" => DateTime.utc_now()
+  defp update_encounter(update_data, user_uuid, %{"id" => encounter_id} = encounter) do
+    add_path = &("encounters.#{encounter_id}." <> &1)
+
+    encounter_update_data = %{
+      add_path.("cancellation_reason") => encounter["cancellation_reason"],
+      add_path.("explanatory_letter") => encounter["explanatory_letter"],
+      add_path.("updated_by") => user_uuid,
+      add_path.("updated_at") => DateTime.utc_now()
     }
 
-    update_data =
+    encounter_update_data =
       if encounter["status"] == @entered_in_error do
-        Map.merge(update_data, %{"status" => @entered_in_error})
+        Map.merge(encounter_update_data, %{add_path.("status") => @entered_in_error})
       else
-        update_data
+        encounter_update_data
       end
 
-    update_in(patient_data, ["encounters", encounter["id"]], &Map.merge(&1, update_data))
+    Map.merge(update_data, encounter_update_data)
   end
 
   defp get_entities_to_load(decoded_content) do
-    available_entities = ["conditions", "allergy_intolerances", "immunizations", "observations"]
+    available_entities = Map.keys(@entities_meta)
 
     decoded_content
     |> Map.delete("encounter")
@@ -191,20 +190,23 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(&1 in available_entities))
   end
 
-  defp create_encounter_package(%Encounter{id: encounter_uuid} = encounter, patient_id_hash, entities_to_load) do
-    entities_to_load
-    |> Enum.reduce(%{}, fn entity_key, acc ->
+  defp create_encounter_package(%Encounter{id: encounter_uuid} = encounter, patient_id_hash, decoded_content) do
+    decoded_content
+    |> filter_entities_to_compare()
+    |> Enum.reduce(%{}, fn {entity_key, entity_ids}, acc ->
       entity_key_atom = String.to_atom(entity_key)
-      entities = get_entities(entity_key, patient_id_hash, encounter_uuid)
-      entities = entity_key_atom |> filter(entities) |> MapSet.new()
+      entities = get_entities(entity_key, entity_ids, patient_id_hash, encounter_uuid)
+      entities = entity_key_atom |> render(entities) |> MapSet.new()
 
       Map.put(acc, entity_key_atom, entities)
     end)
-    |> Map.put(:encounter, filter(:encounter, encounter))
+    |> Map.put(:encounter, render(:encounter, encounter))
     |> wrap_ok()
   end
 
-  defp create_encounter_package_from_request(decoded_content, entities_to_load) do
+  defp create_encounter_package_from_request(decoded_content) do
+    entities_to_load = get_entities_to_load(decoded_content)
+
     entity_creators = %{
       "conditions" => &Core.Condition.create/1,
       "allergy_intolerances" => &Core.AllergyIntolerance.create/1,
@@ -216,14 +218,24 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.reduce(%{}, fn entity_key, acc ->
       entity_key_atom = String.to_atom(entity_key)
       entities = Enum.map(decoded_content[entity_key], &entity_creators[entity_key].(&1))
-      entities = entity_key_atom |> filter(entities) |> MapSet.new()
+      entities = entity_key_atom |> render(entities) |> MapSet.new()
 
       Map.put(acc, entity_key_atom, entities)
     end)
     |> Map.put(
       :encounter,
-      filter(:encounter, Core.Encounter.create(decoded_content["encounter"]))
+      render(:encounter, Core.Encounter.create(decoded_content["encounter"]))
     )
+  end
+
+  defp filter_entities_to_compare(package_data) do
+    @entities_meta
+    |> Map.keys()
+    |> Enum.map(fn entity_key ->
+      entities_ids = Enum.map(package_data[entity_key] || [], & &1["id"])
+      {entity_key, entities_ids}
+    end)
+    |> Enum.reject(fn {_key, entities} -> entities == [] end)
   end
 
   defp validate_enounter_packages(package1, package2) do
@@ -231,8 +243,10 @@ defmodule Core.Patients.Encounters.Cancel do
       :ok
     else
       # todo: remove after test
-      IO.puts("encounter package from db: #{inspect(package1)}")
-      IO.puts("encounter package from request: #{inspect(package2)}")
+      if Mix.env() == :prod do
+        IO.puts("encounter package from db: #{inspect(package1)}")
+        IO.puts("encounter package from request: #{inspect(package2)}")
+      end
 
       {:ok, %{"error" => "Submitted signed content does not correspond to previously created content"}, 409}
     end
@@ -271,19 +285,31 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp validate_conditions(_), do: :ok
 
-  defp get_entities("conditions", patient_id_hash, encounter_uuid),
-    do: Conditions.get_by_encounter_id(patient_id_hash, encounter_uuid)
+  defp get_entities("allergy_intolerances", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> AllergyIntolerances.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
+  end
 
-  defp get_entities("allergy_intolerances", patient_id_hash, encounter_uuid),
-    do: AllergyIntolerances.get_by_encounter_id(patient_id_hash, encounter_uuid)
+  defp get_entities("immunizations", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> Immunizations.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
+  end
 
-  defp get_entities("immunizations", patient_id_hash, encounter_uuid),
-    do: Immunizations.get_by_encounter_id(patient_id_hash, encounter_uuid)
+  defp get_entities("conditions", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> Conditions.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1._id.binary) in ids))
+  end
 
-  defp get_entities("observations", patient_id_hash, encounter_uuid),
-    do: Observations.get_by_encounter_id(patient_id_hash, encounter_uuid)
+  defp get_entities("observations", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> Observations.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1._id.binary) in ids))
+  end
 
-  defp filter(:encounter, encounter) do
+  defp render(:encounter, encounter) do
     %{
       id: UUIDView.render(encounter.id),
       date: DateView.render_date(encounter.date),
@@ -300,25 +326,7 @@ defmodule Core.Patients.Encounters.Cancel do
     }
   end
 
-  defp filter(:conditions, conditions) do
-    Enum.map(conditions, fn condition ->
-      %{
-        id: UUIDView.render(condition._id),
-        primary_source: condition.primary_source,
-        context: ReferenceView.render(condition.context),
-        code: ReferenceView.render(condition.code),
-        severity: ReferenceView.render(condition.severity),
-        body_sites: ReferenceView.render(condition.body_sites),
-        stage: ReferenceView.render(condition.stage),
-        evidences: ReferenceView.render(condition.evidences),
-        asserted_date: DateView.render_date(condition.asserted_date),
-        onset_date: DateView.render_date(condition.onset_date)
-      }
-      |> Map.merge(render_source(condition.source))
-    end)
-  end
-
-  defp filter(:allergy_intolerances, allergy_intolerances) do
+  defp render(:allergy_intolerances, allergy_intolerances) do
     Enum.map(allergy_intolerances, fn allergy_intolerance ->
       allergy_intolerance
       |> Map.take(~w(type category criticality primary_source)a)
@@ -334,7 +342,7 @@ defmodule Core.Patients.Encounters.Cancel do
     end)
   end
 
-  defp filter(:immunizations, immunizations) do
+  defp render(:immunizations, immunizations) do
     Enum.map(immunizations, fn immunization ->
       immunization
       |> Map.take(~w(
@@ -361,7 +369,25 @@ defmodule Core.Patients.Encounters.Cancel do
     end)
   end
 
-  defp filter(:observations, observations) do
+  defp render(:conditions, conditions) do
+    Enum.map(conditions, fn condition ->
+      %{
+        id: UUIDView.render(condition._id),
+        primary_source: condition.primary_source,
+        context: ReferenceView.render(condition.context),
+        code: ReferenceView.render(condition.code),
+        severity: ReferenceView.render(condition.severity),
+        body_sites: ReferenceView.render(condition.body_sites),
+        stage: ReferenceView.render(condition.stage),
+        evidences: ReferenceView.render(condition.evidences),
+        asserted_date: DateView.render_date(condition.asserted_date),
+        onset_date: DateView.render_date(condition.onset_date)
+      }
+      |> Map.merge(render_source(condition.source))
+    end)
+  end
+
+  defp render(:observations, observations) do
     Enum.map(observations, fn observation ->
       observation
       |> Map.take(~w(primary_source comment)a)

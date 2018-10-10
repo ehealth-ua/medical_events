@@ -38,13 +38,12 @@ defmodule ApiWeb.Router do
 
       get("/patients/:patient_id/immunizations", ImmunizationController, :index)
       get("/patients/:patient_id/immunizations/:id", ImmunizationController, :show)
-
-      patch("/patients/:patient_id/encounter_package", EncounterController, :cancel)
     end
 
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)
     patch("/patients/:patient_id/episodes/:id/actions/close", EpisodeController, :close)
     patch("/patients/:patient_id/episodes/:id/actions/cancel", EpisodeController, :cancel)
+    patch("/patients/:patient_id/encounter_package", EncounterController, :cancel)
 
     get("/jobs/:id", JobController, :show)
   end
