@@ -7,7 +7,8 @@ config :core,
   microservices: [
     il: IlMock,
     digital_signature: DigitalSignatureMock,
-    casher: CasherMock
+    casher: CasherMock,
+    media_storage: MediaStorageMock
   ],
   cache: [
     validators: Core.Validators.CacheTest
