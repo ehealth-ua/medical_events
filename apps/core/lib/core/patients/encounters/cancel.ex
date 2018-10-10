@@ -355,9 +355,9 @@ defmodule Core.Patients.Encounters.Cancel do
         id: UUIDView.render(immunization.id),
         vaccine_code: ReferenceView.render(immunization.vaccine_code),
         context: ReferenceView.render(immunization.context),
-        date: DateView.render_date(immunization.date),
+        date: DateView.render_datetime(immunization.date),
         legal_entity: ReferenceView.render(immunization.legal_entity),
-        expiration_date: DateView.render_date(immunization.expiration_date),
+        expiration_date: DateView.render_datetime(immunization.expiration_date),
         site: ReferenceView.render(immunization.site),
         route: ReferenceView.render(immunization.route),
         dose_quantity: ReferenceView.render(immunization.dose_quantity),
@@ -381,7 +381,7 @@ defmodule Core.Patients.Encounters.Cancel do
         stage: ReferenceView.render(condition.stage),
         evidences: ReferenceView.render(condition.evidences),
         asserted_date: DateView.render_date(condition.asserted_date),
-        onset_date: DateView.render_date(condition.onset_date)
+        onset_date: DateView.render_datetime(condition.onset_date)
       }
       |> Map.merge(render_source(condition.source))
     end)

@@ -45,7 +45,7 @@ defmodule Core.Condition do
           {:stage, Maybe.map(v, &Stage.create/1)}
 
         {"onset_date", v} ->
-          {:onset_date, Maybe.map(v, &create_date/1)}
+          {:onset_date, Maybe.map(v, &create_datetime/1)}
 
         {"body_sites", nil} ->
           {:body_sites, nil}
@@ -66,7 +66,7 @@ defmodule Core.Condition do
           {:source, Source.create(type, value)}
 
         {"asserted_date", v} ->
-          {:asserted_date, Maybe.map(v, &create_date/1)}
+          {:asserted_date, Maybe.map(v, &create_datetime/1)}
 
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
@@ -81,18 +81,5 @@ defmodule Core.Condition do
           {String.to_atom(k), v}
       end)
     )
-  end
-
-  defp create_date(%DateTime{} = date), do: date
-
-  defp create_date(date) when is_binary(date) do
-    erl_date =
-      date
-      |> Date.from_iso8601!()
-      |> Date.to_erl()
-
-    {erl_date, {0, 0, 0}}
-    |> NaiveDateTime.from_erl!()
-    |> DateTime.from_naive!("Etc/UTC")
   end
 end

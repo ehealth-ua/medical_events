@@ -21,9 +21,9 @@ defmodule Api.Web.AllergyIntoleranceView do
       id: UUIDView.render(allergy_intolerance.id),
       context: ReferenceView.render(allergy_intolerance.context),
       code: ReferenceView.render(allergy_intolerance.code),
-      onset_date_time: DateView.render_date(allergy_intolerance.onset_date_time),
-      asserted_date: DateView.render_date(allergy_intolerance.asserted_date),
-      last_occurrence: DateView.render_date(allergy_intolerance.last_occurrence)
+      onset_date_time: DateView.render_datetime(allergy_intolerance.onset_date_time),
+      asserted_date: DateView.render_datetime(allergy_intolerance.asserted_date),
+      last_occurrence: DateView.render_datetime(allergy_intolerance.last_occurrence)
     }
 
     allergy_intolerance

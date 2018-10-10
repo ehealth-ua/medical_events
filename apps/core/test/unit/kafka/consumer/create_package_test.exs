@@ -304,7 +304,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
-            "onset_date" => Date.to_iso8601(Date.utc_today()),
+            "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
             "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/severity"}]},
             "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
             "stage" => %{
@@ -469,7 +469,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "primary_source" => true,
-            "date" => to_string(Date.utc_today()),
+            "date" => DateTime.to_iso8601(DateTime.utc_now()),
             "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{
@@ -491,7 +491,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "reactions" => [
               %{
-                "date" => Date.utc_today(),
+                "date" => DateTime.utc_now(),
                 "detail" => %{
                   "identifier" => %{
                     "type" => %{

@@ -3,6 +3,7 @@ defmodule Api.Web.ImmunizationView do
 
   use ApiWeb, :view
 
+  alias Core.DateView
   alias Core.ReferenceView
   alias Core.UUIDView
 
@@ -24,9 +25,9 @@ defmodule Api.Web.ImmunizationView do
       id: UUIDView.render(immunization.id),
       vaccine_code: ReferenceView.render(immunization.vaccine_code),
       context: ReferenceView.render(immunization.context),
-      date: Date.to_string(immunization.date),
+      date: DateView.render_datetime(immunization.date),
       legal_entity: ReferenceView.render(immunization.legal_entity),
-      expiration_date: Date.to_string(immunization.expiration_date),
+      expiration_date: DateView.render_datetime(immunization.expiration_date),
       site: ReferenceView.render(immunization.site),
       route: ReferenceView.render(immunization.route),
       dose_quantity: ReferenceView.render(immunization.dose_quantity),

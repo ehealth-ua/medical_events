@@ -320,11 +320,11 @@
         },
         "onset_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "asserted_date": {
           "type": ["string", "null"],
-          "format": "date"
+          "format": "date-time"
         },
         "stage": {
           "type": "object",

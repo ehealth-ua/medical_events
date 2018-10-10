@@ -49,9 +49,8 @@ defmodule Core.Immunization do
         {"context", v} ->
           {:context, Reference.create(v)}
 
-        {"date", v} when is_binary(v) ->
-          date = v |> Date.from_iso8601!() |> Date.to_erl()
-          {:date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+        {"date", v} ->
+          {:date, Maybe.map(v, &create_datetime/1)}
 
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}
@@ -65,9 +64,8 @@ defmodule Core.Immunization do
         {"legal_entity", v} ->
           {:legal_entity, Maybe.map(v, &Reference.create/1)}
 
-        {"expiration_date", v} when is_binary(v) ->
-          date = v |> Date.from_iso8601!() |> Date.to_erl()
-          {:expiration_date, {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")}
+        {"expiration_date", v} ->
+          {:expiration_date, Maybe.map(v, &create_datetime/1)}
 
         {"vaccine_code", v} ->
           {:vaccine_code, CodeableConcept.create(v)}

@@ -4,6 +4,7 @@ defmodule Core.AllergyIntolerance do
   use Core.Schema
 
   alias Core.CodeableConcept
+  alias Core.Maybe
   alias Core.Reference
   alias Core.Source
 
@@ -52,17 +53,14 @@ defmodule Core.AllergyIntolerance do
         {"code", v} ->
           {:code, CodeableConcept.create(v)}
 
-        {"onset_date_time", v} when is_binary(v) ->
-          {:ok, datetime, _} = DateTime.from_iso8601(v)
-          {:onset_date_time, datetime}
+        {"onset_date_time", v} ->
+          {:onset_date_time, Maybe.map(v, &create_datetime(&1))}
 
-        {"asserted_date", v} when is_binary(v) ->
-          {:ok, datetime, _} = DateTime.from_iso8601(v)
-          {:asserted_date, datetime}
+        {"asserted_date", v} ->
+          {:asserted_date, Maybe.map(v, &create_datetime(&1))}
 
-        {"last_occurrence", v} when is_binary(v) ->
-          {:ok, datetime, _} = DateTime.from_iso8601(v)
-          {:last_occurrence, datetime}
+        {"last_occurrence", v} ->
+          {:last_occurrence, Maybe.map(v, &create_datetime(&1))}
 
         {"source", %{"type" => type, "value" => value}} ->
           {:source, Source.create(type, value)}

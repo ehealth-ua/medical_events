@@ -8,11 +8,5 @@ defmodule Core.DateView do
 
   def render_datetime(nil), do: nil
   def render_datetime(date_time) when is_binary(date_time), do: date_time
-
-  def render_datetime(%DateTime{} = date_time) do
-    date_time
-    |> DateTime.truncate(:millisecond)
-    |> to_string()
-    |> String.replace(" ", "T")
-  end
+  def render_datetime(%DateTime{} = date_time), do: DateTime.to_iso8601(date_time)
 end

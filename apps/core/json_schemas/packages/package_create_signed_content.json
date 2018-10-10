@@ -810,7 +810,7 @@
         },
         "asserted_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "context": {
           "type": "object",
@@ -992,7 +992,7 @@
         },
         "onset_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "stage": {
           "type": "object",
@@ -2052,7 +2052,7 @@
         },
         "date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "performer": {
           "$ref": "#/definitions/performer"
@@ -2072,7 +2072,7 @@
         },
         "expiration_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "site": {
           "type": "object",
@@ -2272,7 +2272,7 @@
             "properties": {
               "date": {
                 "type": "string",
-                "format": "date"
+                "format": "date-time"
               },
               "detail": {
                 "type": "object",

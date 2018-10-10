@@ -459,7 +459,7 @@
         },
         "date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "performer": {
           "$ref": "#/definitions/performer"
@@ -479,7 +479,7 @@
         },
         "expiration_date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "site": {
           "type": "object",
@@ -679,7 +679,7 @@
             "properties": {
               "date": {
                 "type": "string",
-                "format": "date"
+                "format": "date-time"
               },
               "detail": {
                 "type": "object",

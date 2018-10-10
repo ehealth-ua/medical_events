@@ -105,7 +105,6 @@ defmodule Core.Factories do
   def allergy_intolerance_factory do
     id = Mongo.string_to_uuid(UUID.uuid4())
     now = DateTime.utc_now()
-    today = DateTime.utc_now()
 
     %AllergyIntolerance{
       id: id,
@@ -116,9 +115,9 @@ defmodule Core.Factories do
       criticality: "low",
       code: codeable_concept_coding(system: "eHealth/allergy_intolerances_codes"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
-      onset_date_time: today,
-      asserted_date: today,
-      last_occurrence: today,
+      onset_date_time: now,
+      asserted_date: now,
+      last_occurrence: now,
       primary_source: true,
       source:
         build(
@@ -134,7 +133,7 @@ defmodule Core.Factories do
   end
 
   def immunization_factory do
-    today = DateTime.utc_now()
+    now = DateTime.utc_now()
 
     %Immunization{
       id: Mongo.string_to_uuid(UUID.uuid4()),
@@ -142,7 +141,7 @@ defmodule Core.Factories do
       not_given: false,
       vaccine_code: codeable_concept_coding(system: "eHealth/vaccines_codes"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
-      date: today,
+      date: now,
       primary_source: true,
       source:
         build(
@@ -152,7 +151,7 @@ defmodule Core.Factories do
         ),
       manufacturer: "VacinePro Manufacturer",
       lot_number: "AAJN11K",
-      expiration_date: today,
+      expiration_date: now,
       legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       site: codeable_concept_coding(system: "eHealth/body_sites", code: "LA"),
       route: codeable_concept_coding(system: "eHealth/vaccination_routes", code: "IM"),
@@ -421,7 +420,6 @@ defmodule Core.Factories do
   def condition_factory do
     patient_id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
-    today = Date.utc_today()
 
     %Condition{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
@@ -431,8 +429,8 @@ defmodule Core.Factories do
       verification_status: "provisional",
       severity: codeable_concept_coding(system: "eHealth/severity"),
       body_sites: [codeable_concept_coding(system: "eHealth/body_sites")],
-      onset_date: today,
-      asserted_date: today,
+      onset_date: DateTime.utc_now(),
+      asserted_date: DateTime.utc_now(),
       stage: build(:stage, summary: codeable_concept_coding(system: "eHealth/condition_stages")),
       evidences: [
         build(

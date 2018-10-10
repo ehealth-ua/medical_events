@@ -26,8 +26,8 @@ defmodule Api.Web.ConditionView do
       code: ReferenceView.render(condition.code),
       context: ReferenceView.render(condition.context),
       evidences: ReferenceView.render(condition.evidences),
-      asserted_date: DateView.render_date(condition.asserted_date),
-      onset_date: DateView.render_date(condition.onset_date)
+      asserted_date: DateView.render_datetime(condition.asserted_date),
+      onset_date: DateView.render_datetime(condition.onset_date)
     }
 
     condition
