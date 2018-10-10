@@ -203,15 +203,18 @@ defmodule Core.Patients do
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content) do
         visit_id = if is_map(visit), do: visit.id
         encounter = Encounters.fill_up_encounter_performer(encounter)
+        resource_name = "#{encounter.id}/create"
+        files = [{'signed_content.txt', job.signed_data}]
+        {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
-        with {:ok, url} <-
+        with {:ok, _url} <-
                @media_storage.save(
                  patient_id,
-                 job.signed_data,
+                 compressed_content,
                  Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:encounter_bucket],
-                 "#{encounter.id}/create"
+                 resource_name
                ) do
-          encounter = %{encounter | signed_content_links: [url]}
+          encounter = %{encounter | signed_content_links: [resource_name]}
 
           set =
             %{"updated_by" => user_id, "updated_at" => now}
