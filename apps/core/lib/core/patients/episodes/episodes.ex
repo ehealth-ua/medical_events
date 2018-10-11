@@ -35,33 +35,104 @@ defmodule Core.Patients.Episodes do
       |> search_condition(params)
       |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
 
-    with %Page{} = paging <- Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do
+    with %Page{} = paging <-
+           Paging.paginate(
+             :aggregate,
+             @collection,
+             pipeline,
+             Map.take(params, ~w(page page_size))
+           ) do
       paging
     end
   end
 
   defp search_condition(pipeline, params) do
     pipeline
-    |> search_period("period_from", Map.get(params, "period_from"))
-    |> search_period("period_to", Map.get(params, "period_to"))
+    |> add_period_criterias(params)
     |> search_code(Map.get(params, "code"))
   end
 
-  defp search_period(pipeline, _, nil), do: pipeline
-
-  defp search_period(pipeline, period, date) do
-    {compare_function, field} = period_compare_function(period)
-
+  defp add_period_criterias(pipeline, %{"period_from" => from, "period_to" => to}) do
     pipeline ++
       [
-        %{"$addFields" => %{period => %{compare_function => [field, date]}}},
-        %{"$match" => %{period => true}},
-        %{"$project" => %{period => 0}}
+        %{
+          "$addFields" => %{
+            "period_match" => %{
+              "$or" => [
+                %{
+                  "$and" => [
+                    %{"$gte" => [to, "$period.start"]},
+                    %{"$lte" => [from, "$period.end"]},
+                    %{"$ne" => ["$period.end", nil]}
+                  ]
+                },
+                %{
+                  "$and" => [
+                    %{"$gte" => [to, "$period.start"]},
+                    %{"$eq" => ["$period.end", nil]}
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        %{"$match" => %{"period_match" => true}},
+        %{"$project" => %{"period_match" => 0}}
       ]
   end
 
-  defp period_compare_function("period_from"), do: {"$gte", "$period.start"}
-  defp period_compare_function("period_to"), do: {"$lte", "$period.end"}
+  defp add_period_criterias(pipeline, %{"period_from" => from}) do
+    pipeline ++
+      [
+        %{
+          "$addFields" => %{
+            "period_match" => %{
+              "$or" => [
+                %{
+                  "$and" => [
+                    %{"$lte" => [from, "$period.end"]},
+                    %{"$ne" => ["$period.end", nil]}
+                  ]
+                },
+                %{"$eq" => ["$period.end", nil]}
+              ]
+            }
+          }
+        },
+        %{"$match" => %{"period_match" => true}},
+        %{"$project" => %{"period_match" => 0}}
+      ]
+  end
+
+  defp add_period_criterias(pipeline, %{"period_to" => to}) do
+    pipeline ++
+      [
+        %{
+          "$addFields" => %{
+            "period_match" => %{
+              "$or" => [
+                %{
+                  "$and" => [
+                    %{"$gte" => [to, "$period.start"]},
+                    %{"$ne" => ["$period.end", nil]}
+                  ]
+                },
+                %{
+                  "$and" => [
+                    %{"$gte" => [to, "$period.start"]},
+                    %{"$eq" => ["$period.end", nil]}
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        %{"$match" => %{"period_match" => true}},
+        %{"$project" => %{"period_match" => 0}}
+      ]
+  end
+
+  defp add_period_criterias(pipeline, _), do: pipeline
 
   defp search_code(pipeline, nil), do: pipeline
 
@@ -78,7 +149,13 @@ defmodule Core.Patients.Episodes do
       second_name = get_in(employee, ["party", "second_name"])
       last_name = get_in(employee, ["party", "last_name"])
 
-      %{episode | care_manager: %{care_manager | display_value: "#{first_name} #{second_name} #{last_name}"}}
+      %{
+        episode
+        | care_manager: %{
+            care_manager
+            | display_value: "#{first_name} #{second_name} #{last_name}"
+          }
+      }
     else
       _ ->
         Logger.warn("Failed to fill up employee value for episode")
@@ -88,7 +165,13 @@ defmodule Core.Patients.Episodes do
 
   def fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode) do
     with [{_, legal_entity}] <- :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
-      %{episode | managing_organization: %{managing_organization | display_value: Map.get(legal_entity, "public_name")}}
+      %{
+        episode
+        | managing_organization: %{
+            managing_organization
+            | display_value: Map.get(legal_entity, "public_name")
+          }
+      }
     else
       _ ->
         Logger.warn("Failed to fill up legal_entity value for episode")
