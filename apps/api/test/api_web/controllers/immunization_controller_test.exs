@@ -193,6 +193,14 @@ defmodule Api.Web.ImmunizationControllerTest do
       |> assert_json_schema("immunizations/immunization_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
@@ -204,8 +212,7 @@ defmodule Api.Web.ImmunizationControllerTest do
       encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
       encounter_out = build(:encounter)
 
-      encounter_id = UUID.binary_to_string!(encounter_in.id.binary)
-      context = build_encounter_context(Mongo.string_to_uuid(encounter_id))
+      context = build_encounter_context(encounter_in.id)
       immunization_in = build(:immunization, context: context)
       immunization_out = build(:immunization)
 
@@ -243,6 +250,14 @@ defmodule Api.Web.ImmunizationControllerTest do
       |> assert_json_schema("immunizations/immunization_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -409,6 +424,142 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_1
+    end
+
+    test "empty search list when episode_id not found in encounters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      episode_in = build(:episode)
+      episode_out = build(:episode)
+
+      encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
+      encounter_out = build(:encounter)
+
+      context = build_encounter_context(encounter_in.id.binary)
+      immunization_in = build(:immunization, context: context)
+      immunization_out = build(:immunization)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          UUID.binary_to_string!(episode_in.id.binary) => episode_in,
+          UUID.binary_to_string!(episode_out.id.binary) => episode_out
+        },
+        encounters: %{
+          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
+          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+        },
+        immunizations: %{
+          UUID.binary_to_string!(immunization_in.id.binary) => immunization_in,
+          UUID.binary_to_string!(immunization_out.id.binary) => immunization_out
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      search_params = %{"episode_id" => UUID.uuid4()}
+
+      resp =
+        conn
+        |> get(immunization_path(conn, :index, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("immunizations/immunization_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+
+    test "invalid search params", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      search_params = %{
+        "encounter_id" => "test",
+        "vaccine_code" => 12345,
+        "episode_id" => "test",
+        "date_from" => "2018-02-31",
+        "date_to" => "2018-8-t"
+      }
+
+      resp =
+        conn
+        |> get(immunization_path(conn, :index, patient_id), search_params)
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.date_from",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "expected \"2018-02-31\" to be an existing date",
+                       "params" => [],
+                       "rule" => "date"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.date_to",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "expected \"2018-8-t\" to be a valid ISO 8601 date",
+                       "params" => [
+                         "~r/^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))?)?$/"
+                       ],
+                       "rule" => "date"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.encounter_id",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" =>
+                         "string does not match pattern \"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$\"",
+                       "params" => ["^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"],
+                       "rule" => "format"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.episode_id",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" =>
+                         "string does not match pattern \"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$\"",
+                       "params" => ["^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"],
+                       "rule" => "format"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.vaccine_code",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "type mismatch. Expected String but got Integer",
+                       "params" => ["string"],
+                       "rule" => "cast"
+                     }
+                   ]
+                 }
+               ]
+             } = resp["error"]
     end
 
     test "invalid patient uuid", %{conn: conn} do

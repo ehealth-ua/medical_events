@@ -17,6 +17,7 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:episode_cancel, "json_schemas/episodes/episode_cancel.json")
   use_schema(:episode_get, "json_schemas/episodes/episode_get.json")
   use_schema(:allergy_intolerance_request, "json_schemas/allergy_intolerances/allergy_intolerance_request.json")
+  use_schema(:immunization_request, "json_schemas/immunizations/immunization_request.json")
 
   def validate(schema, attrs, errors_limit \\ nil) do
     result =

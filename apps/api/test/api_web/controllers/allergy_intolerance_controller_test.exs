@@ -93,10 +93,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
     test "successful search", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -117,10 +113,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "successful search with search parameters: encounter_id", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -164,10 +156,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "successful search with search parameters: code", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -216,10 +204,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       episode_in = build(:episode)
       episode_out = build(:episode)
@@ -277,10 +261,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "successful search with search parameters: date", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 4, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -341,10 +321,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "successful search with search parameters: complex test", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 3, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -463,10 +439,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       episode_in = build(:episode)
       episode_out = build(:episode)
 
@@ -515,10 +487,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "invalid search params", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -616,10 +584,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
     test "get patient when no allergy intolerances", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -640,10 +604,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
     test "get patient when allergy intolerances list is null", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)

@@ -140,10 +140,15 @@ defmodule Core.Factories do
   end
 
   def immunization_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
     now = DateTime.utc_now()
 
     %Immunization{
-      id: Mongo.string_to_uuid(UUID.uuid4()),
+      id: id,
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id,
       status: Immunization.status(:completed),
       not_given: false,
       vaccine_code: codeable_concept_coding(system: "eHealth/vaccines_codes"),

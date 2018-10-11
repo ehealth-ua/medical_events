@@ -25,10 +25,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     setup do
       expect_signature()
 
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       episode = build(:episode)
 
       encounter =
@@ -279,10 +275,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "diagnosis deactivated" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       expect_signature()
       job = insert(:job)

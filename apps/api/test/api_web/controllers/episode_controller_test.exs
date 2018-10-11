@@ -16,20 +16,12 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "create episode" do
     test "patient not found", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       conn = post(conn, episode_path(conn, :create, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
     test "patient is not active", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -42,11 +34,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "json schema validation failed", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -60,11 +47,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "success create episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -118,20 +100,12 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "update episode" do
     test "patient not found", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       conn = patch(conn, episode_path(conn, :update, UUID.uuid4(), UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
     test "episode not found", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -145,10 +119,6 @@ defmodule Api.Web.EpisodeControllerTest do
     test "patient is not active", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -160,11 +130,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "json schema validation failed", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      stub(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -179,11 +144,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "success update episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -234,20 +194,12 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "close episode" do
     test "patient not found", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       conn = patch(conn, episode_path(conn, :close, UUID.uuid4(), UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
     test "episode not found", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -261,10 +213,6 @@ defmodule Api.Web.EpisodeControllerTest do
     test "patient is not active", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -276,11 +224,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "json schema validation failed", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      stub(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -295,15 +238,11 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "success close episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
+      expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
       patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
@@ -340,20 +279,12 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "cancel episode" do
     test "patient not found", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       conn = patch(conn, episode_path(conn, :cancel, UUID.uuid4(), UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
     test "episode not found", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -367,10 +298,6 @@ defmodule Api.Web.EpisodeControllerTest do
     test "patient is not active", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -382,11 +309,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "json schema validation failed", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      stub(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -401,11 +323,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
     test "success cancel episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -507,14 +424,6 @@ defmodule Api.Web.EpisodeControllerTest do
   end
 
   describe "list episodes" do
-    setup conn do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
-      conn
-    end
-
     test "get episodes success", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 

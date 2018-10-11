@@ -15,20 +15,12 @@ defmodule Api.Web.EncounterControllerTest do
 
   describe "create visit" do
     test "patient not found", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       conn = post(conn, encounter_path(conn, :create, UUID.uuid4()))
       assert json_response(conn, 404)
     end
 
     test "patient is not active", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -41,10 +33,6 @@ defmodule Api.Web.EncounterControllerTest do
 
     test "no signed data set", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -72,10 +60,6 @@ defmodule Api.Web.EncounterControllerTest do
     test "success create visit", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -288,10 +272,6 @@ defmodule Api.Web.EncounterControllerTest do
   describe "cancel encounter" do
     setup %{conn: conn} do
       expect_signature()
-
-      expect(IlMock, :get_dictionaries, 2, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       {:ok, conn: put_consumer_id_header(conn)}
     end

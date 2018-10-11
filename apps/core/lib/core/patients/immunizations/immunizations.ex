@@ -9,6 +9,7 @@ defmodule Core.Patients.Immunizations do
   alias Core.Patients.Encounters
   alias Core.Search
   alias Core.Source
+  alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
 
@@ -28,22 +29,24 @@ defmodule Core.Patients.Immunizations do
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
-    pipeline =
-      [
-        %{"$match" => %{"_id" => patient_id_hash}},
-        %{"$project" => %{"immunizations" => %{"$objectToArray" => "$immunizations"}}},
-        %{"$unwind" => "$immunizations"}
-      ]
-      |> add_search_pipeline(patient_id_hash, params)
-      |> Enum.concat([
-        %{"$project" => %{"immunization" => "$immunizations.v"}},
-        %{"$replaceRoot" => %{"newRoot" => "$immunization"}},
-        %{"$sort" => %{"inserted_at" => -1}}
-      ])
+    with :ok <- JsonSchema.validate(:immunization_request, Map.drop(params, ~w(patient_id patient_id_hash))) do
+      pipeline =
+        [
+          %{"$match" => %{"_id" => patient_id_hash}},
+          %{"$project" => %{"immunizations" => %{"$objectToArray" => "$immunizations"}}},
+          %{"$unwind" => "$immunizations"}
+        ]
+        |> add_search_pipeline(patient_id_hash, params)
+        |> Enum.concat([
+          %{"$project" => %{"immunization" => "$immunizations.v"}},
+          %{"$replaceRoot" => %{"newRoot" => "$immunization"}},
+          %{"$sort" => %{"inserted_at" => -1}}
+        ])
 
-    with %Page{entries: immunizations} = paging <-
-           Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do
-      {:ok, %Page{paging | entries: Enum.map(immunizations, &Immunization.create/1)}}
+      with %Page{entries: immunizations} = paging <-
+             Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do
+        {:ok, %Page{paging | entries: Enum.map(immunizations, &Immunization.create/1)}}
+      end
     end
   end
 
@@ -54,13 +57,13 @@ defmodule Core.Patients.Immunizations do
     date_to = get_filter_date(:to, params["date_to"])
 
     episode_id = if params["episode_id"], do: Mongo.string_to_uuid(params["episode_id"]), else: nil
-    encounter_ids = get_encounter_ids(patient_id_hash, episode_id)
+    encounter_ids = if is_nil(episode_id), do: nil, else: get_encounter_ids(patient_id_hash, episode_id)
 
     search_pipeline =
       %{"$match" => %{}}
       |> Search.add_param(%{"code" => params["vaccine_code"]}, ["$match", "#{path}.vaccine_code.coding"], "$elemMatch")
       |> Search.add_param(encounter_id, ["$match", "#{path}.context.identifier.value"])
-      |> Search.add_param(encounter_ids, ["$match", "#{path}.context.identifier.value"], "$in")
+      |> add_search_param(encounter_ids, ["$match", "#{path}.context.identifier.value"], "$in")
       |> Search.add_param(date_from, ["$match", "#{path}.date"], "$gte")
       |> Search.add_param(date_to, ["$match", "#{path}.date"], "$lt")
 
@@ -99,6 +102,16 @@ defmodule Core.Patients.Immunizations do
       date_time
     else
       _ -> nil
+    end
+  end
+
+  defp add_search_param(search_params, nil, _path, _operator), do: search_params
+
+  defp add_search_param(search_params, value, path, operator) do
+    if get_in(search_params, path) == nil do
+      put_in(search_params, path, %{operator => value})
+    else
+      update_in(search_params, path, &Map.merge(&1, %{operator => value}))
     end
   end
 
