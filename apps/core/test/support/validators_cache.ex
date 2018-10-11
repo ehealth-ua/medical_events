@@ -10,8 +10,8 @@ defmodule Core.Validators.CacheTest do
   def get_dictionaries do
     {:ok,
      [
-       %{"name" => "eHealth/resources", "values" => ["condition"]},
-       %{"name" => "eHealth/ICD10/conditions", "values" => ["A10"]}
+       %{"name" => "eHealth/resources", "values" => %{"condition" => "test"}},
+       %{"name" => "eHealth/ICD10/conditions", "values" => %{"A10" => "test"}}
      ]}
   end
 
