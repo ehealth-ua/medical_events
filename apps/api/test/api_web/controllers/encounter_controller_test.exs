@@ -4,7 +4,6 @@ defmodule Api.Web.EncounterControllerTest do
   use ApiWeb.ConnCase
 
   import Core.Expectations.CasherExpectation
-  import Core.Expectations.DigitalSignatureExpectation
   import Core.TestViews.CancelEncounterPackageView
   import Mox
 
@@ -271,8 +270,6 @@ defmodule Api.Web.EncounterControllerTest do
 
   describe "cancel encounter" do
     setup %{conn: conn} do
-      expect_signature()
-
       {:ok, conn: put_consumer_id_header(conn)}
     end
 
@@ -312,7 +309,6 @@ defmodule Api.Web.EncounterControllerTest do
         )
 
       observation = insert(:observation, patient_id: patient_id_hash, context: context)
-      expect_signature()
 
       request_data = %{
         "signed_data" =>
@@ -343,18 +339,10 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-
-      request_data = %{
-        "signed_data" =>
-          %{"immunizations" => "invalid data"}
-          |> Jason.encode!()
-          |> Base.encode64()
-      }
-
       expect_get_person_data(patient_id)
 
       assert conn
-             |> patch(encounter_path(conn, :cancel, patient_id), request_data)
+             |> patch(encounter_path(conn, :cancel, patient_id), %{"invalid_signed_data" => 1})
              |> json_response(422)
              |> get_in(["error", "message"])
              |> String.contains?("Validation failed.")

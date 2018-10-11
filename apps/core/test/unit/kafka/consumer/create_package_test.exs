@@ -4,6 +4,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   use Core.ModelCase
 
   import Core.Expectations.DigitalSignatureExpectation
+  import Core.Expectations.IlExpectations
   import Mox
 
   alias Core.Immunization
@@ -22,13 +23,15 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       job = insert(:job)
-      expect_signature()
+      user_id = prepare_signature_expectations()
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
-                 signed_data: Base.encode64("")
+                 signed_data: Base.encode64(""),
+                 user_id: user_id,
+                 client_id: UUID.uuid4()
                })
 
       assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(to_string(job._id))
@@ -38,13 +41,15 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       job = insert(:job)
-      expect_signature()
+      user_id = prepare_signature_expectations()
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
                  visit: %{"id" => UUID.uuid4(), "period" => %{}},
-                 signed_data: Base.encode64(Jason.encode!(%{}))
+                 signed_data: Base.encode64(Jason.encode!(%{})),
+                 user_id: user_id,
+                 client_id: UUID.uuid4()
                })
 
       assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(to_string(job._id))
@@ -95,7 +100,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       patient = insert(:patient, _id: patient_id_hash)
       condition = insert(:condition, patient_id: patient_id_hash)
       job = insert(:job)
-      expect_signature()
+      user_id = prepare_signature_expectations()
       episode_id = patient.episodes |> Map.keys() |> hd
 
       signed_content = %{
@@ -147,8 +152,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           }
         }
       }
-
-      user_id = UUID.uuid4()
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -213,7 +216,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       db_observation = insert(:observation, patient_id: patient_id_hash)
       condition_id = UUID.uuid4()
       job = insert(:job)
-      expect_signature()
+      user_id = prepare_signature_expectations()
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
@@ -579,8 +582,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ]
       }
 
-      user_id = UUID.uuid4()
-
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
@@ -604,5 +605,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 status: @status_processed
               }} = Jobs.get_by_id(to_string(job._id))
     end
+  end
+
+  defp prepare_signature_expectations do
+    user_id = UUID.uuid4()
+    drfo = "1111111111"
+    expect_signature(drfo)
+    expect_employee_users(drfo, user_id)
+
+    user_id
   end
 end

@@ -4,8 +4,8 @@ defmodule Core.Expectations.DigitalSignatureExpectation do
   import Core.Microservices
   import Mox
 
-  def expect_signature do
-    expect(DigitalSignatureMock, :decode, fn content, headers ->
+  def expect_signature(drfo) do
+    expect(DigitalSignatureMock, :decode, fn content, _headers ->
       {:ok, decoded_content} = decode_response(Base.decode64!(content))
 
       {:ok,
@@ -15,9 +15,7 @@ defmodule Core.Expectations.DigitalSignatureExpectation do
            "signatures" => [
              %{
                "is_valid" => true,
-               "signer" => %{
-                 "drfo" => Core.Headers.get_header(headers, "drfo")
-               }
+               "signer" => %{"drfo" => drfo}
              }
            ]
          }

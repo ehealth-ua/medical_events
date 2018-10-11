@@ -138,7 +138,7 @@ defmodule Core.Patients do
   def produce_create_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
     with %{} = patient <- get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:package_create, Map.drop(params, ~w(patient_id patient_id_hash))),
+         :ok <- JsonSchema.validate(:package_create, Map.take(params, ["signed_data", "visit"])),
          {:ok, job, package_create_job} <-
            Jobs.create(
              PackageCreateJob,
@@ -152,12 +152,7 @@ defmodule Core.Patients do
   def produce_cancel_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
     with :ok <- JsonSchema.validate(:package_cancel, Map.take(params, ["signed_data"])),
          %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         {:ok, %{"data" => signed_data_decoded}} <- @digital_signature.decode(params["signed_data"], []),
-         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(signed_data_decoded),
-         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
-         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
-         :ok <- Signature.check_drfo(signer, employee_id) do
+         :ok <- Validators.is_active(patient) do
       job_data =
         params
         |> Map.put("user_id", user_id)
@@ -172,17 +167,19 @@ defmodule Core.Patients do
 
   def consume_cancel_package(%PackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job) do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
-         {:ok, %{"content" => decoded_content, "signer" => _signer}} <- Signature.validate(data),
+         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
+         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
          encounter_id <- decoded_content["encounter"]["id"],
+         :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter, patient_id_hash),
          :ok <- CancelEncounter.proccess_cancellation(patient, user_id, decoded_content) do
       {:ok, %{}, 200}
     else
-      {:patient, _} -> {:ok, "Failed to get patient", 404}
-      {:encounter, _} -> {:ok, "Failed to get encounter", 404}
+      {:patient, _} -> {:ok, "Patient not found", 404}
+      {:encounter, _} -> {:ok, "Encounter not found", 404}
       err -> err
     end
   end
@@ -193,8 +190,10 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
 
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
-         {:ok, %{"content" => content, "signer" => _signer}} <- Signature.validate(data),
-         :ok <- JsonSchema.validate(:package_create_signed_content, content) do
+         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         :ok <- JsonSchema.validate(:package_create_signed_content, content),
+         employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
+         :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id) do
       with {:ok, visit} <- create_visit(job),
            {:ok, observations} <- create_observations(job, content),
            {:ok, conditions} <- create_conditions(job, content, observations),

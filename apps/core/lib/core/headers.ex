@@ -20,4 +20,7 @@ defmodule Core.Headers do
       end
     end)
   end
+
+  def create(:user_id, user_id), do: {@consumer_id, user_id}
+  def create(:client_id, client_id), do: {@consumer_metadata, client_id}
 end

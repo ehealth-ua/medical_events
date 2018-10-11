@@ -52,9 +52,10 @@ defmodule Core.MixProject do
       {:mongodb, "~> 0.4.6"},
       {:poolboy, "~> 1.5"},
       {:redix, "~> 0.7.1"},
+      {:scrivener, "~> 2.5"},
+      {:translit, "~> 0.1.0"},
       {:vex, "~> 0.8.0"},
       {:mox, "~> 0.4.0", only: :test},
-      {:scrivener, "~> 2.5"},
       {:ex_machina, "~> 2.2", only: :test}
     ]
   end

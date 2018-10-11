@@ -13,6 +13,10 @@ defmodule Core.Behaviours.IlBehaviour do
               {:ok, result :: term}
               | {:error, reason :: term}
 
+  @callback get_employee_users(id :: binary, headers :: list) ::
+              {:ok, result :: term}
+              | {:error, reason :: term}
+
   @callback get_division(id :: binary, headers :: list) ::
               {:ok, result :: term}
               | {:error, reason :: term}

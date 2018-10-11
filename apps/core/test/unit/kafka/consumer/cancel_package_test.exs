@@ -5,6 +5,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
   import Mox
   import Core.Expectations.DigitalSignatureExpectation
+  import Core.Expectations.IlExpectations
   import Core.TestViews.CancelEncounterPackageView
 
   alias Core.AllergyIntolerance
@@ -23,8 +24,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
   describe "consume cancel package event" do
     setup do
-      expect_signature()
-
       episode = build(:episode)
 
       encounter =
@@ -49,6 +48,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "success", %{test_data: {episode, encounter, context}} do
       expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+      user_id = prepare_signature_expectations()
 
       job = insert(:job)
       encounter = %{encounter | status: @entered_in_error}
@@ -106,7 +106,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
-                 user_id: UUID.uuid4(),
+                 user_id: user_id,
                  client_id: UUID.uuid4(),
                  signed_data: signed_data
                })
@@ -147,6 +147,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "fail on signed content", %{test_data: {episode, encounter, context}} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      user_id = prepare_signature_expectations()
 
       job = insert(:job)
       immunization = build(:immunization, context: context, status: @entered_in_error)
@@ -177,7 +178,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
-                 user_id: UUID.uuid4(),
+                 user_id: user_id,
                  client_id: UUID.uuid4(),
                  signed_data: signed_data
                })
@@ -194,6 +195,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "fail on validate diagnoses" do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      user_id = prepare_signature_expectations()
       job = insert(:job)
 
       episode = build(:episode)
@@ -258,7 +260,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
-                 user_id: UUID.uuid4(),
+                 user_id: user_id,
                  client_id: UUID.uuid4(),
                  signed_data: signed_content
                })
@@ -276,7 +278,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     test "diagnosis deactivated" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect_signature()
+      user_id = prepare_signature_expectations()
       job = insert(:job)
 
       encounter_id = UUID.uuid4()
@@ -325,7 +327,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
-                 user_id: UUID.uuid4(),
+                 user_id: user_id,
                  client_id: UUID.uuid4(),
                  signed_data: signed_data
                })
@@ -340,5 +342,14 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       assert [%{"is_active" => false} | _] = patient["episodes"][episode_id]["diagnoses_history"]
     end
+  end
+
+  defp prepare_signature_expectations do
+    user_id = UUID.uuid4()
+    drfo = "1111111111"
+    expect_signature(drfo)
+    expect_employee_users(drfo, user_id)
+
+    user_id
   end
 end

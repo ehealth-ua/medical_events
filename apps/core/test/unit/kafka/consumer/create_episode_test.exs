@@ -2,8 +2,10 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
   @moduledoc false
 
   use Core.ModelCase
+
   import Mox
-  import Core.Expectations.Employee
+  import Core.Expectations.IlExpectations
+
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob

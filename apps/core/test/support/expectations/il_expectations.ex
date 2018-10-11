@@ -1,4 +1,4 @@
-defmodule Core.Expectations.Employee do
+defmodule Core.Expectations.IlExpectations do
   @moduledoc false
 
   import Mox
@@ -16,6 +16,22 @@ defmodule Core.Expectations.Employee do
              "first_name" => "foo",
              "second_name" => "bar",
              "last_name" => "baz"
+           }
+         }
+       }}
+    end)
+  end
+
+  def expect_employee_users(tax_id, user_id, n \\ 1) do
+    expect(IlMock, :get_employee_users, n, fn employee_id, _ ->
+      {:ok,
+       %{
+         "data" => %{
+           "id" => employee_id,
+           "party" => %{
+             "id" => UUID.uuid4(),
+             "tax_id" => tax_id,
+             "users" => [%{"user_id" => user_id}]
            }
          }
        }}
