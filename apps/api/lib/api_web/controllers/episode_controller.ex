@@ -72,8 +72,8 @@ defmodule Api.Web.EpisodeController do
     end
   end
 
-  defp get_params(conn, %{"id" => id, "patient_id_hash" => patient_id_hash} = params) do
-    url_params = %{"id" => id, "patient_id_hash" => patient_id_hash}
+  defp get_params(conn, %{"id" => id, "patient_id_hash" => patient_id_hash, "patient_id" => patient_id} = params) do
+    url_params = %{"id" => id, "patient_id" => patient_id, "patient_id_hash" => patient_id_hash}
     request_params = Map.drop(params, ~w(id patient_id patient_id_hash))
     conn_params = %{"user_id" => conn.private[:user_id], "client_id" => conn.private[:client_id]}
     {url_params, request_params, conn_params}
