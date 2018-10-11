@@ -96,7 +96,8 @@ config :vex,
       observation_reference: Core.Validators.ObservationReference,
       source: Core.Validators.Source,
       unique_ids: Core.Validators.UniqueIds,
-      mongo_uuid: Core.Validators.MongoUUID
+      mongo_uuid: Core.Validators.MongoUUID,
+      dictionary_reference: Core.Validators.DictionaryReference
     ],
     Vex.Validators
   ]

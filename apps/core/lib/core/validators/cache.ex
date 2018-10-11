@@ -16,6 +16,20 @@ defmodule Core.Validators.Cache do
   end
 
   @impl true
+  def get_dictionaries do
+    case :ets.lookup(__MODULE__, "dictionaries") do
+      [{"dictionaries", dictionaries}] -> {:ok, dictionaries}
+      _ -> {:ok, nil}
+    end
+  end
+
+  @impl true
+  def set_dictionaries(dictionaries) do
+    :ets.insert(__MODULE__, {"dictionaries", dictionaries})
+    :ok
+  end
+
+  @impl true
   def get_json_schema(key) do
     case :ets.lookup(__MODULE__, key) do
       [{^key, schema}] -> {:ok, schema}

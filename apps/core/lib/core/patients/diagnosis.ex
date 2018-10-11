@@ -9,7 +9,11 @@ defmodule Core.Diagnosis do
     field(:condition, presence: true, reference: [path: "condition"])
     field(:role, presence: true, reference: [path: "role"])
     field(:rank)
-    field(:code, presence: true)
+
+    field(:code,
+      presence: true,
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
   end
 
   def create(data) do

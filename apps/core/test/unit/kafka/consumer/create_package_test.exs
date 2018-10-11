@@ -21,10 +21,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     test "empty content" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       job = insert(:job)
       expect_signature()
 
@@ -40,10 +36,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "empty map" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       job = insert(:job)
       expect_signature()
@@ -63,10 +55,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name ->
         {:ok, "http://localhost/#{patient_id}/#{resource_name}"}
-      end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
       end)
 
       client_id = UUID.uuid4()
@@ -141,7 +129,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               },
               "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]}
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
@@ -181,10 +169,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
 
       expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name ->
         {:ok, "http://localhost/#{patient_id}/#{resource_name}"}
@@ -275,7 +259,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               },
               "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/ICD10/conditions"}]}
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
