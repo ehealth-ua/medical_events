@@ -32,7 +32,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  patient_id_hash: patient_id_hash,
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
-                   "cancellation_reason" => %{
+                   "status_reason" => %{
                      "coding" => [%{"code" => "misspelling", "system" => "eHealth/cancellation_reasons"}]
                    },
                    "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"
@@ -65,7 +65,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  patient_id_hash: patient_id_hash,
                  id: episode_id,
                  request_params: %{
-                   "cancellation_reason" => %{
+                   "status_reason" => %{
                      "coding" => [%{"code" => "misspelling", "system" => "eHealth/cancellation_reasons"}]
                    },
                    "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"

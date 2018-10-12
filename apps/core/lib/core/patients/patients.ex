@@ -518,7 +518,7 @@ defmodule Core.Patients do
     with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
       new_period = DatePeriod.create(job.request_params["period"])
-      changes = Map.take(job.request_params, ~w(closing_summary closing_reason))
+      changes = Map.take(job.request_params, ~w(closing_summary status_reason))
 
       episode =
         %{
@@ -536,7 +536,7 @@ defmodule Core.Patients do
           set =
             %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
             |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
-            |> Mongo.add_to_set(episode.closing_reason, "episodes.#{episode.id}.closing_reason")
+            |> Mongo.add_to_set(episode.status_reason, "episodes.#{episode.id}.status_reason")
             |> Mongo.add_to_set(episode.closing_summary, "episodes.#{episode.id}.closing_summary")
             |> Mongo.add_to_set(episode.period.end, "episodes.#{episode.id}.period.end")
             |> Mongo.convert_to_uuid("updated_by")
@@ -544,6 +544,7 @@ defmodule Core.Patients do
           status_history =
             StatusHistory.create(%{
               "status" => episode.status,
+              "status_reason" => episode.status_reason,
               "inserted_at" => episode.updated_at,
               "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
             })
@@ -581,7 +582,7 @@ defmodule Core.Patients do
 
     with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
-      changes = Map.take(job.request_params, ~w(explanatory_letter cancellation_reason))
+      changes = Map.take(job.request_params, ~w(explanatory_letter status_reason))
 
       episode =
         %{
@@ -611,14 +612,15 @@ defmodule Core.Patients do
                 "episodes.#{episode.id}.explanatory_letter"
               )
               |> Mongo.add_to_set(
-                episode.cancellation_reason,
-                "episodes.#{episode.id}.cancellation_reason"
+                episode.status_reason,
+                "episodes.#{episode.id}.status_reason"
               )
               |> Mongo.convert_to_uuid("updated_by")
 
             status_history =
               StatusHistory.create(%{
                 "status" => episode.status,
+                "status_reason" => episode.status_reason,
                 "inserted_at" => episode.updated_at,
                 "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
               })

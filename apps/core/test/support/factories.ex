@@ -350,8 +350,7 @@ defmodule Core.Factories do
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Episode.status(:active),
       closing_summary: "closing summary",
-      closing_reason: build(:codeable_concept),
-      cancellation_reason: build(:codeable_concept),
+      status_reason: build(:codeable_concept),
       explanatory_letter: "explanatory letter",
       status_history: build_list(1, :status_history),
       diagnoses_history: build_list(1, :diagnoses_history),
@@ -469,6 +468,7 @@ defmodule Core.Factories do
   def status_history_factory do
     %StatusHistory{
       status: Episode.status(:active),
+      status_reason: codeable_concept_coding(system: "eHealth/episode_closing_reasons"),
       inserted_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(UUID.uuid4())
     }

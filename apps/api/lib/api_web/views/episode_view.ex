@@ -4,6 +4,7 @@ defmodule Api.Web.EpisodeView do
   use ApiWeb, :view
 
   alias Api.Web.DiagnosesHistoryView
+  alias Api.Web.StatusHistoryView
   alias Core.ReferenceView
   alias Core.UUIDView
   alias Scrivener.Page
@@ -15,8 +16,7 @@ defmodule Api.Web.EpisodeView do
   def render("show.json", %{episode: episode}) do
     episode
     |> Map.take(~w(type status name explanatory_letter closing_summary inserted_at)a)
-    |> Map.put(:cancellation_reason, ReferenceView.render(episode.cancellation_reason))
-    |> Map.put(:closing_reason, ReferenceView.render(episode.closing_reason))
+    |> Map.put(:status_reason, ReferenceView.render(episode.status_reason))
     |> Map.put(:id, UUIDView.render(episode.id))
     |> Map.put(:period, ReferenceView.render(episode.period))
     |> Map.put(
@@ -25,5 +25,9 @@ defmodule Api.Web.EpisodeView do
     )
     |> Map.put(:managing_organization, ReferenceView.render(episode.managing_organization))
     |> Map.put(:care_manager, ReferenceView.render(episode.care_manager))
+    |> Map.put(
+      :status_history,
+      StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history)
+    )
   end
 end

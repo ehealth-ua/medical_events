@@ -49,12 +49,12 @@
     "explanatory_letter": {
       "type": "string"
     },
-    "cancellation_reason": {
+    "status_reason": {
       "$ref": "#/definitions/codeable_concept"
     }
   },
   "required": [
-    "cancellation_reason"
+    "status_reason"
   ],
   "additionalProperties": false
 }

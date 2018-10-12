@@ -250,7 +250,7 @@ defmodule Api.Web.EpisodeControllerTest do
         "period" => %{
           "end" => to_string(Date.utc_today())
         },
-        "closing_reason" => %{"coding" => [%{"system" => "eHealth/episode_closing_reasons", "code" => "legal_entity"}]}
+        "status_reason" => %{"coding" => [%{"system" => "eHealth/episode_closing_reasons", "code" => "legal_entity"}]}
       }
 
       conn1 = patch(conn, episode_path(conn, :close, patient_id, episode_id), data)
@@ -332,7 +332,7 @@ defmodule Api.Web.EpisodeControllerTest do
       episode_id = patient.episodes |> Map.keys() |> hd
 
       data = %{
-        "cancellation_reason" => %{
+        "status_reason" => %{
           "coding" => [%{"system" => "eHealth/cancellation_reasons", "code" => "misspelling"}]
         },
         "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"

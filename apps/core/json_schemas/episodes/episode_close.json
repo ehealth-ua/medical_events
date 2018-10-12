@@ -65,13 +65,13 @@
     "closing_summary": {
       "type": "string"
     },
-    "closing_reason": {
+    "status_reason": {
       "$ref": "#/definitions/codeable_concept"
     }
   },
   "required": [
     "period",
-    "closing_reason"
+    "status_reason"
   ],
   "additionalProperties": false
 }

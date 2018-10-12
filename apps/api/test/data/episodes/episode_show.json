@@ -215,6 +215,25 @@
           }
         }
       }
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "status": {
+          "type": "string"
+        },
+        "status_reason": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inserted_by": {
+          "$ref": "#/definitions/uuid"
+        }
+      }
     }
   },
   "type": "object",
@@ -404,14 +423,14 @@
       ],
       "description": "Explanatory letter"
     },
-    "closing_reason": {
-      "$ref": "#/definitions/codeable_concept"
-    },
-    "cancellation_reason": {
+    "status_reason": {
       "$ref": "#/definitions/codeable_concept"
     },
     "diagnoses_history": {
       "$ref": "#/definitions/diagnoses_history"
+    },
+    "status_history": {
+      "$ref": "#/definitions/status_history"
     }
   },
   "required": [
@@ -425,8 +444,7 @@
     "diagnoses_history",
     "inserted_at",
     "closing_summary",
-    "closing_reason",
-    "explanatory_letter",
-    "cancellation_reason"
+    "status_reason",
+    "explanatory_letter"
   ]
 }

@@ -20,8 +20,7 @@ defmodule Core.Episode do
     field(:id, presence: true, mongo_uuid: true)
     field(:name)
     field(:status)
-    field(:cancellation_reason)
-    field(:closing_reason)
+    field(:status_reason)
     field(:closing_summary)
     field(:explanatory_letter)
     field(:status_history)
@@ -48,11 +47,11 @@ defmodule Core.Episode do
         {"care_manager", v} ->
           {:care_manager, Reference.create(v)}
 
-        {"cancellation_reason", v} ->
-          {:cancellation_reason, CodeableConcept.create(v)}
+        {"status_reason", nil} ->
+          {:status_reason, nil}
 
-        {"closing_reason", v} ->
-          {:closing_reason, CodeableConcept.create(v)}
+        {"status_reason", v} ->
+          {:status_reason, CodeableConcept.create(v)}
 
         {"status_history", nil} ->
           {:status_history, nil}

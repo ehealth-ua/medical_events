@@ -33,7 +33,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  id: UUID.binary_to_string!(episode.id.binary),
                  request_params: %{
                    "period" => %{"end" => to_string(Date.utc_today())},
-                   "closing_reason" => %{
+                   "status_reason" => %{
                      "coding" => [%{"code" => "legal_entity", "system" => "eHealth/episode_closing_reasons"}]
                    },
                    "closing_summary" => "summary"
@@ -66,7 +66,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  id: episode_id,
                  request_params: %{
                    "period" => %{"end" => to_string(Date.utc_today())},
-                   "closing_reason" => %{
+                   "status_reason" => %{
                      "coding" => [%{"code" => "legal_entity", "system" => "eHealth/episode_closing_reasons"}]
                    },
                    "closing_summary" => "summary"
