@@ -57,11 +57,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "visit not found" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name ->
-        {:ok, "http://localhost/#{patient_id}/#{resource_name}"}
-      end)
-
+      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name -> :ok end)
       client_id = UUID.uuid4()
 
       expect(IlMock, :get_employee, fn id, _ ->
@@ -172,11 +168,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name ->
-        {:ok, "http://localhost/#{patient_id}/#{resource_name}"}
-      end)
-
+      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name -> :ok end)
       client_id = UUID.uuid4()
 
       expect(IlMock, :get_employee, fn id, _ ->

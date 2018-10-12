@@ -185,7 +185,11 @@ defmodule Core.Patients do
   end
 
   def consume_create_package(
-        %PackageCreateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, user_id: user_id} = job
+        %PackageCreateJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          user_id: user_id
+        } = job
       ) do
     now = DateTime.utc_now()
 
@@ -206,7 +210,7 @@ defmodule Core.Patients do
         files = [{'signed_content.txt', job.signed_data}]
         {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
-        with {:ok, _url} <-
+        with :ok <-
                @media_storage.save(
                  patient_id,
                  compressed_content,
@@ -383,7 +387,11 @@ defmodule Core.Patients do
   end
 
   def consume_create_episode(
-        %EpisodeCreateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, client_id: client_id} = job
+        %EpisodeCreateJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          client_id: client_id
+        } = job
       ) do
     now = DateTime.utc_now()
 
@@ -451,7 +459,12 @@ defmodule Core.Patients do
   end
 
   def consume_update_episode(
-        %EpisodeUpdateJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id, client_id: client_id} = job
+        %EpisodeUpdateJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          id: id,
+          client_id: client_id
+        } = job
       ) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
@@ -660,7 +673,11 @@ defmodule Core.Patients do
 
   defp create_visit(%PackageCreateJob{visit: nil}), do: {:ok, nil}
 
-  defp create_visit(%PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, visit: visit}) do
+  defp create_visit(%PackageCreateJob{
+         patient_id_hash: patient_id_hash,
+         user_id: user_id,
+         visit: visit
+       }) do
     now = DateTime.utc_now()
     visit = Visit.create(visit)
 
@@ -787,7 +804,11 @@ defmodule Core.Patients do
   defp create_conditions(_, _, _), do: {:ok, []}
 
   defp create_observations(
-         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
          %{"observations" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -828,7 +849,11 @@ defmodule Core.Patients do
   defp create_observations(_, _), do: {:ok, []}
 
   defp create_immunizations(
-         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
          %{"immunizations" => _} = content,
          observations
        ) do
@@ -867,7 +892,11 @@ defmodule Core.Patients do
   defp create_immunizations(_, _, _), do: {:ok, []}
 
   defp create_allergy_intolerances(
-         %PackageCreateJob{patient_id_hash: patient_id_hash, user_id: user_id, client_id: client_id},
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
          %{"allergy_intolerances" => _} = content
        ) do
     now = DateTime.utc_now()
