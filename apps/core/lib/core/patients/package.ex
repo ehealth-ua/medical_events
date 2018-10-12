@@ -44,7 +44,7 @@ defmodule Core.Patients.Package do
   end
 
   def consume_save_conditions(
-        %PackageSavePatientJob{patient_id: patient_id, patient_id_hash: patient_id_hash, encounter: encounter} = job
+        %PackageSaveConditionsJob{patient_id: patient_id, patient_id_hash: patient_id_hash, encounter: encounter} = job
       ) do
     links = insert_conditions(job.links, job.conditions, patient_id)
 
