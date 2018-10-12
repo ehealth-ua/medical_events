@@ -4,6 +4,7 @@ defmodule Core.Microservices do
   @success_codes [200, 201, 204]
 
   require Logger
+  alias Core.Microservices.Error
 
   defmacro __using__(_) do
     quote do
@@ -91,6 +92,10 @@ defmodule Core.Microservices do
       {:ok, body} -> {:error, body}
       error -> error
     end
+  end
+
+  def check_response({:error, %HTTPoison.Error{}} = error) do
+    raise Error, message: error.reason
   end
 
   # no body in response

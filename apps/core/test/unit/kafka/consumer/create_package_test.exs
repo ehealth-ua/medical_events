@@ -15,6 +15,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Observation
   alias Core.Patients
 
+  @status_pending Job.status(:pending)
   @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
 
@@ -57,7 +58,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "visit not found" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name -> :ok end)
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
 
       expect(IlMock, :get_employee, fn id, _ ->
@@ -168,7 +169,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name -> :ok end)
+      stub(KafkaMock, :publish_encounter_package_event, fn _event -> :ok end)
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
 
       expect(IlMock, :get_employee, fn id, _ ->
@@ -593,8 +595,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: 831,
-                status: @status_processed
+                response_size: 2,
+                status: @status_pending
               }} = Jobs.get_by_id(to_string(job._id))
     end
   end

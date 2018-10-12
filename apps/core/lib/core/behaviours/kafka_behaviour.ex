@@ -12,6 +12,15 @@ defmodule Core.Behaviours.KafkaProducerBehaviour do
               | iodata
               | :leader_not_available
 
+  @callback publish_encounter_package_event(event :: any) ::
+              :ok
+              | {:ok, integer}
+              | {:error, :closed}
+              | {:error, :inet.posix()}
+              | {:error, any}
+              | iodata
+              | :leader_not_available
+
   @callback publish_mongo_event(event :: Event.t()) ::
               :ok
               | {:ok, integer}

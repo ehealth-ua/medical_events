@@ -5,7 +5,6 @@ defmodule Core.Patients do
 
   alias Core.AllergyIntolerance
   alias Core.Condition
-  alias Core.Conditions
   alias Core.DatePeriod
   alias Core.DiagnosesHistory
   alias Core.Encounter
@@ -18,6 +17,7 @@ defmodule Core.Patients do
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
+  alias Core.Jobs.PackageSavePatientJob
   alias Core.Mongo
   alias Core.Observation
   alias Core.Patient
@@ -32,7 +32,6 @@ defmodule Core.Patients do
   alias Core.Validators.Vex
   alias Core.Visit
   alias Core.Conditions.Validations, as: ConditionValidations
-  alias Core.Observations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
@@ -323,23 +322,7 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value")
             end)
 
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
-              "$set" => set,
-              "$push" => push
-            })
-
-          links = [
-            %{
-              "entity" => "encounter",
-              "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"
-            }
-          ]
-
-          links =
-            links
-            |> insert_conditions(conditions, patient_id)
-            |> insert_observations(observations, patient_id)
+          links = []
 
           links =
             Enum.reduce(immunizations, links, fn immunization, acc ->
@@ -363,7 +346,23 @@ defmodule Core.Patients do
                 ]
             end)
 
-          {:ok, %{"links" => links}, 200}
+          event = %PackageSavePatientJob{
+            _id: job._id,
+            patient_id: patient_id,
+            patient_id_hash: patient_id_hash,
+            patient_save_data: %{
+              "$set" => set,
+              "$push" => push
+            },
+            links: links,
+            encounter: encounter,
+            conditions: conditions,
+            observations: observations
+          }
+
+          with :ok <- @kafka_producer.publish_encounter_package_event(event) do
+            :ok
+          end
         else
           _ -> Logger.error("Failed to save signed content")
         end
@@ -982,42 +981,6 @@ defmodule Core.Patients do
         _ ->
           {:cont, acc}
       end
-    end)
-  end
-
-  defp insert_conditions(links, [], _), do: links
-
-  defp insert_conditions(links, conditions, patient_id) do
-    conditions = Enum.map(conditions, &Conditions.create/1)
-
-    {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
-
-    Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-      acc ++
-        [
-          %{
-            "entity" => "condition",
-            "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
-          }
-        ]
-    end)
-  end
-
-  defp insert_observations(links, [], _), do: links
-
-  defp insert_observations(links, observations, patient_id) do
-    observations = Enum.map(observations, &Observations.create/1)
-
-    {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
-
-    Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-      acc ++
-        [
-          %{
-            "entity" => "observation",
-            "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
-          }
-        ]
     end)
   end
 end

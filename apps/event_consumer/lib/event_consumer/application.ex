@@ -18,12 +18,10 @@ defmodule EventConsumer.Application do
 
     gen_consumer_impl = MedicalEventConsumer
     consumer_group_name = "medical_event_group"
-    topic_names = ["medical_events"]
+    topic_names = ["medical_events", "encounter_package_events"]
 
     # List all child processes to be supervised
     children = [
-      # Starts a worker by calling: EventConsumer.Worker.start_link(arg)
-      # {EventConsumer.Worker, arg},
       supervisor(KafkaEx.ConsumerGroup, [
         gen_consumer_impl,
         consumer_group_name,
