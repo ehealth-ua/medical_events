@@ -7,10 +7,12 @@ defmodule Core.Microservices.MediaStorage do
   @behaviour Core.Behaviours.MediaStorageBehaviour
 
   def save(id, content, bucket, resource_name) do
+    headers = [{"Content-Type", MIME.from_path(resource_name)}]
+    options = config()[:hackney_options]
+
     with {:ok, %{"data" => %{"secret_url" => url}}} <- create_signed_url("PUT", bucket, resource_name, id),
-         {:ok, _} <-
-           HTTPoison.put(url, content, [{"Content-Type", MIME.from_path(resource_name)}], config()[:hackney_options]) do
-      {:ok, url}
+         {:ok, %HTTPoison.Response{status_code: 200}} <- HTTPoison.put(url, content, headers, options) do
+      :ok
     end
   end
 
