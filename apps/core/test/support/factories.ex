@@ -436,7 +436,7 @@ defmodule Core.Factories do
     %Condition{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       context: reference_coding(code: "encounter"),
-      code: codeable_concept_coding(system: "eHealth/ICD10/conditions"),
+      code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "A10"),
       clinical_status: "active",
       verification_status: "provisional",
       severity: codeable_concept_coding(system: "eHealth/severity"),

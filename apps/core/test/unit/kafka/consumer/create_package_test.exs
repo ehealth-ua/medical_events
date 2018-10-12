@@ -288,7 +288,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/ICPC2/conditions"}]},
+            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/conditions"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),

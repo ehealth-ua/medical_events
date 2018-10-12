@@ -11,7 +11,8 @@ defmodule Core.Validators.CacheTest do
     {:ok,
      [
        %{"name" => "eHealth/resources", "values" => %{"condition" => "test"}},
-       %{"name" => "eHealth/ICD10/conditions", "values" => %{"A10" => "test"}}
+       %{"name" => "eHealth/ICD10/conditions", "values" => %{"A10" => "test", "A11" => "test"}},
+       %{"name" => "eHealth/ICPC2/conditions", "values" => %{"B10" => "test"}}
      ]}
   end
 
