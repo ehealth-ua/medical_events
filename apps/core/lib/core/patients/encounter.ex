@@ -81,32 +81,11 @@ defmodule Core.Encounter do
           {:service_provider, Reference.create(v)}
 
         {"date", v} ->
-          {:date, create_date(v)}
+          {:date, create_datetime(v)}
 
         {k, v} ->
           {String.to_atom(k), v}
       end)
     )
-  end
-
-  defp create_date(%DateTime{} = value), do: value
-  defp create_date(%Date{} = value), do: do_create_date(value)
-
-  defp create_date(value) when is_binary(value) do
-    case Date.from_iso8601(value) do
-      {:ok, date} ->
-        do_create_date(date)
-
-      _ ->
-        nil
-    end
-  end
-
-  defp do_create_date(date) do
-    erl_date = Date.to_erl(date)
-
-    {erl_date, {0, 0, 0}}
-    |> NaiveDateTime.from_erl!()
-    |> DateTime.from_naive!("Etc/UTC")
   end
 end

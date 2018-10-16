@@ -2,6 +2,7 @@ defmodule Api.Web.EpisodeControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+  use Core.Schema
 
   import Core.Expectations.CasherExpectation
   import Mox
@@ -577,11 +578,11 @@ defmodule Api.Web.EpisodeControllerTest do
 
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      week_ago = Date.utc_today() |> Date.add(-7) |> Date.to_string()
-      next_week = Date.utc_today() |> Date.add(7) |> Date.to_string()
-      tomorrow = Date.utc_today() |> Date.add(1) |> Date.to_string()
-      yesterday = Date.utc_today() |> Date.add(-1) |> Date.to_string()
-      today = Date.to_string(Date.utc_today())
+      week_ago = create_datetime(Date.add(Date.utc_today(), -7))
+      next_week = create_datetime(Date.add(Date.utc_today(), 7))
+      tomorrow = create_datetime(Date.add(Date.utc_today(), +1))
+      yesterday = create_datetime(Date.add(Date.utc_today(), -1))
+      today = create_datetime(Date.utc_today())
 
       tomorrow_inactive_episode = build(:episode, period: build(:period, start: tomorrow, end: tomorrow))
       tomorrow_active_episode = build(:episode, period: build(:period, start: tomorrow, end: next_week))
@@ -642,14 +643,16 @@ defmodule Api.Web.EpisodeControllerTest do
 
       expect_get_person_data(patient_id)
 
+      format_date = fn datetime -> datetime |> DateTime.to_date() |> Date.to_string() end
+
       %{conn: conn}
       |> Map.put(:episodes, episodes_state)
       |> Map.put(:patient_id, patient_id)
-      |> Map.put(:week_ago, week_ago)
-      |> Map.put(:next_week, next_week)
-      |> Map.put(:tomorrow, tomorrow)
-      |> Map.put(:today, today)
-      |> Map.put(:yesterday, yesterday)
+      |> Map.put(:week_ago, format_date.(week_ago))
+      |> Map.put(:next_week, format_date.(next_week))
+      |> Map.put(:tomorrow, format_date.(tomorrow))
+      |> Map.put(:today, format_date.(today))
+      |> Map.put(:yesterday, format_date.(yesterday))
     end
 
     test "get episodes by period_from", %{conn: conn, today: today, patient_id: patient_id, episodes: episodes} do
@@ -728,11 +731,11 @@ defmodule Api.Web.EpisodeControllerTest do
       %{
         today_inactive_episode: today_inactive_episode,
         today_active_episode: today_active_episode,
+        today_noend_episode: today_noend_episode,
         week_ago_inactive_episode: week_ago_inactive_episode,
         week_ago_today_episode: week_ago_today_episode,
         week_ago_next_week_episode: week_ago_next_week_episode,
-        week_ago_noend_episode: week_ago_noend_episode,
-        today_noend_episode: today_noend_episode
+        week_ago_noend_episode: week_ago_noend_episode
       } = episodes
 
       resp =

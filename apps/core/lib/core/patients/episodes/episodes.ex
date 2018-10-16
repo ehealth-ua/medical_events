@@ -1,6 +1,7 @@
 defmodule Core.Patients.Episodes do
   @moduledoc false
 
+  use Core.Schema
   alias Core.Episode
   alias Core.Mongo
   alias Core.Paging
@@ -52,23 +53,20 @@ defmodule Core.Patients.Episodes do
     |> search_code(Map.get(params, "code"))
   end
 
-  defp add_period_criterias(pipeline, %{"period_from" => from, "period_to" => to}) do
+  defp add_period_criterias(pipeline, %{"period_from" => date_from, "period_to" => date_to}) do
+    from = create_datetime(date_from)
+    to = create_datetime(date_to)
+
     pipeline ++
       [
         %{
           "$addFields" => %{
             "period_match" => %{
-              "$or" => [
+              "$and" => [
+                %{"$lte" => ["$period.start", to]},
                 %{
-                  "$and" => [
-                    %{"$gte" => [to, "$period.start"]},
-                    %{"$lte" => [from, "$period.end"]},
-                    %{"$ne" => ["$period.end", nil]}
-                  ]
-                },
-                %{
-                  "$and" => [
-                    %{"$gte" => [to, "$period.start"]},
+                  "$or" => [
+                    %{"$gte" => ["$period.end", from]},
                     %{"$eq" => ["$period.end", nil]}
                   ]
                 }
@@ -81,19 +79,16 @@ defmodule Core.Patients.Episodes do
       ]
   end
 
-  defp add_period_criterias(pipeline, %{"period_from" => from}) do
+  defp add_period_criterias(pipeline, %{"period_from" => date}) do
+    from = create_datetime(date)
+
     pipeline ++
       [
         %{
           "$addFields" => %{
             "period_match" => %{
               "$or" => [
-                %{
-                  "$and" => [
-                    %{"$lte" => [from, "$period.end"]},
-                    %{"$ne" => ["$period.end", nil]}
-                  ]
-                },
+                %{"$gte" => ["$period.end", from]},
                 %{"$eq" => ["$period.end", nil]}
               ]
             }
@@ -104,27 +99,14 @@ defmodule Core.Patients.Episodes do
       ]
   end
 
-  defp add_period_criterias(pipeline, %{"period_to" => to}) do
+  defp add_period_criterias(pipeline, %{"period_to" => date}) do
+    to = create_datetime(date)
+
     pipeline ++
       [
         %{
           "$addFields" => %{
-            "period_match" => %{
-              "$or" => [
-                %{
-                  "$and" => [
-                    %{"$gte" => [to, "$period.start"]},
-                    %{"$ne" => ["$period.end", nil]}
-                  ]
-                },
-                %{
-                  "$and" => [
-                    %{"$gte" => [to, "$period.start"]},
-                    %{"$eq" => ["$period.end", nil]}
-                  ]
-                }
-              ]
-            }
+            "period_match" => %{"$lte" => ["$period.start", to]}
           }
         },
         %{"$match" => %{"period_match" => true}},
