@@ -9,21 +9,31 @@ defmodule Core.Validators.EpisodeContext do
   @status_active Episode.status(:active)
 
   def validate(episode_id, options) do
+    client_id = Keyword.get(options, :client_id)
     patient_id_hash = Keyword.get(options, :patient_id_hash)
 
     result =
       Patient.metadata().collection
       |> Mongo.aggregate([
         %{"$match" => %{"_id" => patient_id_hash}},
-        %{"$project" => %{"_id" => "$episodes.#{episode_id}.id", "status" => "$episodes.#{episode_id}.status"}}
+        %{
+          "$project" => %{
+            "_id" => "$episodes.#{episode_id}.id",
+            "status" => "$episodes.#{episode_id}.status",
+            "managing_organization" => "$episodes.#{episode_id}.managing_organization.identifier.value"
+          }
+        }
       ])
       |> Enum.to_list()
 
     episode_mongo_id = Mongo.string_to_uuid(episode_id)
 
     case result do
-      [%{"_id" => ^episode_mongo_id, "status" => @status_active}] ->
+      [%{"_id" => ^episode_mongo_id, "status" => @status_active, "managing_organization" => ^client_id}] ->
         :ok
+
+      [%{"_id" => ^episode_mongo_id, "status" => @status_active}] ->
+        error(options, "User is not allowed to change objects, created by another legal_entity")
 
       [%{"_id" => ^episode_mongo_id}] ->
         error(options, "Episode is not active")

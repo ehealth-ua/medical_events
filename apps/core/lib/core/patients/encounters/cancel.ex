@@ -4,6 +4,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Conditions
   alias Core.DateView
   alias Core.Encounter
+  alias Core.Episode
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCancelSaveConditionsJob
   alias Core.Jobs.PackageCancelSaveObservationsJob
@@ -11,9 +12,13 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
+  alias Core.Patients.Episodes
+  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
   alias Core.ReferenceView
   alias Core.UUIDView
+  alias Core.Validators.Vex
+  alias EView.Views.ValidationError
 
   require Logger
 
@@ -37,10 +42,11 @@ defmodule Core.Patients.Encounters.Cancel do
   Performs validation by comparing encounter packages which created retrieved from job signed data and database
   Package entities except `encounter` are MapSet's to ignore position in list
   """
-  def validate(decoded_content, %Encounter{} = encounter, patient_id_hash) do
+  def validate(decoded_content, %Encounter{} = encounter, patient_id_hash, client_id) do
     encounter_request_package = create_encounter_package_from_request(decoded_content)
 
-    with {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
+    with :ok <- validate_episode_managing_organization(encounter, patient_id_hash, client_id),
+         {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
       :ok
@@ -331,6 +337,39 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   defp validate_conditions(_), do: :ok
+
+  defp validate_episode_managing_organization(
+         %Encounter{episode: %{identifier: %{value: episode_id}}},
+         patient_id_hash,
+         client_id
+       ) do
+    with {:ok, episode} <- Episodes.get(patient_id_hash, UUID.binary_to_string!(episode_id.binary)) do
+      episode = Episode.create(episode)
+      managing_organization = episode.managing_organization
+      identifier = managing_organization.identifier
+
+      episode =
+        %{
+          episode
+          | managing_organization: %{
+              managing_organization
+              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
+            }
+        }
+        |> EpisodeValidations.validate_managing_organization(client_id)
+
+      case Vex.errors(episode) do
+        [] ->
+          :ok
+
+        errors ->
+          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+      end
+    else
+      _ ->
+        {:ok, "Encounter's episode not found", 404}
+    end
+  end
 
   defp get_entities("allergy_intolerances", ids, patient_id_hash, encounter_uuid) do
     patient_id_hash

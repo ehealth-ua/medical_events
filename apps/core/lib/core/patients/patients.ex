@@ -173,7 +173,7 @@ defmodule Core.Patients do
          :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
-         :ok <- CancelEncounter.validate(decoded_content, encounter, patient_id_hash),
+         :ok <- CancelEncounter.validate(decoded_content, encounter, patient_id_hash, job.client_id),
          :ok <- CancelEncounter.save(patient, decoded_content, encounter_id, job) do
       :ok
     else
@@ -529,6 +529,9 @@ defmodule Core.Patients do
 
     with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
+      managing_organization = episode.managing_organization
+      identifier = managing_organization.identifier
+
       new_period = DatePeriod.create(job.request_params["period"])
       changes = Map.take(job.request_params, ~w(closing_summary status_reason))
 
@@ -538,10 +541,15 @@ defmodule Core.Patients do
           | status: Episode.status(:closed),
             updated_by: job.user_id,
             updated_at: now,
-            period: %{episode.period | end: new_period.end}
+            period: %{episode.period | end: new_period.end},
+            managing_organization: %{
+              managing_organization
+              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
+            }
         }
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
         |> EpisodeValidations.validate_period()
+        |> EpisodeValidations.validate_managing_organization(job.client_id)
 
       case Vex.errors(episode) do
         [] ->
@@ -594,6 +602,9 @@ defmodule Core.Patients do
 
     with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       episode = Episode.create(episode)
+      managing_organization = episode.managing_organization
+      identifier = managing_organization.identifier
+
       changes = Map.take(job.request_params, ~w(explanatory_letter status_reason))
 
       episode =
@@ -601,9 +612,14 @@ defmodule Core.Patients do
           episode
           | status: Episode.status(:cancelled),
             updated_by: job.user_id,
-            updated_at: now
+            updated_at: now,
+            managing_organization: %{
+              managing_organization
+              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
+            }
         }
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        |> EpisodeValidations.validate_managing_organization(job.client_id)
 
       case Vex.errors(episode) do
         [] ->
@@ -728,7 +744,7 @@ defmodule Core.Patients do
           inserted_at: now,
           updated_at: now
       }
-      |> EncounterValidations.validate_episode(patient_id_hash)
+      |> EncounterValidations.validate_episode(client_id, patient_id_hash)
       |> EncounterValidations.validate_visit(visit, patient_id_hash)
       |> EncounterValidations.validate_performer(client_id)
       |> EncounterValidations.validate_division(client_id)

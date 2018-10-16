@@ -10,12 +10,12 @@ defmodule Core.Patients.Encounters.Validations do
 
   @il_microservice Application.get_env(:core, :microservices)[:il]
 
-  def validate_episode(%Encounter{episode: episode} = encounter, patient_id_hash) do
+  def validate_episode(%Encounter{episode: episode} = encounter, client_id, patient_id_hash) do
     identifier =
       add_validations(
         episode.identifier,
         :value,
-        episode_context: [patient_id_hash: patient_id_hash]
+        episode_context: [client_id: client_id, patient_id_hash: patient_id_hash]
       )
 
     %{encounter | episode: %{episode | identifier: identifier}}
