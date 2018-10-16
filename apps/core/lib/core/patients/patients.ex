@@ -175,7 +175,7 @@ defmodule Core.Patients do
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          :ok <- CancelEncounter.validate(decoded_content, encounter, patient_id_hash),
          :ok <- CancelEncounter.save(patient, decoded_content, encounter_id, job) do
-      {:ok, %{}, 200}
+      :ok
     else
       {:patient, _} -> {:ok, "Patient not found", 404}
       {:encounter, _} -> {:ok, "Encounter not found", 404}

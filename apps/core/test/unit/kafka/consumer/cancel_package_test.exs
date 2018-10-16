@@ -18,6 +18,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
   alias Core.Patients
 
   @job_status_processed Job.status(:processed)
+  @job_status_pending Job.status(:pending)
   @entered_in_error "entered_in_error"
 
   @explanatory_letter "Я, Шевченко Наталія Олександрівна, здійснила механічну помилку"
@@ -49,6 +50,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     test "success", %{test_data: {episode, encounter, context}} do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+      stub(KafkaMock, :publish_encounter_package_event, fn _event -> :ok end)
       user_id = prepare_signature_expectations()
 
       job = insert(:job)
@@ -115,8 +117,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert {:ok,
               %Core.Job{
                 response_size: _,
-                response: %{},
-                status: @job_status_processed,
+                response: "",
+                status: @job_status_pending,
                 status_code: 200
               }} = Jobs.get_by_id(to_string(job._id))
 
@@ -278,6 +280,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "diagnosis deactivated" do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
+      stub(KafkaMock, :publish_encounter_package_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       user_id = prepare_signature_expectations()
@@ -308,16 +311,14 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      patient =
-        insert(
-          :patient,
-          _id: patient_id_hash,
-          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
-          encounters: %{encounter_id => encounter}
-        )
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{encounter_id => encounter}
+      )
 
       insert(:condition, _id: condition_uuid, patient_id: patient_id_hash, context: context)
-      episode_id = patient.episodes |> Map.keys() |> hd()
 
       signed_data =
         %{"encounter" => render(:encounter, encounter)}
@@ -337,12 +338,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert {:ok,
               %Core.Job{
                 response_size: _,
-                status: @job_status_processed
+                status: @job_status_pending
               }} = Jobs.get_by_id(to_string(job._id))
-
-      patient = Patients.get_by_id(patient_id_hash)
-
-      assert [%{"is_active" => false} | _] = patient["episodes"][episode_id]["diagnoses_history"]
     end
   end
 

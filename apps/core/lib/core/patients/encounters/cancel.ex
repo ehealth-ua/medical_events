@@ -5,6 +5,9 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.DateView
   alias Core.Encounter
   alias Core.Jobs.PackageCancelJob
+  alias Core.Jobs.PackageCancelSaveConditionsJob
+  alias Core.Jobs.PackageCancelSaveObservationsJob
+  alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
@@ -15,10 +18,11 @@ defmodule Core.Patients.Encounters.Cancel do
   require Logger
 
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
+  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
-  @patient_collection Core.Patient.metadata().collection
-  @observation_collection Core.Observation.metadata().collection
-  @condition_collection Core.Condition.metadata().collection
+  @patients_collection Core.Patient.metadata().collection
+  @observations_collection Core.Observation.metadata().collection
+  @conditions_collection Core.Condition.metadata().collection
 
   @entered_in_error "entered_in_error"
 
@@ -44,10 +48,94 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   def save(patient, package_data, encounter_id, %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
-    with {:ok, entities_to_update} <- filter_entities_to_update(package_data),
-         :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
-         :ok <- update_observations_conditions_status(user_id, entities_to_update),
-         :ok <- update_patient_entities(patient, user_id, package_data, entities_to_update) do
+    allergy_intolerances_ids = get_allergy_intolerances_ids(package_data)
+    immunizations_ids = get_immunizations_ids(package_data)
+    conditions_ids = get_conditions_ids(package_data)
+    observations_ids = get_observations_ids(package_data)
+
+    with :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
+         set <- update_patient(patient, user_id, package_data, allergy_intolerances_ids, immunizations_ids) do
+      event = %PackageCancelSavePatientJob{
+        _id: job._id,
+        patient_id_hash: job.patient_id_hash,
+        patient_save_data: %{
+          "$set" => set
+        },
+        conditions_ids: conditions_ids,
+        observations_ids: observations_ids,
+        user_id: user_id
+      }
+
+      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
+        :ok
+      end
+    end
+  end
+
+  def consume_save_patient(
+        %PackageCancelSavePatientJob{patient_id_hash: patient_id_hash, patient_save_data: patient_save_data} = job
+      ) do
+    with {:ok, %{matched_count: 1, modified_count: 1}} <-
+           Mongo.update_one(@patients_collection, %{"_id" => patient_id_hash}, patient_save_data) do
+      event = %PackageCancelSaveConditionsJob{
+        _id: job._id,
+        conditions_ids: job.conditions_ids,
+        observations_ids: job.observations_ids,
+        user_id: job.user_id
+      }
+
+      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
+        :ok
+      end
+    end
+  end
+
+  def consume_save_conditions(%PackageCancelSaveConditionsJob{conditions_ids: conditions_ids} = job) do
+    with :ok <- update_conditions(Enum.map(conditions_ids, &Mongo.string_to_uuid/1), job.user_id) do
+      event = %PackageCancelSaveObservationsJob{
+        _id: job._id,
+        observations_ids: job.observations_ids,
+        user_id: job.user_id
+      }
+
+      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
+        :ok
+      end
+    end
+  end
+
+  defp update_conditions([], _), do: :ok
+
+  defp update_conditions(ids, user_id) do
+    with {:ok, %{}} <-
+           Mongo.update_many(@conditions_collection, %{"_id" => %{"$in" => ids}}, %{
+             "$set" => %{
+               "verification_status" => @entered_in_error,
+               "updated_by" => Mongo.string_to_uuid(user_id),
+               "updated_at" => DateTime.utc_now()
+             }
+           }) do
+      :ok
+    end
+  end
+
+  def consume_save_observations(%PackageCancelSaveObservationsJob{observations_ids: observations_ids} = job) do
+    with :ok <- update_observations(Enum.map(observations_ids, &Mongo.string_to_uuid/1), job.user_id) do
+      {:ok, %{}, 200}
+    end
+  end
+
+  defp update_observations([], _), do: :ok
+
+  defp update_observations(ids, user_id) do
+    with {:ok, %{}} <-
+           Mongo.update_many(@observations_collection, %{"_id" => %{"$in" => ids}}, %{
+             "$set" => %{
+               "verification_status" => @entered_in_error,
+               "updated_by" => Mongo.string_to_uuid(user_id),
+               "updated_at" => DateTime.utc_now()
+             }
+           }) do
       :ok
     end
   end
@@ -65,138 +153,80 @@ defmodule Core.Patients.Encounters.Cancel do
     )
   end
 
-  defp filter_entities_to_update(package_data) do
-    @entities_meta
-    |> Map.keys()
-    |> Enum.map(fn key ->
-      [status: status_field] = @entities_meta[key]
-
-      entities_id =
-        package_data
-        |> Map.get(key, [])
-        |> get_in([Access.filter(&(&1[status_field] == @entered_in_error)), "id"])
-
-      {key, entities_id}
-    end)
-    |> Enum.reject(fn {_key, entities} -> entities == [] end)
-    |> Enum.into(%{})
-    |> wrap_ok()
+  defp get_allergy_intolerances_ids(package_data) do
+    package_data
+    |> Map.get("allergy_intolerances", [])
+    |> Enum.filter(&(Map.get(&1, "verification_status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
   end
 
-  defp update_observations_conditions_status(user_id, entities_data) do
-    user_uuid = Mongo.string_to_uuid(user_id)
+  defp get_immunizations_ids(package_data) do
+    package_data
+    |> Map.get("immunizations", [])
+    |> Enum.filter(&(Map.get(&1, "status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
+  defp get_conditions_ids(package_data) do
+    package_data
+    |> Map.get("conditions", [])
+    |> Enum.filter(&(Map.get(&1, "verification_status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
+  defp get_observations_ids(package_data) do
+    package_data
+    |> Map.get("observations", [])
+    |> Enum.filter(&(Map.get(&1, "status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
+  defp update_patient(patient, user_id, %{"encounter" => encounter}, allergy_intolerances_ids, immunizations_ids) do
     now = DateTime.utc_now()
 
-    update_status = fn ids, status_field, collection ->
-      uuids = Enum.map(ids, &Mongo.string_to_uuid(&1))
+    %{"updated_by" => user_id, "updated_at" => now}
+    |> Mongo.convert_to_uuid("updated_by")
+    |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
+    |> set_immunizations(immunizations_ids, user_id, now)
+    |> set_encounter(user_id, encounter, now)
+  end
 
-      with {:ok, _} <-
-             Mongo.update_many(collection, %{"_id" => %{"$in" => uuids}}, %{
-               "$set" => %{
-                 status_field => @entered_in_error,
-                 "updated_by" => user_uuid,
-                 "updated_at" => now
-               }
-             }) do
-        :ok
-      else
-        err ->
-          Logger.error("Fail to update #{collection} #{status_field}: #{inspect(err)}")
-          err
-      end
-    end
-
-    entities_data
-    |> Map.take(["observations", "conditions"])
-    |> Enum.map(fn
-      {"observations", entities_id} ->
-        update_status.(entities_id, "status", @observation_collection)
-
-      {"conditions", entities_id} ->
-        update_status.(entities_id, "verification_status", @condition_collection)
+  defp set_allergy_intolerances(set, ids, user_id, now) do
+    Enum.reduce(ids, set, fn id, acc ->
+      acc
+      |> Mongo.add_to_set(@entered_in_error, "allergy_intolerances.#{id}.verification_status")
+      |> Mongo.add_to_set(user_id, "allergy_intolerances.#{id}.updated_by")
+      |> Mongo.add_to_set(now, "allergy_intolerances.#{id}.updated_at")
+      |> Mongo.convert_to_uuid("allergy_intolerances.#{id}.updated_by")
     end)
-    |> Enum.all?(&Kernel.==(&1, :ok))
-    |> case do
-      true -> :ok
-      _ -> {:error, "Fail to update encounter package entities"}
-    end
   end
 
-  defp update_patient_entities(patient, user_id, %{"encounter" => encounter}, entities_data) do
-    user_uuid = Mongo.string_to_uuid(user_id)
-    update_data = %{"updated_by" => user_uuid, "updated_at" => DateTime.utc_now()}
-
-    update_patient_data =
-      update_data
-      |> update_allergies_immunizations(user_uuid, entities_data)
-      |> update_diagnoses(patient, encounter)
-      |> update_encounter(user_uuid, encounter)
-
-    with {:ok, _} <- Mongo.update_one(@patient_collection, %{"_id" => patient["_id"]}, %{"$set" => update_patient_data}) do
-      :ok
-    end
+  defp set_immunizations(set, ids, user_id, now) do
+    Enum.reduce(ids, set, fn id, acc ->
+      acc
+      |> Mongo.add_to_set(@entered_in_error, "immunizations.#{id}.status")
+      |> Mongo.add_to_set(user_id, "immunizations.#{id}.updated_by")
+      |> Mongo.add_to_set(now, "immunizations.#{id}.updated_at")
+      |> Mongo.convert_to_uuid("immunizations.#{id}.updated_by")
+    end)
   end
 
-  defp update_allergies_immunizations(update_data, user_uuid, entities_data) do
-    entities_data = Map.take(entities_data, ["allergy_intolerances", "immunizations"])
-
-    for {entity_key, entities_ids} <- entities_data, id <- entities_ids do
-      status_field = @entities_meta[entity_key][:status]
-      add_path = &("#{entity_key}.#{id}." <> &1)
-
-      %{
-        add_path.(status_field) => @entered_in_error,
-        add_path.("updated_by") => user_uuid,
-        add_path.("updated_at") => DateTime.utc_now()
-      }
-    end
-    |> Enum.reduce(update_data, fn change, acc -> Map.merge(acc, change) end)
+  defp set_encounter(set, user_id, %{"id" => encounter_id} = encounter, now) do
+    # TODO: divisions history logic is not specified yet
+    set
+    |> Mongo.add_to_set(user_id, "encounters.#{encounter_id}.updated_by")
+    |> Mongo.add_to_set(now, "encounters.#{encounter_id}.updated_at")
+    |> Mongo.add_to_set(encounter["cancellation_reason"], "encounters.#{encounter_id}.cancellation_reason")
+    |> Mongo.add_to_set(encounter["explanatory_letter"], "encounters.#{encounter_id}.explanatory_letter")
+    |> Mongo.convert_to_uuid("encounters.#{encounter_id}.updated_by")
+    |> set_encounter_status(encounter)
   end
 
-  defp update_diagnoses(update_data, _patient, %{"status" => @entered_in_error}), do: update_data
-
-  defp update_diagnoses(update_data, patient, encounter) do
-    encounter_uuid = Mongo.string_to_uuid(encounter["id"])
-    episode_path = ["encounters", encounter["id"], "episode", "identifier", "value"]
-
-    with %BSON.Binary{} = episode_uuid <- get_in(patient, episode_path) do
-      episode_id = UUID.binary_to_string!(episode_uuid.binary)
-      diagnoses_history = patient["episodes"][episode_id]["diagnoses_history"]
-
-      updated_diagnoses_history =
-        Enum.map(diagnoses_history, fn diagnos ->
-          if diagnos["evidence"]["identifier"]["value"] == encounter_uuid do
-            %{diagnos | "is_active" => false}
-          else
-            diagnos
-          end
-        end)
-
-      Map.merge(update_data, %{"episodes.#{episode_id}.diagnoses_history" => updated_diagnoses_history})
-    else
-      _ -> update_data
-    end
+  defp set_encounter_status(set, %{"id" => id, "status" => @entered_in_error}) do
+    Mongo.add_to_set(set, @entered_in_error, "encounters.#{id}.status")
   end
 
-  defp update_encounter(update_data, user_uuid, %{"id" => encounter_id} = encounter) do
-    add_path = &("encounters.#{encounter_id}." <> &1)
-
-    encounter_update_data = %{
-      add_path.("cancellation_reason") => encounter["cancellation_reason"],
-      add_path.("explanatory_letter") => encounter["explanatory_letter"],
-      add_path.("updated_by") => user_uuid,
-      add_path.("updated_at") => DateTime.utc_now()
-    }
-
-    encounter_update_data =
-      if encounter["status"] == @entered_in_error do
-        Map.merge(encounter_update_data, %{add_path.("status") => @entered_in_error})
-      else
-        encounter_update_data
-      end
-
-    Map.merge(update_data, encounter_update_data)
-  end
+  defp set_encounter_status(set, _), do: set
 
   defp get_entities_to_load(decoded_content) do
     available_entities = Map.keys(@entities_meta)
