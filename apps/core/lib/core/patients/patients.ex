@@ -173,8 +173,8 @@ defmodule Core.Patients do
          :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
-         :ok <- CancelEncounter.validate_cancellation(decoded_content, encounter, patient_id_hash),
-         :ok <- CancelEncounter.proccess_cancellation(patient, user_id, decoded_content) do
+         :ok <- CancelEncounter.validate(decoded_content, encounter, patient_id_hash),
+         :ok <- CancelEncounter.save(patient, decoded_content, encounter_id, job) do
       {:ok, %{}, 200}
     else
       {:patient, _} -> {:ok, "Patient not found", 404}

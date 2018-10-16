@@ -47,6 +47,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "success", %{test_data: {episode, encounter, context}} do
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
       user_id = prepare_signature_expectations()
 
@@ -276,6 +277,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "diagnosis deactivated" do
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       user_id = prepare_signature_expectations()

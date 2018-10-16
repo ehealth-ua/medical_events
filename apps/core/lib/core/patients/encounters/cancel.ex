@@ -4,6 +4,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Conditions
   alias Core.DateView
   alias Core.Encounter
+  alias Core.Jobs.PackageCancelJob
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
@@ -12,6 +13,8 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.UUIDView
 
   require Logger
+
+  @media_storage Application.get_env(:core, :microservices)[:media_storage]
 
   @patient_collection Core.Patient.metadata().collection
   @observation_collection Core.Observation.metadata().collection
@@ -30,7 +33,7 @@ defmodule Core.Patients.Encounters.Cancel do
   Performs validation by comparing encounter packages which created retrieved from job signed data and database
   Package entities except `encounter` are MapSet's to ignore position in list
   """
-  def validate_cancellation(decoded_content, %Encounter{} = encounter, patient_id_hash) do
+  def validate(decoded_content, %Encounter{} = encounter, patient_id_hash) do
     encounter_request_package = create_encounter_package_from_request(decoded_content)
 
     with {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
@@ -40,12 +43,26 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  def proccess_cancellation(patient, user_id, package_data) do
+  def save(patient, package_data, encounter_id, %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
     with {:ok, entities_to_update} <- filter_entities_to_update(package_data),
+         :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
          :ok <- update_observations_conditions_status(user_id, entities_to_update),
          :ok <- update_patient_entities(patient, user_id, package_data, entities_to_update) do
       :ok
     end
+  end
+
+  defp save_signed_content(patient_id, encounter_id, signed_data) do
+    resource_name = "#{encounter_id}/cancel"
+    files = [{'signed_content.txt', signed_data}]
+    {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
+
+    @media_storage.save(
+      patient_id,
+      compressed_content,
+      Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:encounter_bucket],
+      resource_name
+    )
   end
 
   defp filter_entities_to_update(package_data) do
