@@ -21,6 +21,9 @@ defmodule Core.Headers do
     end)
   end
 
-  def create(:user_id, user_id), do: {@consumer_id, user_id}
-  def create(:client_id, client_id), do: {@consumer_metadata, client_id}
+  def create(:user_id, user_id), do: {String.to_atom(@consumer_id), user_id}
+
+  def create(:client_id, client_id) do
+    {String.to_atom(@consumer_metadata), Jason.encode!(%{"client_id" => client_id})}
+  end
 end
