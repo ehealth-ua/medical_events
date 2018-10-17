@@ -53,14 +53,14 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  def save(patient, package_data, encounter_id, %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
+  def save(package_data, encounter_id, %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
     allergy_intolerances_ids = get_allergy_intolerances_ids(package_data)
     immunizations_ids = get_immunizations_ids(package_data)
     conditions_ids = get_conditions_ids(package_data)
     observations_ids = get_observations_ids(package_data)
 
     with :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
-         set <- update_patient(patient, user_id, package_data, allergy_intolerances_ids, immunizations_ids) do
+         set <- update_patient(user_id, package_data, allergy_intolerances_ids, immunizations_ids) do
       event = %PackageCancelSavePatientJob{
         _id: job._id,
         patient_id_hash: job.patient_id_hash,
@@ -187,7 +187,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
-  defp update_patient(patient, user_id, %{"encounter" => encounter}, allergy_intolerances_ids, immunizations_ids) do
+  defp update_patient(user_id, %{"encounter" => encounter}, allergy_intolerances_ids, immunizations_ids) do
     now = DateTime.utc_now()
 
     %{"updated_by" => user_id, "updated_at" => now}
@@ -291,17 +291,26 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.reject(fn {_key, entities} -> entities == [] end)
   end
 
-  defp validate_enounter_packages(package1, package2) do
-    if package1 == package2 do
-      :ok
-    else
-      # todo: remove after test
-      if Mix.env() != :test do
-        IO.puts("encounter package from db: #{inspect(package1)}")
-        IO.puts("encounter package from request: #{inspect(package2)}")
-      end
+  defp validate_enounter_packages(package, request_package) do
+    package = Iteraptor.to_flatmap(package)
+    request_package = Iteraptor.to_flatmap(request_package)
 
-      {:ok, %{"error" => "Submitted signed content does not correspond to previously created content"}, 409}
+    request_package
+    |> Enum.reject(fn {key, value} -> package[key] == value end)
+    |> case do
+      [] ->
+        :ok
+
+      [{error_path, _} | _] = errors ->
+        # todo: remove after test
+        if Mix.env() != :test do
+          IO.puts("encounter packages diff: #{inspect(errors)}")
+          IO.puts("encounter packages from db: #{inspect(package)}")
+          IO.puts("encounter packages from request: #{inspect(request_package)}")
+        end
+
+        {:ok, %{"error" => "Submitted signed content does not correspond to previously created content: #{error_path}"},
+         409}
     end
   end
 
@@ -400,7 +409,7 @@ defmodule Core.Patients.Encounters.Cancel do
       id: UUIDView.render(encounter.id),
       date: DateView.render_date(encounter.date),
       visit: ReferenceView.render(encounter.visit),
-      episode: ReferenceView.render(encounter.episode),
+      episode: render(encounter.episode),
       class: ReferenceView.render(encounter.class),
       type: ReferenceView.render(encounter.type),
       incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
@@ -408,7 +417,7 @@ defmodule Core.Patients.Encounters.Cancel do
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: ReferenceView.render(encounter.diagnoses),
       actions: ReferenceView.render(encounter.actions),
-      division: ReferenceView.render(encounter.division)
+      division: render(encounter.division)
     }
   end
 

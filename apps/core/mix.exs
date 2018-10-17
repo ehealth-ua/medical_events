@@ -46,6 +46,7 @@ defmodule Core.MixProject do
       {:elixir_uuid, "~> 1.2"},
       {:eview, "~> 0.14.0"},
       {:httpoison, "~> 1.2"},
+      {:iteraptor, "~> 1.3.2"},
       {:jason, "~> 1.1"},
       {:jvalid, "~> 0.7.0"},
       {:kafka_ex, "~> 0.8.3"},

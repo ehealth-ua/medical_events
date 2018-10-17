@@ -78,17 +78,17 @@ defmodule Core.ReferenceView do
   end
 
   def render(%Period{} = period) do
-    Map.take(period, ~w(
-      start
-      end
-    )a)
+    %{
+      start: DateView.render_datetime(period.start),
+      end: DateView.render_datetime(period.end)
+    }
   end
 
   def render(%DatePeriod{} = period) do
-    Map.take(period, ~w(
-      start
-      end
-    )a)
+    %{
+      start: DateView.render_date(period.start),
+      end: DateView.render_date(period.end)
+    }
   end
 
   def render(%Coding{} = coding) do
@@ -172,7 +172,8 @@ defmodule Core.ReferenceView do
       factor
       lower_limit
       upper_limit
-      dimensions data
+      dimensions
+      data
     )a
 
     %{value_sampled_data: Map.take(value, fields)}
@@ -199,7 +200,7 @@ defmodule Core.ReferenceView do
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do
-    %{effective_date_time: value}
+    %{effective_date_time: DateView.render_datetime(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_period", value: value}) do

@@ -339,7 +339,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                 status: @job_status_processed
               }} = Jobs.get_by_id(to_string(job._id))
 
-      assert "Submitted signed content does not correspond to previously created content" == error
+      assert String.contains?(error, "Submitted signed content does not correspond to previously created content")
     end
 
     test "fail on validate diagnoses" do
