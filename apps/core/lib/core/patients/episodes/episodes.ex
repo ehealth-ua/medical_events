@@ -67,7 +67,7 @@ defmodule Core.Patients.Episodes do
                 %{
                   "$or" => [
                     %{"$gte" => ["$period.end", from]},
-                    %{"$eq" => ["$period.end", nil]}
+                    %{"$not" => ["$period.end"]}
                   ]
                 }
               ]
@@ -89,7 +89,7 @@ defmodule Core.Patients.Episodes do
             "period_match" => %{
               "$or" => [
                 %{"$gte" => ["$period.end", from]},
-                %{"$eq" => ["$period.end", nil]}
+                %{"$not" => ["$period.end"]}
               ]
             }
           }

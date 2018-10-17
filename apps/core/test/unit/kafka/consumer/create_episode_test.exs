@@ -119,7 +119,9 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                })
 
       assert %{"episodes" => episodes} =
-               Mongo.find_one(Patient.metadata().collection, %{"_id" => Patients.get_pk_hash(patient_id)},
+               Mongo.find_one(
+                 Patient.metadata().collection,
+                 %{"_id" => Patients.get_pk_hash(patient_id)},
                  projection: [episodes: true]
                )
 

@@ -228,7 +228,8 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient,
+      insert(
+        :patient,
         _id: patient_id_hash,
         episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
         encounters: %{
@@ -291,7 +292,8 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       expect_get_person_data(patient_id)
 
-      insert(:patient,
+      insert(
+        :patient,
         _id: patient_id_hash,
         episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
         encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}

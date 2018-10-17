@@ -10,7 +10,8 @@ defmodule Core.Diagnosis do
     field(:role, presence: true, reference: [path: "role"])
     field(:rank)
 
-    field(:code,
+    field(
+      :code,
       presence: true,
       dictionary_reference: [referenced_field: "system", field: "code"]
     )

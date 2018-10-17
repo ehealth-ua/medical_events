@@ -27,7 +27,8 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient,
+      insert(
+        :patient,
         _id: patient_id_hash,
         episodes: %{
           UUID.binary_to_string!(episode.id.binary) => episode,
@@ -47,7 +48,9 @@ defmodule Api.Web.ConditionControllerTest do
       {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
-      insert_list(2, :condition,
+      insert_list(
+        2,
+        :condition,
         patient_id: patient_id_hash,
         context: context,
         code: condition_code,
@@ -158,7 +161,8 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient,
+      insert(
+        :patient,
         _id: patient_id_hash,
         episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
         encounters: %{
@@ -258,7 +262,8 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       expect_get_person_data(patient_id)
 
-      insert(:patient,
+      insert(
+        :patient,
         _id: patient_id_hash,
         episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
         encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}

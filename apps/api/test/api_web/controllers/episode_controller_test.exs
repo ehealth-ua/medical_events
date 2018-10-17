@@ -570,7 +570,287 @@ defmodule Api.Web.EpisodeControllerTest do
     end
   end
 
-  describe "list episodes by period" do
+  describe "list episodes by period end can has no key period.end, by confluence" do
+    setup %{conn: conn} do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      episode1 = build(:episode, period: %{start: create_datetime("2014-02-02")})
+      episode2 = build(:episode, period: %{start: create_datetime("2018-07-02")})
+      episode3 = build(:episode, period: %{start: create_datetime("2017-01-01"), end: create_datetime("2018-10-17")})
+
+      builded_episodes = [
+        episode1,
+        episode2,
+        episode3
+      ]
+
+      episodes =
+        Enum.reduce(builded_episodes, %{}, fn episode, episodes ->
+          Map.put(episodes, UUID.binary_to_string!(episode.id.binary), episode)
+        end)
+
+      episode_id = fn episode ->
+        UUID.binary_to_string!(episode.id.binary)
+      end
+
+      episodes_state = %{
+        episode1: episode_id.(episode1),
+        episode2: episode_id.(episode2),
+        episode3: episode_id.(episode3)
+      }
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
+
+      %{conn: conn}
+      |> Map.put(:episodes, episodes_state)
+      |> Map.put(:patient_id, patient_id)
+    end
+
+    test "get episodes by period_from 2000-01-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2000-01-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2, episode3])
+    end
+
+    test "get episodes by period_from 2017-02-02", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2017-02-02"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2, episode3])
+    end
+
+    test "get episodes by period_from 2018-11-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2018-11-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2])
+    end
+
+    test "get episodes by period_to 2020-01-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_to" => "2020-01-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2, episode3])
+    end
+
+    test "get episodes by period_to 2015-01-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_to" => "2015-01-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1])
+    end
+
+    test "get episodes by period_to 2000-01-01", %{
+      conn: conn,
+      patient_id: patient_id
+    } do
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_to" => "2000-01-01"})
+        |> json_response(200)
+
+      assert resp["data"] == []
+    end
+
+    test "get episodes by period_from 2017-02-02 period_to 2018-06-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2017-02-02", "period_to" => "2018-06-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode3])
+    end
+
+    test "get episodes by period_from 2000-01-01 period_to 2020-01-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2000-01-01", "period_to" => "2020-01-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2, episode3])
+    end
+
+    test "get episodes by period_from 2000-01-01 period_to 2015-01-01", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2000-01-01", "period_to" => "2015-01-01"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1])
+    end
+
+    test "get episodes by period_from 2017-02-02 period_to 2018-11-02", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2, episode3: episode3} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2017-02-02", "period_to" => "2018-11-02"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2, episode3])
+    end
+
+    test "get episodes by period_from 2020-02-02 period_to 2030-09-02", %{
+      conn: conn,
+      patient_id: patient_id,
+      episodes: episodes
+    } do
+      %{episode1: episode1, episode2: episode2} = episodes
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2020-02-02", "period_to" => "2030-09-02"})
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_show.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [episode1, episode2])
+    end
+
+    test "get episodes by period_from 2000-02-02 period_to 2013-09-02", %{
+      conn: conn,
+      patient_id: patient_id
+    } do
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"period_from" => "2000-02-02", "period_to" => "2013-09-02"})
+        |> json_response(200)
+
+      assert resp["data"] == []
+    end
+  end
+
+  describe "list episodes by period when key period.end always exists" do
     setup %{conn: conn} do
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
@@ -680,7 +960,7 @@ defmodule Api.Web.EpisodeControllerTest do
           [episode["id"] | ids]
         end)
 
-      asserd_matching_ids(ids, [
+      assert_matching_ids(ids, [
         today_inactive_episode,
         today_active_episode,
         week_ago_today_episode,
@@ -713,7 +993,7 @@ defmodule Api.Web.EpisodeControllerTest do
           [episode["id"] | ids]
         end)
 
-      asserd_matching_ids(ids, [
+      assert_matching_ids(ids, [
         week_ago_inactive_episode,
         week_ago_today_episode,
         week_ago_next_week_episode,
@@ -752,7 +1032,7 @@ defmodule Api.Web.EpisodeControllerTest do
           [episode["id"] | ids]
         end)
 
-      asserd_matching_ids(ids, [
+      assert_matching_ids(ids, [
         today_inactive_episode,
         today_active_episode,
         week_ago_inactive_episode,
@@ -799,7 +1079,7 @@ defmodule Api.Web.EpisodeControllerTest do
     end
   end
 
-  defp asserd_matching_ids(received_ids, db_ids) do
+  defp assert_matching_ids(received_ids, db_ids) do
     assert MapSet.new(received_ids) == MapSet.new(db_ids)
   end
 end
