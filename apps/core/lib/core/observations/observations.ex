@@ -9,6 +9,7 @@ defmodule Core.Observations do
   alias Core.Reference
   alias Core.Search
   alias Core.Source
+  alias Core.Validators.JsonSchema
   alias Scrivener.Page
 
   require Logger
@@ -27,6 +28,19 @@ defmodule Core.Observations do
     end
   end
 
+  def get_summary(patient_id_hash, id) do
+    @observation_collection
+    |> Mongo.find_one(%{
+      "_id" => Mongo.string_to_uuid(id),
+      "patient_id" => patient_id_hash,
+      "code.coding.code" => %{"$in" => Confex.fetch_env!(:core, :summary)[:observations_whitelist]}
+    })
+    |> case do
+      %{} = observation -> {:ok, Observation.create(observation)}
+      _ -> nil
+    end
+  end
+
   def get_by_encounter_id(patient_id_hash, encounter_id) do
     @observation_collection
     |> Mongo.find(%{"patient_id" => patient_id_hash, "context.identifier.value" => encounter_id})
@@ -34,19 +48,44 @@ defmodule Core.Observations do
   end
 
   def list(params) do
-    paging_params = Map.take(params, ["page", "page_size"])
+    json_params = Map.drop(params, ~w(page page_size patient_id patient_id_hash))
 
-    with [_ | _] = pipeline <- search_observations_pipe(params),
-         %Page{entries: observations} = page <-
-           Paging.paginate(
-             :aggregate,
-             @observation_collection,
-             pipeline,
-             paging_params
-           ) do
-      {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
-    else
-      _ -> {:ok, Paging.create()}
+    with :ok <- JsonSchema.validate(:observation_request, json_params) do
+      paging_params = Map.take(params, ["page", "page_size"])
+
+      with [_ | _] = pipeline <- search_observations_pipe(params),
+           %Page{entries: observations} = page <-
+             Paging.paginate(
+               :aggregate,
+               @observation_collection,
+               pipeline,
+               paging_params
+             ) do
+        {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
+      else
+        _ -> {:ok, Paging.create()}
+      end
+    end
+  end
+
+  def summary(params) do
+    json_params = Map.drop(params, ~w(page page_size patient_id patient_id_hash))
+
+    with :ok <- JsonSchema.validate(:observation_summary, json_params) do
+      paging_params = Map.take(params, ["page", "page_size"])
+
+      with [_ | _] = pipeline <- search_observations_summary(params),
+           %Page{entries: observations} = page <-
+             Paging.paginate(
+               :aggregate,
+               @observation_collection,
+               pipeline,
+               paging_params
+             ) do
+        {:ok, %Page{page | entries: Enum.map(observations, &Observation.create/1)}}
+      else
+        _ -> {:ok, Paging.create()}
+      end
     end
   end
 
@@ -132,6 +171,21 @@ defmodule Core.Observations do
       |> List.wrap()
       |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
     end
+  end
+
+  defp search_observations_summary(%{"patient_id_hash" => patient_id_hash} = params) do
+    code = params["code"]
+    codes = Confex.fetch_env!(:core, :summary)[:conditions_whitelist]
+    issued_from = filter_date(params["issued_from"])
+    issued_to = filter_date(params["issued_to"], true)
+
+    %{"$match" => %{"patient_id" => patient_id_hash}}
+    |> Search.add_param(code, ["$match", "code.coding.0.code"])
+    |> Search.add_param(codes, ["$match", "code.coding.0.code"], "$in")
+    |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
+    |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
+    |> List.wrap()
+    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
   end
 
   defp filter_date(date, end_day_time? \\ false) do

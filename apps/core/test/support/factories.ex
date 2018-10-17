@@ -229,7 +229,7 @@ defmodule Core.Factories do
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
       categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
-      code: codeable_concept_coding(system: "eHealth/observations_codes"),
+      code: codeable_concept_coding(system: "eHealth/observations_codes", code: "A10"),
       comment: "some comment",
       patient_id: Patients.get_pk_hash(UUID.uuid4()),
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],

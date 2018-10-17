@@ -18,6 +18,8 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:episode_get, "json_schemas/episodes/episode_get.json")
   use_schema(:condition_request, "json_schemas/conditions/condition_request.json")
   use_schema(:condition_summary, "json_schemas/conditions/condition_summary.json")
+  use_schema(:observation_request, "json_schemas/observations/observation_request.json")
+  use_schema(:observation_summary, "json_schemas/observations/observation_summary.json")
   use_schema(:allergy_intolerance_request, "json_schemas/allergy_intolerances/allergy_intolerance_request.json")
   use_schema(:allergy_intolerance_summary, "json_schemas/allergy_intolerances/allergy_intolerance_summary.json")
   use_schema(:immunization_request, "json_schemas/immunizations/immunization_request.json")

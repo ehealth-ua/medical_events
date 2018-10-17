@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Observation's code "
+    },
+    "issued_from": {
+      "type": "string",
+      "format": "date",
+      "description": "Selection start date"
+    },
+    "issued_to": {
+      "type": "string",
+      "format": "date",
+      "description": "Selection end date"
+    }
+  },
+  "additionalProperties": false
+}

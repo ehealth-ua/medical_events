@@ -6,6 +6,7 @@ defmodule Api.Web.SummaryControllerTest do
   import Core.Expectations.CasherExpectation
   import Mox
 
+  alias Core.Observations.Value
   alias Core.Patients
 
   describe "list immunizations" do
@@ -483,6 +484,62 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "condition not found", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(summary_path(conn, :show_condition, patient_id, UUID.uuid4()))
+      |> json_response(404)
+    end
+  end
+
+  describe "get observation" do
+    test "success", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      observation =
+        insert(:observation,
+          patient_id: patient_id_hash,
+          value: %Value{type: "period", value: build(:period)},
+          code: codeable_concept_coding(system: "eHealth/observations_codes", code: "B70")
+        )
+
+      expect_get_person_data(patient_id)
+
+      response_data =
+        conn
+        |> get(summary_path(conn, :show_observation, patient_id, UUID.binary_to_string!(observation._id.binary)))
+        |> json_response(200)
+        |> Map.get("data")
+        |> assert_json_schema("observations/observation_show.json")
+
+      assert %{"start" => _, "end" => _} = response_data["value_period"]
+    end
+
+    test "observation has different code", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      insert(:observation, patient_id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(summary_path(conn, :show_observation, patient_id, UUID.uuid4()))
+      |> json_response(404)
+    end
+
+    test "observation not found", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)

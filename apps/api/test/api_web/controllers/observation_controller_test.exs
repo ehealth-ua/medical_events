@@ -325,6 +325,28 @@ defmodule Api.Web.ObservationControllerTest do
                |> json_response(200)
                |> get_in(["data"])
     end
+
+    test "invalid search parameters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      expect_get_person_data(patient_id)
+      insert(:patient, _id: patient_id_hash)
+      search_params = %{"issued_from" => "invalid"}
+
+      resp =
+        conn
+        |> get(observation_path(conn, :index, patient_id), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.issued_from",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"rule" => "date"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
   end
 
   defp build_observation_code do

@@ -6,7 +6,9 @@ defmodule Api.Web.SummaryController do
   alias Api.Web.AllergyIntoleranceView
   alias Api.Web.ConditionView
   alias Api.Web.ImmunizationView
+  alias Api.Web.ObservationView
   alias Core.Conditions
+  alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Immunizations
   alias Scrivener.Page
@@ -35,6 +37,18 @@ defmodule Api.Web.SummaryController do
   def show_condition(conn, %{"patient_id_hash" => patient_id_hash, "id" => condition_id}) do
     with {:ok, condition} <- Conditions.get_summary(patient_id_hash, condition_id) do
       render(conn, ConditionView, "show.json", condition: condition)
+    end
+  end
+
+  def list_observations(conn, params) do
+    with {:ok, %Page{entries: observations} = paging} <- Observations.list(params) do
+      render(conn, ObservationView, "index.json", observations: observations, paging: paging)
+    end
+  end
+
+  def show_observation(conn, %{"patient_id_hash" => patient_id_hash, "id" => observation_id}) do
+    with {:ok, observation} <- Observations.get_summary(patient_id_hash, observation_id) do
+      render(conn, ObservationView, "show.json", observation: observation)
     end
   end
 end
