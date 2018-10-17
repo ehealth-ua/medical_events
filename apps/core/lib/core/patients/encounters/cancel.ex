@@ -137,7 +137,7 @@ defmodule Core.Patients.Encounters.Cancel do
     with {:ok, %{}} <-
            Mongo.update_many(@observations_collection, %{"_id" => %{"$in" => ids}}, %{
              "$set" => %{
-               "verification_status" => @entered_in_error,
+               "status" => @entered_in_error,
                "updated_by" => Mongo.string_to_uuid(user_id),
                "updated_at" => DateTime.utc_now()
              }
