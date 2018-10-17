@@ -27,9 +27,10 @@ defmodule Core.Validators.EpisodeContext do
       |> Enum.to_list()
 
     episode_mongo_id = Mongo.string_to_uuid(episode_id)
+    client_mongo_id = Mongo.string_to_uuid(client_id)
 
     case result do
-      [%{"_id" => ^episode_mongo_id, "status" => @status_active, "managing_organization" => ^client_id}] ->
+      [%{"_id" => ^episode_mongo_id, "status" => @status_active, "managing_organization" => ^client_mongo_id}] ->
         :ok
 
       [%{"_id" => ^episode_mongo_id, "status" => @status_active}] ->

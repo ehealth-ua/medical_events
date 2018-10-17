@@ -104,7 +104,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 build(
                   :identifier,
                   type: build(:codeable_concept, coding: [build(:coding)]),
-                  value: client_id
+                  value: Mongo.string_to_uuid(client_id)
                 )
             )
         )
@@ -233,7 +233,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 build(
                   :identifier,
                   type: build(:codeable_concept, coding: [build(:coding)]),
-                  value: client_id
+                  value: Mongo.string_to_uuid(client_id)
                 )
             )
         )
