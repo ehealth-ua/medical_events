@@ -163,4 +163,6 @@ config :core, :encounter_package,
 
 config :core, digital_signarure_enabled?: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true}
 
+config :core, :summary, conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["A70", "A80"]}
+
 import_config "#{Mix.env()}.exs"

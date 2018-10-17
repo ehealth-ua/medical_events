@@ -28,8 +28,8 @@ defmodule Core.Patients.Immunizations do
     end
   end
 
-  def list(%{"patient_id_hash" => patient_id_hash} = params) do
-    with :ok <- JsonSchema.validate(:immunization_request, Map.drop(params, ~w(patient_id patient_id_hash))) do
+  def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :immunization_request) do
+    with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =
         [
           %{"$match" => %{"_id" => patient_id_hash}},

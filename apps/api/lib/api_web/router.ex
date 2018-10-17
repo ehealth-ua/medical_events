@@ -50,7 +50,13 @@ defmodule ApiWeb.Router do
 
     get("/jobs/:id", JobController, :show)
 
-    get("/patients/:patient_id/summary/immunizations", ImmunizationController, :index)
+    get("/patients/:patient_id/summary/immunizations", SummaryController, :list_immunizations)
     get("/patients/:patient_id/summary/immunizations/:id", ImmunizationController, :show)
+
+    get("/patients/:patient_id/summary/allergy_intolerances", SummaryController, :list_allergy_intolerances)
+    get("/patients/:patient_id/summary/allergy_intolerances/:id", AllergyIntoleranceController, :show)
+
+    get("/patients/:patient_id/summary/conditions", SummaryController, :list_conditions)
+    get("/patients/:patient_id/summary/conditions/:id", SummaryController, :show_condition)
   end
 end
