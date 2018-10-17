@@ -49,5 +49,8 @@ defmodule ApiWeb.Router do
     patch("/patients/:patient_id/encounter_package", EncounterController, :cancel)
 
     get("/jobs/:id", JobController, :show)
+
+    get("/patients/:patient_id/summary/immunizations", ImmunizationController, :index)
+    get("/patients/:patient_id/summary/immunizations/:id", ImmunizationController, :show)
   end
 end
