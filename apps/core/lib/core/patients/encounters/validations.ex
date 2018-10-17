@@ -112,7 +112,7 @@ defmodule Core.Patients.Encounters.Validations do
     end
   end
 
-  defp do_validate_signatures(%{"drfo" => drfo}, employee_id, user_id, client_id) do
+  defp do_validate_signatures(%{"drfo" => drfo}, employee_id, user_id, client_id) when drfo != nil do
     headers = [Headers.create(:user_id, user_id), Headers.create(:client_id, client_id)]
 
     with {:ok, %{"data" => %{"party" => party}}} <- @il_microservice.get_employee_users(employee_id, headers),
