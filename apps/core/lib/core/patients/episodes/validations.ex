@@ -45,7 +45,10 @@ defmodule Core.Patients.Episodes.Validations do
       managing_organization.identifier
       |> add_validations(
         :value,
-        value: [equals: client_id, message: "User can create an episode only for the legal entity for which he works"],
+        value: [
+          equals: client_id,
+          message: "User is not allowed to perform actions with an episode that belongs to another legal entity"
+        ],
         legal_entity: [
           status: "ACTIVE",
           messages: [

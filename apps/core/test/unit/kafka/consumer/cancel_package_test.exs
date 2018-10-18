@@ -257,7 +257,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                       "entry_type" => "json_data_property",
                       "rules" => [
                         %{
-                          "description" => "User can create an episode only for the legal entity for which he works",
+                          "description" =>
+                            "User is not allowed to perform actions with an episode that belongs to another legal entity",
                           "params" => [],
                           "rule" => "invalid"
                         }
