@@ -215,7 +215,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Mongo.convert_to_uuid("updated_by")
     |> Mongo.add_to_set(
       current_diagnoses,
-      "episodes.#{encounter.episode.identifier.value}.current_diagnoses"
+      "episodes.#{get_in(encounter, ~w(episode identifier value))}.current_diagnoses"
     )
     |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
     |> set_immunizations(immunizations_ids, user_id, now)
