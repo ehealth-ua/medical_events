@@ -15,7 +15,7 @@ defmodule Core.Validators.Signature do
     end
   end
 
-  def validate_drfo(drfo, tax_id) do
+  def validate_drfo(drfo, tax_id) when is_binary(drfo) and is_binary(tax_id) do
     drfo = String.replace(drfo, " ", "")
 
     if tax_id == drfo || translit(tax_id) == translit(drfo) do

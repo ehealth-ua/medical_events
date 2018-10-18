@@ -170,7 +170,7 @@ defmodule Core.Patients do
          :ok <- JsonSchema.validate(:package_cancel_signed_content, content),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          encounter_id <- content["encounter"]["id"],
-         :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id),
+         :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          :ok <- CancelEncounter.validate(content, encounter, patient_id_hash, job.client_id),
          :ok <- CancelEncounter.save(content, encounter_id, job) do
@@ -195,7 +195,7 @@ defmodule Core.Patients do
          {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
-         :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id) do
+         :ok <- validate_signatures(signer, employee_id, user_id, job.client_id) do
       with {:ok, visit} <- create_visit(job),
            {:ok, observations} <- create_observations(job, content),
            {:ok, conditions} <- create_conditions(job, content, observations),
@@ -997,5 +997,12 @@ defmodule Core.Patients do
           {:cont, acc}
       end
     end)
+  end
+
+  defp validate_signatures(signer, employee_id, user_id, client_id) do
+    case EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id) do
+      :ok -> :ok
+      {:error, error} -> {:ok, error, 409}
+    end
   end
 end

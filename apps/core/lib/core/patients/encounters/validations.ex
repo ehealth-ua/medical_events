@@ -119,6 +119,9 @@ defmodule Core.Patients.Encounters.Validations do
          :ok <- Signature.validate_drfo(drfo, party["tax_id"]),
          :ok <- validate_performer_is_current_user(party["users"], user_id) do
       :ok
+    else
+      {:ok, response} -> {:error, response}
+      err -> err
     end
   end
 
