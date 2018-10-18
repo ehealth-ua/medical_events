@@ -1082,6 +1082,129 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 status_code: 422
               }} = Jobs.get_by_id(to_string(job._id))
     end
+
+    test "fail on invalid drfo" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+
+      encounter_id = UUID.uuid4()
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode =
+        build(
+          :episode,
+          managing_organization:
+            build(
+              :reference,
+              identifier:
+                build(
+                  :identifier,
+                  type: build(:codeable_concept, coding: [build(:coding)]),
+                  value: Mongo.string_to_uuid(client_id)
+                )
+            )
+        )
+
+      patient =
+        insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+
+      condition_id = UUID.uuid4()
+      insert(:condition, patient_id: patient_id_hash, _id: Mongo.string_to_uuid(condition_id))
+
+      job = insert(:job)
+
+      user_id = UUID.uuid4()
+      drfo = "1111111111"
+      expect_signature(nil)
+      expect_employee_users(drfo, user_id)
+
+      visit_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+      employee_id = UUID.uuid4()
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "status" => "finished",
+          "date" => to_string(Date.utc_today()),
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
+                  "value" => condition_id
+                }
+              },
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "division" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
+          },
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => employee_id
+            }
+          }
+        }
+      }
+
+      assert :ok =
+               Consumer.consume(%PackageCreateJob{
+                 _id: to_string(job._id),
+                 visit: %{
+                   "id" => visit_id,
+                   "period" => %{
+                     "start" => start_datetime,
+                     "end" => end_datetime
+                   }
+                 },
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+
+      assert {:ok,
+              %Core.Job{
+                response: "Invalid drfo",
+                status_code: 409
+              }} = Jobs.get_by_id(to_string(job._id))
+    end
   end
 
   defp prepare_signature_expectations do

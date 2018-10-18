@@ -181,7 +181,7 @@ defmodule Core.Patients do
       {:episode, _} -> {:ok, "Encounter's episode not found", 404}
       {:encounter, _} -> {:ok, "Encounter not found", 404}
       {:error, error} -> {:ok, ValidationError.render("422.json", %{schema: error}), 422}
-      err -> err
+      error -> error
     end
   end
 
@@ -391,6 +391,9 @@ defmodule Core.Patients do
 
       {:error, {:bad_request, error}} ->
         {:ok, error, 422}
+
+      error ->
+        error
     end
   end
 
