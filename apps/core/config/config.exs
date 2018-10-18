@@ -54,6 +54,7 @@ config :core, Core.Microservices.MediaStorage,
   ]
 
 config :core, Core.Microservices.DigitalSignature,
+  enabled: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true},
   endpoint: {:system, "DIGITAL_SIGNATURE_ENDPOINT", "http://api-svc.digital-signature"},
   hackney_options: [
     connect_timeout: 30_000,
