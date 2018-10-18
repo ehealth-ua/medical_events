@@ -33,8 +33,7 @@ defmodule Api.Web.EpisodeController do
   end
 
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => id}) do
-    with {:ok, episode} <- Episodes.get(patient_id_hash, id),
-         episode <- Episode.create(episode) do
+    with {:ok, %Episode{} = episode} <- Episodes.get(patient_id_hash, id) do
       render(conn, "show.json", episode: episode)
     end
   end

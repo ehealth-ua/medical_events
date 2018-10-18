@@ -174,7 +174,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"status" => @closed}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{status: @closed}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

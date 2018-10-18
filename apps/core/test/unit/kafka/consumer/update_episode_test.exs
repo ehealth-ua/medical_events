@@ -107,7 +107,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"name" => "ОРВИ 2019"}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{name: "ОРВИ 2019"}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

@@ -155,7 +155,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                })
 
       assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %{"status" => @canceled}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{status: @canceled}} = Episodes.get(patient_id_hash, episode_id)
     end
   end
 end

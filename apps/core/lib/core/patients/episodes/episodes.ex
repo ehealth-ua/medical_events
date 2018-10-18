@@ -17,7 +17,7 @@ defmodule Core.Patients.Episodes do
              "_id" => patient_id_hash,
              "episodes.#{id}" => %{"$exists" => true}
            }) do
-      {:ok, episode}
+      {:ok, Episode.create(episode)}
     else
       _ ->
         nil

@@ -5,6 +5,7 @@ defmodule Core.Episode do
   alias Core.CodeableConcept
   alias Core.DatePeriod
   alias Core.DiagnosesHistory
+  alias Core.Diagnosis
   alias Core.Reference
   alias Core.StatusHistory
 
@@ -24,6 +25,7 @@ defmodule Core.Episode do
     field(:closing_summary)
     field(:explanatory_letter)
     field(:status_history)
+    field(:current_diagnoses)
     field(:type)
     field(:diagnoses_history)
     field(:managing_organization, presence: true, reference: [path: "managing_organization"])
@@ -64,6 +66,12 @@ defmodule Core.Episode do
 
         {"diagnoses_history", v} ->
           {:diagnoses_history, Enum.map(v, &DiagnosesHistory.create/1)}
+
+        {"current_diagnoses", nil} ->
+          {:current_diagnoses, nil}
+
+        {"current_diagnoses", v} ->
+          {:current_diagnoses, Enum.map(v, &Diagnosis.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

@@ -172,10 +172,13 @@ defmodule Core.Patients do
          encounter_id <- content["encounter"]["id"],
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
-         :ok <- CancelEncounter.validate(content, encounter, patient_id_hash, job.client_id),
-         :ok <- CancelEncounter.save(content, encounter_id, job) do
+         {_, {:ok, %Episode{} = episode}} <-
+           {:episode, Episodes.get(patient_id_hash, to_string(encounter.episode.identifier.value))},
+         :ok <- CancelEncounter.validate(content, episode, encounter, patient_id_hash, job.client_id),
+         :ok <- CancelEncounter.save(content, episode, encounter_id, job) do
       :ok
     else
+      {:episode, _} -> {:ok, "Encounter's episode not found", 404}
       {:encounter, _} -> {:ok, "Encounter not found", 404}
       {:error, error} -> {:ok, ValidationError.render("422.json", %{schema: error}), 422}
       err -> err
@@ -279,6 +282,13 @@ defmodule Core.Patients do
                   }
                 end)
           }
+
+          set =
+            Mongo.add_to_set(
+              set,
+              diagnoses_history.diagnoses,
+              "episodes.#{encounter.episode.identifier.value}.current_diagnoses"
+            )
 
           push =
             Mongo.add_to_push(
@@ -467,9 +477,8 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
+    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       changes = Map.take(job.request_params, ~w(name managing_organization care_manager))
-      episode = Episode.create(episode)
 
       episode =
         %{episode | updated_by: job.user_id, updated_at: now}
@@ -517,7 +526,7 @@ defmodule Core.Patients do
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
       end
     else
-      {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be updated", 422}
+      {:ok, %Episode{status: status}} -> {:ok, "Episode in status #{status} can not be updated", 422}
       nil -> {:error, "Failed to get episode", 404}
     end
   end
@@ -526,8 +535,7 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
-      episode = Episode.create(episode)
+    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -590,7 +598,7 @@ defmodule Core.Patients do
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
       end
     else
-      {:ok, %{"status" => status}} -> {:ok, "Episode in status #{status} can not be closed", 422}
+      {:ok, %Episode{status: status}} -> {:ok, "Episode in status #{status} can not be closed", 422}
       nil -> {:error, "Failed to get episode", 404}
     end
   end
@@ -599,8 +607,7 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %{"status" => ^status} = episode} <- Episodes.get(patient_id_hash, id) do
-      episode = Episode.create(episode)
+    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -677,7 +684,7 @@ defmodule Core.Patients do
           {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
       end
     else
-      {:ok, %{"status" => status}} ->
+      {:ok, %Episode{status: status}} ->
         {:ok, "Episode in status #{status} can not be canceled", 422}
 
       nil ->

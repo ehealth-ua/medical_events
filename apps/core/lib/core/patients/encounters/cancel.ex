@@ -12,7 +12,6 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Mongo
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
-  alias Core.Patients.Episodes
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
   alias Core.ReferenceView
@@ -42,10 +41,10 @@ defmodule Core.Patients.Encounters.Cancel do
   Performs validation by comparing encounter packages which created retrieved from job signed data and database
   Package entities except `encounter` are MapSet's to ignore position in list
   """
-  def validate(decoded_content, %Encounter{} = encounter, patient_id_hash, client_id) do
+  def validate(decoded_content, %Episode{} = episode, %Encounter{} = encounter, patient_id_hash, client_id) do
     encounter_request_package = create_encounter_package_from_request(decoded_content)
 
-    with :ok <- validate_episode_managing_organization(encounter, patient_id_hash, client_id),
+    with :ok <- validate_episode_managing_organization(episode, client_id),
          {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
@@ -53,14 +52,27 @@ defmodule Core.Patients.Encounters.Cancel do
     end
   end
 
-  def save(package_data, encounter_id, %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job) do
+  def save(
+        package_data,
+        %Episode{} = episode,
+        encounter_id,
+        %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job
+      ) do
     allergy_intolerances_ids = get_allergy_intolerances_ids(package_data)
     immunizations_ids = get_immunizations_ids(package_data)
     conditions_ids = get_conditions_ids(package_data)
     observations_ids = get_observations_ids(package_data)
+    current_diagnoses = get_current_diagnoses(episode, encounter_id)
 
     with :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
-         set <- update_patient(user_id, package_data, allergy_intolerances_ids, immunizations_ids) do
+         set <-
+           update_patient(
+             user_id,
+             package_data,
+             current_diagnoses,
+             allergy_intolerances_ids,
+             immunizations_ids
+           ) do
       event = %PackageCancelSavePatientJob{
         _id: job._id,
         patient_id_hash: job.patient_id_hash,
@@ -79,7 +91,10 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   def consume_save_patient(
-        %PackageCancelSavePatientJob{patient_id_hash: patient_id_hash, patient_save_data: patient_save_data} = job
+        %PackageCancelSavePatientJob{
+          patient_id_hash: patient_id_hash,
+          patient_save_data: patient_save_data
+        } = job
       ) do
     with {:ok, %{matched_count: 1, modified_count: 1}} <-
            Mongo.update_one(@patients_collection, %{"_id" => patient_id_hash}, patient_save_data) do
@@ -187,11 +202,21 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
-  defp update_patient(user_id, %{"encounter" => encounter}, allergy_intolerances_ids, immunizations_ids) do
+  defp update_patient(
+         user_id,
+         %{"encounter" => encounter},
+         current_diagnoses,
+         allergy_intolerances_ids,
+         immunizations_ids
+       ) do
     now = DateTime.utc_now()
 
     %{"updated_by" => user_id, "updated_at" => now}
     |> Mongo.convert_to_uuid("updated_by")
+    |> Mongo.add_to_set(
+      current_diagnoses,
+      "episodes.#{encounter.episode.identifier.value}.current_diagnoses"
+    )
     |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
     |> set_immunizations(immunizations_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
@@ -222,8 +247,14 @@ defmodule Core.Patients.Encounters.Cancel do
     set
     |> Mongo.add_to_set(user_id, "encounters.#{encounter_id}.updated_by")
     |> Mongo.add_to_set(now, "encounters.#{encounter_id}.updated_at")
-    |> Mongo.add_to_set(encounter["cancellation_reason"], "encounters.#{encounter_id}.cancellation_reason")
-    |> Mongo.add_to_set(encounter["explanatory_letter"], "encounters.#{encounter_id}.explanatory_letter")
+    |> Mongo.add_to_set(
+      encounter["cancellation_reason"],
+      "encounters.#{encounter_id}.cancellation_reason"
+    )
+    |> Mongo.add_to_set(
+      encounter["explanatory_letter"],
+      "encounters.#{encounter_id}.explanatory_letter"
+    )
     |> Mongo.convert_to_uuid("encounters.#{encounter_id}.updated_by")
     |> set_encounter_status(encounter)
   end
@@ -243,7 +274,11 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(&1 in available_entities))
   end
 
-  defp create_encounter_package(%Encounter{id: encounter_uuid} = encounter, patient_id_hash, decoded_content) do
+  defp create_encounter_package(
+         %Encounter{id: encounter_uuid} = encounter,
+         patient_id_hash,
+         decoded_content
+       ) do
     decoded_content
     |> filter_entities_to_compare()
     |> Enum.reduce(%{}, fn {entity_key, entity_ids}, acc ->
@@ -309,8 +344,10 @@ defmodule Core.Patients.Encounters.Cancel do
           IO.puts("encounter packages from request: #{inspect(request_package)}")
         end
 
-        {:ok, %{"error" => "Submitted signed content does not correspond to previously created content: #{error_path}"},
-         409}
+        {:ok,
+         %{
+           "error" => "Submitted signed content does not correspond to previously created content: #{error_path}"
+         }, 409}
     end
   end
 
@@ -347,36 +384,26 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp validate_conditions(_), do: :ok
 
-  defp validate_episode_managing_organization(
-         %Encounter{episode: %{identifier: %{value: episode_id}}},
-         patient_id_hash,
-         client_id
-       ) do
-    with {:ok, episode} <- Episodes.get(patient_id_hash, UUID.binary_to_string!(episode_id.binary)) do
-      episode = Episode.create(episode)
-      managing_organization = episode.managing_organization
-      identifier = managing_organization.identifier
+  defp validate_episode_managing_organization(%Episode{} = episode, client_id) do
+    managing_organization = episode.managing_organization
+    identifier = managing_organization.identifier
 
-      episode =
-        %{
-          episode
-          | managing_organization: %{
-              managing_organization
-              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-            }
-        }
-        |> EpisodeValidations.validate_managing_organization(client_id)
+    episode =
+      %{
+        episode
+        | managing_organization: %{
+            managing_organization
+            | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
+          }
+      }
+      |> EpisodeValidations.validate_managing_organization(client_id)
 
-      case Vex.errors(episode) do
-        [] ->
-          :ok
+    case Vex.errors(episode) do
+      [] ->
+        :ok
 
-        errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
-      end
-    else
-      _ ->
-        {:ok, "Encounter's episode not found", 404}
+      errors ->
+        {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
     end
   end
 
@@ -505,10 +532,14 @@ defmodule Core.Patients.Encounters.Cancel do
     end)
   end
 
-  def render(%Core.Reference{} = reference), do: %{identifier: ReferenceView.render(reference.identifier)}
+  def render(%Core.Reference{} = reference),
+    do: %{identifier: ReferenceView.render(reference.identifier)}
+
   def render(value), do: value
 
-  def render_source(%Core.Source{type: "performer", value: value}), do: %{performer: render(value)}
+  def render_source(%Core.Source{type: "performer", value: value}),
+    do: %{performer: render(value)}
+
   def render_source(%Core.Source{type: "asserter", value: value}), do: %{asserter: render(value)}
 
   def render_source(%Core.Source{type: type, value: value}) do
@@ -516,4 +547,17 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   defp wrap_ok(value), do: {:ok, value}
+
+  defp get_current_diagnoses(%Episode{diagnoses_history: diagnoses_history}, encounter_id) do
+    current_diagnoses =
+      diagnoses_history
+      |> Enum.filter(fn history_item ->
+        history_item.is_active && to_string(history_item.evidence.identifier.value) != encounter_id
+      end)
+
+    case current_diagnoses do
+      [] -> []
+      _ -> current_diagnoses |> List.last() |> Map.get(:diagnoses)
+    end
+  end
 end
