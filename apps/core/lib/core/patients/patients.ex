@@ -166,17 +166,18 @@ defmodule Core.Patients do
 
   def consume_cancel_package(%PackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job) do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(job.signed_data, []),
-         {:ok, %{"content" => decoded_content, "signer" => signer}} <- Signature.validate(data),
-         :ok <- JsonSchema.validate(:package_cancel_signed_content, decoded_content),
-         employee_id <- get_in(decoded_content, ["encounter", "performer", "identifier", "value"]),
-         encounter_id <- decoded_content["encounter"]["id"],
+         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         :ok <- JsonSchema.validate(:package_cancel_signed_content, content),
+         employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
+         encounter_id <- content["encounter"]["id"],
          :ok <- EncounterValidations.validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
-         :ok <- CancelEncounter.validate(decoded_content, encounter, patient_id_hash, job.client_id),
-         :ok <- CancelEncounter.save(decoded_content, encounter_id, job) do
+         :ok <- CancelEncounter.validate(content, encounter, patient_id_hash, job.client_id),
+         :ok <- CancelEncounter.save(content, encounter_id, job) do
       :ok
     else
       {:encounter, _} -> {:ok, "Encounter not found", 404}
+      {:error, error} -> {:ok, ValidationError.render("422.json", %{schema: error}), 422}
       err -> err
     end
   end
