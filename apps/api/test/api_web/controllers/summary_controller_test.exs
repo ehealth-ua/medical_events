@@ -405,7 +405,7 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, episodes: [episode], _id: patient_id_hash)
+      insert(:patient, episodes: %{to_string(episode.id) => episode}, _id: patient_id_hash)
       expect_get_person_data(patient_id)
       {code, condition_code} = build_condition_code("A10")
 
@@ -550,6 +550,40 @@ defmodule Api.Web.SummaryControllerTest do
       conn
       |> get(summary_path(conn, :show_condition, patient_id, UUID.uuid4()))
       |> json_response(404)
+    end
+  end
+
+  describe "list active diagnoses" do
+    test "success", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnoses, patient_id))
+        |> json_response(200)
+
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "invalid code", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnoses, patient_id), %{"code" => "invalid"})
+        |> json_response(200)
+
+      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end
   end
 

@@ -1059,7 +1059,7 @@ defmodule Api.Web.EpisodeControllerTest do
       expect_get_person_data(patient_id)
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, episodes: [], _id: patient_id_hash)
+      insert(:patient, episodes: %{}, _id: patient_id_hash)
 
       resp =
         conn

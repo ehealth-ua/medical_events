@@ -345,15 +345,17 @@ defmodule Core.Factories do
   def episode_factory do
     id = UUID.uuid4()
     date = to_string(Date.utc_today())
+    diagnoses_history = build_list(1, :diagnoses_history)
 
     %Episode{
       id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Episode.status(:active),
+      current_diagnoses: Map.get(hd(diagnoses_history), :diagnoses),
       closing_summary: "closing summary",
       status_reason: build(:codeable_concept),
       explanatory_letter: "explanatory letter",
       status_history: build_list(1, :status_history),
-      diagnoses_history: build_list(1, :diagnoses_history),
+      diagnoses_history: diagnoses_history,
       type: "primary_care",
       name: "ОРВИ 2018",
       managing_organization: reference_coding(code: "legal_entity"),
@@ -379,7 +381,7 @@ defmodule Core.Factories do
     %Diagnosis{
       condition: reference_coding(system: "eHealth/resources", code: "condition"),
       role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
-      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A20"),
+      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A70"),
       rank: Enum.random(1..1000)
     }
   end

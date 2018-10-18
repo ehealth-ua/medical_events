@@ -126,7 +126,7 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, episodes: [episode], _id: patient_id_hash)
+      insert(:patient, episodes: %{to_string(episode.id) => episode}, _id: patient_id_hash)
       expect_get_person_data(patient_id)
       {code, condition_code} = build_condition_code()
 

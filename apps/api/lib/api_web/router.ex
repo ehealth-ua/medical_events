@@ -61,5 +61,7 @@ defmodule ApiWeb.Router do
 
     get("/patients/:patient_id/summary/observations", SummaryController, :list_observations)
     get("/patients/:patient_id/summary/observations/:id", SummaryController, :show_observation)
+
+    get("/patients/:patient_id/summary/diagnoses", SummaryController, :list_diagnoses)
   end
 end

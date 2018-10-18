@@ -5,9 +5,11 @@ defmodule Api.Web.SummaryController do
 
   alias Api.Web.AllergyIntoleranceView
   alias Api.Web.ConditionView
+  alias Api.Web.DiagnosisView
   alias Api.Web.ImmunizationView
   alias Api.Web.ObservationView
   alias Core.Conditions
+  alias Core.Diagnoses
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Immunizations
@@ -49,6 +51,12 @@ defmodule Api.Web.SummaryController do
   def show_observation(conn, %{"patient_id_hash" => patient_id_hash, "id" => observation_id}) do
     with {:ok, observation} <- Observations.get_summary(patient_id_hash, observation_id) do
       render(conn, ObservationView, "show.json", observation: observation)
+    end
+  end
+
+  def list_diagnoses(conn, params) do
+    with {:ok, %Page{entries: diagnoses} = paging} <- Diagnoses.list_active_diagnoses(params) do
+      render(conn, DiagnosisView, "diagnoses.json", diagnoses: diagnoses, paging: paging)
     end
   end
 end
