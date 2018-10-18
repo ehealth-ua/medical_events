@@ -4,6 +4,7 @@ defmodule Api.Web.EpisodeView do
   use ApiWeb, :view
 
   alias Api.Web.DiagnosesHistoryView
+  alias Api.Web.DiagnosisView
   alias Api.Web.StatusHistoryView
   alias Core.ReferenceView
   alias Core.UUIDView
@@ -29,5 +30,6 @@ defmodule Api.Web.EpisodeView do
       :status_history,
       StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history)
     )
+    |> Map.put(:current_diagnoses, DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || []))
   end
 end
