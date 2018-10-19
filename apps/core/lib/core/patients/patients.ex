@@ -171,15 +171,17 @@ defmodule Core.Patients do
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          encounter_id <- content["encounter"]["id"],
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
+         {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          {_, {:ok, %Episode{} = episode}} <-
            {:episode, Episodes.get(patient_id_hash, to_string(encounter.episode.identifier.value))},
          :ok <- CancelEncounter.validate(content, episode, encounter, patient_id_hash, job.client_id),
-         :ok <- CancelEncounter.save(content, episode, encounter_id, job) do
+         :ok <- CancelEncounter.save(patient, content, episode, encounter_id, job) do
       :ok
     else
-      {:episode, _} -> {:ok, "Encounter's episode not found", 404}
-      {:encounter, _} -> {:ok, "Encounter not found", 404}
+      {:patient, _} -> {:ok, %{"error" => "Patient not found"}, 404}
+      {:episode, _} -> {:ok, %{"error" => "Encounter's episode not found"}, 404}
+      {:encounter, _} -> {:ok, %{"error" => "Encounter not found"}, 404}
       {:error, error} -> {:ok, ValidationError.render("422.json", %{schema: error}), 422}
       error -> error
     end

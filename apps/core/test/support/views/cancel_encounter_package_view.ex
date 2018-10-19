@@ -8,6 +8,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
   def render(:encounter, encounter) do
     %{
       id: UUIDView.render(encounter.id),
+      status: encounter.status,
       date: Date.to_string(encounter.date),
       explanatory_letter: encounter.explanatory_letter,
       cancellation_reason: ReferenceView.render(encounter.cancellation_reason),
@@ -57,6 +58,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       primary_source
       comment
       issued
+      status
     )a
 
     for observation <- observations do
@@ -88,6 +90,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       primary_source
       manufacturer
       lot_number
+      status
     )a
 
     for immunization <- immunizations do

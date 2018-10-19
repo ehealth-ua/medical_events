@@ -1,16 +1,21 @@
 defmodule Core.Patients.Encounters.Cancel do
   @moduledoc false
 
+  alias Core.AllergyIntolerance
+  alias Core.Condition
   alias Core.Conditions
   alias Core.DateView
   alias Core.Encounter
   alias Core.Episode
+  alias Core.Immunization
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCancelSaveConditionsJob
   alias Core.Jobs.PackageCancelSaveObservationsJob
   alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.Mongo
+  alias Core.Observation
   alias Core.Observations
+  alias Core.Patient
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
@@ -24,9 +29,9 @@ defmodule Core.Patients.Encounters.Cancel do
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
-  @patients_collection Core.Patient.metadata().collection
-  @observations_collection Core.Observation.metadata().collection
-  @conditions_collection Core.Condition.metadata().collection
+  @patients_collection Patient.metadata().collection
+  @observations_collection Observation.metadata().collection
+  @conditions_collection Condition.metadata().collection
 
   @entered_in_error "entered_in_error"
 
@@ -45,6 +50,7 @@ defmodule Core.Patients.Encounters.Cancel do
     encounter_request_package = create_encounter_package_from_request(decoded_content)
 
     with :ok <- validate_episode_managing_organization(episode, client_id),
+         :ok <- validate_has_entity_entered_in_error(decoded_content),
          {:ok, encounter_package} <- create_encounter_package(encounter, patient_id_hash, decoded_content),
          :ok <- validate_enounter_packages(encounter_package, encounter_request_package),
          :ok <- validate_conditions(decoded_content) do
@@ -53,6 +59,7 @@ defmodule Core.Patients.Encounters.Cancel do
   end
 
   def save(
+        patient,
         package_data,
         %Episode{} = episode,
         encounter_id,
@@ -68,6 +75,7 @@ defmodule Core.Patients.Encounters.Cancel do
          set <-
            update_patient(
              user_id,
+             patient,
              package_data,
              current_diagnoses,
              allergy_intolerances_ids,
@@ -204,6 +212,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp update_patient(
          user_id,
+         patient,
          %{"encounter" => encounter},
          current_diagnoses,
          allergy_intolerances_ids,
@@ -220,6 +229,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
     |> set_immunizations(immunizations_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
+    |> set_encounter_diagnoses(patient, encounter)
   end
 
   defp set_allergy_intolerances(set, ids, user_id, now) do
@@ -265,6 +275,25 @@ defmodule Core.Patients.Encounters.Cancel do
 
   defp set_encounter_status(set, _), do: set
 
+  defp set_encounter_diagnoses(set, patient, %{"id" => encounter_id, "status" => @entered_in_error}) do
+    encounter_uuid = Mongo.string_to_uuid(encounter_id)
+    episode_id = to_string(patient["encounters"][encounter_id]["episode"]["identifier"]["value"])
+
+    diagnoses_history = patient["episodes"][episode_id]["diagnoses_history"]
+
+    diagnoses_history
+    |> Enum.with_index()
+    |> Enum.reduce(set, fn {diagnos_history, index}, set ->
+      if diagnos_history["is_active"] and diagnos_history["evidence"]["identifier"]["value"] == encounter_uuid do
+        Mongo.add_to_set(set, false, "episodes.#{episode_id}.diagnoses_history.#{index}.is_active")
+      else
+        set
+      end
+    end)
+  end
+
+  defp set_encounter_diagnoses(set, _patient, _encounter), do: set
+
   defp get_entities_to_load(decoded_content) do
     available_entities = Map.keys(@entities_meta)
 
@@ -274,46 +303,86 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(&1 in available_entities))
   end
 
-  defp create_encounter_package(
-         %Encounter{id: encounter_uuid} = encounter,
-         patient_id_hash,
-         decoded_content
-       ) do
-    decoded_content
-    |> filter_entities_to_compare()
-    |> Enum.reduce(%{}, fn {entity_key, entity_ids}, acc ->
-      entity_key_atom = String.to_atom(entity_key)
-      entities = get_entities(entity_key, entity_ids, patient_id_hash, encounter_uuid)
-      entities = entity_key_atom |> render(entities) |> MapSet.new()
+  defp create_encounter_package(%Encounter{id: encounter_uuid} = encounter, patient_id_hash, decoded_content) do
+    package =
+      decoded_content
+      |> filter_entities_to_compare()
+      |> Enum.reduce(%{}, fn {entity_key, entity_ids}, acc ->
+        entity_key_atom = String.to_atom(entity_key)
+        entities = get_entities(entity_key, entity_ids, patient_id_hash, encounter_uuid)
 
-      Map.put(acc, entity_key_atom, entities)
+        Map.put(acc, entity_key_atom, entities)
+      end)
+      |> Map.put(:encounter, encounter)
+
+    with :ok <- validate_package_has_no_entered_in_error_entities(package) do
+      {:ok, render_package_entities(package)}
+    end
+  end
+
+  defp validate_has_entity_entered_in_error(%{"encounter" => encounter} = decoded_content) do
+    [
+      [encounter["status"]],
+      get_entities_statuses(decoded_content["allergy_intolerances"], "verification_status"),
+      get_entities_statuses(decoded_content["immunizations"], "status"),
+      get_entities_statuses(decoded_content["conditions"], "verification_status"),
+      get_entities_statuses(decoded_content["observations"], "status")
+    ]
+    |> Enum.flat_map(& &1)
+    |> Enum.any?(&(&1 == @entered_in_error))
+    |> case do
+      true -> :ok
+      _ -> {:ok, %{"error" => ~s(At least one entity should have status "entered_in_error")}, 409}
+    end
+  end
+
+  defp get_entities_statuses(nil, _status_field), do: []
+  defp get_entities_statuses(entities, status_field), do: Enum.map(entities, &Map.get(&1, status_field))
+
+  defp validate_package_has_no_entered_in_error_entities(%{encounter: encounter} = package) do
+    [
+      encounter: [encounter.status],
+      allergy_intolerance: get_entities_statuses(package[:allergy_intolerances] || [], :verification_status),
+      immunization: get_entities_statuses(package[:immunizations] || [], :status),
+      condition: get_entities_statuses(package[:conditions] || [], :verification_status),
+      observation: get_entities_statuses(package[:observations] || [], :status)
+    ]
+    |> Enum.reject(fn {_, statuses} -> statuses == [] end)
+    |> Enum.reduce_while(:ok, fn {key, statuses}, _acc ->
+      case @entered_in_error in statuses do
+        true -> {:halt, {:ok, %{"error" => "Invalid transition for #{key} - already entered_in_error"}, 409}}
+        _ -> {:cont, :ok}
+      end
     end)
-    |> Map.put(:encounter, render(:encounter, encounter))
-    |> wrap_ok()
+  end
+
+  defp render_package_entities(package) do
+    package
+    |> Enum.map(fn
+      {:encounter = key, entity} -> {key, render(key, entity)}
+      {key, entities} -> {key, MapSet.new(render(key, entities))}
+    end)
+    |> Enum.into(%{})
   end
 
   defp create_encounter_package_from_request(decoded_content) do
     entities_to_load = get_entities_to_load(decoded_content)
 
     entity_creators = %{
-      "conditions" => &Core.Condition.create/1,
-      "allergy_intolerances" => &Core.AllergyIntolerance.create/1,
-      "immunizations" => &Core.Immunization.create/1,
-      "observations" => &Core.Observation.create/1
+      "conditions" => &Condition.create/1,
+      "allergy_intolerances" => &AllergyIntolerance.create/1,
+      "immunizations" => &Immunization.create/1,
+      "observations" => &Observation.create/1
     }
 
     entities_to_load
     |> Enum.reduce(%{}, fn entity_key, acc ->
-      entity_key_atom = String.to_atom(entity_key)
       entities = Enum.map(decoded_content[entity_key], &entity_creators[entity_key].(&1))
-      entities = entity_key_atom |> render(entities) |> MapSet.new()
 
-      Map.put(acc, entity_key_atom, entities)
+      Map.put(acc, String.to_atom(entity_key), entities)
     end)
-    |> Map.put(
-      :encounter,
-      render(:encounter, Core.Encounter.create(decoded_content["encounter"]))
-    )
+    |> Map.put(:encounter, Encounter.create(decoded_content["encounter"]))
+    |> render_package_entities()
   end
 
   defp filter_entities_to_compare(package_data) do
@@ -431,6 +500,19 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.filter(&(UUID.binary_to_string!(&1._id.binary) in ids))
   end
 
+  defp get_current_diagnoses(%Episode{diagnoses_history: diagnoses_history}, encounter_id) do
+    current_diagnoses =
+      diagnoses_history
+      |> Enum.filter(fn history_item ->
+        history_item.is_active && to_string(history_item.evidence.identifier.value) != encounter_id
+      end)
+
+    case current_diagnoses do
+      [] -> []
+      _ -> current_diagnoses |> List.last() |> Map.get(:diagnoses)
+    end
+  end
+
   defp render(:encounter, encounter) do
     %{
       id: UUIDView.render(encounter.id),
@@ -544,20 +626,5 @@ defmodule Core.Patients.Encounters.Cancel do
 
   def render_source(%Core.Source{type: type, value: value}) do
     %{String.to_atom(type) => ReferenceView.render(value)}
-  end
-
-  defp wrap_ok(value), do: {:ok, value}
-
-  defp get_current_diagnoses(%Episode{diagnoses_history: diagnoses_history}, encounter_id) do
-    current_diagnoses =
-      diagnoses_history
-      |> Enum.filter(fn history_item ->
-        history_item.is_active && to_string(history_item.evidence.identifier.value) != encounter_id
-      end)
-
-    case current_diagnoses do
-      [] -> []
-      _ -> current_diagnoses |> List.last() |> Map.get(:diagnoses)
-    end
   end
 end
