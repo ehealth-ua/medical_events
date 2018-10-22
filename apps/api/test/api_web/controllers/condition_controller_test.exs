@@ -336,7 +336,7 @@ defmodule Api.Web.ConditionControllerTest do
   end
 
   defp build_condition_code do
-    code = "A11"
+    code = "J11"
     condition_code = build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICD10/conditions")])
 
     {code, condition_code}

@@ -165,7 +165,7 @@ config :core, :encounter_package,
 config :core, digital_signarure_enabled?: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true}
 
 config :core, :summary,
-  conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["A70", "A80"]},
-  observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["B70", "B80"]}
+  conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},
+  observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["8310-5", "8462-4", "8480-6", "80319-7"]}
 
 import_config "#{Mix.env()}.exs"

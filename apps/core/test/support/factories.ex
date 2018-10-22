@@ -229,7 +229,7 @@ defmodule Core.Factories do
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
       categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
-      code: codeable_concept_coding(system: "eHealth/observations_codes", code: "A10"),
+      code: codeable_concept_coding(system: "eHealth/observations_codes", code: "8310-5"),
       comment: "some comment",
       patient_id: Patients.get_pk_hash(UUID.uuid4()),
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
@@ -381,7 +381,7 @@ defmodule Core.Factories do
     %Diagnosis{
       condition: reference_coding(system: "eHealth/resources", code: "condition"),
       role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
-      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "A70"),
+      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "R80"),
       rank: Enum.random(1..1000)
     }
   end
@@ -437,7 +437,7 @@ defmodule Core.Factories do
     %Condition{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       context: reference_coding(code: "encounter"),
-      code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "A10"),
+      code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "R80"),
       clinical_status: "active",
       verification_status: "provisional",
       severity: codeable_concept_coding(system: "eHealth/severity"),

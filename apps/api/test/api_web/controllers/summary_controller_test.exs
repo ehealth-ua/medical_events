@@ -362,7 +362,7 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
       expect_get_person_data(patient_id)
-      {code, condition_code} = build_condition_code("A70")
+      {code, condition_code} = build_condition_code("R80")
       {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
@@ -459,7 +459,7 @@ defmodule Api.Web.SummaryControllerTest do
         insert(:condition,
           patient_id: patient_id_hash,
           asserted_date: nil,
-          code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "A70")
+          code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "R80")
         )
 
       expect_get_person_data(patient_id)
@@ -475,7 +475,14 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
-      condition = insert(:condition, patient_id: patient_id_hash, asserted_date: nil)
+
+      condition =
+        insert(:condition,
+          patient_id: patient_id_hash,
+          asserted_date: nil,
+          code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "J11")
+        )
+
       expect_get_person_data(patient_id)
 
       assert conn
@@ -509,7 +516,7 @@ defmodule Api.Web.SummaryControllerTest do
         insert(:observation,
           patient_id: patient_id_hash,
           value: %Value{type: "period", value: build(:period)},
-          code: codeable_concept_coding(system: "eHealth/observations_codes", code: "B70")
+          code: codeable_concept_coding(system: "eHealth/observations_codes", code: "8310-5")
         )
 
       expect_get_person_data(patient_id)
@@ -588,7 +595,7 @@ defmodule Api.Web.SummaryControllerTest do
   end
 
   defp build_condition_code(code) do
-    {code, build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICD10/conditions")])}
+    {code, build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICPC2/conditions")])}
   end
 
   defp get_datetime(day_shift) do

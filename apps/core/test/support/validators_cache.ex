@@ -11,9 +11,18 @@ defmodule Core.Validators.CacheTest do
     {:ok,
      [
        %{"name" => "eHealth/resources", "values" => %{"condition" => "test"}},
-       %{"name" => "eHealth/ICD10/conditions", "values" => %{"A10" => "test", "A11" => "test", "A70" => "test"}},
-       %{"name" => "eHealth/ICPC2/conditions", "values" => %{"B10" => "test"}},
-       %{"name" => "eHealth/observations_codes", "values" => %{"B70" => "test"}}
+       %{
+         "name" => "eHealth/ICD10/conditions",
+         "values" => %{"A10" => "test", "A11" => "test", "A70" => "test", "J11" => "J11", "R80" => "R80"}
+       },
+       %{
+         "name" => "eHealth/ICPC2/conditions",
+         "values" => %{"A10" => "test", "B10" => "test", "R80" => "R80", "T90" => "T90"}
+       },
+       %{
+         "name" => "eHealth/observations_codes",
+         "values" => %{"B70" => "test", "8310-5" => "8310-5", "8462-4" => "8462-4", "8480-6" => "8480-6"}
+       }
      ]}
   end
 
