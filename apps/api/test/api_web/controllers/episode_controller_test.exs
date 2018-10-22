@@ -479,6 +479,51 @@ defmodule Api.Web.EpisodeControllerTest do
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end
 
+    test "get episodes by code", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      search_code = "R80"
+      search_code2 = "A90"
+      diagnosis1 = build(:diagnosis, code: codeable_concept_coding(code: search_code))
+      diagnosis2 = build(:diagnosis, code: codeable_concept_coding(code: "R35"))
+      diagnosis3 = build(:diagnosis, code: codeable_concept_coding(code: search_code2))
+      diagnosis4 = build(:diagnosis, code: codeable_concept_coding(code: search_code2))
+
+      episode1 = build(:episode, current_diagnoses: [diagnosis1, diagnosis2])
+      episode2 = build(:episode, current_diagnoses: [diagnosis3])
+      episode3 = build(:episode, current_diagnoses: [diagnosis4])
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2,
+          to_string(episode3.id) => episode3
+        }
+      )
+
+      insert(:patient, episodes: %{to_string(episode1.id) => episode1})
+
+      expect_get_person_data(patient_id, 2)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"code" => search_code})
+        |> json_response(200)
+
+      Enum.each(resp["data"], &assert_json_schema(&1, "episodes/episode_show.json"))
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      assert %{"total_entries" => 2} =
+               conn
+               |> get(episode_path(conn, :index, patient_id), %{"code" => search_code2})
+               |> json_response(200)
+               |> Map.get("paging")
+    end
+
     test "get episodes order by inserted first episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 

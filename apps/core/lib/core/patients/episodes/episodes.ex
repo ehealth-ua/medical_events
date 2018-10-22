@@ -30,8 +30,7 @@ defmodule Core.Patients.Episodes do
         %{"$match" => %{"_id" => patient_id_hash}},
         %{"$project" => %{"episodes" => %{"$objectToArray" => "$episodes"}}},
         %{"$unwind" => "$episodes"},
-        %{"$project" => %{"episode" => "$episodes.v"}},
-        %{"$replaceRoot" => %{"newRoot" => "$episode"}}
+        %{"$replaceRoot" => %{"newRoot" => "$episodes.v"}}
       ]
       |> search_condition(params)
       |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
@@ -49,11 +48,11 @@ defmodule Core.Patients.Episodes do
 
   defp search_condition(pipeline, params) do
     pipeline
-    |> add_period_criterias(params)
+    |> search_period_criterias(params)
     |> search_code(Map.get(params, "code"))
   end
 
-  defp add_period_criterias(pipeline, %{"period_from" => date_from, "period_to" => date_to}) do
+  defp search_period_criterias(pipeline, %{"period_from" => date_from, "period_to" => date_to}) do
     from = create_datetime(date_from)
     to = create_datetime(date_to)
 
@@ -79,7 +78,7 @@ defmodule Core.Patients.Episodes do
       ]
   end
 
-  defp add_period_criterias(pipeline, %{"period_from" => date}) do
+  defp search_period_criterias(pipeline, %{"period_from" => date}) do
     from = create_datetime(date)
 
     pipeline ++
@@ -99,7 +98,7 @@ defmodule Core.Patients.Episodes do
       ]
   end
 
-  defp add_period_criterias(pipeline, %{"period_to" => date}) do
+  defp search_period_criterias(pipeline, %{"period_to" => date}) do
     to = create_datetime(date)
 
     pipeline ++
@@ -114,14 +113,18 @@ defmodule Core.Patients.Episodes do
       ]
   end
 
-  defp add_period_criterias(pipeline, _), do: pipeline
+  defp search_period_criterias(pipeline, _), do: pipeline
 
   defp search_code(pipeline, nil), do: pipeline
 
-  defp search_code(pipeline, _code) do
+  defp search_code(pipeline, code) do
     pipeline ++
       [
-        # TODO: implement search by code
+        %{
+          "$match" => %{
+            "current_diagnoses.code.coding.code" => code
+          }
+        }
       ]
   end
 
