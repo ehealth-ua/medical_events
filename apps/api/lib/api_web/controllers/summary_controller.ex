@@ -43,7 +43,7 @@ defmodule Api.Web.SummaryController do
   end
 
   def list_observations(conn, params) do
-    with {:ok, %Page{entries: observations} = paging} <- Observations.list(params) do
+    with {:ok, %Page{entries: observations} = paging} <- Observations.summary(params) do
       render(conn, ObservationView, "index.json", observations: observations, paging: paging)
     end
   end
