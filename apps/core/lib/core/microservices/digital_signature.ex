@@ -13,6 +13,8 @@ defmodule Core.Microservices.DigitalSignature do
         "signed_content_encoding" => "base64"
       }
 
+      headers = Keyword.merge(headers, "Content-Type": "application/json")
+
       post("/digital_signatures", Jason.encode!(params), headers)
     else
       with {:ok, binary} <- Base.decode64(signed_content),

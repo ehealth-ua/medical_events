@@ -6,16 +6,18 @@ defmodule Core.Patients.Encounters.ValidationsTest do
   import Core.Expectations.IlExpectations
   import Mox
 
+  alias Core.Microservices.DigitalSignature
   alias Core.Patients.Encounters.Validations, as: EncounterValidation
 
   setup :verify_on_exit!
 
   test "validate signature is off" do
-    Application.put_env(:core, :digital_signarure_enabled?, false)
+    ds_config = Confex.fetch_env!(:core, DigitalSignature)
+    Application.put_env(:core, DigitalSignature, Keyword.merge(ds_config, enabled: false))
 
     assert :ok == EncounterValidation.validate_signatures(%{}, UUID.uuid4(), UUID.uuid4(), UUID.uuid4())
 
-    Application.put_env(:core, :digital_signarure_enabled?, true)
+    Application.put_env(:core, DigitalSignature, Keyword.merge(ds_config, enabled: true))
   end
 
   test "success" do
@@ -33,7 +35,7 @@ defmodule Core.Patients.Encounters.ValidationsTest do
     drfo = UUID.uuid4()
     expect_employee_users(drfo, UUID.uuid4())
 
-    assert {:error, "Employee is not performer of encouner"} ==
+    assert {:error, "Employee is not performer of encounter"} ==
              EncounterValidation.validate_signatures(%{"drfo" => drfo}, UUID.uuid4(), UUID.uuid4(), UUID.uuid4())
   end
 

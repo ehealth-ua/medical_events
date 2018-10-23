@@ -162,8 +162,6 @@ config :core, :encounter_package,
   allergy_intolerance_max_days_passed: {:system, :integer, "ALLERGY_INTOLERANCE_MAX_DAYS_PASSED", 150 * 365},
   immunization_max_days_passed: {:system, :integer, "IMMUNIZATION_MAX_DAYS_PASSED", 150 * 365}
 
-config :core, digital_signarure_enabled?: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true}
-
 config :core, :summary,
   conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},
   observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["8310-5", "8462-4", "8480-6", "80319-7"]}

@@ -5,6 +5,7 @@ defmodule Core.Patients.Encounters.Validations do
 
   alias Core.Encounter
   alias Core.Headers
+  alias Core.Microservices.DigitalSignature
   alias Core.Validators.Date, as: DateValidator
   alias Core.Validators.Signature
 
@@ -104,8 +105,9 @@ defmodule Core.Patients.Encounters.Validations do
     add_validations(encounter, :date, by: &DateValidator.validate_expiration(&1, max_days_passed))
   end
 
+  @spec validate_signatures(map, binary, binary, binary) :: :ok | {:error, term}
   def validate_signatures(signer, employee_id, user_id, client_id) do
-    if Confex.fetch_env!(:core, :digital_signarure_enabled?) do
+    if Confex.fetch_env!(:core, DigitalSignature)[:enabled] do
       do_validate_signatures(signer, employee_id, user_id, client_id)
     else
       :ok
@@ -132,7 +134,7 @@ defmodule Core.Patients.Encounters.Validations do
     |> Enum.any?(&(&1["user_id"] == user_id))
     |> case do
       true -> :ok
-      _ -> {:error, "Employee is not performer of encouner"}
+      _ -> {:error, "Employee is not performer of encounter"}
     end
   end
 end
