@@ -28,6 +28,29 @@ defmodule Core.Patients.Immunizations do
     end
   end
 
+  def get_by_ids(_patient_id_hash, []), do: {:ok, []}
+
+  def get_by_ids(patient_id_hash, ids) do
+    with %{"immunizations" => immunizations} <- Mongo.find_one(@collection, %{"_id" => patient_id_hash}) do
+      immunizations = Enum.into(immunizations, %{})
+
+      immunizations =
+        Enum.reduce_while(ids, [], fn id, acc ->
+          case Map.fetch(immunizations, id) do
+            {:ok, immunization} -> {:cont, [Immunization.create(immunization) | acc]}
+            :error -> {:halt, {:error, "Immunization with id: #{id} not found"}}
+          end
+        end)
+
+      case immunizations do
+        {:error, _} = error -> error
+        immunizations -> {:ok, immunizations}
+      end
+    else
+      _ -> {:error, "Immunization with id: #{hd(ids)} not found"}
+    end
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :immunization_request) do
     with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =

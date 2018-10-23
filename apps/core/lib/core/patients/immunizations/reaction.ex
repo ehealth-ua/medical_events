@@ -5,18 +5,13 @@ defmodule Core.Patients.Immunizations.Reaction do
   alias Core.Reference
 
   embedded_schema do
-    field(:date)
     field(:detail, reference: [path: "detail"])
-    field(:reported)
   end
 
   def create(data) do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"date", v} ->
-          {:date, create_datetime(v)}
-
         {"detail", v} ->
           {:detail, Reference.create(v)}
 

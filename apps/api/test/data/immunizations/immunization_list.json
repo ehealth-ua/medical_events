@@ -677,10 +677,6 @@
           "items": {
             "type": "object",
             "properties": {
-              "date": {
-                "type": "string",
-                "format": "date-time"
-              },
               "detail": {
                 "type": "object",
                 "properties": {
@@ -739,9 +735,6 @@
                   }
                 },
                 "description": "should be filled one of: condition or condition_id"
-              },
-              "reported": {
-                "type": "boolean"
               }
             }
           }

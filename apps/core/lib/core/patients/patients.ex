@@ -37,6 +37,7 @@ defmodule Core.Patients do
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
+  alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
   alias EView.Views.ValidationError
@@ -299,23 +300,7 @@ defmodule Core.Patients do
               "episodes.#{encounter.episode.identifier.value}.diagnoses_history"
             )
 
-          set =
-            Enum.reduce(immunizations, set, fn immunization, acc ->
-              immunization = Immunizations.fill_up_immunization_performer(immunization)
-
-              acc
-              |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.id")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.inserted_by")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
-              |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
-              |> Mongo.convert_to_uuid(
-                "immunizations.#{immunization.id}.reactions",
-                ~w(detail identifier value)a
-              )
-            end)
+          set = Enum.reduce(immunizations, set, &add_immunization_to_set/2)
 
           set =
             Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
@@ -397,6 +382,27 @@ defmodule Core.Patients do
       error ->
         error
     end
+  end
+
+  defp add_immunization_to_set(%{id: %BSON.Binary{}} = immunization, set) do
+    set
+    |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
+  end
+
+  defp add_immunization_to_set(immunization, set) do
+    immunization = Immunizations.fill_up_immunization_performer(immunization)
+
+    set
+    |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.id")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.inserted_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
   end
 
   def consume_create_episode(
@@ -842,7 +848,10 @@ defmodule Core.Patients do
 
     observations =
       Enum.map(content["observations"], fn data ->
-        observation = Observation.create(data)
+        observation =
+          data
+          |> Map.drop(["reaction_on"])
+          |> Observation.create()
 
         %{
           observation
@@ -885,10 +894,15 @@ defmodule Core.Patients do
        ) do
     now = DateTime.utc_now()
     encounter_id = content["encounter"]["id"]
+    immunization_observation_id_map = get_immunization_observation_id_map(content)
+    db_immunization_ids = get_db_immunization_ids(content)
 
     immunizations =
       Enum.map(content["immunizations"], fn data ->
-        immunization = Immunization.create(data)
+        immunization =
+          data
+          |> create_immunization_reactions(immunization_observation_id_map)
+          |> Immunization.create()
 
         %{
           immunization
@@ -903,19 +917,111 @@ defmodule Core.Patients do
         |> ImmunizationValidations.validate_reactions(observations, patient_id_hash)
       end)
 
-    case Vex.errors(
-           %{immunizations: immunizations},
-           immunizations: [unique_ids: [field: :id], reference: [path: "immunizations"]]
-         ) do
-      [] ->
-        validate_immunizations(patient_id_hash, immunizations)
+    with {:ok, db_immunizations} <- get_db_immunizations(db_immunization_ids, patient_id_hash) do
+      immunizations =
+        immunizations ++ update_db_immunizations(db_immunizations, user_id, immunization_observation_id_map)
 
-      errors ->
-        {:error, errors}
+      case Vex.errors(
+             %{immunizations: immunizations},
+             immunizations: [unique_ids: [field: :id], reference: [path: "immunizations"]]
+           ) do
+        [] ->
+          validate_immunizations(patient_id_hash, immunizations)
+
+        errors ->
+          {:error, errors}
+      end
     end
   end
 
   defp create_immunizations(_, _, _), do: {:ok, []}
+
+  defp get_db_immunizations(immunization_ids, patient_id_hash) do
+    with {:ok, immunizations} <- Immunizations.get_by_ids(patient_id_hash, immunization_ids) do
+      {:ok, immunizations}
+    else
+      {:error, message} -> {:error, %{"error" => message}, 404}
+    end
+  end
+
+  defp update_db_immunizations(immunizations, user_id, immunization_observation_id_map) do
+    now = DateTime.utc_now()
+
+    Enum.map(immunizations, fn %{id: immunization_id} = immunization ->
+      reactions =
+        immunization_observation_id_map
+        |> Map.get(to_string(immunization_id), [])
+        |> Enum.map(&Reaction.create(create_reaction(&1)))
+        |> Enum.concat(immunization.reactions || [])
+        |> case do
+          [] -> nil
+          reactions -> reactions
+        end
+
+      %{immunization | reactions: reactions, updated_at: now, updated_by: user_id}
+    end)
+  end
+
+  defp get_immunization_observation_id_map(content) do
+    content
+    |> Map.get("observations", [])
+    |> Enum.reduce(%{}, fn %{"id" => observation_id} = observation, acc ->
+      const_observation_id = fn _ -> observation_id end
+
+      case get_reaction_on_immunization_ids(observation["reaction_on"]) do
+        [] -> acc
+        immunization_ids -> Map.merge(acc, Enum.group_by(immunization_ids, & &1, const_observation_id))
+      end
+    end)
+  end
+
+  defp get_request_immunization_ids(content) do
+    content
+    |> Map.get("immunizations", [])
+    |> Enum.map(& &1["id"])
+  end
+
+  defp get_reactions_immunization_ids(content) do
+    content
+    |> Map.get("observations", [])
+    |> Enum.map(&get_reaction_on_immunization_ids(&1["reaction_on"]))
+    |> Enum.flat_map(& &1)
+  end
+
+  defp get_db_immunization_ids(content) do
+    immunization_ids_from_request = get_request_immunization_ids(content)
+    immunization_ids_from_reactions_on = get_reactions_immunization_ids(content)
+
+    immunization_ids_from_reactions_on -- immunization_ids_from_request
+  end
+
+  defp get_reaction_on_immunization_ids(nil), do: []
+  defp get_reaction_on_immunization_ids(reaction_on), do: Enum.map(reaction_on, & &1["identifier"]["value"])
+
+  defp create_immunization_reactions(%{"id" => immunization_id} = data, immunization_observation_id_map) do
+    case immunization_observation_id_map[immunization_id] do
+      nil -> data
+      observation_ids -> Map.put(data, "reactions", Enum.map(observation_ids, &create_reaction(&1)))
+    end
+  end
+
+  defp create_reaction(observation_id) do
+    %{
+      "detail" => %{
+        "identifier" => %{
+          "type" => %{
+            "coding" => [
+              %{
+                "system" => "eHealth/resources",
+                "code" => "observation"
+              }
+            ]
+          },
+          "value" => observation_id
+        }
+      }
+    }
+  end
 
   defp create_allergy_intolerances(
          %PackageCreateJob{

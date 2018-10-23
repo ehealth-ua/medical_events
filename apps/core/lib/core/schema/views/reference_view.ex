@@ -108,9 +108,7 @@ defmodule Core.ReferenceView do
 
   def render(%Reaction{} = reaction) do
     %{
-      date: DateView.render_datetime(reaction.date),
-      detail: render(reaction.detail),
-      reported: reaction.reported
+      detail: render(reaction.detail)
     }
   end
 

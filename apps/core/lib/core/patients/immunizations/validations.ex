@@ -59,7 +59,6 @@ defmodule Core.Patients.Immunizations.Validations do
   end
 
   def validate_reactions(%Immunization{} = immunization, observations, patient_id) do
-    now = DateTime.utc_now()
     reactions = immunization.reactions || []
 
     reactions =
@@ -73,13 +72,14 @@ defmodule Core.Patients.Immunizations.Validations do
             observation_reference: [patient_id: patient_id, observations: observations]
           )
 
-        add_validations(
-          %{reaction | detail: %{detail | identifier: identifier}},
-          :date,
-          datetime: [less_than_or_equal_to: now, message: "Date of reaction must be in past"]
-        )
+        %{reaction | detail: %{detail | identifier: identifier}}
       end)
 
-    %{immunization | reactions: reactions}
+    # todo: make default values for list fields as empty arrays
+    if reactions == [] do
+      %{immunization | reactions: nil}
+    else
+      %{immunization | reactions: reactions}
+    end
   end
 end

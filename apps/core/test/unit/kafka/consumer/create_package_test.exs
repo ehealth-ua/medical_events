@@ -12,6 +12,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
   alias Core.Kafka.Consumer
+  alias Core.Mongo
   alias Core.Observation
   alias Core.Patients
 
@@ -186,7 +187,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "success create package" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      stub(KafkaMock, :publish_encounter_package_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
 
@@ -238,16 +238,26 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             )
         )
 
+      db_immunization_id = UUID.uuid4()
+      immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id))
+
       patient =
-        insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+        insert(:patient,
+          _id: patient_id_hash,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          immunizations: %{db_immunization_id => immunization}
+        )
 
       db_observation = insert(:observation, patient_id: patient_id_hash)
       condition_id = UUID.uuid4()
+      immunization_id = UUID.uuid4()
+      immunization_id2 = UUID.uuid4()
       job = insert(:job)
       user_id = prepare_signature_expectations()
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
+      observation_id2 = UUID.uuid4()
       employee_id = UUID.uuid4()
 
       start_datetime =
@@ -424,10 +434,25 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   }
                 ]
               }
+            ],
+            "reaction_on" => [
+              %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "immunization"
+                      }
+                    ]
+                  },
+                  "value" => immunization_id
+                }
+              }
             ]
           },
           %{
-            "id" => UUID.uuid4(),
+            "id" => observation_id2,
             "status" => @status_valid,
             "issued" => DateTime.to_iso8601(DateTime.utc_now()),
             "context" => %{
@@ -448,12 +473,27 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "report_origin" => %{
               "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
             },
+            "reaction_on" => [
+              %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "immunization"
+                      }
+                    ]
+                  },
+                  "value" => db_immunization_id
+                }
+              }
+            ],
             "value_time" => "12:00:00"
           }
         ],
         "immunizations" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => immunization_id,
             "status" => Immunization.status(:completed),
             "not_given" => false,
             "vaccine_code" => %{
@@ -504,25 +544,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "reactions" => [
-              %{
-                "date" => DateTime.utc_now(),
-                "detail" => %{
-                  "identifier" => %{
-                    "type" => %{
-                      "coding" => [
-                        %{
-                          "system" => "eHealth/resources",
-                          "code" => "observation"
-                        }
-                      ]
-                    },
-                    "value" => observation_id
-                  }
-                },
-                "reported" => true
-              }
-            ],
             "vaccination_protocols" => [
               %{
                 "dose_sequence" => 1,
@@ -565,6 +586,59 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               }
             ]
+          },
+          %{
+            "id" => immunization_id2,
+            "status" => Immunization.status(:completed),
+            "not_given" => false,
+            "vaccine_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/vaccines_codes",
+                  "code" => "FLUVAX"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => employee_id
+              }
+            },
+            "primary_source" => true,
+            "date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
+            "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
+            "dose_quantity" => %{
+              "value" => 18,
+              "unit" => "mg",
+              "system" => "eHealth/dose_quantities"
+            },
+            "explanation" => %{
+              "reasons" => [
+                %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/reason_explanations",
+                      "code" => "429060002"
+                    }
+                  ]
+                }
+              ]
+            }
           }
         ],
         "allergy_intolerances" => [
@@ -609,6 +683,26 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           }
         ]
       }
+
+      expect(KafkaMock, :publish_encounter_package_event, fn %{patient_save_data: %{"$set" => set_data}} ->
+        assert observation_id ==
+                 set_data["immunizations.#{immunization_id}.reactions"]
+                 |> hd()
+                 |> get_in(~w(detail identifier value)a)
+                 |> to_string()
+
+        assert observation_id2 ==
+                 set_data["immunizations.#{db_immunization_id}.reactions"]
+                 |> hd()
+                 |> get_in(~w(detail identifier value)a)
+                 |> to_string()
+
+        assert 2 == length(set_data["immunizations.#{db_immunization_id}.reactions"])
+
+        assert nil == set_data["immunizations.#{immunization_id2}.reactions"]
+
+        :ok
+      end)
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -940,25 +1034,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "reactions" => [
-              %{
-                "date" => DateTime.utc_now(),
-                "detail" => %{
-                  "identifier" => %{
-                    "type" => %{
-                      "coding" => [
-                        %{
-                          "system" => "eHealth/resources",
-                          "code" => "observation"
-                        }
-                      ]
-                    },
-                    "value" => observation_id
-                  }
-                },
-                "reported" => true
-              }
-            ],
             "vaccination_protocols" => [
               %{
                 "dose_sequence" => 1,

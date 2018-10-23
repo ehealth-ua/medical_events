@@ -183,9 +183,7 @@ defmodule Core.Factories do
 
   def reaction_factory do
     %Reaction{
-      date: DateTime.utc_now(),
-      detail: reference_coding(system: "eHealth/resources", code: "observation"),
-      reported: true
+      detail: reference_coding(system: "eHealth/resources", code: "observation")
     }
   end
 

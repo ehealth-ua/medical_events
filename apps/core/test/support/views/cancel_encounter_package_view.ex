@@ -104,7 +104,6 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         site: ReferenceView.render(immunization.site),
         route: ReferenceView.render(immunization.route),
         dose_quantity: ReferenceView.render(immunization.dose_quantity),
-        reactions: ReferenceView.render(immunization.reactions),
         vaccination_protocols: ReferenceView.render(immunization.vaccination_protocols),
         explanation: ReferenceView.render(immunization.explanation)
       }
