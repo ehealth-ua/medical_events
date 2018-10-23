@@ -15,6 +15,10 @@ defmodule ApiWeb.Router do
     plug(Api.Web.Plugs.AuthorizeParty)
   end
 
+  pipeline :summary do
+    plug(Api.Web.Plugs.PatientExists)
+  end
+
   scope "/api", Api.Web do
     pipe_through(:api)
 
@@ -50,18 +54,21 @@ defmodule ApiWeb.Router do
 
     get("/jobs/:id", JobController, :show)
 
-    get("/patients/:patient_id/summary/immunizations", SummaryController, :list_immunizations)
-    get("/patients/:patient_id/summary/immunizations/:id", ImmunizationController, :show)
+    scope "/patients/:patient_id/summary" do
+      pipe_through(:summary)
+      get("/immunizations", SummaryController, :list_immunizations)
+      get("/immunizations/:id", ImmunizationController, :show)
 
-    get("/patients/:patient_id/summary/allergy_intolerances", SummaryController, :list_allergy_intolerances)
-    get("/patients/:patient_id/summary/allergy_intolerances/:id", AllergyIntoleranceController, :show)
+      get("/allergy_intolerances", SummaryController, :list_allergy_intolerances)
+      get("/allergy_intolerances/:id", AllergyIntoleranceController, :show)
 
-    get("/patients/:patient_id/summary/conditions", SummaryController, :list_conditions)
-    get("/patients/:patient_id/summary/conditions/:id", SummaryController, :show_condition)
+      get("/conditions", SummaryController, :list_conditions)
+      get("/conditions/:id", SummaryController, :show_condition)
 
-    get("/patients/:patient_id/summary/observations", SummaryController, :list_observations)
-    get("/patients/:patient_id/summary/observations/:id", SummaryController, :show_observation)
+      get("/observations", SummaryController, :list_observations)
+      get("/observations/:id", SummaryController, :show_observation)
 
-    get("/patients/:patient_id/summary/diagnoses", SummaryController, :list_diagnoses)
+      get("/diagnoses", SummaryController, :list_diagnoses)
+    end
   end
 end

@@ -34,6 +34,9 @@ defmodule Api.Web.SummaryControllerTest do
     test "invalid search parameters", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
       search_params = %{"encounter_id" => UUID.uuid4(), "episode_id" => UUID.uuid4()}
 
       resp =
@@ -204,6 +207,9 @@ defmodule Api.Web.SummaryControllerTest do
     test "invalid search parameters", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
       search_params = %{"encounter_id" => UUID.uuid4(), "episode_id" => UUID.uuid4()}
 
       resp =
