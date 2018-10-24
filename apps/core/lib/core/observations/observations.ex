@@ -175,7 +175,7 @@ defmodule Core.Observations do
 
   defp search_observations_summary(%{"patient_id_hash" => patient_id_hash} = params) do
     code = params["code"]
-    codes = Confex.fetch_env!(:core, :summary)[:conditions_whitelist]
+    codes = Confex.fetch_env!(:core, :summary)[:observations_whitelist]
     issued_from = filter_date(params["issued_from"])
     issued_to = filter_date(params["issued_to"], true)
 
