@@ -435,21 +435,19 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 ]
               }
             ],
-            "reaction_on" => [
-              %{
-                "identifier" => %{
-                  "type" => %{
-                    "coding" => [
-                      %{
-                        "system" => "eHealth/resources",
-                        "code" => "immunization"
-                      }
-                    ]
-                  },
-                  "value" => immunization_id
-                }
+            "reaction_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "immunization"
+                    }
+                  ]
+                },
+                "value" => immunization_id
               }
-            ]
+            }
           },
           %{
             "id" => observation_id2,
@@ -473,21 +471,19 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "report_origin" => %{
               "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
             },
-            "reaction_on" => [
-              %{
-                "identifier" => %{
-                  "type" => %{
-                    "coding" => [
-                      %{
-                        "system" => "eHealth/resources",
-                        "code" => "immunization"
-                      }
-                    ]
-                  },
-                  "value" => db_immunization_id
-                }
+            "reaction_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "immunization"
+                    }
+                  ]
+                },
+                "value" => db_immunization_id
               }
-            ],
+            },
             "value_time" => "12:00:00"
           }
         ],

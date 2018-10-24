@@ -1930,62 +1930,59 @@
           }
         },
         "reaction_on": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "identifier": {
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "type": "object",
-                    "properties": {
-                      "coding": {
-                        "type": "array",
-                        "minItems": 1,
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "system": {
-                              "type": "string",
-                              "enum": [
-                                "eHealth/resources"
-                              ]
-                            },
-                            "code": {
-                              "type": "string",
-                              "enum": [
-                                "immunization"
-                              ],
-                              "description": "Symbol in syntax defined by the system"
-                            }
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
                           },
-                          "required": [
-                            "code",
-                            "system"
-                          ],
-                          "additionalProperties": false
-                        }
-                      },
-                      "text": {
-                        "type": "string"
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "immunization"
+                            ],
+                            "description": "Symbol in syntax defined by the system"
+                          }
+                        },
+                        "required": [
+                          "code",
+                          "system"
+                        ],
+                        "additionalProperties": false
                       }
                     },
-                    "required": [
-                      "coding"
-                    ],
-                    "additionalProperties": false
+                    "text": {
+                      "type": "string"
+                    }
                   },
-                  "value": {
-                    "type": "string",
-                    "description": "Dictionary: TBD"
-                  }
+                  "required": [
+                    "coding"
+                  ],
+                  "additionalProperties": false
                 },
-                "required": [
-                  "value"
-                ],
-                "additionalProperties": false
-              }
+                "value": {
+                  "type": "string",
+                  "description": "Dictionary: TBD"
+                }
+              },
+              "required": [
+                "value"
+              ],
+              "additionalProperties": false
             }
           }
         }

@@ -966,11 +966,9 @@ defmodule Core.Patients do
     content
     |> Map.get("observations", [])
     |> Enum.reduce(%{}, fn %{"id" => observation_id} = observation, acc ->
-      const_observation_id = fn _ -> observation_id end
-
-      case get_reaction_on_immunization_ids(observation["reaction_on"]) do
-        [] -> acc
-        immunization_ids -> Map.merge(acc, Enum.group_by(immunization_ids, & &1, const_observation_id))
+      case get_reaction_on_immunization_id(observation["reaction_on"]) do
+        nil -> acc
+        immunization_id -> Map.merge(acc, %{immunization_id => [observation_id]}, fn _key, v1, v2 -> [v2 | v1] end)
       end
     end)
   end
@@ -984,8 +982,8 @@ defmodule Core.Patients do
   defp get_reactions_immunization_ids(content) do
     content
     |> Map.get("observations", [])
-    |> Enum.map(&get_reaction_on_immunization_ids(&1["reaction_on"]))
-    |> Enum.flat_map(& &1)
+    |> Enum.map(&get_reaction_on_immunization_id(&1["reaction_on"]))
+    |> Enum.reject(&is_nil/1)
   end
 
   defp get_db_immunization_ids(content) do
@@ -995,8 +993,8 @@ defmodule Core.Patients do
     immunization_ids_from_reactions_on -- immunization_ids_from_request
   end
 
-  defp get_reaction_on_immunization_ids(nil), do: []
-  defp get_reaction_on_immunization_ids(reaction_on), do: Enum.map(reaction_on, & &1["identifier"]["value"])
+  defp get_reaction_on_immunization_id(%{"identifier" => %{"value" => immunization_id}}), do: immunization_id
+  defp get_reaction_on_immunization_id(_), do: nil
 
   defp create_immunization_reactions(%{"id" => immunization_id} = data, immunization_observation_id_map) do
     case immunization_observation_id_map[immunization_id] do
