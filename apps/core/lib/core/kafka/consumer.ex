@@ -101,12 +101,12 @@ defmodule Core.Kafka.Consumer do
         rescue
           # Add message to the end of log for further processing
           error in Error ->
-            Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
+            Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
             @kafka_producer.publish_medical_event(kafka_job)
 
           error ->
             Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
-            Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
+            Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
         end
 
         :ets.delete(:message_cache)

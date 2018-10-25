@@ -21,7 +21,10 @@ defmodule Api.Web.JobController do
 
   defp map_http_response_code(%Job{status_code: 200}), do: {303, "details.json"}
   defp map_http_response_code(%Job{status_code: 202}), do: {200, "details.json"}
-  defp map_http_response_code(%Job{status_code: code}) when code in [404, 422, 409], do: {200, "details_error.json"}
+
+  defp map_http_response_code(%Job{status_code: code}) when code in [404, 422, 409, 500] do
+    {200, "details_error.json"}
+  end
 
   defp map_http_response_code(%Job{status_code: code}),
     do: {:error, {:not_implemented, "Job status_code `#{code}` not implemented for response"}}
