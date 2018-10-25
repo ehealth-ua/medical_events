@@ -889,7 +889,7 @@ defmodule Core.Patients do
            user_id: user_id,
            client_id: client_id
          },
-         %{"immunizations" => _} = content,
+         content,
          observations
        ) do
     now = DateTime.utc_now()
@@ -898,7 +898,7 @@ defmodule Core.Patients do
     db_immunization_ids = get_db_immunization_ids(content)
 
     immunizations =
-      Enum.map(content["immunizations"], fn data ->
+      Enum.map(content["immunizations"] || [], fn data ->
         immunization =
           data
           |> create_immunization_reactions(immunization_observation_id_map)
@@ -934,8 +934,6 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_immunizations(_, _, _), do: {:ok, []}
-
   defp get_db_immunizations(immunization_ids, patient_id_hash) do
     with {:ok, immunizations} <- Immunizations.get_by_ids(patient_id_hash, immunization_ids) do
       {:ok, immunizations}
@@ -948,11 +946,16 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
 
     Enum.map(immunizations, fn %{id: immunization_id} = immunization ->
-      reactions =
+      previous_reactions = immunization.reactions || []
+
+      new_reactions =
         immunization_observation_id_map
         |> Map.get(to_string(immunization_id), [])
         |> Enum.map(&Reaction.create(create_reaction(&1)))
-        |> Enum.concat(immunization.reactions || [])
+
+      reactions =
+        previous_reactions
+        |> Enum.concat(new_reactions)
         |> case do
           [] -> nil
           reactions -> reactions

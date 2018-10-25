@@ -239,7 +239,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         )
 
       db_immunization_id = UUID.uuid4()
-      immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id))
+      immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id), reactions: [build(:reaction)])
 
       patient =
         insert(:patient,
@@ -689,7 +689,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
         assert observation_id2 ==
                  set_data["immunizations.#{db_immunization_id}.reactions"]
-                 |> hd()
+                 |> Enum.at(1)
                  |> get_in(~w(detail identifier value)a)
                  |> to_string()
 
