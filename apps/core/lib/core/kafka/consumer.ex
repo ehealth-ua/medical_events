@@ -15,13 +15,14 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.PackageSaveConditionsJob
   alias Core.Jobs.PackageSaveObservationsJob
   alias Core.Jobs.PackageSavePatientJob
-  alias Core.Kafka.Producer
   alias Core.Microservices.Error
   alias Core.Patients
   alias Core.Patients.Encounters.Cancel
   alias Core.Patients.Package
 
   require Logger
+
+  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def consume(%PackageCreateJob{} = package_create_job) do
     do_consume(Patients, :consume_create_package, package_create_job)
@@ -100,10 +101,12 @@ defmodule Core.Kafka.Consumer do
         rescue
           # Add message to the end of log for further processing
           error in Error ->
+            IO.inspect(error, label: "microservice error")
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
-            Producer.publish_medical_event(kafka_job)
+            @kafka_producer.publish_medical_event(kafka_job)
 
           error ->
+            IO.inspect(error, label: "general error")
             Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
         end
