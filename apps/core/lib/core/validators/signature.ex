@@ -10,8 +10,7 @@ defmodule Core.Validators.Signature do
       signer_message = if required_signatures == 1, do: "signer", else: "signers"
 
       {:error,
-       {:bad_request,
-        "document must be signed by #{required_signatures} #{signer_message} but contains #{Enum.count(signatures)} signatures"}}
+       "document must be signed by #{required_signatures} #{signer_message} but contains #{Enum.count(signatures)} signatures"}
     end
   end
 
@@ -35,6 +34,5 @@ defmodule Core.Validators.Signature do
     {:ok, %{"content" => content, "signer" => signer}}
   end
 
-  defp get_last_signer(_, %{"is_valid" => false, "validation_error_message" => error}),
-    do: {:error, {:bad_request, error}}
+  defp get_last_signer(_, %{"is_valid" => false, "validation_error_message" => error}), do: {:error, error}
 end

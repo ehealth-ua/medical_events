@@ -46,4 +46,29 @@ defmodule Core.Patients.Encounters.ValidationsTest do
     assert {:error, "Does not match the signer drfo"} =
              EncounterValidation.validate_signatures(%{"drfo" => UUID.uuid4()}, UUID.uuid4(), user_id, UUID.uuid4())
   end
+
+  test "invalid employee legal entity id" do
+    employee_id = UUID.uuid4()
+    user_id = UUID.uuid4()
+    client_id = UUID.uuid4()
+    invalid_legal_entity_id = UUID.uuid4()
+    drfo = UUID.uuid4()
+
+    expect(IlMock, :get_employee_users, fn employee_id, _ ->
+      {:ok,
+       %{
+         "data" => %{
+           "id" => employee_id,
+           "legal_entity_id" => invalid_legal_entity_id,
+           "party" => %{
+             "tax_id" => drfo,
+             "users" => [%{"user_id" => user_id}]
+           }
+         }
+       }}
+    end)
+
+    assert {:error, "Performer does not belong to current legal entity"} ==
+             EncounterValidation.validate_signatures(%{"drfo" => drfo}, employee_id, user_id, client_id)
+  end
 end

@@ -23,11 +23,17 @@ defmodule Core.Expectations.IlExpectations do
   end
 
   def expect_employee_users(tax_id, user_id, n \\ 1) do
-    expect(IlMock, :get_employee_users, n, fn employee_id, _ ->
+    expect(IlMock, :get_employee_users, n, fn employee_id, headers ->
+      client_id =
+        headers[:"x-consumer-metadata"]
+        |> Jason.decode!()
+        |> Map.get("client_id")
+
       {:ok,
        %{
          "data" => %{
            "id" => employee_id,
+           "legal_entity_id" => client_id,
            "party" => %{
              "id" => UUID.uuid4(),
              "tax_id" => tax_id,

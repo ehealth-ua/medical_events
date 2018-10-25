@@ -167,7 +167,7 @@ defmodule Core.Patients do
 
   def consume_cancel_package(%PackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job) do
     with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, content),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          encounter_id <- content["encounter"]["id"],
@@ -198,7 +198,7 @@ defmodule Core.Patients do
     now = DateTime.utc_now()
 
     with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- Signature.validate(data),
+         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id) do
@@ -1121,6 +1121,14 @@ defmodule Core.Patients do
     else
       {:error, %{"error" => _} = error} -> {:ok, error, 422}
       error -> {:ok, error, 500}
+    end
+  end
+
+  defp validate_signed_data(signed_data) do
+    with {:ok, %{"content" => _, "signer" => _}} = validation_result <- Signature.validate(signed_data) do
+      validation_result
+    else
+      {:error, error} -> {:error, error, 422}
     end
   end
 
