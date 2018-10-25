@@ -94,8 +94,8 @@ defmodule Core.Microservices do
     end
   end
 
-  def check_response({:error, %HTTPoison.Error{}} = error) do
-    raise Error, message: error.reason
+  def check_response({:error, %HTTPoison.Error{reason: reason}}) do
+    raise Error, message: reason
   end
 
   # no body in response

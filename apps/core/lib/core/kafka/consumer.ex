@@ -101,12 +101,10 @@ defmodule Core.Kafka.Consumer do
         rescue
           # Add message to the end of log for further processing
           error in Error ->
-            IO.inspect(error, label: "microservice error")
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
             @kafka_producer.publish_medical_event(kafka_job)
 
           error ->
-            IO.inspect(error, label: "general error")
             Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job))
         end
