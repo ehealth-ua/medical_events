@@ -377,7 +377,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -462,7 +462,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -893,7 +893,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -965,7 +965,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/observations_codes"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime

@@ -522,7 +522,7 @@ defmodule Api.Web.SummaryControllerTest do
         insert(:observation,
           patient_id: patient_id_hash,
           value: %Value{type: "period", value: build(:period)},
-          code: codeable_concept_coding(system: "eHealth/observations_codes", code: "8310-5")
+          code: codeable_concept_coding(system: "eHealth/LOINC/observations", code: "8310-5")
         )
 
       expect_get_person_data(patient_id)

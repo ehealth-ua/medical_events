@@ -1688,12 +1688,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/observations_codes"
+                      "eHealth/LOINC/observations"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary: eHealth/LOINC/observations"
                   }
                 },
                 "required": [

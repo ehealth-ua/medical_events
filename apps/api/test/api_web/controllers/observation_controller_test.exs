@@ -353,7 +353,7 @@ defmodule Api.Web.ObservationControllerTest do
 
   defp build_observation_code do
     code = "#{Enum.random(10_000..99_999)}-2"
-    observation_code = codeable_concept_coding(code: code, system: "eHealth/observations_codes")
+    observation_code = codeable_concept_coding(code: code, system: "eHealth/LOINC/observations")
     {code, observation_code}
   end
 

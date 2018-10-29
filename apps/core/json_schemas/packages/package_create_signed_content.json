@@ -1650,7 +1650,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/observations_codes"
+                      "eHealth/LOINC/observations"
                     ]
                   },
                   "code": {
