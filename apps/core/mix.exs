@@ -49,7 +49,7 @@ defmodule Core.MixProject do
       {:iteraptor, "~> 1.3.2"},
       {:jason, "~> 1.1"},
       {:jvalid, "~> 0.7.0"},
-      {:kafka_ex, "~> 0.8.3"},
+      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:mongodb, "~> 0.4.6"},
       {:poolboy, "~> 1.5"},
       {:redix, "~> 0.7.1"},

@@ -10,14 +10,35 @@ defmodule Core.Kafka.Producer do
   @behaviour Core.Behaviours.KafkaProducerBehaviour
 
   def publish_medical_event(request) do
-    KafkaEx.produce(@medical_events_topic, 0, :erlang.term_to_binary(request))
+    KafkaEx.produce(
+      @medical_events_topic,
+      get_partition(request.patient_id, @medical_events_topic),
+      :erlang.term_to_binary(request)
+    )
   end
 
   def publish_encounter_package_event(event) do
-    KafkaEx.produce(@encounter_package_events_topic, 0, :erlang.term_to_binary(event))
+    KafkaEx.produce(
+      @encounter_package_events_topic,
+      get_partition(event.patient_id, @encounter_package_events_topic),
+      :erlang.term_to_binary(event)
+    )
   end
 
   def publish_mongo_event(%Event{} = event) do
-    KafkaEx.produce(@mongo_events_topic, 0, :erlang.term_to_binary(event))
+    KafkaEx.produce(
+      @mongo_events_topic,
+      get_partition(event.actor_id, @mongo_events_topic),
+      :erlang.term_to_binary(event)
+    )
+  end
+
+  defp get_partition(nil, _), do: 0
+  defp get_partition("", _), do: 0
+
+  defp get_partition(patient_id, topic) do
+    partitions_number = Confex.fetch_env!(:core, :kafka)[:partitions][topic]
+    {i, _} = Integer.parse(String.first(patient_id), 16)
+    trunc((i + 1) * partitions_number / 16)
   end
 end

@@ -83,6 +83,7 @@ defmodule Core.Patients.Encounters.Cancel do
            ) do
       event = %PackageCancelSavePatientJob{
         _id: job._id,
+        patient_id: job.patient_id,
         patient_id_hash: job.patient_id_hash,
         patient_save_data: %{
           "$set" => set
@@ -108,6 +109,7 @@ defmodule Core.Patients.Encounters.Cancel do
            Mongo.update_one(@patients_collection, %{"_id" => patient_id_hash}, patient_save_data) do
       event = %PackageCancelSaveConditionsJob{
         _id: job._id,
+        patient_id: job.patient_id,
         conditions_ids: job.conditions_ids,
         observations_ids: job.observations_ids,
         user_id: job.user_id
@@ -123,6 +125,7 @@ defmodule Core.Patients.Encounters.Cancel do
     with :ok <- update_conditions(Enum.map(conditions_ids, &Mongo.string_to_uuid/1), job.user_id) do
       event = %PackageCancelSaveObservationsJob{
         _id: job._id,
+        patient_id: job.patient_id,
         observations_ids: job.observations_ids,
         user_id: job.user_id
       }

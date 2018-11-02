@@ -28,7 +28,7 @@ defmodule PersonConsumer.MixProject do
   defp deps do
     [
       {:toml, "~> 0.3.0"},
-      {:kafka_ex, "~> 0.8.3"},
+      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:core, in_umbrella: true}
     ]
   end

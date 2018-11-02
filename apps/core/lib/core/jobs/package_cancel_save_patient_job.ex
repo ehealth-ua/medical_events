@@ -6,6 +6,7 @@ defmodule Core.Jobs.PackageCancelSavePatientJob do
 
   defstruct [
     :_id,
+    :patient_id,
     :patient_id_hash,
     :patient_save_data,
     :conditions_ids,

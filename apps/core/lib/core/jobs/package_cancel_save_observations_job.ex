@@ -6,6 +6,7 @@ defmodule Core.Jobs.PackageCancelSaveObservationsJob do
 
   defstruct [
     :_id,
+    :patient_id,
     :observations_ids,
     :user_id
   ]

@@ -32,7 +32,12 @@ config :core,
     validators: Core.Validators.Cache
   ],
   kafka: [
-    producer: Core.Kafka.Producer
+    producer: Core.Kafka.Producer,
+    partitions: %{
+      "medical_events" => {:system, :integer, "MEDICAL_EVENTS_PARTITIONS"},
+      "person_events" => {:system, :integer, "PERSON_EVENTS_PARTITIONS"},
+      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"}
+    }
   ]
 
 config :core, Core.Microservices.Il,
