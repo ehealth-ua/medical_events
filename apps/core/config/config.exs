@@ -36,7 +36,8 @@ config :core,
     partitions: %{
       "medical_events" => {:system, :integer, "MEDICAL_EVENTS_PARTITIONS"},
       "person_events" => {:system, :integer, "PERSON_EVENTS_PARTITIONS"},
-      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"}
+      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"},
+      "encounter_package_events" => {:system, :integer, "ENCOUNTER_PACKAGE_EVENTS_PARTITIONS"}
     }
   ]
 
