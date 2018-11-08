@@ -36,6 +36,10 @@ defmodule Core.Kafka.Producer do
   defp get_partition(nil, _), do: 0
   defp get_partition("", _), do: 0
 
+  defp get_partition(%BSON.Binary{binary: id}, topic) do
+    get_partition(UUID.binary_to_string!(id), topic)
+  end
+
   defp get_partition(patient_id, topic) do
     partitions_number = Confex.fetch_env!(:core, :kafka)[:partitions][topic]
     {i, _} = Integer.parse(String.first(patient_id), 16)
