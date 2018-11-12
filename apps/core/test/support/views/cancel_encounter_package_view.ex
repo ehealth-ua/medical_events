@@ -22,7 +22,8 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: ReferenceView.render(encounter.diagnoses),
       actions: ReferenceView.render(encounter.actions),
-      division: ReferenceView.render(encounter.division)
+      division: ReferenceView.render(encounter.division),
+      prescriptions: encounter.prescriptions
     }
   end
 

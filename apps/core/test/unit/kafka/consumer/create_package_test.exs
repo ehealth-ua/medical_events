@@ -164,7 +164,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
               "value" => UUID.uuid4()
             }
-          }
+          },
+          "prescriptions" => "Дієта №1"
         }
       }
 
@@ -315,7 +316,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
               "value" => employee_id
             }
-          }
+          },
+          "prescriptions" => "Дієта №1"
         },
         "conditions" => [
           %{
@@ -831,7 +833,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
               "value" => employee_id
             }
-          }
+          },
+          "prescriptions" => "Дієта №1"
         },
         "conditions" => [
           %{
@@ -1249,7 +1252,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
               "value" => employee_id
             }
-          }
+          },
+          "prescriptions" => "Дієта №1"
         }
       }
 

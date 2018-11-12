@@ -1479,6 +1479,9 @@
               "additionalProperties": false
             }
           }
+        },
+        "prescriptions": {
+          "type": "string"
         }
       },
       "required": [
@@ -1494,7 +1497,8 @@
         "division",
         "date",
         "explanatory_letter",
-        "cancellation_reason"
+        "cancellation_reason",
+        "prescriptions"
       ],
       "additionalProperties": false
     },

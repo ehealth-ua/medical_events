@@ -333,6 +333,7 @@ defmodule Core.Factories do
       division: reference_coding(system: "eHealth/resources", code: "division"),
       service_provider: build(:reference),
       explanatory_letter: "some explanations",
+      prescriptions: "Дієта №1",
       inserted_at: now,
       updated_at: now,
       inserted_by: Mongo.string_to_uuid(id),
