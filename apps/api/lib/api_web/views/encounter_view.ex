@@ -13,6 +13,7 @@ defmodule Api.Web.EncounterView do
   def render("show.json", %{encounter: encounter}) do
     encounter_fields = ~w(
       status
+      prescriptions
     )a
 
     encounter_data = %{

@@ -35,6 +35,7 @@ defmodule Core.Encounter do
     field(:explanatory_letter)
     field(:cancellation_reason)
     field(:signed_content_links)
+    field(:prescriptions)
 
     timestamps()
     changed_by()

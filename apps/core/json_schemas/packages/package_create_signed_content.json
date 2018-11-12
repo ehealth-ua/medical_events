@@ -1441,6 +1441,9 @@
               "additionalProperties": false
             }
           }
+        },
+        "prescriptions": {
+          "type": "string"
         }
       },
       "required": [
@@ -1455,7 +1458,8 @@
         "reasons",
         "diagnoses",
         "actions",
-        "division"
+        "division",
+        "prescriptions"
       ],
       "additionalProperties": false
     },
