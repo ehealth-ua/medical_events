@@ -31,6 +31,7 @@ config :libcluster,
         mode: :dns,
         kubernetes_node_basename: "ehealth",
         kubernetes_selector: "app=api",
+        kubernetes_namespace: "il",
         polling_interval: 10_000
       ]
     ]
