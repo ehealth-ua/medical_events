@@ -45,7 +45,8 @@ defmodule Core.Application do
               ]
             ],
             id: :mongo_audit_log
-          )
+          ),
+          {Cluster.Supervisor, [Application.get_env(:libcluster, :topologies), [name: Core.ClusterSupervisor]]}
         ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

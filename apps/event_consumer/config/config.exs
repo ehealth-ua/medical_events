@@ -23,6 +23,19 @@ config :event_consumer, env: Mix.env()
 #     config :logger, level: :info
 #
 
+config :libcluster,
+  topologies: [
+    k8s_ehealth: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "ehealth",
+        kubernetes_selector: "app=api",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
+
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
 # by uncommenting the line below and defining dev.exs, test.exs and such.
