@@ -111,6 +111,8 @@ config :vex,
 
 config :core, Core.Validators.JsonSchema, errors_limit: {:system, :integer, "JSON_SCHEMA_ERRORS_LIMIT", 6}
 
+config :core, Core.Rpc.Worker, max_attempts: {:system, :integer, "RPC_MAX_ATTEMPTS", 3}
+
 config :kafka_ex,
   # A list of brokers to connect to. This can be in either of the following formats
   #
