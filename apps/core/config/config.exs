@@ -39,7 +39,8 @@ config :core,
       "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"},
       "encounter_package_events" => {:system, :integer, "ENCOUNTER_PACKAGE_EVENTS_PARTITIONS"}
     }
-  ]
+  ],
+  rpc_worker: Core.Rpc.Worker
 
 config :core, Core.Microservices.Il,
   endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
@@ -52,6 +53,7 @@ config :core, Core.Microservices.Il,
 config :core, Core.Microservices.MediaStorage,
   endpoint: {:system, "MEDIA_STORAGE_ENDPOINT", "http://api-svc.ael"},
   encounter_bucket: {:system, "MEDIA_STORAGE_ENCOUNTER_BUCKET", "encounters-dev"},
+  service_request_bucket: {:system, "MEDIA_STORAGE_SERVICE_REQUEST_BUCKET", "service-requests-dev"},
   enabled?: {:system, :boolean, "MEDIA_STORAGE_ENABLED", false},
   hackney_options: [
     connect_timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000},
@@ -100,11 +102,16 @@ config :vex,
       episode_context: Core.Validators.EpisodeContext,
       diagnosis_condition: Core.Validators.DiagnosisCondition,
       strict_presence: Core.Validators.StrictPresence,
+      observation_context: Core.Validators.ObservationContext,
       observation_reference: Core.Validators.ObservationReference,
       source: Core.Validators.Source,
       unique_ids: Core.Validators.UniqueIds,
       mongo_uuid: Core.Validators.MongoUUID,
-      dictionary_reference: Core.Validators.DictionaryReference
+      dictionary_reference: Core.Validators.DictionaryReference,
+      drfo: Core.Validators.Drfo,
+      encounter_reference: Core.Validators.EncounterReference,
+      episode_reference: Core.Validators.EpisodeReference,
+      condition_reference: Core.Validators.ConditionReference
     ],
     Vex.Validators
   ]

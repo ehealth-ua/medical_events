@@ -74,7 +74,7 @@ defmodule Core.Conditions.Validations do
               add_validations(
                 detail.identifier,
                 :value,
-                observation_reference: [patient_id_hash: patient_id_hash, observations: observations]
+                observation_context: [patient_id_hash: patient_id_hash, observations: observations]
               )
 
             %{detail | identifier: identifier}

@@ -24,6 +24,8 @@ defmodule Core.Validators.Signature do
     end
   end
 
+  def validate_drfo(_, _), do: {:error, "Does not match the signer drfo"}
+
   defp translit(string) do
     string
     |> Translit.translit()

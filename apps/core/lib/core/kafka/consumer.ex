@@ -15,10 +15,12 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.PackageSaveConditionsJob
   alias Core.Jobs.PackageSaveObservationsJob
   alias Core.Jobs.PackageSavePatientJob
+  alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Microservices.Error
   alias Core.Patients
   alias Core.Patients.Encounters.Cancel
   alias Core.Patients.Package
+  alias Core.ServiceRequests
 
   require Logger
 
@@ -70,6 +72,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%PackageCancelSaveObservationsJob{} = package_cancel_save_observations_job) do
     do_consume(Cancel, :consume_save_observations, package_cancel_save_observations_job)
+  end
+
+  def consume(%ServiceRequestCreateJob{} = service_request_create_job) do
+    do_consume(ServiceRequests, :consume_create_service_request, service_request_create_job)
   end
 
   def consume(value) do
