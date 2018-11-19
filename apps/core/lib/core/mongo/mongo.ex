@@ -182,32 +182,32 @@ defmodule Core.Mongo do
      }, "$.#{field}"}
   end
 
-  defp prepare_doc([%{__struct__: _, __meta__: _} | _] = docs) do
+  def prepare_doc([%{__struct__: _, __meta__: _} | _] = docs) do
     Enum.map(docs, &prepare_doc/1)
   end
 
-  defp prepare_doc(%{__meta__: _} = doc) do
+  def prepare_doc(%{__meta__: _} = doc) do
     doc
     |> Map.from_struct()
     |> Map.drop(~w(__meta__ __validations__)a)
     |> Enum.into(%{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
 
-  defp prepare_doc(%DateTime{} = doc), do: doc
+  def prepare_doc(%DateTime{} = doc), do: doc
 
-  defp prepare_doc(%Date{} = doc) do
+  def prepare_doc(%Date{} = doc) do
     date = Date.to_erl(doc)
     {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
   end
 
-  defp prepare_doc(%BSON.Binary{} = doc), do: doc
-  defp prepare_doc(%BSON.ObjectId{} = doc), do: doc
+  def prepare_doc(%BSON.Binary{} = doc), do: doc
+  def prepare_doc(%BSON.ObjectId{} = doc), do: doc
 
-  defp prepare_doc(%{} = doc) do
+  def prepare_doc(%{} = doc) do
     Enum.into(doc, %{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
 
-  defp prepare_doc(doc), do: doc
+  def prepare_doc(doc), do: doc
 
   defp maybe_add_return_document(opts) do
     # for valid audit logging.
@@ -262,7 +262,7 @@ defmodule Core.Mongo do
       nil ->
         set
 
-      values ->
+      values when is_list(values) ->
         items =
           Enum.map(values, fn item ->
             uuid = get_in(item, subpath)
@@ -270,6 +270,10 @@ defmodule Core.Mongo do
           end)
 
         Map.replace!(set, path, items)
+
+      %{} = value ->
+        uuid = get_in(value, subpath)
+        Map.replace!(set, path, put_item.(uuid, value))
     end
   end
 

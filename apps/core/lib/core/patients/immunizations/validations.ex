@@ -69,7 +69,7 @@ defmodule Core.Patients.Immunizations.Validations do
           add_validations(
             detail.identifier,
             :value,
-            observation_reference: [patient_id: patient_id, observations: observations]
+            observation_context: [patient_id: patient_id, observations: observations]
           )
 
         %{reaction | detail: %{detail | identifier: identifier}}

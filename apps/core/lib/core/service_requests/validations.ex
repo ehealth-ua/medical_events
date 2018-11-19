@@ -1,0 +1,117 @@
+defmodule Core.ServiceRequests.Validations do
+  @moduledoc false
+
+  import Core.Schema, only: [add_validations: 3]
+
+  alias Core.ServiceRequest
+  alias Core.ServiceRequests.Occurence
+
+  def validate_signatures(%ServiceRequest{} = service_request, %{"drfo" => drfo}, user_id, client_id) do
+    requester = service_request.requester
+
+    identifier =
+      add_validations(
+        requester.identifier,
+        :value,
+        drfo: [drfo: drfo, client_id: client_id, user_id: user_id]
+      )
+
+    %{service_request | requester: %{requester | identifier: identifier}}
+  end
+
+  def validate_context(%ServiceRequest{} = service_request, patient_id_hash) do
+    context = service_request.context
+
+    identifier =
+      add_validations(
+        context.identifier,
+        :value,
+        encounter_reference: [patient_id_hash: patient_id_hash]
+      )
+
+    %{service_request | context: %{context | identifier: identifier}}
+  end
+
+  def validate_occurence(%ServiceRequest{occurence: %Occurence{type: "date_time"} = occurence} = service_request) do
+    now = DateTime.utc_now()
+
+    occurence =
+      add_validations(
+        occurence,
+        :value,
+        datetime: [greater_than: now, message: "Occurence date must be in the future"]
+      )
+
+    %{service_request | occurence: occurence}
+  end
+
+  def validate_occurence(%ServiceRequest{occurence: %Occurence{type: "period"} = occurence} = service_request) do
+    now = DateTime.utc_now()
+
+    occurence =
+      occurence.value
+      |> add_validations(
+        :start,
+        datetime: [greater_than: now, message: "Occurence start date must be in the future"]
+      )
+      |> add_validations(
+        :end,
+        datetime: [
+          greater_than: occurence.value.start,
+          message: "Occurence end date must be greater than the start date"
+        ]
+      )
+
+    %{service_request | occurence: occurence}
+  end
+
+  def validate_occurence(service_request), do: service_request
+
+  def validate_authored_on(%ServiceRequest{} = service_request) do
+    add_validations(service_request, :authored_on, datetime: [less_than: DateTime.utc_now()])
+  end
+
+  def validate_supporting_info(%ServiceRequest{} = service_request, patient_id_hash) do
+    supporting_info =
+      Enum.map(service_request.supporting_info, fn info ->
+        identifier = add_validations(info.identifier, :value, episode_reference: [patient_id_hash: patient_id_hash])
+        %{info | identifier: identifier}
+      end)
+
+    %{service_request | supporting_info: supporting_info}
+  end
+
+  def validate_reason_reference(%ServiceRequest{} = service_request, patient_id_hash) do
+    reason_references = service_request.reason_reference || []
+
+    references =
+      Enum.map(reason_references, fn reference ->
+        identifier = reference.identifier
+        reference_type = identifier.type.coding |> List.first() |> Map.get(:code)
+
+        case reference_type do
+          "observation" ->
+            add_validations(identifier, :value, observation_reference: [patient_id_hash: patient_id_hash])
+
+          "condition" ->
+            add_validations(identifier, :value, condition_reference: [patient_id_hash: patient_id_hash])
+        end
+      end)
+
+    %{service_request | reason_reference: references}
+  end
+
+  def validate_permitted_episodes(%ServiceRequest{} = service_request, patient_id_hash) do
+    episodes = service_request.permitted_episodes || []
+
+    references =
+      Enum.map(episodes, fn reference ->
+        identifier =
+          add_validations(reference.identifier, :value, episode_reference: [patient_id_hash: patient_id_hash])
+
+        %{reference | identifier: identifier}
+      end)
+
+    %{service_request | permitted_episodes: references}
+  end
+end

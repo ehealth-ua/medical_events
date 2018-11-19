@@ -24,6 +24,12 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:allergy_intolerance_summary, "json_schemas/allergy_intolerances/allergy_intolerance_summary.json")
   use_schema(:immunization_request, "json_schemas/immunizations/immunization_request.json")
   use_schema(:immunization_summary, "json_schemas/immunizations/immunization_summary.json")
+  use_schema(:service_request_create, "json_schemas/service_requests/service_request_create.json")
+
+  use_schema(
+    :service_request_create_signed_content,
+    "json_schemas/service_requests/service_request_create_signed_content.json"
+  )
 
   def validate(schema, attrs, errors_limit \\ nil) do
     result =
