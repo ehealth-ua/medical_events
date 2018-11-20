@@ -27,7 +27,8 @@ defmodule EventConsumer.Application do
         consumer_group_name,
         topic_names,
         consumer_group_opts
-      ])
+      ]),
+      {Cluster.Supervisor, [Application.get_env(:event_consumer, :topologies), [name: Core.ClusterSupervisor]]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
