@@ -23,7 +23,7 @@ config :event_consumer, env: Mix.env()
 #     config :logger, level: :info
 #
 
-config :libcluster,
+config :event_consumer,
   topologies: [
     k8s_ehealth: [
       strategy: Elixir.Cluster.Strategy.Kubernetes,
