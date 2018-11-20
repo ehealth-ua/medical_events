@@ -44,7 +44,6 @@ defmodule Core.MixProject do
     [
       {:confex, "~> 3.3"},
       {:ecto, "~> 3.0", override: true},
-      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:elixir_uuid, "~> 1.2"},
       {:eview, "~> 0.14.0"},
       {:httpoison, "~> 1.2"},
