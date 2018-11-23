@@ -1459,8 +1459,7 @@
         "reasons",
         "diagnoses",
         "actions",
-        "division",
-        "prescriptions"
+        "division"
       ],
       "additionalProperties": false
     },

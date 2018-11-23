@@ -1496,8 +1496,7 @@
         "division",
         "date",
         "explanatory_letter",
-        "cancellation_reason",
-        "prescriptions"
+        "cancellation_reason"
       ],
       "additionalProperties": false
     },
