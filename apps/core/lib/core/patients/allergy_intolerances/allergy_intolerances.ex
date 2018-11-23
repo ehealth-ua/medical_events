@@ -124,9 +124,9 @@ defmodule Core.Patients.AllergyIntolerances do
 
   def fill_up_allergy_intolerance_asserter(%AllergyIntolerance{source: %Source{value: value}} = allergy_intolerance) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{value.identifier.value}") do
-      first_name = get_in(employee, ["party", "first_name"])
-      second_name = get_in(employee, ["party", "second_name"])
-      last_name = get_in(employee, ["party", "last_name"])
+      first_name = get_in(employee, ~w(party first_name)a)
+      second_name = get_in(employee, ~w(party second_name)a)
+      last_name = get_in(employee, ~w(party last_name)a)
 
       %{
         allergy_intolerance

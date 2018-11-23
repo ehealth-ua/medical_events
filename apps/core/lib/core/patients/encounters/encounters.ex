@@ -55,9 +55,9 @@ defmodule Core.Patients.Encounters do
 
   def fill_up_encounter_performer(%Encounter{performer: performer} = encounter) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{performer.identifier.value}") do
-      first_name = get_in(employee, ["party", "first_name"])
-      second_name = get_in(employee, ["party", "second_name"])
-      last_name = get_in(employee, ["party", "last_name"])
+      first_name = get_in(employee, ~w(party first_name)a)
+      second_name = get_in(employee, ~w(party second_name)a)
+      last_name = get_in(employee, ~w(party last_name)a)
 
       %{encounter | performer: %{performer | display_value: "#{first_name} #{second_name} #{last_name}"}}
     else

@@ -7,12 +7,10 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
   import Core.Expectations.IlExpectations
   import Mox
 
-  # alias Core.Immunization
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Kafka.Consumer
-  # alias Core.Mongo
   alias Core.Patients
   alias Core.ServiceRequest
 

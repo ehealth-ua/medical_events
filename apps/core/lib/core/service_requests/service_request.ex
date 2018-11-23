@@ -79,14 +79,29 @@ defmodule Core.ServiceRequest do
         {"context", v} ->
           {:context, Reference.create(v)}
 
+        {"used_by", nil} ->
+          {:used_by, nil}
+
+        {"used_by", v} ->
+          {:used_by, Reference.create(v)}
+
         {"performer_type", v} ->
           {:performer_type, CodeableConcept.create(v)}
+
+        {"reason_reference", nil} ->
+          {:reason_reference, nil}
 
         {"reason_reference", v} ->
           {:reason_reference, Enum.map(v, &Reference.create/1)}
 
+        {"supporting_info", nil} ->
+          {:supporting_info, nil}
+
         {"supporting_info", v} ->
           {:supporting_info, Enum.map(v, &Reference.create/1)}
+
+        {"permitted_episodes", nil} ->
+          {:permitted_episodes, nil}
 
         {"permitted_episodes", v} ->
           {:permitted_episodes, Enum.map(v, &Reference.create/1)}

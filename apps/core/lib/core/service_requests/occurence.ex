@@ -8,11 +8,11 @@ defmodule Core.ServiceRequests.Occurence do
     field(:value, presence: true, reference: [path: nil])
   end
 
-  def create("occurrence_date_time", value) do
+  def create("date_time", value) do
     %__MODULE__{type: "date_time", value: value}
   end
 
-  def create("occurrence_period", value) do
+  def create("period", value) do
     %__MODULE__{type: "period", value: value}
   end
 end

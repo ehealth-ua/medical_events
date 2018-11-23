@@ -159,7 +159,11 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
     },
     "authored_on": {
       "type": "string",
@@ -219,7 +223,11 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
     },
     "performer_type": {
       "type": "object",
@@ -317,7 +325,11 @@
             ],
             "additionalProperties": false
           }
-        }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
       }
     },
     "supporting_info": {
@@ -378,7 +390,11 @@
             ],
             "additionalProperties": false
           }
-        }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
       }
     },
     "note": {
@@ -445,7 +461,11 @@
             ],
             "additionalProperties": false
           }
-        }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
       }
     },
     "occurrence_date_time": {

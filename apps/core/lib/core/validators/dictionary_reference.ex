@@ -24,6 +24,8 @@ defmodule Core.Validators.DictionaryReference do
     end
   end
 
+  def validate(nil, _), do: :ok
+
   def error(options, error_message) do
     {:error, message(options, error_message)}
   end

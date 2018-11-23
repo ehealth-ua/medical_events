@@ -3,9 +3,11 @@ defmodule Core.ServiceRequests do
 
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestUseJob
   alias Core.Mongo
   alias Core.Patients
   alias Core.Patients.Validators
+  alias Core.Reference
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
   alias Core.Validators.JsonSchema
@@ -18,6 +20,15 @@ defmodule Core.ServiceRequests do
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
 
+  def get_by_id(id) do
+    @collection
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)})
+    |> case do
+      %{} = service_request -> {:ok, ServiceRequest.create(service_request)}
+      _ -> nil
+    end
+  end
+
   def produce_create_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
@@ -28,6 +39,21 @@ defmodule Core.ServiceRequests do
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_create_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_use_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         :ok <- JsonSchema.validate(:service_request_use, Map.take(params, ~w(used_by))),
+         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+         {:ok, job, service_request_use_job} <-
+           Jobs.create(
+             ServiceRequestUseJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(service_request_use_job) do
       {:ok, job}
     end
   end
@@ -118,6 +144,60 @@ defmodule Core.ServiceRequests do
 
       error ->
         error
+    end
+  end
+
+  def consume_use_service_request(
+        %ServiceRequestUseJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          user_id: user_id,
+          client_id: client_id,
+          service_request_id: id,
+          used_by: used_by
+        } = job
+      ) do
+    now = DateTime.utc_now()
+
+    with {:ok, %ServiceRequest{} = service_request} <- get_by_id(id),
+         {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
+         {true, _} <- {is_nil(service_request.used_by), :used_by} do
+      changes = %{"used_by" => Reference.create(job.used_by)}
+
+      service_request =
+        %{service_request | updated_by: job.user_id, updated_at: now}
+        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        |> ServiceRequestsValidations.validate_used_by(client_id)
+
+      case Vex.errors(service_request) do
+        [] ->
+          set =
+            %{"updated_by" => service_request.updated_by, "updated_at" => now}
+            |> Mongo.add_to_set(service_request.used_by, "service_request.used_by")
+            |> Mongo.convert_to_uuid("service_request.used_by.identifier.value")
+            |> Mongo.convert_to_uuid("updated_by")
+
+          {:ok, %{matched_count: 1, modified_count: 1}} =
+            Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+          %BSON.Binary{binary: id} = service_request._id
+
+          {:ok,
+           %{
+             "links" => [
+               %{
+                 "entity" => "service_request",
+                 "href" => "/api/patients/#{patient_id}/service_requests/#{UUID.binary_to_string!(id)}"
+               }
+             ]
+           }, 200}
+
+        errors ->
+          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+      end
+    else
+      {_, :status} -> {:error, "Can't use inactive service request", 409}
+      {_, :used_by} -> {:error, "Service request already used", 409}
     end
   end
 

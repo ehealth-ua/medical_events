@@ -61,23 +61,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,
@@ -190,23 +174,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,
@@ -734,23 +702,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       end)
 
       client_id = UUID.uuid4()
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,

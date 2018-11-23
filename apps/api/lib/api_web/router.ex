@@ -54,6 +54,7 @@ defmodule ApiWeb.Router do
 
     scope "/patients/:patient_id/service_requests" do
       post("/", ServiceRequestController, :create)
+      patch("/:service_request_id/actions/use", ServiceRequestController, :use)
     end
 
     get("/jobs/:id", JobController, :show)
