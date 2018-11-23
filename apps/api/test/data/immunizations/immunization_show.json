@@ -376,7 +376,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/vaccines_codes"
+                      "eHealth/vaccine_codes"
                     ]
                   },
                   "code": {
@@ -574,7 +574,7 @@
             "system": {
               "type": "string",
               "enum": [
-                "eHealth/dose_quantities"
+                "eHealth/ucum/units"
               ]
             },
             "code": {

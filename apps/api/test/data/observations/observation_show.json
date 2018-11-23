@@ -609,7 +609,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/LOINC/observations"
+                      "eHealth/LOINC/observation_codes"
                     ]
                   },
                   "code": {
@@ -818,7 +818,7 @@
                         "system": {
                           "type": "string",
                           "enum": [
-                            "eHealth/observations_codes"
+                            "eHealth/LOINC/observation_codes"
                           ]
                         },
                         "code": {

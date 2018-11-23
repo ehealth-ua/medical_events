@@ -116,7 +116,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/diagnoses_roles"
+                      "eHealth/diagnosis_roles"
                     ]
                   },
                   "code": {
@@ -155,8 +155,8 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/ICPC2/conditions",
-                      "eHealth/ICD10/conditions"
+                      "eHealth/ICPC2/condition_codes",
+                      "eHealth/ICD10/condition_codes"
                     ]
                   },
                   "code": {

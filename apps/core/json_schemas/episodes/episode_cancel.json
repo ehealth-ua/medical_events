@@ -9,7 +9,7 @@
           "enum": [
             "eHealth/cancellation_reasons"
           ],
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/cancellation_reasons"
         },
         "code": {
           "type": "string",
