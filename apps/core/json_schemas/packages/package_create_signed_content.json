@@ -23,15 +23,17 @@
         },
         "unit": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary eHealth/ucum/units"
         },
         "system": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "enum": [
+            "eHealth/ucum/units"
+          ]
         },
         "code": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary eHealth/ucum/units"
         }
       },
       "required": [
@@ -66,7 +68,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/reference_range_types"
                   }
                 },
                 "required": [
@@ -104,7 +106,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Symbol in syntax defined by the system"
+                      "description": "Dictionary eHealth/reference_range_applications"
                     }
                   },
                   "required": [
@@ -279,7 +281,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Symbol in syntax defined by the system"
+                "description": "Dictionary eHealth/report_origins"
               }
             },
             "required": [
@@ -311,7 +313,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Symbol in syntax defined by the system"
+                "description": "Dictionary eHealth/observation_interpretations"
               }
             },
             "required": [
@@ -337,7 +339,7 @@
         },
         "code": {
           "type": "string",
-          "description": "Symbol in syntax defined by the system"
+          "description": "Dictionary eHealth/resources"
         }
       },
       "required": [
@@ -411,12 +413,12 @@
               "system": {
                 "type": "string",
                 "enum": [
-                  "eHealth/actions"
+                  "eHealth/ICPC2/actions"
                 ]
               },
               "code": {
                 "type": "string",
-                "description": "Symbol in syntax defined by the system"
+                "description": "Dictionary eHealth/ICPC2/actions"
               }
             },
             "required": [
@@ -452,7 +454,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Symbol in syntax defined by the system"
+                "description": "Dictionary eHealth/ICPC2/reasons"
               }
             },
             "required": [
@@ -501,7 +503,7 @@
                             "enum": [
                               "condition"
                             ],
-                            "description": "Symbol in syntax defined by the system"
+                            "description": "Dictionary eHealth/resources"
                           }
                         },
                         "required": [
@@ -531,7 +533,7 @@
               "additionalProperties": false
             }
           },
-          "description": "should be filled one of: condition or condition_id"
+          "description": ""
         },
         "code": {
           "type": "object",
@@ -545,8 +547,8 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/ICPC2/conditions",
-                      "eHealth/ICD10/conditions"
+                      "eHealth/ICPC2/condition_codes",
+                      "eHealth/ICD10/condition_codes"
                     ]
                   },
                   "code": {
@@ -582,12 +584,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/diagnoses_roles"
+                      "eHealth/diagnosis_roles"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/diagnosis_roles"
                   }
                 },
                 "required": [
@@ -692,7 +694,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Symbol in syntax defined by the system"
+                      "description": "Dictionary eHealth/vaccination_target_diseases"
                     }
                   },
                   "required": [
@@ -730,7 +732,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/vaccination_dose_statuses"
                   }
                 },
                 "required": [
@@ -767,7 +769,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/vaccination_dose_statuse_reasons"
                   }
                 },
                 "required": [
@@ -838,7 +840,7 @@
                             "enum": [
                               "encounter"
                             ],
-                            "description": "Symbol in syntax defined by the system"
+                            "description": "Dictionary eHealth/resources"
                           }
                         },
                         "required": [
@@ -881,13 +883,13 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/ICD10/conditions",
-                      "eHealth/ICPC2/conditions"
+                      "eHealth/ICPC2/condition_codes",
+                      "eHealth/ICD10/condition_codes"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "one of dictionaries eHealth/ICPC2/condition_codes or eHealth/ICD10/condition_codes"
                   }
                 },
                 "required": [
@@ -908,11 +910,11 @@
         },
         "clinical_status": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/condition_clinical_statuses"
         },
         "verification_status": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: Health/condition_verification_statuses"
         },
         "severity": {
           "type": "object",
@@ -926,12 +928,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/severity"
+                      "eHealth/condition_severities"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/condition_severities"
                   }
                 },
                 "required": [
@@ -970,7 +972,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Symbol in syntax defined by the system"
+                      "description": "Dictionary eHealth/body_sites"
                     }
                   },
                   "required": [
@@ -1014,7 +1016,7 @@
                       },
                       "code": {
                         "type": "string",
-                        "description": "Symbol in syntax defined by the system"
+                        "description": "Dictionary eHealth/condition_stages"
                       }
                     },
                     "required": [
@@ -1059,13 +1061,12 @@
                           "system": {
                             "type": "string",
                             "enum": [
-                              "eHealth/ICPC2/conditions",
-                              "eHealth/ICD10/conditions"
+                              "eHealth/LOINC/observation_codes"
                             ]
                           },
                           "code": {
                             "type": "string",
-                            "description": "Dictionary: TBD"
+                            "description": "Dictionary eHealth/LOINC/observation_codes"
                           }
                         },
                         "required": [
@@ -1306,7 +1307,7 @@
             },
             "code": {
               "type": "string",
-              "description": "Symbol in syntax defined by the system"
+              "description": "Dictionary eHealth/encounter_classes"
             }
           },
           "required": [
@@ -1332,7 +1333,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/encounter_types"
                   }
                 },
                 "required": [
@@ -1480,7 +1481,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary eHealth/observation_statuses"
         },
         "context": {
           "type": "object",
@@ -1589,12 +1590,12 @@
                     "additionalProperties": false
                   },
                   "value": {
-                    "type": "string",
-                    "description": "Dictionary: TBD"
+                    "type": "string"
                   }
                 },
                 "required": [
-                  "value"
+                  "value",
+                  "type"
                 ],
                 "additionalProperties": false
               }
@@ -1622,7 +1623,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Symbol in syntax defined by the system"
+                      "description": "Dictionary eHealth/observation_categories"
                     }
                   },
                   "required": [
@@ -1654,12 +1655,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/LOINC/observations"
+                      "eHealth/LOINC/observation_codes"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/LOINC/observation_codes"
                   }
                 },
                 "required": [
@@ -1729,7 +1730,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/body_sites"
                   }
                 },
                 "required": [
@@ -1761,7 +1762,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/observation_methods"
                   }
                 },
                 "required": [
@@ -1848,12 +1849,12 @@
                         "system": {
                           "type": "string",
                           "enum": [
-                            "eHealth/observations_codes"
+                            "eHealth/LOINC/observation_codes"
                           ]
                         },
                         "code": {
                           "type": "string",
-                          "description": "Symbol in syntax defined by the system"
+                          "description": "Dictionary eHealth/LOINC/observation_codes"
                         }
                       },
                       "required": [
@@ -1979,8 +1980,7 @@
                   "additionalProperties": false
                 },
                 "value": {
-                  "type": "string",
-                  "description": "Dictionary: TBD"
+                  "type": "string"
                 }
               },
               "required": [
@@ -2010,7 +2010,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/immunization_statuses"
         },
         "not_given": {
           "type": "boolean"
@@ -2030,12 +2030,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/vaccines_codes"
+                      "eHealth/vaccine_codes"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/vaccine_codes"
                   }
                 },
                 "required": [
@@ -2151,7 +2151,8 @@
                     ]
                   },
                   "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Dictionary eHealth/body_sites"
                   }
                 },
                 "required": [
@@ -2186,7 +2187,8 @@
                     ]
                   },
                   "code": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Dictionary eHealth/vaccination_routes"
                   }
                 },
                 "required": [
@@ -2223,17 +2225,17 @@
             },
             "unit": {
               "type": "string",
-              "description": "Dictionary: TBD"
+              "description": "Dictionary eHealth/ucum/units"
             },
             "system": {
               "type": "string",
               "enum": [
-                "eHealth/dose_quantities"
+                "eHealth/ucum/units"
               ]
             },
             "code": {
               "type": "string",
-              "description": "Dictionary: TBD"
+              "description": "Dictionary eHealth/ucum/units"
             }
           },
           "required": [
@@ -2264,7 +2266,8 @@
                           ]
                         },
                         "code": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Dictionary eHealth/reason_explanations"
                         }
                       },
                       "required": [
@@ -2299,11 +2302,12 @@
                         "system": {
                           "type": "string",
                           "enum": [
-                            "eHealth/reason_explanations"
+                            "eHealth/reason_not_given_explanations"
                           ]
                         },
                         "code": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Dictionary eHealth/reason_not_given_explanations"
                         }
                       },
                       "required": [
@@ -2353,24 +2357,27 @@
         "clinical_status": {
           "type": "string",
           "minLength": 1,
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/allergy_intolerance_clinical_statuses"
         },
         "verification_status": {
           "type": "string",
           "minLength": 1,
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/allergy_intolerance_verification_statuses"
         },
         "type": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Dictionary: eHealth/allergy_intolerance_types"
         },
         "category": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Dictionary: eHealth/allergy_intolerance_categories"
         },
         "criticality": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "description": "Dictionary: eHealth/allergy_intolerance_criticalities"
         },
         "context": {
           "type": "object",
@@ -2429,7 +2436,7 @@
               "additionalProperties": false
             }
           },
-          "description": "should be filled one of: condition or condition_id"
+          "description": ""
         },
         "code": {
           "type": "object",
@@ -2449,7 +2456,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Symbol in syntax defined by the system"
+                    "description": "Dictionary eHealth/allergy_intolerances_codes"
                   }
                 },
                 "required": [

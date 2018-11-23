@@ -132,11 +132,11 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => UUID.binary_to_string!(condition._id.binary)
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
-          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
           "division" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
@@ -211,7 +211,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id), reactions: [build(:reaction)])
 
       patient =
-        insert(:patient,
+        insert(
+          :patient,
           _id: patient_id_hash,
           episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
           immunizations: %{db_immunization_id => immunization}
@@ -268,11 +269,11 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
-          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
           "division" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
@@ -296,18 +297,18 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/conditions"}]},
+            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/condition_codes"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/severity"}]},
+            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/condition_severities"}]},
             "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
             "stage" => %{
               "summary" => %{"coding" => [%{"code" => "181414000", "system" => "eHealth/condition_stages"}]}
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/ICD10/conditions"}]}],
+                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/LOINC/observation_codes"}]}],
                 "details" => [
                   %{
                     "identifier" => %{
@@ -347,7 +348,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -385,7 +386,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "components" => [
               %{
                 "code" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/observations_codes"}]
+                  "coding" => [%{"code" => "category", "system" => "eHealth/LOINC/observation_codes"}]
                 },
                 "value_period" => %{
                   "start" => start_datetime,
@@ -432,7 +433,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -465,7 +466,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "vaccine_code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/vaccines_codes",
+                  "system" => "eHealth/vaccine_codes",
                   "code" => "FLUVAX"
                 }
               ]
@@ -496,7 +497,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "dose_quantity" => %{
               "value" => 18,
               "unit" => "mg",
-              "system" => "eHealth/dose_quantities"
+              "system" => "eHealth/ucum/units"
             },
             "explanation" => %{
               "reasons" => [
@@ -560,7 +561,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "vaccine_code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/vaccines_codes",
+                  "system" => "eHealth/vaccine_codes",
                   "code" => "FLUVAX"
                 }
               ]
@@ -591,7 +592,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "dose_quantity" => %{
               "value" => 18,
               "unit" => "mg",
-              "system" => "eHealth/dose_quantities"
+              "system" => "eHealth/ucum/units"
             },
             "explanation" => %{
               "reasons" => [
@@ -769,11 +770,11 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
-          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
           "division" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
@@ -797,18 +798,18 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/conditions"}]},
+            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/condition_codes"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/severity"}]},
+            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/condition_severities"}]},
             "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
             "stage" => %{
               "summary" => %{"coding" => [%{"code" => "181414000", "system" => "eHealth/condition_stages"}]}
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/ICD10/conditions"}]}],
+                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/LOINC/observation_codes"}]}],
                 "details" => [
                   %{
                     "identifier" => %{
@@ -848,7 +849,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -886,7 +887,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "components" => [
               %{
                 "code" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/observations_codes"}]
+                  "coding" => [%{"code" => "category", "system" => "eHealth/LOINC/observation_codes"}]
                 },
                 "value_period" => %{
                   "start" => start_datetime,
@@ -920,7 +921,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observations"}]},
+            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -940,7 +941,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "vaccine_code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/vaccines_codes",
+                  "system" => "eHealth/vaccine_codes",
                   "code" => "FLUVAX"
                 }
               ]
@@ -971,7 +972,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "dose_quantity" => %{
               "value" => 18,
               "unit" => "mg",
-              "system" => "eHealth/dose_quantities"
+              "system" => "eHealth/ucum/units"
             },
             "explanation" => %{
               "reasons" => [
@@ -1188,11 +1189,11 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnoses_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/conditions"}]}
+              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
-          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/actions"}]}],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
           "division" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},

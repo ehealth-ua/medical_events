@@ -16,14 +16,14 @@
       "enum": [
         "primary_care"
       ],
-      "description": "Dictionary: TBD"
+      "description": "Dictionary: eHealth/episode_types"
     },
     "status": {
       "type": "string",
       "enum": [
         "active"
       ],
-      "description": "Dictionary: TBD"
+      "description": "Dictionary: eHealth/episode_statuses"
     },
     "name": {
       "type": "string",
@@ -92,7 +92,7 @@
         "start": {
           "type": "string",
           "format": "date",
-          "description": "C? Starting time with inclusive boundary"
+          "description": ""
         }
       },
       "required": [

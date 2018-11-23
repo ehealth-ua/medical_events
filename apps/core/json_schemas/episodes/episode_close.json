@@ -22,7 +22,7 @@
           "enum": [
             "eHealth/episode_closing_reasons"
           ],
-          "description": "Dictionary: TBD"
+          "description": "Dictionary: eHealth/episode_closing_reasons"
         },
         "code": {
           "type": "string",

@@ -152,7 +152,7 @@ defmodule Core.Factories do
       updated_by: id,
       status: Immunization.status(:completed),
       not_given: false,
-      vaccine_code: codeable_concept_coding(system: "eHealth/vaccines_codes"),
+      vaccine_code: codeable_concept_coding(system: "eHealth/vaccine_codes"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       date: now,
       primary_source: true,
@@ -168,7 +168,7 @@ defmodule Core.Factories do
       legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       site: codeable_concept_coding(system: "eHealth/body_sites", code: "LA"),
       route: codeable_concept_coding(system: "eHealth/vaccination_routes", code: "IM"),
-      dose_quantity: build(:quantity, system: "eHealth/dose_quantities"),
+      dose_quantity: build(:quantity, system: "eHealth/ucum/units"),
       explanation: build(:explanation),
       reactions: [build(:reaction)],
       vaccination_protocols: [build(:vaccination_protocol)]
@@ -228,7 +228,7 @@ defmodule Core.Factories do
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
       categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
-      code: codeable_concept_coding(system: "eHealth/LOINC/observations", code: "8310-5"),
+      code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5"),
       comment: "some comment",
       patient_id: Patients.get_pk_hash(UUID.uuid4()),
       based_on: [reference_coding(system: "eHealth/resources", code: "referral")],
@@ -257,7 +257,7 @@ defmodule Core.Factories do
         build_list(
           2,
           :component,
-          code: codeable_concept_coding(system: "eHealth/observations_codes"),
+          code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes"),
           interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
           reference_ranges: [
             build(
@@ -308,7 +308,7 @@ defmodule Core.Factories do
       value: :rand.uniform(100),
       comparator: "<",
       unit: "mg",
-      system: "eHealth/units",
+      system: "eHealth/ucum/units",
       code: "mg"
     }
   end
@@ -330,7 +330,7 @@ defmodule Core.Factories do
       diagnoses: [build(:diagnosis)],
       cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
       incoming_referrals: [reference_coding(system: "eHealth/resources", code: "referral")],
-      actions: [codeable_concept_coding(system: "eHealth/actions")],
+      actions: [codeable_concept_coding(system: "eHealth/ICPC2/actions")],
       division: reference_coding(system: "eHealth/resources", code: "division"),
       service_provider: build(:reference),
       explanatory_letter: "some explanations",
@@ -380,8 +380,8 @@ defmodule Core.Factories do
   def diagnosis_factory do
     %Diagnosis{
       condition: reference_coding(system: "eHealth/resources", code: "condition"),
-      role: codeable_concept_coding(system: "eHealth/diagnoses_roles", code: "cheif_complaint"),
-      code: codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "R80"),
+      role: codeable_concept_coding(system: "eHealth/diagnosis_roles", code: "cheif_complaint"),
+      code: codeable_concept_coding(system: "eHealth/ICPC2/condition_codes", code: "R80"),
       rank: Enum.random(1..1000)
     }
   end
@@ -437,10 +437,10 @@ defmodule Core.Factories do
     %Condition{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       context: reference_coding(code: "encounter"),
-      code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "R80"),
+      code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "R80"),
       clinical_status: "active",
       verification_status: "provisional",
-      severity: codeable_concept_coding(system: "eHealth/severity"),
+      severity: codeable_concept_coding(system: "eHealth/condition_severities"),
       body_sites: [codeable_concept_coding(system: "eHealth/body_sites")],
       onset_date: DateTime.utc_now(),
       asserted_date: DateTime.utc_now(),
@@ -448,7 +448,7 @@ defmodule Core.Factories do
       evidences: [
         build(
           :evidence,
-          codes: [codeable_concept_coding(system: "eHealth/ICPC2/conditions", code: "condition")],
+          codes: [codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "condition")],
           details: [reference_coding(code: "observation")]
         )
       ],

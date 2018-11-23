@@ -164,8 +164,8 @@ defmodule Api.Web.ImmunizationControllerTest do
         build(
           :codeable_concept,
           coding: [
-            build(:coding, code: code, system: "eHealth/vaccines_codes"),
-            build(:coding, code: "test", system: "eHealth/vaccines_codes")
+            build(:coding, code: code, system: "eHealth/vaccine_codes"),
+            build(:coding, code: "test", system: "eHealth/vaccine_codes")
           ]
         )
 
@@ -323,8 +323,8 @@ defmodule Api.Web.ImmunizationControllerTest do
         build(
           :codeable_concept,
           coding: [
-            build(:coding, code: code, system: "eHealth/vaccines_codes"),
-            build(:coding, code: "test", system: "eHealth/vaccines_codes")
+            build(:coding, code: code, system: "eHealth/vaccine_codes"),
+            build(:coding, code: "test", system: "eHealth/vaccine_codes")
           ]
         )
 

@@ -70,8 +70,8 @@ defmodule Api.Web.SummaryControllerTest do
         build(
           :codeable_concept,
           coding: [
-            build(:coding, code: code, system: "eHealth/vaccines_codes"),
-            build(:coding, code: "test", system: "eHealth/vaccines_codes")
+            build(:coding, code: code, system: "eHealth/vaccine_codes"),
+            build(:coding, code: "test", system: "eHealth/vaccine_codes")
           ]
         )
 
@@ -372,7 +372,9 @@ defmodule Api.Web.SummaryControllerTest do
       {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
-      insert_list(2, :condition,
+      insert_list(
+        2,
+        :condition,
         patient_id: patient_id_hash,
         code: condition_code,
         asserted_date: nil,
@@ -462,10 +464,11 @@ defmodule Api.Web.SummaryControllerTest do
       insert(:patient, _id: patient_id_hash)
 
       condition =
-        insert(:condition,
+        insert(
+          :condition,
           patient_id: patient_id_hash,
           asserted_date: nil,
-          code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "R80")
+          code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "R80")
         )
 
       expect_get_person_data(patient_id)
@@ -483,10 +486,11 @@ defmodule Api.Web.SummaryControllerTest do
       insert(:patient, _id: patient_id_hash)
 
       condition =
-        insert(:condition,
+        insert(
+          :condition,
           patient_id: patient_id_hash,
           asserted_date: nil,
-          code: codeable_concept_coding(system: "eHealth/ICD10/conditions", code: "J11")
+          code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "J11")
         )
 
       expect_get_person_data(patient_id)
@@ -519,10 +523,11 @@ defmodule Api.Web.SummaryControllerTest do
       insert(:patient, _id: patient_id_hash)
 
       observation =
-        insert(:observation,
+        insert(
+          :observation,
           patient_id: patient_id_hash,
           value: %Value{type: "period", value: build(:period)},
-          code: codeable_concept_coding(system: "eHealth/LOINC/observations", code: "8310-5")
+          code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5")
         )
 
       expect_get_person_data(patient_id)
@@ -601,7 +606,7 @@ defmodule Api.Web.SummaryControllerTest do
   end
 
   defp build_condition_code(code) do
-    {code, build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICPC2/conditions")])}
+    {code, build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICPC2/condition_codes")])}
   end
 
   defp get_datetime(day_shift) do

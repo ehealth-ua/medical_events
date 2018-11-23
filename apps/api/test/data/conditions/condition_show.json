@@ -197,8 +197,8 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/ICD10/conditions",
-                      "eHealth/ICPC2/conditions"
+                      "eHealth/ICD10/condition_codes",
+                      "eHealth/ICPC2/condition_codes"
                     ]
                   },
                   "code": {
@@ -246,7 +246,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/severity"
+                      "eHealth/condition_severities"
                     ]
                   },
                   "code": {
@@ -323,7 +323,10 @@
           "format": "date-time"
         },
         "asserted_date": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "stage": {
@@ -395,8 +398,7 @@
                           "system": {
                             "type": "string",
                             "enum": [
-                              "eHealth/ICPC2/conditions",
-                              "eHealth/ICD10/conditions"
+                              "eHealth/LOINC/observation_codes"
                             ]
                           },
                           "code": {
