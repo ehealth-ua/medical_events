@@ -44,7 +44,7 @@ defmodule Core.Validators.SchemaMapper do
   defp process_schema_value({k = "description", v}, acc, dictionaries) do
     acc = Map.put(acc, k, v)
 
-    with %{"type" => type} <- Regex.named_captures(~r/Dictionary: (?<type>\w+)$/, v),
+    with %{"type" => type} <- Regex.named_captures(~r/Dictionary: (?<type>[\w\/]+)$/i, v),
          %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == type end) do
       Map.put(acc, "enum", Map.keys(values))
     else

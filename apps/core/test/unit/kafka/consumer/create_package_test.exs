@@ -308,7 +308,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/LOINC/observation_codes"}]}],
+                "codes" => [%{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]}],
                 "details" => [
                   %{
                     "identifier" => %{
@@ -348,7 +348,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
+            "code" => %{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -386,7 +386,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "components" => [
               %{
                 "code" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/LOINC/observation_codes"}]
+                  "coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]
                 },
                 "value_period" => %{
                   "start" => start_datetime,
@@ -433,7 +433,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
+            "code" => %{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -809,7 +809,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "condition", "system" => "eHealth/LOINC/observation_codes"}]}],
+                "codes" => [%{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]}],
                 "details" => [
                   %{
                     "identifier" => %{
@@ -849,7 +849,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
+            "code" => %{"coding" => [%{"code" => "8480-6", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
@@ -887,7 +887,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "components" => [
               %{
                 "code" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/LOINC/observation_codes"}]
+                  "coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]
                 },
                 "value_period" => %{
                   "start" => start_datetime,
@@ -921,7 +921,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "categories" => [
               %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
             ],
-            "code" => %{"coding" => [%{"code" => "code", "system" => "eHealth/LOINC/observation_codes"}]},
+            "code" => %{"coding" => [%{"code" => "8480-6", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
               "start" => start_datetime,
               "end" => end_datetime
