@@ -23,7 +23,7 @@
         },
         "unit": {
           "type": "string",
-          "description": "Dictionary eHealth/ucum/units"
+          "description": "Dictionary: eHealth/ucum/units"
         },
         "system": {
           "type": "string",
@@ -33,7 +33,7 @@
         },
         "code": {
           "type": "string",
-          "description": "Dictionary eHealth/ucum/units"
+          "description": "Dictionary: eHealth/ucum/units"
         }
       },
       "required": [
@@ -68,7 +68,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/reference_range_types"
+                    "description": "Dictionary: eHealth/reference_range_types"
                   }
                 },
                 "required": [
@@ -106,7 +106,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Dictionary eHealth/reference_range_applications"
+                      "description": "Dictionary: eHealth/reference_range_applications"
                     }
                   },
                   "required": [
@@ -281,7 +281,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Dictionary eHealth/report_origins"
+                "description": "Dictionary: eHealth/report_origins"
               }
             },
             "required": [
@@ -313,7 +313,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Dictionary eHealth/observation_interpretations"
+                "description": "Dictionary: eHealth/observation_interpretations"
               }
             },
             "required": [
@@ -339,7 +339,7 @@
         },
         "code": {
           "type": "string",
-          "description": "Dictionary eHealth/resources"
+          "description": "Dictionary: eHealth/resources"
         }
       },
       "required": [
@@ -418,7 +418,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Dictionary eHealth/ICPC2/actions"
+                "description": "Dictionary: eHealth/ICPC2/actions"
               }
             },
             "required": [
@@ -454,7 +454,7 @@
               },
               "code": {
                 "type": "string",
-                "description": "Dictionary eHealth/ICPC2/reasons"
+                "description": "Dictionary: eHealth/ICPC2/reasons"
               }
             },
             "required": [
@@ -503,7 +503,7 @@
                             "enum": [
                               "condition"
                             ],
-                            "description": "Dictionary eHealth/resources"
+                            "description": "Dictionary: eHealth/resources"
                           }
                         },
                         "required": [
@@ -589,7 +589,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/diagnosis_roles"
+                    "description": "Dictionary: eHealth/diagnosis_roles"
                   }
                 },
                 "required": [
@@ -694,7 +694,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Dictionary eHealth/vaccination_target_diseases"
+                      "description": "Dictionary: eHealth/vaccination_target_diseases"
                     }
                   },
                   "required": [
@@ -732,7 +732,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/vaccination_dose_statuses"
+                    "description": "Dictionary: eHealth/vaccination_dose_statuses"
                   }
                 },
                 "required": [
@@ -769,7 +769,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/vaccination_dose_statuse_reasons"
+                    "description": "Dictionary: eHealth/vaccination_dose_statuse_reasons"
                   }
                 },
                 "required": [
@@ -840,7 +840,7 @@
                             "enum": [
                               "encounter"
                             ],
-                            "description": "Dictionary eHealth/resources"
+                            "description": "Dictionary: eHealth/resources"
                           }
                         },
                         "required": [
@@ -933,7 +933,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/condition_severities"
+                    "description": "Dictionary: eHealth/condition_severities"
                   }
                 },
                 "required": [
@@ -972,7 +972,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Dictionary eHealth/body_sites"
+                      "description": "Dictionary: eHealth/body_sites"
                     }
                   },
                   "required": [
@@ -1016,7 +1016,7 @@
                       },
                       "code": {
                         "type": "string",
-                        "description": "Dictionary eHealth/condition_stages"
+                        "description": "Dictionary: eHealth/condition_stages"
                       }
                     },
                     "required": [
@@ -1066,7 +1066,7 @@
                           },
                           "code": {
                             "type": "string",
-                            "description": "Dictionary eHealth/LOINC/observation_codes"
+                            "description": "Dictionary: eHealth/LOINC/observation_codes"
                           }
                         },
                         "required": [
@@ -1307,7 +1307,7 @@
             },
             "code": {
               "type": "string",
-              "description": "Dictionary eHealth/encounter_classes"
+              "description": "Dictionary: eHealth/encounter_classes"
             }
           },
           "required": [
@@ -1333,7 +1333,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/encounter_types"
+                    "description": "Dictionary: eHealth/encounter_types"
                   }
                 },
                 "required": [
@@ -1481,7 +1481,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Dictionary eHealth/observation_statuses"
+          "description": "Dictionary: eHealth/observation_statuses"
         },
         "context": {
           "type": "object",
@@ -1623,7 +1623,7 @@
                     },
                     "code": {
                       "type": "string",
-                      "description": "Dictionary eHealth/observation_categories"
+                      "description": "Dictionary: eHealth/observation_categories"
                     }
                   },
                   "required": [
@@ -1660,7 +1660,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/LOINC/observation_codes"
+                    "description": "Dictionary: eHealth/LOINC/observation_codes"
                   }
                 },
                 "required": [
@@ -1730,7 +1730,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/body_sites"
+                    "description": "Dictionary: eHealth/body_sites"
                   }
                 },
                 "required": [
@@ -1762,7 +1762,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/observation_methods"
+                    "description": "Dictionary: eHealth/observation_methods"
                   }
                 },
                 "required": [
@@ -1854,7 +1854,7 @@
                         },
                         "code": {
                           "type": "string",
-                          "description": "Dictionary eHealth/LOINC/observation_codes"
+                          "description": "Dictionary: eHealth/LOINC/observation_codes"
                         }
                       },
                       "required": [
@@ -2035,7 +2035,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/vaccine_codes"
+                    "description": "Dictionary: eHealth/vaccine_codes"
                   }
                 },
                 "required": [
@@ -2152,7 +2152,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/body_sites"
+                    "description": "Dictionary: eHealth/body_sites"
                   }
                 },
                 "required": [
@@ -2188,7 +2188,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/vaccination_routes"
+                    "description": "Dictionary: eHealth/vaccination_routes"
                   }
                 },
                 "required": [
@@ -2225,7 +2225,7 @@
             },
             "unit": {
               "type": "string",
-              "description": "Dictionary eHealth/ucum/units"
+              "description": "Dictionary: eHealth/ucum/units"
             },
             "system": {
               "type": "string",
@@ -2235,7 +2235,7 @@
             },
             "code": {
               "type": "string",
-              "description": "Dictionary eHealth/ucum/units"
+              "description": "Dictionary: eHealth/ucum/units"
             }
           },
           "required": [
@@ -2267,7 +2267,7 @@
                         },
                         "code": {
                           "type": "string",
-                          "description": "Dictionary eHealth/reason_explanations"
+                          "description": "Dictionary: eHealth/reason_explanations"
                         }
                       },
                       "required": [
@@ -2307,7 +2307,7 @@
                         },
                         "code": {
                           "type": "string",
-                          "description": "Dictionary eHealth/reason_not_given_explanations"
+                          "description": "Dictionary: eHealth/reason_not_given_explanations"
                         }
                       },
                       "required": [
@@ -2456,7 +2456,7 @@
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary eHealth/allergy_intolerances_codes"
+                    "description": "Dictionary: eHealth/allergy_intolerances_codes"
                   }
                 },
                 "required": [
