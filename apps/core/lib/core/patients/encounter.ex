@@ -19,7 +19,13 @@ defmodule Core.Encounter do
     field(:status, presence: true)
     field(:status_history)
     field(:class, presence: true, reference: [path: "class"])
-    field(:type, presence: true, reference: [path: "type"])
+
+    field(:type,
+      presence: true,
+      reference: [path: "type"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:incoming_referrals, reference: [path: "incoming_referrals"])
     field(:duration)
     field(:reasons, presence: true, reference: [path: "reasons"])
