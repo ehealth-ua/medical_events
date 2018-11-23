@@ -24,6 +24,22 @@ defmodule Core.Validators.DictionaryReference do
     end
   end
 
+  def validate(%{} = value, options) do
+    field = Keyword.get(options, :field)
+    referenced_field = Keyword.get(options, :referenced_field)
+    coding = hd(value["coding"])
+    field = Map.get(coding, field)
+    referenced_field = Map.get(coding, referenced_field)
+
+    with {:ok, dictionaries} <- @validator_cache.get_dictionaries(),
+         %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == referenced_field end),
+         true <- Map.has_key?(values, field) do
+      :ok
+    else
+      _ -> error(options, "Value #{field} not found in the dictionary #{referenced_field}")
+    end
+  end
+
   def validate(nil, _), do: :ok
 
   def error(options, error_message) do

@@ -10,9 +10,23 @@ defmodule Core.Validators.CacheTest do
   def get_dictionaries do
     {:ok,
      [
+       %{"name" => "eHealth/encounter_types", "values" => %{"AMB" => "AMB"}},
+       %{
+         "name" => "eHealth/episode_closing_reasons",
+         "values" => %{
+           "legal_entity" => "legal_entity"
+         }
+       },
+       %{
+         "name" => "eHealth/cancellation_reasons",
+         "values" => %{
+           "misspelling" => "misspelling"
+         }
+       },
        %{
          "name" => "eHealth/resources",
          "values" => %{
+           "1" => "1",
            "employee" => "test",
            "condition" => "test",
            "referral" => "test",

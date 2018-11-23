@@ -325,7 +325,7 @@ defmodule Core.Factories do
       performer: reference_coding(system: "eHealth/resources", code: "employee"),
       visit: reference_coding(system: "eHealth/resources", code: "visit"),
       class: build(:coding, system: "eHealth/encounter_classes", code: "AMB"),
-      type: codeable_concept_coding(system: "eHealth/encounter_types"),
+      type: codeable_concept_coding(system: "eHealth/encounter_types", code: "AMB"),
       reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons")],
       diagnoses: [build(:diagnosis)],
       cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
