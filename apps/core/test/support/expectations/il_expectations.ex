@@ -10,7 +10,7 @@ defmodule Core.Expectations.IlExpectations do
           id: id,
           status: "APPROVED",
           employee_type: "DOCTOR",
-          legal_entity: %{id: client_id},
+          legal_entity_id: client_id,
           party: %{
             first_name: "foo",
             second_name: "bar",
