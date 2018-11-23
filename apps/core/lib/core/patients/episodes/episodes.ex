@@ -130,9 +130,9 @@ defmodule Core.Patients.Episodes do
 
   def fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
-      first_name = get_in(employee, ~w(party first_name)a)
-      second_name = get_in(employee, ~w(party second_name)a)
-      last_name = get_in(employee, ~w(party last_name)a)
+      first_name = employee.party.first_name
+      second_name = employee.party.second_name
+      last_name = employee.party.last_name
 
       %{
         episode

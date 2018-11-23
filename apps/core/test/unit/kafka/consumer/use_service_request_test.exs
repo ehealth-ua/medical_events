@@ -24,7 +24,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
       expect(WorkerMock, :run, 2, fn
         _, _, :employees_by_user_id_client_id, _ -> [employee_id]
         _, _, :tax_id_by_employee_id, _ -> "1111111112"
-        _, _, :employee_by_id, _ -> %{status: "APPROVED", legal_entity: %{id: client_id}}
+        _, _, :employee_by_id, _ -> %{employee_type: nil, status: "APPROVED", legal_entity: %{id: client_id}}
       end)
 
       patient_id = UUID.uuid4()
@@ -67,7 +67,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
       expect(WorkerMock, :run, 2, fn
         _, _, :employees_by_user_id_client_id, _ -> [employee_id]
         _, _, :tax_id_by_employee_id, _ -> "1111111113"
-        _, _, :employee_by_id, _ -> %{status: "APPROVED", legal_entity: %{id: UUID.uuid4()}}
+        _, _, :employee_by_id, _ -> %{employee_type: nil, status: "APPROVED", legal_entity: %{id: UUID.uuid4()}}
       end)
 
       patient_id = UUID.uuid4()

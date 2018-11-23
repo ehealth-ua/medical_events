@@ -207,9 +207,9 @@ defmodule Core.Observations do
 
   defp fill_up_observation_performer(%Reference{identifier: identifier}) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do
-      first_name = get_in(employee, ~w(party first_name)a)
-      second_name = get_in(employee, ~w(party second_name)a)
-      last_name = get_in(employee, ~w(party last_name)a)
+      first_name = employee.party.first_name
+      second_name = employee.party.second_name
+      last_name = employee.party.last_name
 
       "#{first_name} #{second_name} #{last_name}"
     else

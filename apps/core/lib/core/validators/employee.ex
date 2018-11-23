@@ -16,16 +16,16 @@ defmodule Core.Validators.Employee do
       %{} = employee ->
         :ets.insert(:message_cache, {ets_key, employee})
 
-        with :ok <- validate_field({:type, [:employee_type]}, employee, options),
-             :ok <- validate_field({:status, [:status]}, employee, options),
-             :ok <- validate_field({:legal_entity_id, [:legal_entity, :id]}, employee, options) do
+        with :ok <- validate_field(:type, employee.employee_type, options),
+             :ok <- validate_field(:status, employee.status, options),
+             :ok <- validate_field(:legal_entity_id, employee.legal_entity.id, options) do
           :ok
         end
     end
   end
 
-  def validate_field({field, remote_field}, employee, options) do
-    if is_nil(Keyword.get(options, field)) or get_in(employee, remote_field) == Keyword.get(options, field) do
+  def validate_field(field, remote_value, options) do
+    if is_nil(Keyword.get(options, field)) or remote_value == Keyword.get(options, field) do
       :ok
     else
       error(options, Keyword.get(options, :messages)[field])
