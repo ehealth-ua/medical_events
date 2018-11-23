@@ -132,7 +132,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => UUID.binary_to_string!(condition._id.binary)
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
               "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
@@ -269,7 +269,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
               "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
@@ -770,7 +770,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
               "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
@@ -1189,7 +1189,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "chief_complaint", "system" => "eHealth/diagnosis_roles"}]},
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
               "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
             }
           ],
