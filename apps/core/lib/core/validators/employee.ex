@@ -18,7 +18,7 @@ defmodule Core.Validators.Employee do
 
         with :ok <- validate_field(:type, employee.employee_type, options),
              :ok <- validate_field(:status, employee.status, options),
-             :ok <- validate_field(:legal_entity_id, employee.legal_entity.id, options) do
+             :ok <- validate_field(:legal_entity_id, employee.legal_entity_id, options) do
           :ok
         end
     end

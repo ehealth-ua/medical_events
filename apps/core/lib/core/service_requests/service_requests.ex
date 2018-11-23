@@ -150,7 +150,6 @@ defmodule Core.ServiceRequests do
   def consume_use_service_request(
         %ServiceRequestUseJob{
           patient_id: patient_id,
-          patient_id_hash: patient_id_hash,
           user_id: user_id,
           client_id: client_id,
           service_request_id: id,
@@ -162,10 +161,10 @@ defmodule Core.ServiceRequests do
     with {:ok, %ServiceRequest{} = service_request} <- get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
          {true, _} <- {is_nil(service_request.used_by), :used_by} do
-      changes = %{"used_by" => Reference.create(job.used_by)}
+      changes = %{"used_by" => Reference.create(used_by)}
 
       service_request =
-        %{service_request | updated_by: job.user_id, updated_at: now}
+        %{service_request | updated_by: user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
         |> ServiceRequestsValidations.validate_used_by(client_id)
 
