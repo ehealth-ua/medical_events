@@ -9,7 +9,6 @@ defmodule Core.Factories do
   alias Core.Condition
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
-  alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
@@ -30,6 +29,8 @@ defmodule Core.Factories do
   alias Core.Patients.Immunizations.VaccinationProtocol
   alias Core.Period
   alias Core.Reference
+  alias Core.ServiceRequest
+  alias Core.ServiceRequests.Occurence
   alias Core.Source
   alias Core.Stage
   alias Core.StatusHistory
@@ -472,6 +473,30 @@ defmodule Core.Factories do
       status_reason: codeable_concept_coding(system: "eHealth/episode_closing_reasons"),
       inserted_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(UUID.uuid4())
+    }
+  end
+
+  def service_request_factory do
+    patient_id = Patients.get_pk_hash(UUID.uuid4())
+    user_id = UUID.uuid4()
+
+    %ServiceRequest{
+      _id: Mongo.string_to_uuid(UUID.uuid4()),
+      status: ServiceRequest.status(:active),
+      intent: "plan",
+      code: codeable_concept_coding(system: "eHealth/SNOMED/procedure_codes", code: "128004"),
+      category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "409063005"),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      occurence: %Occurence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
+      performer_type:
+        codeable_concept_coding(system: "eHealth/SNOMED/service_request_performer_roles", code: "psychiatrist"),
+      requester: reference_coding(system: "eHealth/resources", code: "employee"),
+      authored_on: DateTime.to_iso8601(DateTime.utc_now()),
+      subject: patient_id,
+      inserted_by: Mongo.string_to_uuid(user_id),
+      updated_by: Mongo.string_to_uuid(user_id),
+      inserted_at: DateTime.utc_now(),
+      updated_at: DateTime.utc_now()
     }
   end
 

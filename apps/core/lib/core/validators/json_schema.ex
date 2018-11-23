@@ -31,6 +31,8 @@ defmodule Core.Validators.JsonSchema do
     "json_schemas/service_requests/service_request_create_signed_content.json"
   )
 
+  use_schema(:service_request_use, "json_schemas/service_requests/service_request_use.json")
+
   def validate(schema, attrs, errors_limit \\ nil) do
     result =
       @schemas

@@ -2,30 +2,25 @@ defmodule Core.Validators.Employee do
   @moduledoc false
 
   use Vex.Validator
-  alias Core.Headers
+  alias Core.Rpc
 
-  @il_microservice Application.get_env(:core, :microservices)[:il]
+  @worker Application.get_env(:core, :rpc_worker)
 
   def validate(employee_id, options) do
-    headers = [
-      {String.to_atom(Headers.consumer_metadata()),
-       Jason.encode!(%{"client_id" => Keyword.get(options, :legal_entity_id)})}
-    ]
-
     ets_key = "employee_#{employee_id}"
 
-    case get_data(ets_key, employee_id, headers) do
-      {:ok, %{"data" => employee}} ->
+    case get_data(ets_key, employee_id) do
+      nil ->
+        error(options, "Employee with such ID is not found")
+
+      %{} = employee ->
         :ets.insert(:message_cache, {ets_key, employee})
 
-        with :ok <- validate_field({:type, ["employee_type"]}, employee, options),
-             :ok <- validate_field({:status, ["status"]}, employee, options),
-             :ok <- validate_field({:legal_entity_id, ["legal_entity", "id"]}, employee, options) do
+        with :ok <- validate_field({:type, [:employee_type]}, employee, options),
+             :ok <- validate_field({:status, [:status]}, employee, options),
+             :ok <- validate_field({:legal_entity_id, [:legal_entity, :id]}, employee, options) do
           :ok
         end
-
-      _ ->
-        error(options, "Employee with such ID is not found")
     end
   end
 
@@ -41,10 +36,10 @@ defmodule Core.Validators.Employee do
     {:error, message(options, error_message)}
   end
 
-  defp get_data(ets_key, employee_id, headers) do
+  defp get_data(ets_key, employee_id) do
     case :ets.lookup(:message_cache, ets_key) do
-      [{^ets_key, employee}] -> {:ok, %{"data" => employee}}
-      _ -> @il_microservice.get_employee(employee_id, headers)
+      [{^ets_key, employee}] -> employee
+      _ -> @worker.run("ehealth", Rpc, :employee_by_id, [employee_id])
     end
   end
 end

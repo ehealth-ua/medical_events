@@ -114,4 +114,22 @@ defmodule Core.ServiceRequests.Validations do
 
     %{service_request | permitted_episodes: references}
   end
+
+  def validate_used_by(%ServiceRequest{} = service_request, client_id) do
+    used_by = service_request.used_by
+
+    identifier =
+      add_validations(used_by.identifier, :value,
+        employee: [
+          status: "APPROVED",
+          legal_entity_id: client_id,
+          messages: [
+            status: "Employee is not approved",
+            legal_entity_id: "Employee #{used_by.identifier.value} doesn't belong to your legal entity"
+          ]
+        ]
+      )
+
+    %{service_request | used_by: %{used_by | identifier: identifier}}
+  end
 end
