@@ -7,7 +7,7 @@ defmodule Core.Evidence do
   alias Core.Reference
 
   embedded_schema do
-    field(:codes, reference: [path: "codes"])
+    field(:codes, dictionary_reference: [path: "codes", referenced_field: "system", field: "code"])
     field(:details, reference: [path: "details"])
   end
 

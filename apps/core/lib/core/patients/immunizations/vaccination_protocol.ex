@@ -7,12 +7,25 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
   embedded_schema do
     field(:dose_sequence, number: [greater_than: 0])
     field(:description)
-    field(:authority, reference: [path: "authority"])
+    field(:authority, reference: [path: "authority"], dictionary_reference: [referenced_field: "system", field: "code"])
     field(:series)
     field(:series_doses, number: [greater_than: 0])
-    field(:target_diseases, presence: true, reference: [path: "target_diseases"])
-    field(:dose_status, presence: true)
-    field(:dose_status_reason)
+
+    field(:target_diseases,
+      presence: true,
+      dictionary_reference: [path: "target_diseases", referenced_field: "system", field: "code"]
+    )
+
+    field(:dose_status,
+      presence: true,
+      reference: [path: "dose_status"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
+    field(:dose_status_reason,
+      reference: [path: "dose_status_reason"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
   end
 
   def create(data) do

@@ -41,8 +41,11 @@ defmodule Core.Validators.JsonSchema do
       |> validate_schema(attrs)
 
     case result do
-      {:error, errors} -> {:error, limit_errors(errors, errors_limit)}
-      :ok -> :ok
+      {:error, errors} ->
+        {:error, limit_errors(errors, errors_limit)}
+
+      :ok ->
+        :ok
     end
   end
 

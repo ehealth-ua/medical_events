@@ -22,7 +22,13 @@ defmodule Core.Immunization do
     field(:id, presence: true, mongo_uuid: true)
     field(:status, presence: true)
     field(:not_given, strict_presence: true)
-    field(:vaccine_code, presence: true)
+
+    field(:vaccine_code,
+      presence: true,
+      reference: [path: "vaccine_code"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:context, presence: true, reference: [path: "context"])
     field(:date, presence: true, reference: [path: "date"])
     field(:primary_source, strict_presence: true)
@@ -31,10 +37,10 @@ defmodule Core.Immunization do
     field(:manufacturer)
     field(:lot_number)
     field(:expiration_date, reference: [path: "expiration_date"])
-    field(:site, reference: [path: "site"])
-    field(:route, reference: [path: "route"])
+    field(:site, reference: [path: "site"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:route, reference: [path: "route"], dictionary_reference: [referenced_field: "system", field: "code"])
     field(:dose_quantity, reference: [path: "dose_quantity"])
-    field(:explanation)
+    field(:explanation, reference: [path: "explanation"])
     field(:reactions, reference: [path: "reactions"])
     field(:vaccination_protocols, reference: [path: "vaccination_protocols"])
 

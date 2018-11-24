@@ -160,7 +160,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      code_value = "227493005"
+      code_value = "1"
 
       code =
         build(
@@ -325,7 +325,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      code_value = "227493005"
+      code_value = "1"
 
       code =
         build(

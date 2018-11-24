@@ -30,7 +30,13 @@ defmodule Core.AllergyIntolerance do
     field(:type, presence: true)
     field(:category, presence: true)
     field(:criticality, presence: true)
-    field(:code, presence: true)
+
+    field(:code,
+      presence: true,
+      reference: [path: "code"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:onset_date_time, presence: true)
     field(:asserted_date, presence: true)
     field(:primary_source, strict_presence: true)

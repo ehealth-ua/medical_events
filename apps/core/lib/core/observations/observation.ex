@@ -24,8 +24,18 @@ defmodule Core.Observation do
     field(:_id, presence: true)
     field(:based_on)
     field(:status, presence: true)
-    field(:categories, presence: true, reference: [path: "categories"])
-    field(:code, presence: true, reference: [path: "code"])
+
+    field(:categories,
+      presence: true,
+      dictionary_reference: [path: "categories", referenced_field: "system", field: "code"]
+    )
+
+    field(:code,
+      presence: true,
+      reference: [path: "code"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:patient_id, presence: true)
     field(:context, presence: true, reference: [path: "context"])
     field(:effective_at, presence: true, reference: [path: "effective_at"])
@@ -33,10 +43,15 @@ defmodule Core.Observation do
     field(:primary_source, strict_presence: true)
     field(:source, presence: true, reference: [path: "source"])
     field(:value, presence: true)
-    field(:interpretation, reference: [path: "interpretation"])
+
+    field(:interpretation,
+      reference: [path: "interpretation"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:comment)
-    field(:body_site, reference: [path: "body_site"])
-    field(:method, reference: [path: "method"])
+    field(:body_site, reference: [path: "body_site"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:method, reference: [path: "method"], dictionary_reference: [referenced_field: "system", field: "code"])
     field(:reference_ranges, reference: [path: "reference_ranges"])
     field(:components, reference: [path: "components"])
 
