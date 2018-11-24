@@ -121,7 +121,7 @@ defmodule Core.Factories do
       type: "allergy",
       category: "food",
       criticality: "low",
-      code: codeable_concept_coding(system: "eHealth/allergy_intolerances_codes"),
+      code: codeable_concept_coding(system: "eHealth/allergy_intolerances_codes", code: "227493005"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       onset_date_time: now,
       asserted_date: now,
@@ -152,7 +152,7 @@ defmodule Core.Factories do
       updated_by: id,
       status: Immunization.status(:completed),
       not_given: false,
-      vaccine_code: codeable_concept_coding(system: "eHealth/vaccine_codes"),
+      vaccine_code: codeable_concept_coding(system: "eHealth/vaccine_codes", code: "FLUVAX"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       date: now,
       primary_source: true,
@@ -166,7 +166,7 @@ defmodule Core.Factories do
       lot_number: "AAJN11K",
       expiration_date: now,
       legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
-      site: codeable_concept_coding(system: "eHealth/body_sites", code: "LA"),
+      site: codeable_concept_coding(system: "eHealth/body_sites", code: "1"),
       route: codeable_concept_coding(system: "eHealth/vaccination_routes", code: "IM"),
       dose_quantity: build(:quantity, system: "eHealth/ucum/units"),
       explanation: build(:explanation),
@@ -198,7 +198,7 @@ defmodule Core.Factories do
       target_diseases: [
         codeable_concept_coding(system: "eHealth/vaccination_target_diseases", code: "1857005")
       ],
-      dose_status: codeable_concept_coding(system: "eHealth/vaccination_dose_statuses", code: "count"),
+      dose_status: codeable_concept_coding(system: "eHealth/vaccination_dose_statuses", code: "1"),
       dose_status_reason:
         codeable_concept_coding(
           system: "eHealth/vaccination_dose_statuse_reasons",
@@ -227,7 +227,7 @@ defmodule Core.Factories do
     %Observation{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
-      categories: [codeable_concept_coding(system: "eHealth/observation_categories")],
+      categories: [codeable_concept_coding(system: "eHealth/observation_categories", code: "1")],
       code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5"),
       comment: "some comment",
       patient_id: Patients.get_pk_hash(UUID.uuid4()),
@@ -326,11 +326,11 @@ defmodule Core.Factories do
       visit: reference_coding(system: "eHealth/resources", code: "visit"),
       class: build(:coding, system: "eHealth/encounter_classes", code: "AMB"),
       type: codeable_concept_coding(system: "eHealth/encounter_types", code: "AMB"),
-      reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons")],
+      reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons", code: "reason")],
       diagnoses: [build(:diagnosis)],
       cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
       incoming_referrals: [reference_coding(system: "eHealth/resources", code: "referral")],
-      actions: [codeable_concept_coding(system: "eHealth/ICPC2/actions")],
+      actions: [codeable_concept_coding(system: "eHealth/ICPC2/actions", code: "action")],
       division: reference_coding(system: "eHealth/resources", code: "division"),
       service_provider: build(:reference),
       explanatory_letter: "some explanations",
@@ -380,7 +380,7 @@ defmodule Core.Factories do
   def diagnosis_factory do
     %Diagnosis{
       condition: reference_coding(system: "eHealth/resources", code: "condition"),
-      role: codeable_concept_coding(system: "eHealth/diagnosis_roles", code: "cheif_complaint"),
+      role: codeable_concept_coding(system: "eHealth/diagnosis_roles", code: "CC"),
       code: codeable_concept_coding(system: "eHealth/ICPC2/condition_codes", code: "R80"),
       rank: Enum.random(1..1000)
     }

@@ -18,7 +18,12 @@ defmodule Core.Encounter do
     field(:id, presence: true, mongo_uuid: true)
     field(:status, presence: true)
     field(:status_history)
-    field(:class, presence: true, reference: [path: "class"])
+
+    field(:class,
+      presence: true,
+      reference: [path: "class"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
 
     field(:type,
       presence: true,
@@ -28,18 +33,28 @@ defmodule Core.Encounter do
 
     field(:incoming_referrals, reference: [path: "incoming_referrals"])
     field(:duration)
-    field(:reasons, presence: true, reference: [path: "reasons"])
+
+    field(:reasons,
+      presence: true,
+      dictionary_reference: [path: "reasons", referenced_field: "system", field: "code"]
+    )
+
     field(:diagnoses, presence: true, reference: [path: "diagnoses"])
     field(:service_provider)
     field(:division, presence: true, reference: [path: "division"])
-    field(:actions, presence: true, reference: [path: "actions"])
+    field(:actions, presence: true, dictionary_reference: [path: "actions", referenced_field: "system", field: "code"])
     field(:signed_content_links)
     field(:performer, presence: true, reference: [path: "performer"])
     field(:episode, presence: true, reference: [path: "episode"])
     field(:visit, presence: true, reference: [path: "visit"])
     field(:date, presence: true)
     field(:explanatory_letter)
-    field(:cancellation_reason)
+
+    field(:cancellation_reason,
+      reference: [path: "cancellation_reason"],
+      dictionary_reference: [referenced_field: "system", field: "code"]
+    )
+
     field(:prescriptions)
 
     timestamps()

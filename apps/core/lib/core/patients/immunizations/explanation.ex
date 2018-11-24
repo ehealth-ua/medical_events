@@ -6,7 +6,11 @@ defmodule Core.Patients.Immunizations.Explanation do
 
   embedded_schema do
     field(:type, presence: true)
-    field(:value, presence: true, reference: [path: "value"])
+
+    field(:value,
+      presence: true,
+      dictionary_reference: [path: "value", referenced_field: "system", field: "code"]
+    )
   end
 
   def create(%{"reasons" => reasons}) do

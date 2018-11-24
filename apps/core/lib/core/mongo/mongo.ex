@@ -2,6 +2,7 @@ defmodule Core.Mongo do
   @moduledoc false
 
   alias Core.Mongo.AuditLog
+  alias Core.Validators.Vex
   alias DBConnection.Poolboy
   alias Mongo, as: M
 

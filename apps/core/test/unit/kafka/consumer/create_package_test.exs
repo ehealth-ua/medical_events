@@ -301,10 +301,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/condition_severities"}]},
-            "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
+            "severity" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_severities"}]},
+            "body_sites" => [%{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]}],
             "stage" => %{
-              "summary" => %{"coding" => [%{"code" => "181414000", "system" => "eHealth/condition_stages"}]}
+              "summary" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_stages"}]}
             },
             "evidences" => [
               %{
@@ -346,7 +346,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "categories" => [
-              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
             ],
             "code" => %{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
@@ -361,13 +361,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "interpretation" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
             },
             "body_site" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/body_sites"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]
             },
             "method" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/observation_methods"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_methods"}]
             },
             "value_period" => %{
               "start" => start_datetime,
@@ -393,7 +393,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "end" => end_datetime
                 },
                 "interpretation" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+                  "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
                 },
                 "reference_ranges" => [
                   %{
@@ -431,7 +431,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "categories" => [
-              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
             ],
             "code" => %{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
@@ -484,15 +484,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "performer" => %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => employee_id
-              }
-            },
-            "primary_source" => true,
+            "report_origin" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]},
+            "primary_source" => false,
             "date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
+            "site" => %{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{
               "value" => 18,
@@ -539,7 +534,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "coding" => [
                     %{
                       "system" => "eHealth/vaccination_dose_statuses",
-                      "code" => "count"
+                      "code" => "1"
                     }
                   ]
                 },
@@ -587,7 +582,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "primary_source" => true,
             "date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
+            "site" => %{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{
               "value" => 18,
@@ -632,13 +627,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "asserter" => %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => employee_id
-              }
-            },
-            "primary_source" => true,
+            "report_origin" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]},
+            "primary_source" => false,
             "clinical_status" => "active",
             "verification_status" => "confirmed",
             "type" => "allergy",
@@ -802,10 +792,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "severity" => %{"coding" => [%{"code" => "55604002", "system" => "eHealth/condition_severities"}]},
-            "body_sites" => [%{"coding" => [%{"code" => "181414000", "system" => "eHealth/body_sites"}]}],
+            "severity" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_severities"}]},
+            "body_sites" => [%{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]}],
             "stage" => %{
-              "summary" => %{"coding" => [%{"code" => "181414000", "system" => "eHealth/condition_stages"}]}
+              "summary" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_stages"}]}
             },
             "evidences" => [
               %{
@@ -826,12 +816,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 ]
               }
             ],
-            "primary_source" => true,
-            "asserter" => %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                "value" => employee_id
-              }
+            "primary_source" => false,
+            "report_origin" => %{
+              "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
             }
           }
         ],
@@ -847,7 +834,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "categories" => [
-              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
             ],
             "code" => %{"coding" => [%{"code" => "8480-6", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
@@ -862,13 +849,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "interpretation" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
             },
             "body_site" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/body_sites"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]
             },
             "method" => %{
-              "coding" => [%{"code" => "category", "system" => "eHealth/observation_methods"}]
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_methods"}]
             },
             "value_period" => %{
               "start" => start_datetime,
@@ -894,7 +881,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "end" => end_datetime
                 },
                 "interpretation" => %{
-                  "coding" => [%{"code" => "category", "system" => "eHealth/observation_interpretations"}]
+                  "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
                 },
                 "reference_ranges" => [
                   %{
@@ -919,7 +906,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "categories" => [
-              %{"coding" => [%{"code" => "category", "system" => "eHealth/observation_categories"}]}
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
             ],
             "code" => %{"coding" => [%{"code" => "8480-6", "system" => "eHealth/LOINC/observation_codes"}]},
             "effective_period" => %{
@@ -967,7 +954,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "primary_source" => true,
             "date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "site" => %{"coding" => [%{"code" => "LA", "system" => "eHealth/body_sites"}]},
+            "site" => %{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]},
             "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
             "dose_quantity" => %{
               "value" => 18,
@@ -1014,7 +1001,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "coding" => [
                     %{
                       "system" => "eHealth/vaccination_dose_statuses",
-                      "code" => "count"
+                      "code" => "1"
                     }
                   ]
                 },

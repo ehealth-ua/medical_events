@@ -100,7 +100,7 @@ defmodule Core.Kafka.Consumer do
           case apply(module, fun, [kafka_job]) do
             {:ok, response, status_code} ->
               {:ok, %{matched_count: 1, modified_count: 1}} =
-                Jobs.update(id, Job.status(:processed), response, status_code)
+                Jobs.update(id, Job.status(:processed), limit_errors(response), status_code)
 
             :ok ->
               :ok
@@ -129,4 +129,11 @@ defmodule Core.Kafka.Consumer do
         :ok
     end
   end
+
+  defp limit_errors(%{invalid: errors} = response) do
+    errors_limit = Confex.fetch_env!(:core, Core.Validators.JsonSchema)[:errors_limit]
+    %{response | invalid: Enum.take(errors, errors_limit)}
+  end
+
+  defp limit_errors(response), do: response
 end
