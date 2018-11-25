@@ -308,7 +308,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]}],
+                "codes" => [%{"coding" => [%{"code" => "A02", "system" => "eHealth/ICPC2/reasons"}]}],
                 "details" => [
                   %{
                     "identifier" => %{
@@ -799,7 +799,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "evidences" => [
               %{
-                "codes" => [%{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]}],
+                "codes" => [%{"coding" => [%{"code" => "A02", "system" => "eHealth/ICPC2/reasons"}]}],
                 "details" => [
                   %{
                     "identifier" => %{

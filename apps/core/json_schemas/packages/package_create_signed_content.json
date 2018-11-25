@@ -1061,12 +1061,12 @@
                           "system": {
                             "type": "string",
                             "enum": [
-                              "eHealth/LOINC/observation_codes"
+                              "eHealth/ICPC2/reasons"
                             ]
                           },
                           "code": {
                             "type": "string",
-                            "description": "Dictionary: eHealth/LOINC/observation_codes"
+                            "description": "Dictionary: eHealth/ICPC2/reasons"
                           }
                         },
                         "required": [

@@ -448,7 +448,7 @@ defmodule Core.Factories do
       evidences: [
         build(
           :evidence,
-          codes: [codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "condition")],
+          codes: [codeable_concept_coding(system: "eHealth/ICPC2/reasons", code: "A02")],
           details: [reference_coding(code: "observation")]
         )
       ],
