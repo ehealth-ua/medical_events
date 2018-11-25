@@ -16,7 +16,7 @@ defmodule Core.Validators.CacheTest do
        %{"name" => "eHealth/vaccination_authorities", "values" => %{"WVO" => "WVO", "1857005" => "1857005"}},
        %{"name" => "eHealth/observation_categories", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/ICPC2/actions", "values" => %{"action" => "action"}},
-       %{"name" => "eHealth/ICPC2/reasons", "values" => %{"reason" => "reason"}},
+       %{"name" => "eHealth/ICPC2/reasons", "values" => %{"reason" => "reason", "A02" => "A02"}},
        %{"name" => "eHealth/encounter_classes", "values" => %{"AMB" => "AMB"}},
        %{"name" => "eHealth/allergy_intolerances_codes", "values" => %{"227493005" => "227493005", "1" => "1"}},
        %{"name" => "eHealth/vaccine_codes", "values" => %{"FLUVAX" => "FLUVAX"}},

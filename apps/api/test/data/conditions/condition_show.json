@@ -398,19 +398,12 @@
                           "system": {
                             "type": "string",
                             "enum": [
-                              "eHealth/LOINC/observation_codes"
+                              "eHealth/ICPC2/reasons"
                             ]
                           },
                           "code": {
                             "type": "string",
-                            "enum": [
-                              "condition"
-                            ],
-                            "description": "Symbol in syntax defined by the system"
-                          },
-                          "display": {
-                            "type": "string",
-                            "description": "Representation defined by the system"
+                            "description": "Dictionary: eHealth/ICPC2/reasons"
                           }
                         },
                         "required": [
