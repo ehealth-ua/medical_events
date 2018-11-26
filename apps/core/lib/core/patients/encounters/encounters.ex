@@ -22,6 +22,19 @@ defmodule Core.Patients.Encounters do
     end
   end
 
+  @spec get_status_by_id(binary(), binary()) :: nil | {:ok, binary()}
+  def get_status_by_id(patient_id_hash, id) do
+    with %{"encounters" => %{^id => %{"status" => status}}} <-
+           Mongo.find_one(@patient_collection, %{"_id" => patient_id_hash},
+             projection: ["encounters.#{id}.status": true]
+           ) do
+      {:ok, status}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def get_episode_encounters(
         patient_id_hash,
         %BSON.Binary{} = episode_id,
@@ -64,19 +77,6 @@ defmodule Core.Patients.Encounters do
       _ ->
         Logger.warn("Failed to fill up employee value for encounter")
         encounter
-    end
-  end
-
-  def get(patient_id_hash, id) do
-    with %{"encounters" => %{^id => encounter}} <-
-           Mongo.find_one(@patient_collection, %{
-             "_id" => patient_id_hash,
-             "encounters.#{id}" => %{"$exists" => true}
-           }) do
-      {:ok, Encounter.create(encounter)}
-    else
-      _ ->
-        nil
     end
   end
 
