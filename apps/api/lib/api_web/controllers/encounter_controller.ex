@@ -17,7 +17,7 @@ defmodule Api.Web.EncounterController do
   end
 
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => encounter_id}) do
-    with {:ok, encounter} <- Encounters.get(patient_id_hash, encounter_id) do
+    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, encounter_id) do
       render(conn, "show.json", encounter: encounter)
     end
   end
