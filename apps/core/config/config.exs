@@ -38,7 +38,7 @@ config :core,
       "person_events" => {:system, :integer, "PERSON_EVENTS_PARTITIONS"},
       "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"},
       "secondary_events" => {:system, :integer, "SECONDARY_EVENTS_PARTITIONS"},
-      "job_update_status_events" => {:system, :integer, "JOB_UPDATE_STATUS_EVENTS"}
+      "job_update_events" => {:system, :integer, "JOB_UPDATE_EVENTS_PARTITIONS"}
     }
   ],
   rpc_worker: Core.Rpc.Worker
