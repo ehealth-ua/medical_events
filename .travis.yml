@@ -62,7 +62,7 @@ jobs:
     - stage: "test and build"
       name: "Event Consumer"
       env:
-        - APPS='[{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-event-consumer","label":"api-event-consumer"}]'
+        - APPS='[{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"event-consumer","label":"event-consumer"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
@@ -71,7 +71,7 @@ jobs:
     - stage: "test and build"
       name: "Person Consumer"
       env:
-        - APPS='[{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-person-consumer","label":"api-person-consumer"}]'
+        - APPS='[{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
@@ -80,7 +80,16 @@ jobs:
     - stage: "test and build"
       name: "Audit log Consumer"
       env:
-      - APPS='[{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"api-audit-log-consumer","label":"api-audit-log-consumer"}]'
+      - APPS='[{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"}]'
+      # "Decrypting deploy key..."
+      script:
+      - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
+      - (curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_v2/docker.sh -o docker.sh; bash ./docker.sh) || travis_terminate 1
+
+    - stage: "test and build"
+      name: "Secondary events Consumer"
+      env:
+      - APPS='[{"app":"secondary_events_consumer","chart":"medical-events-api","namespace":"me","deployment":"secondary-events-consumer","label":"secondary-events-consumer"}]'
       # "Decrypting deploy key..."
       script:
       - openssl aes-256-cbc -K $encrypted_727565a690f3_key -iv $encrypted_727565a690f3_iv -in eHealth-8110bd102a69.json.enc -out eHealth-8110bd102a69.json -d
