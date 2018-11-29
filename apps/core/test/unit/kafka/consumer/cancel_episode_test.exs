@@ -12,7 +12,8 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
   alias Core.Patients.Episodes
 
   @canceled Episode.status(:cancelled)
-  @status_processed Job.status(:processed)
+  @status_pending Job.status(:pending)
+  setup :verify_on_exit!
 
   describe "consume cancel episode event" do
     test "cancel with invalid status" do
@@ -26,6 +27,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
+      expect_job_update(job._id, "Episode in status entered_in_error can not be canceled", 422)
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
@@ -43,8 +45,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status entered_in_error can not be canceled"}} =
-               Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when episode's managing organization is invalid" do
@@ -71,6 +72,30 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
 
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.managing_organization.identifier.value",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description:
+                    "User is not allowed to perform actions with an episode that belongs to another legal entity",
+                  params: [],
+                  rule: :invalid
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
+
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
                  _id: to_string(job._id),
@@ -87,27 +112,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok,
-              %{
-                response: %{
-                  "invalid" => [
-                    %{
-                      "entry" => "$.managing_organization.identifier.value",
-                      "entry_type" => "json_data_property",
-                      "rules" => [
-                        %{
-                          "description" =>
-                            "User is not allowed to perform actions with an episode that belongs to another legal entity",
-                          "params" => [],
-                          "rule" => "invalid"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                status: @status_processed,
-                status_code: 422
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was canceled" do
@@ -133,10 +138,21 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
       insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
-
       episode_id = UUID.binary_to_string!(episode.id.binary)
+
+      expect_job_update(
+        job._id,
+        %{
+          "links" => [
+            %{
+              "entity" => "episode",
+              "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
+            }
+          ]
+        },
+        200
+      )
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
@@ -154,8 +170,8 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %Episode{status: @canceled}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{status: @canceled}} = Episodes.get_by_id(patient_id_hash, episode_id)
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

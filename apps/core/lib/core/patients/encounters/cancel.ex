@@ -8,6 +8,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
+  alias Core.Jobs
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCancelSaveConditionsJob
   alias Core.Jobs.PackageCancelSaveObservationsJob
@@ -153,7 +154,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
   def consume_save_observations(%PackageCancelSaveObservationsJob{observations_ids: observations_ids} = job) do
     with :ok <- update_observations(Enum.map(observations_ids, &Mongo.string_to_uuid/1), job.user_id) do
-      {:ok, %{}, 200}
+      Jobs.produce_update_status(job._id, %{}, 200)
     end
   end
 

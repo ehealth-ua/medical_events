@@ -12,7 +12,8 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
   alias Core.Patients.Episodes
 
   @closed Episode.status(:closed)
-  @status_processed Job.status(:processed)
+  @status_pending Job.status(:pending)
+  setup :verify_on_exit!
 
   describe "consume close episode event" do
     test "close with invalid status" do
@@ -26,6 +27,8 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
+
+      expect_job_update(job._id, "Episode in status closed can not be closed", 422)
 
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
@@ -44,7 +47,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status closed can not be closed"}} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when episode's managing organization is invalid" do
@@ -53,23 +56,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
-
-      expect(IlMock, :get_employee, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "APPROVED",
-             "employee_type" => "DOCTOR",
-             "legal_entity" => %{"id" => client_id},
-             "party" => %{
-               "first_name" => "foo",
-               "last_name" => "bar",
-               "second_name" => "baz"
-             }
-           }
-         }}
-      end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -88,6 +74,30 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
       patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
 
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.managing_organization.identifier.value",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description:
+                    "User is not allowed to perform actions with an episode that belongs to another legal entity",
+                  params: [],
+                  rule: :invalid
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
+
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
                  _id: to_string(job._id),
@@ -105,27 +115,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok,
-              %{
-                response: %{
-                  "invalid" => [
-                    %{
-                      "entry" => "$.managing_organization.identifier.value",
-                      "entry_type" => "json_data_property",
-                      "rules" => [
-                        %{
-                          "description" =>
-                            "User is not allowed to perform actions with an episode that belongs to another legal entity",
-                          "params" => [],
-                          "rule" => "invalid"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                status: @status_processed,
-                status_code: 422
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was closed" do
@@ -151,10 +141,21 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
       insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
-
       episode_id = UUID.binary_to_string!(episode.id.binary)
+
+      expect_job_update(
+        job._id,
+        %{
+          "links" => [
+            %{
+              "entity" => "episode",
+              "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
+            }
+          ]
+        },
+        200
+      )
 
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
@@ -173,8 +174,8 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %Episode{status: @closed}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{status: @closed}} = Episodes.get_by_id(patient_id_hash, episode_id)
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

@@ -10,16 +10,17 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
   alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.Jobs.PackageCancelJob
+  alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.Kafka.Consumer
   alias Core.Patients
 
-  @job_status_processed Job.status(:processed)
-  @job_status_pending Job.status(:pending)
+  @status_pending Job.status(:pending)
   @entered_in_error "entered_in_error"
 
   @explanatory_letter "Я, Шевченко Наталія Олександрівна, здійснила механічну помилку"
+
+  setup :verify_on_exit!
 
   describe "consume cancel package event" do
     setup do
@@ -47,7 +48,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "success", %{test_data: {episode, encounter, context}} do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
-      expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
 
       expect(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -61,7 +62,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       end)
 
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -156,13 +156,13 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
               %Core.Job{
                 response_size: _,
                 response: "",
-                status: @job_status_pending,
+                status: @status_pending,
                 status_code: 200
               }} = Jobs.get_by_id(to_string(job._id))
     end
 
-    test "faild when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+    test "failed when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -176,7 +176,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       end)
 
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -219,6 +218,12 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        %{"error" => ~s(At least one entity should have status "entered_in_error")},
+        409
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -229,17 +234,11 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_data
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{"error" => "At least one entity should have status \"entered_in_error\""},
-                status: @job_status_processed,
-                status_code: 409
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "faild when entity has alraady entered_in_error status", %{test_data: {episode, encounter, _}} do
-      expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -285,6 +284,12 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        %{"error" => "Invalid transition for encounter - already entered_in_error"},
+        409
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -295,17 +300,11 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_data
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{"error" => "Invalid transition for encounter - already entered_in_error"},
-                status: @job_status_processed,
-                status_code: 409
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "faild when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, 5, fn _event -> :ok end)
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -368,6 +367,30 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.managing_organization.identifier.value",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description:
+                    "User is not allowed to perform actions with an episode that belongs to another legal entity",
+                  params: [],
+                  rule: :invalid
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -378,28 +401,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_data
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{
-                  "invalid" => [
-                    %{
-                      "entry" => "$.managing_organization.identifier.value",
-                      "entry_type" => "json_data_property",
-                      "rules" => [
-                        %{
-                          "description" =>
-                            "User is not allowed to perform actions with an episode that belongs to another legal entity",
-                          "params" => [],
-                          "rule" => "invalid"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                status: @job_status_processed,
-                status_code: 422
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on signed content", %{test_data: {episode, encounter, context}} do
@@ -453,6 +455,15 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        %{
+          "error" =>
+            "Submitted signed content does not correspond to previously created content: immunizations.0.lot_number"
+        },
+        409
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -463,14 +474,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_data
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{"error" => error},
-                status: @job_status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
-
-      assert String.contains?(error, "Submitted signed content does not correspond to previously created content")
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on validate diagnoses" do
@@ -489,13 +493,11 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       end)
 
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
 
       episode =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
       job = insert(:job)
-
       condition_uuid = Mongo.string_to_uuid(UUID.uuid4())
 
       diagnosis =
@@ -545,6 +547,12 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        %{"error" => "The condition can not be canceled while encounter is not canceled"},
+        409
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -555,14 +563,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_content
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{"error" => error},
-                status: @job_status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
-
-      assert "The condition can not be canceled while encounter is not canceled" == error
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "diagnosis deactivated" do
@@ -582,8 +583,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       user_id = prepare_signature_expectations()
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
-
       job = insert(:job)
 
       encounter_id = UUID.uuid4()
@@ -655,7 +654,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert {:ok,
               %Core.Job{
                 response_size: _,
-                status: @job_status_pending
+                status: @status_pending
               }} = Jobs.get_by_id(to_string(job._id))
     end
 
@@ -697,6 +696,12 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
+      expect_job_update(
+        job._id,
+        "Encounter's episode not found",
+        404
+      )
+
       assert :ok =
                Consumer.consume(%PackageCancelJob{
                  _id: to_string(job._id),
@@ -707,13 +712,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_content
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                response: %{"error" => "Encounter's episode not found"},
-                status_code: 404,
-                status: @job_status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 

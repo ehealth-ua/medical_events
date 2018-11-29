@@ -4,7 +4,8 @@ defmodule Core.Kafka.Producer do
   alias Core.Mongo.Event
 
   @medical_events_topic "medical_events"
-  @encounter_package_events_topic "encounter_package_events"
+  @secondary_events_topic "secondary_events"
+  @job_update_events_topic "job_update_events"
   @mongo_events_topic "mongo_events"
 
   @behaviour Core.Behaviours.KafkaProducerBehaviour
@@ -19,8 +20,8 @@ defmodule Core.Kafka.Producer do
 
   def publish_encounter_package_event(event) do
     KafkaEx.produce(
-      @encounter_package_events_topic,
-      get_partition(event.patient_id, @encounter_package_events_topic),
+      @secondary_events_topic,
+      get_partition(event.patient_id, @secondary_events_topic),
       :erlang.term_to_binary(event)
     )
   end
@@ -29,6 +30,14 @@ defmodule Core.Kafka.Producer do
     KafkaEx.produce(
       @mongo_events_topic,
       get_partition(event.actor_id, @mongo_events_topic),
+      :erlang.term_to_binary(event)
+    )
+  end
+
+  def publish_job_update_status_event(event) do
+    KafkaEx.produce(
+      @job_update_events_topic,
+      Enum.random(0..Confex.fetch_env!(:core, :kafka)[:partitions][@job_update_events_topic]),
       :erlang.term_to_binary(event)
     )
   end

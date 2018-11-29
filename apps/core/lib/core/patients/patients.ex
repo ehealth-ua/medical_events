@@ -5,16 +5,11 @@ defmodule Core.Patients do
 
   alias Core.AllergyIntolerance
   alias Core.Condition
-  alias Core.DatePeriod
   alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
   alias Core.Jobs
-  alias Core.Jobs.EpisodeCancelJob
-  alias Core.Jobs.EpisodeCloseJob
-  alias Core.Jobs.EpisodeCreateJob
-  alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Jobs.PackageSavePatientJob
@@ -26,7 +21,6 @@ defmodule Core.Patients do
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.Validators
-  alias Core.StatusHistory
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
@@ -34,7 +28,6 @@ defmodule Core.Patients do
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
-  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Immunizations.Reaction
@@ -62,77 +55,6 @@ defmodule Core.Patients do
 
   def get_by_id(id) do
     Mongo.find_one(@collection, %{"_id" => id})
-  end
-
-  def produce_create_episode(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:episode_create, Map.drop(params, ~w(patient_id patient_id_hash))),
-         {:ok, job, episode_create_job} <-
-           Jobs.create(
-             EpisodeCreateJob,
-             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
-           ),
-         :ok <- @kafka_producer.publish_medical_event(episode_create_job) do
-      {:ok, job}
-    end
-  end
-
-  def produce_update_episode(
-        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
-        request_params,
-        conn_params
-      ) do
-    with %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id_hash, id),
-         :ok <- JsonSchema.validate(:episode_update, request_params),
-         {:ok, job, episode_update_job} <-
-           Jobs.create(
-             EpisodeUpdateJob,
-             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
-           ),
-         :ok <- @kafka_producer.publish_medical_event(episode_update_job) do
-      {:ok, job}
-    end
-  end
-
-  def produce_close_episode(
-        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
-        request_params,
-        conn_params
-      ) do
-    with %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id_hash, id),
-         :ok <- JsonSchema.validate(:episode_close, request_params),
-         {:ok, job, episode_close_job} <-
-           Jobs.create(
-             EpisodeCloseJob,
-             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
-           ),
-         :ok <- @kafka_producer.publish_medical_event(episode_close_job) do
-      {:ok, job}
-    end
-  end
-
-  def produce_cancel_episode(
-        %{"patient_id_hash" => patient_id_hash, "id" => id} = url_params,
-        request_params,
-        conn_params
-      ) do
-    with %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         {:ok, _} <- Episodes.get(patient_id_hash, id),
-         :ok <- JsonSchema.validate(:episode_cancel, request_params),
-         {:ok, job, episode_cancel_job} <-
-           Jobs.create(
-             EpisodeCancelJob,
-             url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
-           ),
-         :ok <- @kafka_producer.publish_medical_event(episode_cancel_job) do
-      {:ok, job}
-    end
   end
 
   def produce_create_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
@@ -175,16 +97,25 @@ defmodule Core.Patients do
          {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
          {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          {_, {:ok, %Episode{} = episode}} <-
-           {:episode, Episodes.get(patient_id_hash, to_string(encounter.episode.identifier.value))},
+           {:episode, Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value))},
          :ok <- CancelEncounter.validate(content, episode, encounter, patient_id_hash, job.client_id),
          :ok <- CancelEncounter.save(patient, content, episode, encounter_id, job) do
       :ok
     else
-      {:patient, _} -> {:ok, %{"error" => "Patient not found"}, 404}
-      {:episode, _} -> {:ok, %{"error" => "Encounter's episode not found"}, 404}
-      {:encounter, _} -> {:ok, %{"error" => "Encounter not found"}, 404}
-      {:error, error} -> {:ok, ValidationError.render("422.json", %{schema: error}), 422}
-      error -> error
+      {:patient, _} ->
+        Jobs.produce_update_status(job._id, "Patient not found", 404)
+
+      {:episode, _} ->
+        Jobs.produce_update_status(job._id, "Encounter's episode not found", 404)
+
+      {:encounter, _} ->
+        Jobs.produce_update_status(job._id, "Encounter not found", 404)
+
+      {:error, error} ->
+        Jobs.produce_update_status(job._id, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, response, status_code)
     end
   end
 
@@ -360,27 +291,33 @@ defmodule Core.Patients do
             :ok
           end
         else
-          _ -> Logger.error("Failed to save signed content")
+          error ->
+            Logger.error("Failed to save signed content: #{inspect(error)}")
+            Jobs.produce_update_status(job._id, "Failed to save signed content", 500)
         end
       else
         {:error, error, status_code} ->
-          {:ok, error, status_code}
+          Jobs.produce_update_status(job._id, error, status_code)
 
         {:error, error} ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(error)}), 422}
+          Jobs.produce_update_status(
+            job._id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(error)}),
+            422
+          )
       end
     else
       {:error, %{"error" => error, "meta" => _}} ->
-        {:ok, Jason.encode!(error), 422}
+        Jobs.produce_update_status(job._id, Jason.encode!(error), 422)
 
       {:error, error} ->
-        {:ok, ValidationError.render("422.json", %{schema: error}), 422}
+        Jobs.produce_update_status(job._id, ValidationError.render("422.json", %{schema: error}), 422)
 
       {:error, {:bad_request, error}} ->
-        {:ok, error, 422}
+        Jobs.produce_update_status(job._id, error, 422)
 
-      error ->
-        error
+      {_, response, status} ->
+        Jobs.produce_update_status(job._id, response, status)
     end
   end
 
@@ -403,304 +340,6 @@ defmodule Core.Patients do
     |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
     |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
     |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
-  end
-
-  def consume_create_episode(
-        %EpisodeCreateJob{
-          patient_id: patient_id,
-          patient_id_hash: patient_id_hash,
-          client_id: client_id
-        } = job
-      ) do
-    now = DateTime.utc_now()
-
-    episode =
-      job
-      |> Map.from_struct()
-      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
-      |> Episode.create()
-
-    episode =
-      %{
-        episode
-        | status_history: [],
-          diagnoses_history: [],
-          inserted_by: job.user_id,
-          updated_by: job.user_id,
-          inserted_at: now,
-          updated_at: now
-      }
-      |> EpisodeValidations.validate_period()
-      |> EpisodeValidations.validate_managing_organization(client_id)
-      |> EpisodeValidations.validate_care_manager(client_id)
-
-    episode_id = episode.id
-
-    case Vex.errors(episode) do
-      [] ->
-        case Episodes.get(patient_id_hash, episode_id) do
-          {:ok, _} ->
-            {:ok, %{"error" => "Episode with such id already exists"}, 422}
-
-          _ ->
-            episode =
-              episode
-              |> Episodes.fill_up_episode_care_manager()
-              |> Episodes.fill_up_episode_managing_organization()
-
-            set =
-              %{"updated_by" => episode.updated_by}
-              |> Mongo.add_to_set(episode, "episodes.#{episode.id}")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.id")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.inserted_by")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
-              |> Mongo.convert_to_uuid("updated_by")
-
-            {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
-
-            {:ok,
-             %{
-               "links" => [
-                 %{
-                   "entity" => "episode",
-                   "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                 }
-               ]
-             }, 200}
-        end
-
-      errors ->
-        {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
-    end
-  end
-
-  def consume_update_episode(
-        %EpisodeUpdateJob{
-          patient_id: patient_id,
-          patient_id_hash: patient_id_hash,
-          id: id,
-          client_id: client_id
-        } = job
-      ) do
-    now = DateTime.utc_now()
-    status = Episode.status(:active)
-
-    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
-      changes = Map.take(job.request_params, ~w(name managing_organization care_manager))
-
-      episode =
-        %{episode | updated_by: job.user_id, updated_at: now}
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_managing_organization(
-          job.request_params["managing_organization"],
-          client_id
-        )
-        |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
-
-      case Vex.errors(episode) do
-        [] ->
-          episode =
-            episode
-            |> Episodes.fill_up_episode_care_manager()
-            |> Episodes.fill_up_episode_managing_organization()
-
-          set =
-            %{"updated_by" => episode.updated_by, "updated_at" => now}
-            |> Mongo.add_to_set(episode.care_manager, "episodes.#{episode.id}.care_manager")
-            |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
-            |> Mongo.add_to_set(
-              episode.managing_organization,
-              "episodes.#{episode.id}.managing_organization"
-            )
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
-            |> Mongo.convert_to_uuid("updated_by")
-
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
-
-          {:ok,
-           %{
-             "links" => [
-               %{
-                 "entity" => "episode",
-                 "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-               }
-             ]
-           }, 200}
-
-        errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
-      end
-    else
-      {:ok, %Episode{status: status}} -> {:ok, "Episode in status #{status} can not be updated", 422}
-      nil -> {:error, "Failed to get episode", 404}
-    end
-  end
-
-  def consume_close_episode(%EpisodeCloseJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
-    now = DateTime.utc_now()
-    status = Episode.status(:active)
-
-    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
-      managing_organization = episode.managing_organization
-      identifier = managing_organization.identifier
-
-      new_period = DatePeriod.create(job.request_params["period"])
-      changes = Map.take(job.request_params, ~w(closing_summary status_reason))
-
-      episode =
-        %{
-          episode
-          | status: Episode.status(:closed),
-            updated_by: job.user_id,
-            updated_at: now,
-            period: %{episode.period | end: new_period.end},
-            managing_organization: %{
-              managing_organization
-              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-            }
-        }
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_period()
-        |> EpisodeValidations.validate_managing_organization(job.client_id)
-
-      case Vex.errors(episode) do
-        [] ->
-          set =
-            %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
-            |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
-            |> Mongo.add_to_set(episode.status_reason, "episodes.#{episode.id}.status_reason")
-            |> Mongo.add_to_set(episode.closing_summary, "episodes.#{episode.id}.closing_summary")
-            |> Mongo.add_to_set(episode.period.end, "episodes.#{episode.id}.period.end")
-            |> Mongo.convert_to_uuid("updated_by")
-
-          status_history =
-            StatusHistory.create(%{
-              "status" => episode.status,
-              "status_reason" => episode.status_reason,
-              "inserted_at" => episode.updated_at,
-              "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
-            })
-
-          push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
-
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
-              "$set" => set,
-              "$push" => push
-            })
-
-          {:ok,
-           %{
-             "links" => [
-               %{
-                 "entity" => "episode",
-                 "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-               }
-             ]
-           }, 200}
-
-        errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
-      end
-    else
-      {:ok, %Episode{status: status}} -> {:ok, "Episode in status #{status} can not be closed", 422}
-      nil -> {:error, "Failed to get episode", 404}
-    end
-  end
-
-  def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
-    now = DateTime.utc_now()
-    status = Episode.status(:active)
-
-    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get(patient_id_hash, id) do
-      managing_organization = episode.managing_organization
-      identifier = managing_organization.identifier
-
-      changes = Map.take(job.request_params, ~w(explanatory_letter status_reason))
-
-      episode =
-        %{
-          episode
-          | status: Episode.status(:cancelled),
-            updated_by: job.user_id,
-            updated_at: now,
-            managing_organization: %{
-              managing_organization
-              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-            }
-        }
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_managing_organization(job.client_id)
-
-      case Vex.errors(episode) do
-        [] ->
-          all_encounters_canceled =
-            patient_id_hash
-            |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{
-              "status" => "$encounters.v.status"
-            })
-            |> Enum.map(& &1["status"])
-            |> Enum.all?(fn status -> status == Encounter.status(:entered_in_error) end)
-
-          if all_encounters_canceled do
-            set =
-              %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
-              |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
-              |> Mongo.add_to_set(
-                episode.explanatory_letter,
-                "episodes.#{episode.id}.explanatory_letter"
-              )
-              |> Mongo.add_to_set(
-                episode.status_reason,
-                "episodes.#{episode.id}.status_reason"
-              )
-              |> Mongo.convert_to_uuid("updated_by")
-
-            status_history =
-              StatusHistory.create(%{
-                "status" => episode.status,
-                "status_reason" => episode.status_reason,
-                "inserted_at" => episode.updated_at,
-                "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
-              })
-
-            push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
-
-            {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
-                "$set" => set,
-                "$push" => push
-              })
-
-            {:ok,
-             %{
-               "links" => [
-                 %{
-                   "entity" => "episode",
-                   "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                 }
-               ]
-             }, 200}
-          else
-            {:error, "Episode can not be canceled while it has not canceled encounters", 409}
-          end
-
-        errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
-      end
-    else
-      {:ok, %Episode{status: status}} ->
-        {:ok, "Episode in status #{status} can not be canceled", 422}
-
-      nil ->
-        {:error, "Failed to get episode", 404}
-    end
   end
 
   defp create_visit(%PackageCreateJob{visit: nil}), do: {:ok, nil}

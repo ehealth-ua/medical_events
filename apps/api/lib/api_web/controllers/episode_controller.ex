@@ -5,8 +5,8 @@ defmodule Api.Web.EpisodeController do
 
   alias Api.Web.JobView
   alias Core.Episode
-  alias Core.Patients
   alias Core.Patients.Episodes
+  alias Core.Patients.Episodes.Producer
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
 
@@ -24,7 +24,7 @@ defmodule Api.Web.EpisodeController do
   end
 
   def create(conn, params) do
-    with {:ok, job} <- Patients.produce_create_episode(params, conn.private[:user_id], conn.private[:client_id]) do
+    with {:ok, job} <- Producer.produce_create_episode(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -33,7 +33,7 @@ defmodule Api.Web.EpisodeController do
   end
 
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => id}) do
-    with {:ok, %Episode{} = episode} <- Episodes.get(patient_id_hash, id) do
+    with {:ok, %Episode{} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
       render(conn, "show.json", episode: episode)
     end
   end
@@ -41,7 +41,7 @@ defmodule Api.Web.EpisodeController do
   def update(conn, params) do
     {url_params, request_params, conn_params} = get_params(conn, params)
 
-    with {:ok, job} <- Patients.produce_update_episode(url_params, request_params, conn_params) do
+    with {:ok, job} <- Producer.produce_update_episode(url_params, request_params, conn_params) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -52,7 +52,7 @@ defmodule Api.Web.EpisodeController do
   def close(conn, params) do
     {url_params, request_params, conn_params} = get_params(conn, params)
 
-    with {:ok, job} <- Patients.produce_close_episode(url_params, request_params, conn_params) do
+    with {:ok, job} <- Producer.produce_close_episode(url_params, request_params, conn_params) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -63,7 +63,7 @@ defmodule Api.Web.EpisodeController do
   def cancel(conn, params) do
     {url_params, request_params, conn_params} = get_params(conn, params)
 
-    with {:ok, job} <- Patients.produce_cancel_episode(url_params, request_params, conn_params) do
+    with {:ok, job} <- Producer.produce_cancel_episode(url_params, request_params, conn_params) do
       conn
       |> put_status(202)
       |> put_view(JobView)

@@ -7,12 +7,17 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
   import Core.Expectations.IlExpectations
 
   alias Core.Episode
+  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Kafka.Consumer
   alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
+
+  @status_pending Job.status(:pending)
+
+  setup :verify_on_exit!
 
   describe "consume create episode event" do
     test "episode already exists" do
@@ -28,6 +33,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       expect_doctor(client_id)
+      expect_job_update(job._id, "Episode with such id already exists", 422)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -63,8 +69,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  }
                })
 
-      assert {:ok, %{response: %{"error" => "Episode with such id already exists"}}} =
-               Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was created" do
@@ -91,6 +96,19 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       job = insert(:job)
       user_id = UUID.uuid4()
+
+      expect_job_update(
+        job._id,
+        %{
+          "links" => [
+            %{
+              "entity" => "episode",
+              "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
+            }
+          ]
+        },
+        200
+      )
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
@@ -126,7 +144,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                )
 
       assert Map.has_key?(episodes, episode_id)
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

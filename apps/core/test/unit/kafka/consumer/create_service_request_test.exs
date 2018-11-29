@@ -4,17 +4,14 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
   use Core.ModelCase
 
   import Core.Expectations.DigitalSignatureExpectation
-  import Core.Expectations.IlExpectations
   import Mox
 
-  alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.ServiceRequest
 
-  @status_processed Job.status(:processed)
+  setup :verify_on_exit!
 
   describe "consume create service_request event" do
     test "empty content" do
@@ -23,6 +20,32 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = job._id
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "type mismatch. Expected Object but got String",
+                           params: ["object"],
+                           rule: :cast
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
                  _id: to_string(job._id),
@@ -30,8 +53,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                  user_id: user_id,
                  client_id: UUID.uuid4()
                })
-
-      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "empty map" do
@@ -40,6 +61,87 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = job._id
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$.id",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property id was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.requisition",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property requisition was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.status",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property status was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.intent",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property intent was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.category",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property category was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.code",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property code was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
                  _id: to_string(job._id),
@@ -47,8 +149,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                  user_id: user_id,
                  client_id: UUID.uuid4()
                })
-
-      assert {:ok, %Job{status: @status_processed, response_size: 1131}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "success create service_request" do
@@ -117,6 +217,33 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         ]
       }
 
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = job._id
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$.managing_organization.identifier.value",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description:
+                             "User is not allowed to perform actions with an episode that belongs to another legal entity",
+                           params: [],
+                           rule: :invalid
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
                  _id: to_string(job._id),
@@ -126,17 +253,10 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok,
-              %Core.Job{
-                response_size: 154,
-                status: @status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on invalid drfo" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -200,6 +320,32 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         ]
       }
 
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = job._id
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$.service_request.requester.identifier.value",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "Signer DRFO doesn't match with requester tax_id",
+                           params: [],
+                           rule: :invalid
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
                  _id: to_string(job._id),
@@ -209,12 +355,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok,
-              %Core.Job{
-                response_size: 401,
-                status: @status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
     end
   end
 
@@ -222,7 +362,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     user_id = UUID.uuid4()
     drfo = "1111111111"
     expect_signature(drfo)
-    expect_employee_users(drfo, user_id)
 
     user_id
   end
