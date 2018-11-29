@@ -3,6 +3,7 @@ defmodule Core.ServiceRequests do
 
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Mongo
   alias Core.Patients
@@ -54,6 +55,20 @@ defmodule Core.ServiceRequests do
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_use_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_release_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+         {:ok, job, service_request_release_job} <-
+           Jobs.create(
+             ServiceRequestReleaseJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(service_request_release_job) do
       {:ok, job}
     end
   end
@@ -211,6 +226,58 @@ defmodule Core.ServiceRequests do
 
       {_, :used_by} ->
         Jobs.produce_update_status(job._id, "Service request already used", 409)
+    end
+  end
+
+  def consume_release_service_request(
+        %ServiceRequestReleaseJob{
+          patient_id: patient_id,
+          user_id: user_id,
+          service_request_id: id
+        } = job
+      ) do
+    now = DateTime.utc_now()
+
+    with {:ok, %ServiceRequest{} = service_request} <- get_by_id(id),
+         {true, _} <- {service_request.status == ServiceRequest.status(:active), :status} do
+      changes = %{"used_by" => nil}
+
+      service_request =
+        %{service_request | updated_by: user_id, updated_at: now}
+        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+
+      case Vex.errors(service_request) do
+        [] ->
+          set = %{"updated_by" => service_request.updated_by, "updated_at" => now, "used_by" => nil}
+
+          {:ok, %{matched_count: 1, modified_count: 1}} =
+            Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+          %BSON.Binary{binary: id} = service_request._id
+
+          Jobs.produce_update_status(
+            job._id,
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{UUID.binary_to_string!(id)}"
+                }
+              ]
+            },
+            200
+          )
+
+        errors ->
+          Jobs.produce_update_status(
+            job._id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
+      end
+    else
+      {_, :status} ->
+        Jobs.produce_update_status(job._id, "Can't use inactive service request", 409)
     end
   end
 
