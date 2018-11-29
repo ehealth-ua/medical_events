@@ -131,19 +131,23 @@ defmodule Core.ServiceRequests do
                 }
               ]
 
-              {:ok, %{"links" => links}, 200}
+              Jobs.produce_update_status(job._id, %{"links" => links}, 200)
             end
           end
 
         errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+          Jobs.produce_update_status(
+            job._id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
       end
     else
       {:error, error} ->
-        {:ok, ValidationError.render("422.json", %{schema: error}), 422}
+        Jobs.produce_update_status(job._id, ValidationError.render("422.json", %{schema: error}), 422)
 
-      error ->
-        error
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, response, status_code)
     end
   end
 
@@ -181,22 +185,32 @@ defmodule Core.ServiceRequests do
 
           %BSON.Binary{binary: id} = service_request._id
 
-          {:ok,
-           %{
-             "links" => [
-               %{
-                 "entity" => "service_request",
-                 "href" => "/api/patients/#{patient_id}/service_requests/#{UUID.binary_to_string!(id)}"
-               }
-             ]
-           }, 200}
+          Jobs.produce_update_status(
+            job._id,
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{UUID.binary_to_string!(id)}"
+                }
+              ]
+            },
+            200
+          )
 
         errors ->
-          {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+          Jobs.produce_update_status(
+            job._id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
       end
     else
-      {_, :status} -> {:error, "Can't use inactive service request", 409}
-      {_, :used_by} -> {:error, "Service request already used", 409}
+      {_, :status} ->
+        Jobs.produce_update_status(job._id, "Can't use inactive service request", 409)
+
+      {_, :used_by} ->
+        Jobs.produce_update_status(job._id, "Service request already used", 409)
     end
   end
 

@@ -3,9 +3,40 @@ defmodule Core.Jobs do
 
   alias BSON.ObjectId
   alias Core.Job
+  alias Core.Jobs.JobUpdateStatusJob
   alias Core.Mongo
+  require Logger
 
   @collection Job.metadata().collection
+  @kafka_producer Application.get_env(:core, :kafka)[:producer]
+
+  def produce_update_status(id, response, 200) do
+    do_produce_update_status(id, response, Job.status(:processed), 200)
+  end
+
+  def produce_update_status(id, response, status_code) do
+    do_produce_update_status(id, limit_errors(response), Job.status(:failed), status_code)
+  end
+
+  defp limit_errors(%{invalid: errors} = response) do
+    errors_limit = Confex.fetch_env!(:core, Core.Validators.JsonSchema)[:errors_limit]
+    %{response | invalid: Enum.take(errors, errors_limit)}
+  end
+
+  defp limit_errors(response), do: response
+
+  def do_produce_update_status(id, response, status, status_code) do
+    event = %JobUpdateStatusJob{
+      _id: id,
+      response: response,
+      status: status,
+      status_code: status_code
+    }
+
+    with :ok <- @kafka_producer.publish_job_update_status_event(event) do
+      :ok
+    end
+  end
 
   def get_by_id(id) when is_binary(id) do
     object_id = ObjectId.decode!(id)
@@ -59,6 +90,17 @@ defmodule Core.Jobs do
         with {:ok, _} <- Mongo.insert_one(job) do
           {:ok, job, struct(module, data)}
         end
+    end
+  end
+
+  def update_status(%JobUpdateStatusJob{_id: id} = event) do
+    case get_by_id(id) do
+      {:ok, _} ->
+        {:ok, %{matched_count: 1, modified_count: 1}} = update(id, event.status, event.response, event.status_code)
+
+      _ ->
+        Logger.warn(fn -> "Can't get job by id #{id}" end)
+        :ok
     end
   end
 

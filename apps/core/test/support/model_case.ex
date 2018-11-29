@@ -17,6 +17,7 @@ defmodule Core.ModelCase do
 
   using do
     quote do
+      import Core.Expectations.JobExpectations
       import Core.Factories
       alias Core.Mongo
     end

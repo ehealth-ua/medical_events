@@ -7,26 +7,27 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
   import Core.Expectations.IlExpectations
 
   alias Core.Episode
+  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.Patients.Episodes
 
+  @status_pending Job.status(:pending)
+  setup :verify_on_exit!
+
   describe "consume update episode event" do
     test "update with invalid status" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: Episode.status(:closed))
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
       insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
-
       job = insert(:job)
       user_id = UUID.uuid4()
+      expect_job_update(job._id, "Episode in status closed can not be updated", 422)
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
@@ -53,7 +54,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: "Episode in status closed can not be updated"}} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was updated" do
@@ -81,6 +82,19 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
 
+      expect_job_update(
+        job._id,
+        %{
+          "links" => [
+            %{
+              "entity" => "episode",
+              "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
+            }
+          ]
+        },
+        200
+      )
+
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
                  _id: to_string(job._id),
@@ -106,8 +120,8 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  client_id: client_id
                })
 
-      assert {:ok, %{response: %{}}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, %Episode{name: "ОРВИ 2019"}} = Episodes.get(patient_id_hash, episode_id)
+      assert {:ok, %Episode{name: "ОРВИ 2019"}} = Episodes.get_by_id(patient_id_hash, episode_id)
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

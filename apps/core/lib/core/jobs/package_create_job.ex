@@ -4,5 +4,13 @@ defmodule Core.Jobs.PackageCreateJob do
   _id is a binded Request id.
   """
 
-  defstruct [:_id, :patient_id, :patient_id_hash, :visit, :signed_data, :user_id, :client_id]
+  defstruct [
+    :_id,
+    :patient_id,
+    :patient_id_hash,
+    :visit,
+    :signed_data,
+    :user_id,
+    :client_id
+  ]
 end

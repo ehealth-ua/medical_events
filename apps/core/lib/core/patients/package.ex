@@ -3,6 +3,7 @@ defmodule Core.Patients.Package do
 
   alias Core.Condition
   alias Core.Conditions
+  alias Core.Jobs.JobUpdateStatusJob
   alias Core.Jobs.PackageSaveConditionsJob
   alias Core.Jobs.PackageSaveObservationsJob
   alias Core.Jobs.PackageSavePatientJob
@@ -64,7 +65,16 @@ defmodule Core.Patients.Package do
 
   def consume_save_observations(%PackageSaveObservationsJob{patient_id: patient_id} = job) do
     links = insert_observations(job.links, job.observations, patient_id)
-    {:ok, %{"links" => links}, 200}
+
+    event = %JobUpdateStatusJob{
+      _id: job._id,
+      response: %{"links" => links},
+      status_code: 200
+    }
+
+    with :ok <- @kafka_producer.publish_job_update_status_event(event) do
+      :ok
+    end
   end
 
   defp insert_conditions(links, [], _), do: links

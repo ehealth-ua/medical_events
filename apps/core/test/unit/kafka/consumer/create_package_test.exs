@@ -17,7 +17,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Patients
 
   @status_pending Job.status(:pending)
-  @status_processed Job.status(:processed)
   @status_valid Observation.status(:valid)
 
   describe "consume create package event" do
@@ -26,6 +25,29 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       job = insert(:job)
       user_id = prepare_signature_expectations()
+
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description: "type mismatch. Expected Object but got String",
+                  params: ["object"],
+                  rule: :cast
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -36,7 +58,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: UUID.uuid4()
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 361}} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "empty map" do
@@ -44,6 +66,29 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       job = insert(:job)
       user_id = prepare_signature_expectations()
+
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.encounter",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description: "required property encounter was not present",
+                  params: [],
+                  rule: :required
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -54,7 +99,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: UUID.uuid4()
                })
 
-      assert {:ok, %Job{status: @status_processed, response_size: 365}} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "visit not found" do
@@ -153,6 +198,29 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         }
       }
 
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.encounter.visit.identifier.value",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description: "Visit with such ID is not found",
+                  params: [],
+                  rule: :invalid
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
+
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
@@ -163,11 +231,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: 375,
-                status: @status_processed
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "success create package" do
@@ -656,7 +720,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
         assert 2 == length(set_data["immunizations.#{db_immunization_id}.reactions"])
 
-        assert nil == set_data["immunizations.#{immunization_id2}.reactions"]
+        assert set_data["immunizations.#{immunization_id2}.reactions"]
 
         :ok
       end)
@@ -1060,6 +1124,29 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ]
       }
 
+      expect_job_update(
+        job._id,
+        %{
+          invalid: [
+            %{
+              entry: "$.encounter.episode.identifier.value",
+              entry_type: "json_data_property",
+              rules: [
+                %{
+                  description: "User is not allowed to change objects, created by another legal_entity",
+                  params: [],
+                  rule: :invalid
+                }
+              ]
+            }
+          ],
+          message:
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          type: :validation_failed
+        },
+        422
+      )
+
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
@@ -1077,24 +1164,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
-      assert {:ok,
-              %Core.Job{
-                response: %{
-                  "invalid" => [
-                    %{
-                      "entry" => "$.encounter.episode.identifier.value",
-                      "rules" => [
-                        %{
-                          "description" => "User is not allowed to change objects, created by another legal_entity",
-                          "params" => [],
-                          "rule" => "invalid"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                status_code: 422
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on invalid drfo" do
@@ -1197,6 +1267,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         }
       }
 
+      expect_job_update(job._id, "Invalid drfo", 409)
+
       assert :ok =
                Consumer.consume(%PackageCreateJob{
                  _id: to_string(job._id),
@@ -1214,11 +1286,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
-      assert {:ok,
-              %Core.Job{
-                response: "Invalid drfo",
-                status_code: 409
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 
