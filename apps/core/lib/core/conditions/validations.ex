@@ -55,7 +55,8 @@ defmodule Core.Conditions.Validations do
           legal_entity_id: client_id,
           messages: [
             type: "Employee is not an active doctor",
-            status: "Employee is not an active doctor"
+            status: "Employee is not an active doctor",
+            legal_entity_id: "Employee #{asserter.identifier.value} doesn't belong to your legal entity"
           ]
         ]
       )

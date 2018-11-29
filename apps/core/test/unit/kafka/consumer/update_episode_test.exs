@@ -102,12 +102,6 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  patient_id_hash: patient_id_hash,
                  id: episode_id,
                  request_params: %{
-                   "managing_organization" => %{
-                     "identifier" => %{
-                       "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
-                       "value" => client_id
-                     }
-                   },
                    "care_manager" => %{
                      "identifier" => %{
                        "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},

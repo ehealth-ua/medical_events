@@ -5,6 +5,7 @@ defmodule Core.Patients do
 
   alias Core.AllergyIntolerance
   alias Core.Condition
+  alias Core.Conditions
   alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
@@ -15,6 +16,7 @@ defmodule Core.Patients do
   alias Core.Jobs.PackageSavePatientJob
   alias Core.Mongo
   alias Core.Observation
+  alias Core.Observations
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Encounters
@@ -283,8 +285,8 @@ defmodule Core.Patients do
             },
             links: links,
             encounter: encounter,
-            conditions: conditions,
-            observations: observations
+            conditions: Enum.map(conditions, &Conditions.create/1),
+            observations: Enum.map(observations, &Observations.create/1)
           }
 
           with :ok <- @kafka_producer.publish_encounter_package_event(event) do

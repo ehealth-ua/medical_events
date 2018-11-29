@@ -71,7 +71,8 @@ defmodule Core.Observations.Validations do
           legal_entity_id: client_id,
           messages: [
             type: "Employee is not an active doctor",
-            status: "Employee is not an active doctor"
+            status: "Employee is not an active doctor",
+            legal_entity_id: "Employee #{performer.identifier.value} doesn't belong to your legal entity"
           ]
         ]
       )
