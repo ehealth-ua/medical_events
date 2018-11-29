@@ -97,6 +97,7 @@ defmodule Core.Jobs do
     case get_by_id(id) do
       {:ok, _} ->
         {:ok, %{matched_count: 1, modified_count: 1}} = update(id, event.status, event.response, event.status_code)
+        :ok
 
       _ ->
         Logger.warn(fn -> "Can't get job by id #{id}" end)
