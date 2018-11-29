@@ -2,14 +2,12 @@ defmodule Core.Patients.Package do
   @moduledoc false
 
   alias Core.Condition
-  alias Core.Conditions
   alias Core.Jobs.JobUpdateStatusJob
   alias Core.Jobs.PackageSaveConditionsJob
   alias Core.Jobs.PackageSaveObservationsJob
   alias Core.Jobs.PackageSavePatientJob
   alias Core.Mongo
   alias Core.Observation
-  alias Core.Observations
 
   @collection "patients"
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
@@ -80,7 +78,6 @@ defmodule Core.Patients.Package do
   defp insert_conditions(links, [], _), do: links
 
   defp insert_conditions(links, conditions, patient_id) do
-    conditions = Enum.map(conditions, &Conditions.create/1)
     {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
 
     Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
@@ -97,7 +94,6 @@ defmodule Core.Patients.Package do
   defp insert_observations(links, [], _), do: links
 
   defp insert_observations(links, observations, patient_id) do
-    observations = Enum.map(observations, &Observations.create/1)
     {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
 
     Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->

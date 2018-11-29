@@ -116,15 +116,11 @@ defmodule Core.Patients.Episodes.Consumer do
     status = Episode.status(:active)
 
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
-      changes = Map.take(job.request_params, ~w(name managing_organization care_manager))
+      changes = Map.take(job.request_params, ~w(name care_manager))
 
       episode =
         %{episode | updated_by: job.user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_managing_organization(
-          job.request_params["managing_organization"],
-          client_id
-        )
         |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
 
       case Vex.errors(episode) do
@@ -140,13 +136,8 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
             |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
             |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
-            |> Mongo.add_to_set(
-              episode.managing_organization,
-              "episodes.#{episode.id}.managing_organization"
-            )
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
             |> Mongo.convert_to_uuid("updated_by")
 
           {:ok, %{matched_count: 1, modified_count: 1}} =

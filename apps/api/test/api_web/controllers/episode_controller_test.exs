@@ -155,12 +155,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       data = %{
         "name" => "ОРВИ 2019",
-        "managing_organization" => %{
-          "identifier" => %{
-            "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "legal_entity"}]},
-            "value" => UUID.uuid4()
-          }
-        },
         "care_manager" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "employee"}]},

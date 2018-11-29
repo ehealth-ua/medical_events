@@ -60,13 +60,6 @@ defmodule Core.Patients.Episodes.Validations do
     %{episode | managing_organization: %{managing_organization | identifier: identifier}}
   end
 
-  def validate_managing_organization(%Episode{} = episode, nil, _), do: episode
-
-  def validate_managing_organization(%Episode{} = episode, %{} = reference, client_id) do
-    managing_organization = Reference.create(reference)
-    validate_managing_organization(%{episode | managing_organization: managing_organization}, client_id)
-  end
-
   def validate_care_manager(%Episode{care_manager: care_manager} = episode, client_id) do
     identifier =
       care_manager.identifier
@@ -79,7 +72,7 @@ defmodule Core.Patients.Episodes.Validations do
           messages: [
             type: "Employee submitted as a care_manager is not a doctor",
             status: "Doctor submitted as a care_manager is not active",
-            legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
+            legal_entity_id: "Employee #{care_manager.identifier.value} doesn't belong to your legal entity"
           ]
         ]
       )

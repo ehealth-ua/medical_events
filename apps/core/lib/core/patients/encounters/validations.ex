@@ -47,7 +47,7 @@ defmodule Core.Patients.Encounters.Validations do
           messages: [
             type: "Employee submitted as a care_manager is not a doctor",
             status: "Doctor submitted as a care_manager is not active",
-            legal_entity_id: "User can create an episode only for the doctor that works for the same legal_entity"
+            legal_entity_id: "Employee #{performer.identifier.value} doesn't belong to your legal entity"
           ]
         ]
       )

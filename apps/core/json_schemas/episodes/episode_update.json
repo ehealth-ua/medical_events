@@ -61,108 +61,28 @@
           "additionalProperties": false
         }
       }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "name": {
+      "$ref": "#/definitions/name"
     },
-    "managing_organization": {
-      "type": "object",
-      "properties": {
-        "identifier": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "object",
-              "properties": {
-                "coding": {
-                  "type": "array",
-                  "minItems": 1,
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "system": {
-                        "type": "string",
-                        "enum": [
-                          "eHealth/resources"
-                        ]
-                      },
-                      "code": {
-                        "type": "string",
-                        "enum": [
-                          "legal_entity"
-                        ],
-                        "description": "Symbol in syntax defined by the system"
-                      }
-                    },
-                    "required": [
-                      "code",
-                      "system"
-                    ],
-                    "additionalProperties": false
-                  }
-                },
-                "text": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "coding"
-              ],
-              "additionalProperties": false
-            },
-            "value": {
-              "type": "string",
-              "description": "The value that is unique"
-            }
-          },
-          "required": [
-            "value"
-          ],
-          "additionalProperties": false
-        }
-      }
+    "care_manager": {
+      "$ref": "#/definitions/care_manager"
     }
   },
   "anyOf": [
     {
-      "type": "object",
-      "properties": {
-        "name": {
-          "$ref": "#/definitions/name"
-        },
-        "care_manager": {
-          "$ref": "#/definitions/care_manager"
-        },
-        "managing_organization": {
-          "$ref": "#/definitions/managing_organization"
-        }
-      },
       "required": [
-        "managing_organization",
-        "care_manager"
-      ],
-      "additionalProperties": false
+        "name"
+      ]
     },
     {
-      "type": "object",
-      "properties": {
-        "name": {
-          "$ref": "#/definitions/name"
-        },
-        "care_manager": {
-          "$ref": "#/definitions/care_manager"
-        }
-      },
-      "anyOf": [
-        {
-          "required": [
-            "name"
-          ]
-        },
-        {
-          "required": [
-            "care_manager"
-          ]
-        }
-      ],
-      "additionalProperties": false
+      "required": [
+        "care_manager"
+      ]
     }
-  ]
+  ],
+  "additionalProperties": false
 }

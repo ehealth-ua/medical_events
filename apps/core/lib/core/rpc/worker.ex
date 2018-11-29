@@ -6,27 +6,32 @@ defmodule Core.Rpc.Worker do
 
   @behaviour Core.Behaviours.WorkerBehaviour
 
-  def run(basename, module, function, args, attempt \\ 0) do
+  def run(basename, module, function, args, attempt \\ 0, skip_servers \\ []) do
     if attempt >= config()[:max_attempts] do
       {:error, :badrpc}
     else
-      do_run(basename, module, function, args, attempt)
+      do_run(basename, module, function, args, attempt, skip_servers)
     end
   end
 
-  defp do_run(basename, module, function, args, attempt) do
-    servers = Node.list() |> Enum.filter(&String.starts_with?(to_string(&1), basename))
+  defp do_run(basename, module, function, args, attempt, skip_servers) do
+    servers =
+      Node.list()
+      |> Enum.filter(&String.starts_with?(to_string(&1), basename))
+      |> Enum.filter(fn server -> server not in skip_servers end)
 
     case servers do
       # Invalid basename or all servers are down
       [] ->
-        run(basename, module, function, args, attempt + 1)
+        {:error, :badrpc}
 
       _ ->
-        case :rpc.call(Enum.random(servers), module, function, args) do
+        server = Enum.random(servers)
+
+        case :rpc.call(server, module, function, args) do
           # try a different server
           {:badrpc, :nodedown} ->
-            run(basename, module, function, args, attempt + 1)
+            run(basename, module, function, args, attempt + 1, [server | skip_servers])
 
           {:badrpc, error} ->
             Logger.error(inspect(error))
