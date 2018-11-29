@@ -16,7 +16,7 @@ defmodule SecondaryEventsConsumer.Application do
 
     gen_consumer_impl = Consumer
     consumer_group_name = "secondary_events_group"
-    topic_names = ["secondary_events", "update_job_events"]
+    topic_names = ["secondary_events", "job_update_events"]
 
     # List all child processes to be supervised
     children = [
