@@ -79,7 +79,9 @@ config :core, Core.Microservices.Casher,
     timeout: 30_000
   ]
 
-config :core, Core.Patients, pk_hash_salt: {:system, "PERSON_PK_HASH_SALT"}
+config :core, Core.Patients.Encryptor,
+  keyphrase: {:system, :string, "PERSON_PK_KEYPHRASE"},
+  ivphrase: {:system, :string, "PERSON_PK_IVPHRASE"}
 
 config :core, Core.Redis,
   host: {:system, "REDIS_HOST", "0.0.0.0"},
