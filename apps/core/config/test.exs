@@ -18,5 +18,9 @@ config :core,
   ],
   rpc_worker: WorkerMock
 
+config :core, Core.Patients.Encryptor,
+  keyphrase: "8grv872gt3trc92b",
+  ivphrase: "99yBSYB*Y99yr932"
+
 config :core, :mongo, url: "mongodb://localhost:27017/medical_data_test"
 config :core, :mongo_audit_log, url: "mongodb://localhost:27017/medical_events_audit_log"

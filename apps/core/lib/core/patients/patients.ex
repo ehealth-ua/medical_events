@@ -32,6 +32,7 @@ defmodule Core.Patients do
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
+  alias Core.Patients.Encryptor
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
@@ -47,12 +48,7 @@ defmodule Core.Patients do
   def get_pk_hash(nil), do: nil
 
   def get_pk_hash(value) do
-    :sha256
-    |> :crypto.hash_init()
-    |> :crypto.hash_update(value)
-    |> :crypto.hash_update(config()[:pk_hash_salt])
-    |> :crypto.hash_final()
-    |> Base.encode16()
+    Encryptor.encrypt(value)
   end
 
   def get_by_id(id) do
