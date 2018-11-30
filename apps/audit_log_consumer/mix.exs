@@ -29,7 +29,7 @@ defmodule AuditLogConsumer.MixProject do
   defp deps do
     [
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
-      {:toml, "~> 0.3.0"},
+      {:confex_config_provider, "~> 0.1.0"},
       {:core, in_umbrella: true}
     ]
   end

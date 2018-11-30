@@ -27,7 +27,7 @@ defmodule PersonConsumer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:toml, "~> 0.3.0"},
+      {:confex_config_provider, "~> 0.1.0"},
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:core, in_umbrella: true}
     ]

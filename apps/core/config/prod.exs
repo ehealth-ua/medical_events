@@ -5,3 +5,5 @@ use Mix.Config
 
 config :core, :mongo, url: "${DB_URL}"
 config :core, :mongo_audit_log, url: "${AUDIT_LOG_DB_URL}"
+
+config :kafka_ex, brokers: {:system, :string, "KAFKA_BROKERS"}

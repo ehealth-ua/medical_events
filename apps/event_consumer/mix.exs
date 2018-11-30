@@ -27,7 +27,7 @@ defmodule EventConsumer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:toml, "~> 0.3.0"},
+      {:confex_config_provider, "~> 0.1.0"},
       {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:core, in_umbrella: true}
