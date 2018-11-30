@@ -42,11 +42,7 @@ release :medical_events_api do
     ]
   )
 
-  set(
-    config_providers: [
-      {Toml.Provider, [path: "/app/config.toml"]}
-    ]
-  )
+  set(config_providers: [ConfexConfigProvider])
 end
 
 release :event_consumer do
@@ -60,11 +56,7 @@ release :event_consumer do
     ]
   )
 
-  set(
-    config_providers: [
-      {Toml.Provider, [path: "/app/config.toml"]}
-    ]
-  )
+  set(config_providers: [ConfexConfigProvider])
 end
 
 release :person_consumer do
@@ -78,11 +70,7 @@ release :person_consumer do
     ]
   )
 
-  set(
-    config_providers: [
-      {Toml.Provider, [path: "/app/config.toml"]}
-    ]
-  )
+  set(config_providers: [ConfexConfigProvider])
 end
 
 release :audit_log_consumer do
@@ -96,11 +84,7 @@ release :audit_log_consumer do
     ]
   )
 
-  set(
-    config_providers: [
-      {Toml.Provider, [path: "/app/config.toml"]}
-    ]
-  )
+  set(config_providers: [ConfexConfigProvider])
 end
 
 release :secondary_events_consumer do
@@ -114,9 +98,5 @@ release :secondary_events_consumer do
     ]
   )
 
-  set(
-    config_providers: [
-      {Toml.Provider, [path: "/app/config.toml"]}
-    ]
-  )
+  set(config_providers: [ConfexConfigProvider])
 end

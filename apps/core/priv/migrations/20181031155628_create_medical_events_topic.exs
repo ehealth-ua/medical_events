@@ -7,7 +7,7 @@ defmodule Core.Migrations.CreateMedicalEventsTopic do
     request = %{
       topic: "medical_events",
       num_partitions: 4,
-      replication_factor: 1,
+      replication_factor: 3,
       replica_assignment: [],
       config_entries: []
     }

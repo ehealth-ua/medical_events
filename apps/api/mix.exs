@@ -38,7 +38,7 @@ defmodule Api.Mixfile do
   defp deps do
     [
       {:core, in_umbrella: true},
-      {:toml, "~> 0.3.0"},
+      {:confex_config_provider, "~> 0.1.0"},
       {:plug, "~> 1.0"},
       {:plug_logger_json, "~> 0.6.0"},
       {:phoenix, "~> 1.3.3"},

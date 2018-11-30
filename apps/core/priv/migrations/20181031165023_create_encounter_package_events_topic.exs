@@ -7,7 +7,7 @@ defmodule Core.Migrations.CreateEncounterPackageEventsTopic do
     request = %{
       topic: "encounter_package_events",
       num_partitions: 4,
-      replication_factor: 1,
+      replication_factor: 3,
       replica_assignment: [],
       config_entries: []
     }

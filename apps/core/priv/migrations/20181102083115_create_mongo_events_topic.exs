@@ -7,7 +7,7 @@ defmodule Core.Migrations.CreateMongoEventsTopic do
     request = %{
       topic: "mongo_events",
       num_partitions: 4,
-      replication_factor: 1,
+      replication_factor: 3,
       replica_assignment: [],
       config_entries: []
     }
