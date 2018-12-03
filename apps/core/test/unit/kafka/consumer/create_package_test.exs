@@ -1251,12 +1251,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
-          "division" => %{
-            "identifier" => %{
-              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
-              "value" => UUID.uuid4()
-            }
-          },
           "performer" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},

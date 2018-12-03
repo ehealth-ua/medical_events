@@ -1458,8 +1458,7 @@
         "performer",
         "reasons",
         "diagnoses",
-        "actions",
-        "division"
+        "actions"
       ],
       "additionalProperties": false
     },
