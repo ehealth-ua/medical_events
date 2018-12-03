@@ -151,7 +151,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         "encounter" => %{
           "id" => encounter_id,
           "status" => "finished",
-          "date" => to_string(Date.utc_today()),
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
           "visit" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
@@ -307,7 +307,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         "encounter" => %{
           "id" => encounter_id,
           "status" => "finished",
-          "date" => to_string(Date.utc_today()),
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
           "visit" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
@@ -798,7 +798,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         "encounter" => %{
           "id" => encounter_id,
           "status" => "finished",
-          "date" => to_string(Date.utc_today()),
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
           "visit" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
@@ -1220,7 +1220,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         "encounter" => %{
           "id" => encounter_id,
           "status" => "finished",
-          "date" => to_string(Date.utc_today()),
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
           "visit" => %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},

@@ -217,8 +217,11 @@ defmodule Api.Web.EncounterControllerTest do
       refute encounter["id"] == UUID.binary_to_string!(encounter_out_1.id.binary)
       refute encounter["id"] == UUID.binary_to_string!(encounter_out_2.id.binary)
 
-      assert Date.compare(Date.from_iso8601!(date_from), Date.from_iso8601!(encounter["date"])) in [:lt, :eq]
-      assert Date.compare(Date.from_iso8601!(date_to), Date.from_iso8601!(encounter["date"])) in [:gt, :eq]
+      {:ok, datetime, _} = DateTime.from_iso8601(encounter["date"])
+      assert Date.compare(Date.from_iso8601!(date_from), DateTime.to_date(datetime)) in [:lt, :eq]
+
+      assert Date.compare(Date.from_iso8601!(date_to), DateTime.to_date(datetime)) in [:gt, :eq]
+
       assert get_in(encounter, ~w(episode identifier value)) == UUID.binary_to_string!(episode.identifier.value.binary)
     end
 
