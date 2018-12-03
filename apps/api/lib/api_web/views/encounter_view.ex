@@ -14,6 +14,7 @@ defmodule Api.Web.EncounterView do
     encounter_fields = ~w(
       status
       prescriptions
+      explanatory_letter
     )a
 
     encounter_data = %{
@@ -28,7 +29,8 @@ defmodule Api.Web.EncounterView do
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: ReferenceView.render(encounter.diagnoses),
       actions: ReferenceView.render(encounter.actions),
-      division: ReferenceView.render(encounter.division)
+      division: ReferenceView.render(encounter.division),
+      cancellation_reason: ReferenceView.render(encounter.cancellation_reason)
     }
 
     encounter

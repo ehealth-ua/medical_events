@@ -104,6 +104,9 @@ defmodule Core.Encounter do
         {"date", v} ->
           {:date, create_datetime(v)}
 
+        {"cancellation_reason", v} ->
+          {:cancellation_reason, CodeableConcept.create(v)}
+
         {k, v} ->
           {String.to_atom(k), v}
       end)
