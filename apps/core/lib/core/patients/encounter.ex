@@ -41,7 +41,7 @@ defmodule Core.Encounter do
 
     field(:diagnoses, presence: true, reference: [path: "diagnoses"])
     field(:service_provider)
-    field(:division, presence: true, reference: [path: "division"])
+    field(:division, reference: [path: "division"])
     field(:actions, presence: true, dictionary_reference: [path: "actions", referenced_field: "system", field: "code"])
     field(:signed_content_links)
     field(:performer, presence: true, reference: [path: "performer"])
@@ -70,6 +70,9 @@ defmodule Core.Encounter do
 
         {"visit", v} ->
           {:visit, Reference.create(v)}
+
+        {"division", nil} ->
+          {:division, nil}
 
         {"division", v} ->
           {:division, Reference.create(v)}
