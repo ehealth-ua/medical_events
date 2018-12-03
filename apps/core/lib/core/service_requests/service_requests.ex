@@ -1,25 +1,89 @@
 defmodule Core.ServiceRequests do
   @moduledoc false
 
+  alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Mongo
+  alias Core.Paging
   alias Core.Patients
+  alias Core.Patients.Encounters
+  alias Core.Patients.Episodes
   alias Core.Patients.Validators
   alias Core.Reference
+  alias Core.Search
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
+  alias Scrivener.Page
 
   @collection ServiceRequest.metadata().collection
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
+
+  def list(%{"patient_id_hash" => patient_id_hash, "episode_id" => episode_id} = params) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         {:ok, %Episode{}} <- Episodes.get_by_id(patient_id_hash, episode_id),
+         encounters <- Encounters.get_episode_encounters(patient_id_hash, Mongo.string_to_uuid(episode_id)),
+         true <-
+           Enum.any?(encounters, fn %{"episode_id" => encounter_episode_id} ->
+             to_string(encounter_episode_id) == episode_id
+           end) do
+      paging_params = Map.take(params, ["page", "page_size"])
+
+      with [_ | _] = pipeline <-
+             search_service_requests_pipe(params, Enum.map(encounters, &Map.get(&1, "encounter_id"))),
+           %Page{entries: service_requests} = page <-
+             Paging.paginate(
+               :aggregate,
+               @collection,
+               pipeline,
+               paging_params
+             ) do
+        {:ok, %Page{page | entries: Enum.map(service_requests, &ServiceRequest.create/1)}}
+      else
+        _ -> {:ok, Paging.create()}
+      end
+    else
+      false -> nil
+      error -> error
+    end
+  end
+
+  defp search_service_requests_pipe(%{"patient_id_hash" => patient_id_hash} = params, encounters) do
+    %{"$match" => %{"subject" => patient_id_hash, "context.identifier.value" => %{"$in" => encounters}}}
+    |> Search.add_param(params["status"], ["$match", "status"])
+    |> List.wrap()
+    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+  end
+
+  def get_by_episode_id(patient_id_hash, episode_id, id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         {:ok, %Episode{}} <- Episodes.get_by_id(patient_id_hash, episode_id),
+         {:ok, %ServiceRequest{} = service_request} <- get_by_id(id),
+         encounters <- Encounters.get_episode_encounters(patient_id_hash, Mongo.string_to_uuid(episode_id)),
+         true <-
+           Enum.any?(encounters, fn %{"episode_id" => encounter_episode_id} ->
+             to_string(encounter_episode_id) == episode_id
+           end),
+         true <-
+           Enum.any?(encounters, fn %{"encounter_id" => encounter_id} ->
+             to_string(encounter_id) == to_string(service_request.context.identifier.value)
+           end) do
+      {:ok, service_request}
+    else
+      false -> nil
+      error -> error
+    end
+  end
 
   def get_by_id(id) do
     @collection

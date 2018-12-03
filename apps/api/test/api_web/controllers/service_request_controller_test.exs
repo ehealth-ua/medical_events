@@ -2,9 +2,142 @@ defmodule Api.Web.ServiceRequestControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+  alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
   import Mox
+
+  describe "list service requests" do
+    test "patient not found", %{conn: conn} do
+      conn = get(conn, service_request_path(conn, :index, UUID.uuid4(), UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = get(conn, service_request_path(conn, :index, patient_id, UUID.uuid4()))
+      assert json_response(conn, 409)
+    end
+
+    test "success get service_request", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      service_request =
+        insert(:service_request,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter"),
+          subject: patient_id_hash
+        )
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+      conn = get(conn, service_request_path(conn, :index, patient_id, episode_id))
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+  end
+
+  describe "show service request" do
+    test "patient not found", %{conn: conn} do
+      conn = get(conn, service_request_path(conn, :show, UUID.uuid4(), UUID.uuid4(), UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = get(conn, service_request_path(conn, :show, patient_id, UUID.uuid4(), UUID.uuid4()))
+      assert json_response(conn, 409)
+    end
+
+    test "service_request doesn't belong to episode", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      service_request = insert(:service_request)
+      id = to_string(service_request._id)
+
+      conn = get(conn, service_request_path(conn, :show, patient_id, episode_id, id))
+      assert json_response(conn, 404)
+    end
+
+    test "success get service_request", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      service_request =
+        insert(:service_request, context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter"))
+
+      id = to_string(service_request._id)
+
+      conn = get(conn, service_request_path(conn, :show, patient_id, episode_id, id))
+      assert response = json_response(conn, 200)
+      assert %{"data" => %{"id" => ^id}} = response
+    end
+  end
 
   describe "create service request" do
     test "patient not found", %{conn: conn} do
