@@ -1384,7 +1384,7 @@
         },
         "date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "division": {
           "type": "object",
