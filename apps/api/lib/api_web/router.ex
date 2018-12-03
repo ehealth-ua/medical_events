@@ -52,6 +52,14 @@ defmodule ApiWeb.Router do
     patch("/patients/:patient_id/episodes/:id/actions/cancel", EpisodeController, :cancel)
     patch("/patients/:patient_id/encounter_package", EncounterController, :cancel)
 
+    get(
+      "/patients/:patient_id/episodes/:episode_id/service_requests/:service_request_id",
+      ServiceRequestController,
+      :show
+    )
+
+    get("/patients/:patient_id/episodes/:episode_id/service_requests", ServiceRequestController, :index)
+
     scope "/patients/:patient_id/service_requests" do
       post("/", ServiceRequestController, :create)
       patch("/:service_request_id/actions/use", ServiceRequestController, :use)

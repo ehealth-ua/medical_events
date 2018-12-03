@@ -4,9 +4,24 @@ defmodule Api.Web.ServiceRequestController do
   use ApiWeb, :controller
 
   alias Api.Web.JobView
+  alias Core.ServiceRequest
   alias Core.ServiceRequests
+  alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
+
+  def index(conn, params) do
+    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.list(params) do
+      render(conn, "index.json", service_requests: entries, paging: paging)
+    end
+  end
+
+  def show(conn, %{"patient_id_hash" => patient_id_hash, "episode_id" => episode_id, "service_request_id" => id}) do
+    with {:ok, %ServiceRequest{} = service_request} <-
+           ServiceRequests.get_by_episode_id(patient_id_hash, episode_id, id) do
+      render(conn, "show.json", service_request: service_request)
+    end
+  end
 
   def create(conn, params) do
     with {:ok, job} <-

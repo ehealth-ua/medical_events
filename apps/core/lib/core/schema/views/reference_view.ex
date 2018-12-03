@@ -18,8 +18,10 @@ defmodule Core.ReferenceView do
   alias Core.Patients.Immunizations.VaccinationProtocol
   alias Core.Period
   alias Core.Reference
+  alias Core.ServiceRequests.Occurence
   alias Core.Source
   alias Core.Stage
+  alias Core.StatusHistory
   alias Core.UUIDView
 
   def render(%Reference{} = reference) do
@@ -141,6 +143,12 @@ defmodule Core.ReferenceView do
     )a)
   end
 
+  def render(%StatusHistory{} = status_history) do
+    status_history
+    |> Map.take(~w(status inserted_at)a)
+    |> Map.merge(%{status_reason: render(status_history.status_reason)})
+  end
+
   def render(nil), do: nil
 
   def render(references) when is_list(references) do
@@ -195,6 +203,14 @@ defmodule Core.ReferenceView do
 
   def render_source(%Source{type: type, value: value}) do
     %{String.to_atom(type) => render(value)}
+  end
+
+  def render_occurence(%Occurence{type: "date_time", value: value}) do
+    %{"datetime" => DateView.render_datetime(value)}
+  end
+
+  def render_occurence(%Occurence{type: "period", value: value}) do
+    %{"period" => render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do
