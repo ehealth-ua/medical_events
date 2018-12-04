@@ -2,6 +2,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
   @moduledoc false
 
   alias Core.DateView
+  alias Core.DiagnosisView
   alias Core.ReferenceView
   alias Core.UUIDView
 
@@ -20,7 +21,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         encounter.incoming_referrals |> ReferenceView.render() |> Enum.map(&Map.delete(&1, :display_value)),
       performer: ReferenceView.render(encounter.performer),
       reasons: ReferenceView.render(encounter.reasons),
-      diagnoses: ReferenceView.render(encounter.diagnoses),
+      diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
       actions: ReferenceView.render(encounter.actions),
       division: ReferenceView.render(encounter.division),
       prescriptions: encounter.prescriptions

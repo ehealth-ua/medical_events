@@ -5,6 +5,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Condition
   alias Core.Conditions
   alias Core.DateView
+  alias Core.DiagnosisView
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
@@ -528,7 +529,7 @@ defmodule Core.Patients.Encounters.Cancel do
       incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
       performer: render(encounter.performer),
       reasons: ReferenceView.render(encounter.reasons),
-      diagnoses: ReferenceView.render(encounter.diagnoses),
+      diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
       actions: ReferenceView.render(encounter.actions),
       division: render(encounter.division)
     }

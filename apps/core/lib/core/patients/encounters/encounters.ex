@@ -80,6 +80,17 @@ defmodule Core.Patients.Encounters do
     end
   end
 
+  def fill_up_diagnoses_codes(%Encounter{diagnoses: diagnoses} = encounter) do
+    diagnoses =
+      Enum.map(diagnoses, fn diagnosis ->
+        with [{_, condition}] <- :ets.lookup(:message_cache, "condition_#{diagnosis.condition.identifier.value}") do
+          %{diagnosis | code: Map.get(condition, "code")}
+        end
+      end)
+
+    %{encounter | diagnoses: diagnoses}
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
     pipeline =
       [
@@ -140,25 +151,5 @@ defmodule Core.Patients.Encounters do
     else
       _ -> nil
     end
-  end
-
-  defp add_search_param(nil, _, _, _), do: []
-  defp add_search_param(pipeline, nil, _, _) when is_list(pipeline), do: pipeline
-
-  defp add_search_param(pipeline, value, path, operator) when is_list(pipeline) do
-    pipeline ++
-      [
-        %{
-          "$project" => %{
-            "encounters" => %{
-              "$filter" => %{
-                "input" => "$encounters",
-                "as" => "item",
-                "cond" => %{operator => ["$$item.v.#{path}", value]}
-              }
-            }
-          }
-        }
-      ]
   end
 end
