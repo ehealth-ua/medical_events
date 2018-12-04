@@ -610,7 +610,8 @@
         },
         "rank": {
           "type": "number",
-          "description": "Ranking of the diagnosis (for each role type)"
+          "description": "Ranking of the diagnosis (for each role type)",
+          "maximum": 10
         }
       },
       "required": [

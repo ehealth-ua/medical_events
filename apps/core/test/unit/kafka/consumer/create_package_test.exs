@@ -178,7 +178,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               },
               "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
+              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]},
+              "rank" => 10
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
