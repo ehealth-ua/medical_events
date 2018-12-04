@@ -138,7 +138,12 @@ defmodule Core.Patients do
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content) do
         visit_id = if is_map(visit), do: visit.id
-        encounter = Encounters.fill_up_encounter_performer(encounter)
+
+        encounter =
+          encounter
+          |> Encounters.fill_up_encounter_performer()
+          |> Encounters.fill_up_diagnoses_codes()
+
         resource_name = "#{encounter.id}/create"
         files = [{'signed_content.txt', job.signed_data}]
         {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])

@@ -14,9 +14,11 @@ defmodule Core.Validators.DiagnosesCode do
 
     results =
       Enum.any?(diagnoses, fn diagnosis ->
-        Enum.find(diagnosis.code.coding, fn coding ->
-          coding.system == required_system
-        end)
+        ets_key = "condition_#{diagnosis.condition.identifier.value}"
+
+        with [{_, condition}] <- :ets.lookup(:message_cache, ets_key) do
+          condition["code"].coding |> hd |> Map.get(:system) == required_system
+        end
       end)
 
     if results do

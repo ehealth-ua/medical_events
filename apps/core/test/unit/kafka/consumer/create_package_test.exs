@@ -178,7 +178,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               },
               "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]},
               "rank" => 10
             }
           ],
@@ -334,8 +333,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
@@ -362,7 +360,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/condition_codes"}]},
+            "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
@@ -720,7 +718,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  |> to_string()
 
         assert 2 == length(set_data["immunizations.#{db_immunization_id}.reactions"])
-
         assert set_data["immunizations.#{immunization_id2}.reactions"]
 
         :ok
@@ -825,8 +822,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICPC2/condition_codes"}]}
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
@@ -1235,7 +1231,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           },
           "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "inpatient", "system" => "eHealth/encounter_types"}]},
+          "type" => %{"coding" => [%{"code" => "outpatient", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],
@@ -1247,8 +1243,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
-              "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]}
+              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],

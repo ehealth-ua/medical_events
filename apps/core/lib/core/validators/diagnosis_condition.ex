@@ -2,25 +2,24 @@ defmodule Core.Validators.DiagnosisCondition do
   @moduledoc false
 
   use Vex.Validator
-  alias Core.Condition
-  alias Core.Mongo
+  alias Core.Conditions
 
   def validate(value, options) do
+    ets_key = "condition_#{value}"
     conditions = Keyword.get(options, :conditions)
-    condition_ids = Enum.map(conditions, &Map.get(&1, :_id))
     patient_id_hash = Keyword.get(options, :patient_id_hash)
+    matched_condition = Enum.find(conditions, &(Map.get(&1, :_id) == value))
 
-    if value in condition_ids do
+    if matched_condition do
+      add_to_cache(ets_key, %{"code" => matched_condition.code})
       :ok
     else
-      case Mongo.find_one(Condition.metadata().collection, %{
-             "_id" => Mongo.string_to_uuid(value),
-             "patient_id" => patient_id_hash
-           }) do
+      case Conditions.get(patient_id_hash, value) do
         nil ->
           error(options, "Condition with such id is not found")
 
-        _ ->
+        {:ok, condition} ->
+          add_to_cache(ets_key, %{"code" => condition.code})
           :ok
       end
     end
@@ -28,5 +27,9 @@ defmodule Core.Validators.DiagnosisCondition do
 
   def error(options, error_message) do
     {:error, message(options, error_message)}
+  end
+
+  defp add_to_cache(ets_key, condition) do
+    :ets.insert(:message_cache, {ets_key, condition})
   end
 end
