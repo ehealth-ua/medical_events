@@ -3,6 +3,7 @@ defmodule Core.Patients.Encounters.Validations do
 
   import Core.Schema, only: [add_validations: 3]
 
+  alias Core.CodeableConcept
   alias Core.Encounter
   alias Core.Headers
   alias Core.Microservices.DigitalSignature
@@ -75,8 +76,9 @@ defmodule Core.Patients.Encounters.Validations do
     %{encounter | division: %{division | identifier: identifier}}
   end
 
-  def validate_diagnoses(%Encounter{} = encounter, conditions, patient_id_hash) do
+  def validate_diagnoses(%Encounter{} = encounter, conditions, %CodeableConcept{} = type, patient_id_hash) do
     diagnoses = encounter.diagnoses
+    type_code = type.coding |> hd |> Map.get(:code)
 
     diagnoses =
       Enum.map(diagnoses, fn diagnosis ->
@@ -95,7 +97,8 @@ defmodule Core.Patients.Encounters.Validations do
     %{encounter | diagnoses: diagnoses}
     |> add_validations(
       :diagnoses,
-      diagnoses_role: [type: "CC", message: "Encounter must have at least one chief complaint"]
+      diagnoses_role: [type: "CC", message: "Encounter must have at least one chief complaint"],
+      diagnoses_code: [code: type_code]
     )
   end
 
