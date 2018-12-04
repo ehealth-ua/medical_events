@@ -81,8 +81,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
               entry_type: "json_data_property",
               rules: [
                 %{
-                  description:
-                    "User is not allowed to perform actions with an episode that belongs to another legal entity",
+                  description: "Managing_organization does not correspond to user's legal_entity",
                   params: [],
                   rule: :invalid
                 }
