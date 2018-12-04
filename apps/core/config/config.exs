@@ -114,7 +114,8 @@ config :vex,
       drfo: Core.Validators.Drfo,
       encounter_reference: Core.Validators.EncounterReference,
       episode_reference: Core.Validators.EpisodeReference,
-      condition_reference: Core.Validators.ConditionReference
+      condition_reference: Core.Validators.ConditionReference,
+      diagnoses_code: Core.Validators.DiagnosesCode
     ],
     Vex.Validators
   ]

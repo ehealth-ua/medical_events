@@ -402,7 +402,7 @@ defmodule Core.Patients do
       |> EncounterValidations.validate_visit(visit, patient_id_hash)
       |> EncounterValidations.validate_performer(client_id)
       |> EncounterValidations.validate_division(client_id)
-      |> EncounterValidations.validate_diagnoses(conditions, patient_id_hash)
+      |> EncounterValidations.validate_diagnoses(conditions, encounter.type, patient_id_hash)
       |> EncounterValidations.validate_date()
 
     case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do

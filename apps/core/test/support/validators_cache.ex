@@ -28,7 +28,7 @@ defmodule Core.Validators.CacheTest do
        %{"name" => "eHealth/body_sites", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/condition_severities", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/condition_stages", "values" => %{"1" => "1"}},
-       %{"name" => "eHealth/encounter_types", "values" => %{"AMB" => "AMB"}},
+       %{"name" => "eHealth/encounter_types", "values" => %{"inpatient" => "inpatient", "outpatient" => "outpatient"}},
        %{
          "name" => "eHealth/episode_closing_reasons",
          "values" => %{
