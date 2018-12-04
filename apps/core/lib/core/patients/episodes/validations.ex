@@ -47,7 +47,7 @@ defmodule Core.Patients.Episodes.Validations do
         :value,
         value: [
           equals: client_id,
-          message: "User is not allowed to perform actions with an episode that belongs to another legal entity"
+          message: "Managing_organization does not correspond to user's legal_entity"
         ],
         legal_entity: [
           status: "ACTIVE",

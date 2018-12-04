@@ -1133,7 +1133,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               entry_type: "json_data_property",
               rules: [
                 %{
-                  description: "User is not allowed to change objects, created by another legal_entity",
+                  description: "Managing_organization does not correspond to user's legal_entity",
                   params: [],
                   rule: :invalid
                 }

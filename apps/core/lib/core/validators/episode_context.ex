@@ -34,7 +34,7 @@ defmodule Core.Validators.EpisodeContext do
         :ok
 
       [%{"_id" => ^episode_mongo_id, "status" => @status_active}] ->
-        error(options, "User is not allowed to change objects, created by another legal_entity")
+        error(options, "Managing_organization does not correspond to user's legal_entity")
 
       [%{"_id" => ^episode_mongo_id}] ->
         error(options, "Episode is not active")
