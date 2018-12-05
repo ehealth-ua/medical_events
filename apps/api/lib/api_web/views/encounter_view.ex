@@ -15,6 +15,8 @@ defmodule Api.Web.EncounterView do
       status
       prescriptions
       explanatory_letter
+      inserted_at
+      updated_at
     )a
 
     encounter_data = %{

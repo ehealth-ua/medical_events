@@ -349,10 +349,12 @@
           "$ref": "#/definitions/uuid"
         },
         "inserted_at": {
-          "type": [
-            "string",
-            "null"
-          ]
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
         },
         "status": {
           "type": "string",
@@ -757,7 +759,8 @@
             "context",
             "date",
             "primary_source",
-            "inserted_at"
+            "inserted_at",
+            "updated_at"
           ]
         },
         {

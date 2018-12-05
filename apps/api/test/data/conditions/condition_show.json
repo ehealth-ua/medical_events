@@ -491,6 +491,14 @@
             },
             "additionalProperties": false
           }
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "allOf": [
@@ -502,7 +510,9 @@
             "code",
             "clinical_status",
             "verification_status",
-            "onset_date"
+            "onset_date",
+            "inserted_at",
+            "updated_at"
           ]
         },
         {

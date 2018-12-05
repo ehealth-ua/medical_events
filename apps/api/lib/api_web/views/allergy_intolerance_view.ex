@@ -19,6 +19,8 @@ defmodule Api.Web.AllergyIntoleranceView do
       category
       criticality
       primary_source
+      inserted_at
+      updated_at
     )a
 
     allergy_intolerance_data = %{
