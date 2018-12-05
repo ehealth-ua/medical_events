@@ -293,6 +293,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       observation_id = UUID.uuid4()
       observation_id2 = UUID.uuid4()
       employee_id = UUID.uuid4()
+      service_request = insert(:service_request)
 
       start_datetime =
         DateTime.utc_now()
@@ -349,7 +350,15 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => employee_id
             }
           },
-          "prescriptions" => "Дієта №1"
+          "prescriptions" => "Дієта №1",
+          "incoming_referrals" => [
+            %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "referral", "system" => "eHealth/resources"}]},
+                "value" => to_string(service_request._id)
+              }
+            }
+          ]
         },
         "conditions" => [
           %{
