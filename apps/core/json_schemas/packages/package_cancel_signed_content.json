@@ -1343,7 +1343,7 @@
         },
         "date": {
           "type": "string",
-          "format": "date"
+          "format": "date-time"
         },
         "explanatory_letter": {
           "type": "string"

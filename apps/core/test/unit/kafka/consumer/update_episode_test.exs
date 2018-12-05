@@ -65,7 +65,16 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
       patient = insert(:patient, _id: patient_id_hash)
       episode_id = patient.episodes |> Map.keys() |> hd
-      client_id = UUID.uuid4()
+
+      client_id =
+        patient.episodes
+        |> Map.values()
+        |> hd
+        |> Map.get(:managing_organization)
+        |> Map.get(:identifier)
+        |> Map.get(:value)
+        |> to_string()
+
       expect_doctor(client_id)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->

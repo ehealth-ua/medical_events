@@ -56,6 +56,8 @@ defmodule Core.Patients.Encounters.Validations do
     %{encounter | performer: %{performer | identifier: identifier}}
   end
 
+  def validate_division(%Encounter{division: nil} = encounter, _), do: encounter
+
   def validate_division(%Encounter{} = encounter, client_id) do
     division = encounter.division
 

@@ -8,7 +8,7 @@ defmodule Core.Validators.LegalEntity do
 
   def validate(legal_entity_id, options) do
     headers = [
-      {String.to_atom(Headers.consumer_metadata()), Jason.encode!(%{"client_id" => legal_entity_id})}
+      {String.to_atom(Headers.consumer_metadata()), Jason.encode!(%{"client_id" => to_string(legal_entity_id)})}
     ]
 
     ets_key = "legal_entity_#{legal_entity_id}"

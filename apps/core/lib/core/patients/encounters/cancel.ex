@@ -521,7 +521,7 @@ defmodule Core.Patients.Encounters.Cancel do
   defp render(:encounter, encounter) do
     %{
       id: UUIDView.render(encounter.id),
-      date: DateView.render_date(encounter.date),
+      date: DateView.render_datetime(encounter.date),
       visit: ReferenceView.render(encounter.visit),
       episode: render(encounter.episode),
       class: ReferenceView.render(encounter.class),

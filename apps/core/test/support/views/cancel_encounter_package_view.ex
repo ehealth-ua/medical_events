@@ -10,7 +10,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
     %{
       id: UUIDView.render(encounter.id),
       status: encounter.status,
-      date: Date.to_string(encounter.date),
+      date: DateTime.to_iso8601(encounter.date),
       explanatory_letter: encounter.explanatory_letter,
       cancellation_reason: ReferenceView.render(encounter.cancellation_reason),
       visit: encounter.visit |> ReferenceView.render() |> Map.delete(:display_value),
