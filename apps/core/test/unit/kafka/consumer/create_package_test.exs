@@ -354,7 +354,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           "incoming_referrals" => [
             %{
               "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "referral", "system" => "eHealth/resources"}]},
+                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
                 "value" => to_string(service_request._id)
               }
             }

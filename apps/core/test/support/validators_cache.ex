@@ -50,7 +50,7 @@ defmodule Core.Validators.CacheTest do
            "1" => "1",
            "employee" => "test",
            "condition" => "test",
-           "referral" => "test",
+           "service_request" => "test",
            "encounter" => "test",
            "legal_entity" => "test"
          }

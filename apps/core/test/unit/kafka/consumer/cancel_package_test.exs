@@ -303,7 +303,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
-    test "faild when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
+    test "failed when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
       expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->

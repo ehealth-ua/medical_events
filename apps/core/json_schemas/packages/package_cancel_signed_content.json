@@ -1566,7 +1566,7 @@
                             "code": {
                               "type": "string",
                               "enum": [
-                                "referral"
+                                "service_request"
                               ],
                               "description": "Symbol in syntax defined by the system"
                             }
