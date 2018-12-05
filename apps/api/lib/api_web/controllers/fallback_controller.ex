@@ -13,8 +13,8 @@ defmodule Api.Web.FallbackController do
 
   def call(conn, {:error, {:access_denied, reason}}) do
     conn
-    |> put_status(:unauthorized)
-    |> render(Error, :"401", %{message: reason})
+    |> put_status(:forbidden)
+    |> render(Error, :"403", %{message: reason})
   end
 
   def call(conn, {:error, errors}) when is_list(errors) do

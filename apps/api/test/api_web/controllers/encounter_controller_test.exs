@@ -122,7 +122,7 @@ defmodule Api.Web.EncounterControllerTest do
 
       conn
       |> get(encounter_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "invalid encounter uuid", %{conn: conn} do
@@ -231,7 +231,7 @@ defmodule Api.Web.EncounterControllerTest do
 
       conn
       |> get(encounter_path(conn, :index, UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "get patient when no encounters", %{conn: conn} do
