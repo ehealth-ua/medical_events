@@ -383,7 +383,7 @@ defmodule Api.Web.EpisodeControllerTest do
 
       conn
       |> get(episode_path(conn, :show, "invalid-uuid", UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "get episode invalid episode uuid", %{conn: conn} do

@@ -48,7 +48,7 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       conn
       |> get(immunization_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "invalid immunization uuid", %{conn: conn} do
@@ -568,7 +568,7 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       conn
       |> get(immunization_path(conn, :index, UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "get patient when no immunizations", %{conn: conn} do

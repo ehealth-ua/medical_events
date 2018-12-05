@@ -73,7 +73,7 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
       invalid_patient_id = UUID.uuid4()
       invalid_patient_id_hash = Patients.get_pk_hash(invalid_patient_id)
 
-      assert %Plug.Conn{status: 401, resp_body: resp_body} =
+      assert %Plug.Conn{status: 403, resp_body: resp_body} =
                conn
                |> Map.update!(
                  :params,
@@ -93,7 +93,7 @@ defmodule Api.Web.Plugs.AuthorizePartyTest do
       insert(:patient, _id: patient_id_hash)
       expect_get_person_data(patient_id)
 
-      assert %Plug.Conn{status: 401, resp_body: resp_body} =
+      assert %Plug.Conn{status: 403, resp_body: resp_body} =
                conn
                |> Map.update!(
                  :params,

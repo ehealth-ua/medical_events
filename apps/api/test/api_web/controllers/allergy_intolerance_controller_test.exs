@@ -50,7 +50,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
       conn
       |> get(allergy_intolerance_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "invalid allergy intolerance uuid", %{conn: conn} do
@@ -578,7 +578,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
       conn
       |> get(allergy_intolerance_path(conn, :index, UUID.uuid4()))
-      |> json_response(401)
+      |> json_response(403)
     end
 
     test "get patient when no allergy intolerances", %{conn: conn} do
