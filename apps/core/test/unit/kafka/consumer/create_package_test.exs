@@ -164,8 +164,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "inpatient", "system" => "eHealth/encounter_types"}]},
+          "class" => %{"code" => "inpatient", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],
@@ -321,8 +321,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "inpatient", "system" => "eHealth/encounter_types"}]},
+          "class" => %{"code" => "inpatient", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],
@@ -818,8 +818,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "outpatient", "system" => "eHealth/encounter_types"}]},
+          "class" => %{"code" => "outpatient", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],
@@ -1239,8 +1239,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
-          "type" => %{"coding" => [%{"code" => "outpatient", "system" => "eHealth/encounter_types"}]},
+          "class" => %{"code" => "outpatient", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
           ],

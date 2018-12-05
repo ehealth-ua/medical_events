@@ -17,7 +17,10 @@ defmodule Core.Validators.CacheTest do
        %{"name" => "eHealth/observation_categories", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/ICPC2/actions", "values" => %{"action" => "action"}},
        %{"name" => "eHealth/ICPC2/reasons", "values" => %{"reason" => "reason", "A02" => "A02"}},
-       %{"name" => "eHealth/encounter_classes", "values" => %{"AMB" => "AMB"}},
+       %{
+         "name" => "eHealth/encounter_classes",
+         "values" => %{"inpatient" => "inpatient", "outpatient" => "outpatient"}
+       },
        %{"name" => "eHealth/allergy_intolerances_codes", "values" => %{"227493005" => "227493005", "1" => "1"}},
        %{"name" => "eHealth/vaccine_codes", "values" => %{"FLUVAX" => "FLUVAX"}},
        %{"name" => "eHealth/vaccination_dose_statuse_reasons", "values" => %{"coldchbrk" => "coldchbrk"}},
@@ -28,7 +31,7 @@ defmodule Core.Validators.CacheTest do
        %{"name" => "eHealth/body_sites", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/condition_severities", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/condition_stages", "values" => %{"1" => "1"}},
-       %{"name" => "eHealth/encounter_types", "values" => %{"inpatient" => "inpatient", "outpatient" => "outpatient"}},
+       %{"name" => "eHealth/encounter_types", "values" => %{"AMB" => "AMB"}},
        %{
          "name" => "eHealth/episode_closing_reasons",
          "values" => %{

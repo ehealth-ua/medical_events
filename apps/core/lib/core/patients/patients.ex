@@ -407,7 +407,7 @@ defmodule Core.Patients do
       |> EncounterValidations.validate_visit(visit, patient_id_hash)
       |> EncounterValidations.validate_performer(client_id)
       |> EncounterValidations.validate_division(client_id)
-      |> EncounterValidations.validate_diagnoses(conditions, encounter.type, patient_id_hash)
+      |> EncounterValidations.validate_diagnoses(conditions, encounter.class, patient_id_hash)
       |> EncounterValidations.validate_date()
       |> EncounterValidations.validate_incoming_referrals()
 
