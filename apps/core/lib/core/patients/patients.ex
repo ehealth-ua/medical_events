@@ -409,6 +409,7 @@ defmodule Core.Patients do
       |> EncounterValidations.validate_division(client_id)
       |> EncounterValidations.validate_diagnoses(conditions, encounter.type, patient_id_hash)
       |> EncounterValidations.validate_date()
+      |> EncounterValidations.validate_incoming_referrals()
 
     case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do
       [] ->

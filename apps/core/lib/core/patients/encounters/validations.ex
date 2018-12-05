@@ -102,6 +102,18 @@ defmodule Core.Patients.Encounters.Validations do
     )
   end
 
+  def validate_incoming_referrals(%Encounter{} = encounter) do
+    incoming_referrals = encounter.incoming_referrals || []
+
+    incoming_referrals =
+      Enum.map(incoming_referrals, fn referral ->
+        identifier = referral.identifier
+        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [])}
+      end)
+
+    %{encounter | incoming_referrals: incoming_referrals}
+  end
+
   def validate_date(%Encounter{} = encounter) do
     max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:encounter_max_days_passed]
 
