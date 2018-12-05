@@ -122,6 +122,7 @@ defmodule Core.Patients.Episodes.Consumer do
         %{episode | updated_by: job.user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
         |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
+        |> EpisodeValidations.validate_managing_organization(client_id)
 
       case Vex.errors(episode) do
         [] ->
