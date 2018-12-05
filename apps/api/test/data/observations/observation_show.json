@@ -905,6 +905,14 @@
               }
             }
           }
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "allOf": [
@@ -916,7 +924,9 @@
             "categories",
             "code",
             "issued",
-            "primary_source"
+            "primary_source",
+            "inserted_at",
+            "updated_at"
           ]
         },
         {

@@ -19,6 +19,7 @@ defmodule Api.Web.ImmunizationView do
       manufacturer
       lot_number
       inserted_at
+      updated_at
     )a
 
     immunization_data = %{

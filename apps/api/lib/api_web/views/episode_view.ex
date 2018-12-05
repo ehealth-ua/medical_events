@@ -16,20 +16,25 @@ defmodule Api.Web.EpisodeView do
 
   def render("show.json", %{episode: episode}) do
     episode
-    |> Map.take(~w(type status name explanatory_letter closing_summary inserted_at)a)
-    |> Map.put(:status_reason, ReferenceView.render(episode.status_reason))
-    |> Map.put(:id, UUIDView.render(episode.id))
-    |> Map.put(:period, ReferenceView.render(episode.period))
-    |> Map.put(
-      :diagnoses_history,
-      DiagnosesHistoryView.render("diagnoses_history.json", diagnoses_history: episode.diagnoses_history)
-    )
-    |> Map.put(:managing_organization, ReferenceView.render(episode.managing_organization))
-    |> Map.put(:care_manager, ReferenceView.render(episode.care_manager))
-    |> Map.put(
-      :status_history,
-      StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history)
-    )
-    |> Map.put(:current_diagnoses, DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || []))
+    |> Map.take(~w(
+      type
+      status
+      name
+      explanatory_letter
+      closing_summary
+      inserted_at
+      updated_at
+    )a)
+    |> Map.merge(%{
+      id: UUIDView.render(episode.id),
+      status_reason: ReferenceView.render(episode.status_reason),
+      period: ReferenceView.render(episode.period),
+      diagnoses_history:
+        DiagnosesHistoryView.render("diagnoses_history.json", diagnoses_history: episode.diagnoses_history),
+      managing_organization: ReferenceView.render(episode.managing_organization),
+      care_manager: ReferenceView.render(episode.care_manager),
+      status_history: StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history),
+      current_diagnoses: DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || [])
+    })
   end
 end

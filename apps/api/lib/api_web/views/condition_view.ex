@@ -16,6 +16,8 @@ defmodule Api.Web.ConditionView do
       clinical_status
       verification_status
       primary_source
+      inserted_at
+      updated_at
     )a
 
     condition_data = %{

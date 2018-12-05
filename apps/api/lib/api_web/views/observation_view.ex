@@ -16,6 +16,8 @@ defmodule Api.Web.ObservationView do
       primary_source
       comment
       issued
+      inserted_at
+      updated_at
     )a
 
     observation_data = %{

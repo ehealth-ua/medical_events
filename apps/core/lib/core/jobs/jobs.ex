@@ -35,6 +35,10 @@ defmodule Core.Jobs do
 
     with :ok <- @kafka_producer.publish_job_update_status_event(event) do
       :ok
+    else
+      error ->
+        Logger.error("Failed to publish kafka event: #{inspect(error)}")
+        update_status(event)
     end
   end
 

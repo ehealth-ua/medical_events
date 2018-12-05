@@ -249,6 +249,14 @@
         "last_occurrence": {
           "type": "string",
           "format": "date-time"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "allOf": [
@@ -264,7 +272,9 @@
             "code",
             "onset_date_time",
             "asserted_date",
-            "primary_source"
+            "primary_source",
+            "inserted_at",
+            "updated_at"
           ]
         },
         {
