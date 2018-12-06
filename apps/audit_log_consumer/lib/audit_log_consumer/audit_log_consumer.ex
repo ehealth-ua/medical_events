@@ -5,7 +5,7 @@ defmodule AuditLogConsumer.Kafka.MongoEventConsumer do
   alias Core.Mongo.Event
   require Logger
 
-  def handle_message_set(%{key: key, value: value} = message) do
+  def handle_message(%{key: _key, value: value} = message) do
     value = :erlang.binary_to_term(value)
     Logger.debug(fn -> "message: " <> inspect(value) end)
     Logger.info(fn -> "offset: #{Map.get(message, :offset)}" end)
