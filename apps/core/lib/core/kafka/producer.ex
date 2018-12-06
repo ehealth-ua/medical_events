@@ -60,8 +60,8 @@ defmodule Core.Kafka.Producer do
   end
 
   defp get_partition(patient_id, topic) do
-    partitions_number = Confex.fetch_env!(:core, :kafka)[:partitions][topic]
+    partitions_number = Confex.fetch_env!(:core, :kafka)[:partitions][topic] - 1
     {i, _} = Integer.parse(String.first(patient_id), 16)
-    trunc((i + 1) * partitions_number / 16)
+    trunc(i * partitions_number / 12)
   end
 end
