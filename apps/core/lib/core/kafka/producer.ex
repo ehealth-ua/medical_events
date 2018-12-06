@@ -40,7 +40,7 @@ defmodule Core.Kafka.Producer do
   def publish_job_update_status_event(event) do
     Kaffe.Producer.produce_sync(
       @job_update_events_topic,
-      Enum.random(0..Confex.fetch_env!(:core, :kafka)[:partitions][@job_update_events_topic]),
+      Enum.random(0..(Confex.fetch_env!(:core, :kafka)[:partitions][@job_update_events_topic] - 1)),
       UUID.uuid4(),
       :erlang.term_to_binary(event)
     )
