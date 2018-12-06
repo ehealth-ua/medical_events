@@ -74,7 +74,9 @@ defmodule Core.Mongo.AuditLog do
            :ok <- @kafka_producer.publish_mongo_event(event) do
         :ok
       else
-        _ ->
+        error ->
+          Logger.error("Error: #{inspect(error)}")
+
           Logger.error(
             "Failed to publish audit log to Kafka. Push data: operation: `#{operation}`, id: `#{map_event.entry_id}`," <>
               "collection: `#{collection}`, params: `#{inspect(map_event.params)}`"
