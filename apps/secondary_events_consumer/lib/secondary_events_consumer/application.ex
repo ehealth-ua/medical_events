@@ -6,6 +6,8 @@ defmodule SecondaryEventsConsumer.Application do
   use Application
 
   def start(_type, _args) do
+    Application.put_env(:kaffe, :consumer, Application.get_env(:secondary_events_consumer, :kaffe_consumer))
+
     children = [
       %{
         id: Kaffe.Consumer,

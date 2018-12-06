@@ -18,8 +18,8 @@ config :event_consumer,
     ]
   ]
 
-config :kaffe,
-  consumer: [
+config :event_consumer,
+  kaffe_consumer: [
     endpoints: [localhost: 9092],
     topics: ["medical_events"],
     consumer_group: "medical_event_group",

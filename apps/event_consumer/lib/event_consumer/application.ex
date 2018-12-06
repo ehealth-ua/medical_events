@@ -13,6 +13,8 @@ defmodule EventConsumer.Application do
       }
     ]
 
+    Application.put_env(:kaffe, :consumer, Application.get_env(:event_consumer, :kaffe_consumer))
+
     children =
       if Application.get_env(:event_consumer, :env) == :prod do
         children ++
