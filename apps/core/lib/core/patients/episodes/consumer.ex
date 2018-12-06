@@ -36,6 +36,14 @@ defmodule Core.Patients.Episodes.Consumer do
       |> Enum.map(fn {k, v} -> {to_string(k), v} end)
       |> Episode.create()
 
+    status_history =
+      StatusHistory.create(%{
+        "status" => episode.status,
+        "status_reason" => episode.status_reason,
+        "inserted_at" => now,
+        "inserted_by" => Mongo.string_to_uuid(job.user_id)
+      })
+
     episode =
       %{
         episode
@@ -46,6 +54,7 @@ defmodule Core.Patients.Episodes.Consumer do
           inserted_at: now,
           updated_at: now
       }
+      |> Map.put(:status_history, [status_history])
       |> EpisodeValidations.validate_period()
       |> EpisodeValidations.validate_managing_organization(client_id)
       |> EpisodeValidations.validate_care_manager(client_id)
