@@ -6,30 +6,23 @@ defmodule EventConsumer.Application do
   use Application
 
   def start(_type, _args) do
-    import Supervisor.Spec, warn: false
-    alias EventConsumer.Kafka.MedicalEventConsumer
-
-    consumer_group_opts = [
-      # setting for the ConsumerGroup
-      heartbeat_interval: 1_000,
-      # this setting will be forwarded to the GenConsumer
-      commit_interval: 1_000
-    ]
-
-    gen_consumer_impl = MedicalEventConsumer
-    consumer_group_name = "medical_event_group"
-    topic_names = ["medical_events", "encounter_package_events"]
-
-    # List all child processes to be supervised
     children = [
-      supervisor(KafkaEx.ConsumerGroup, [
-        gen_consumer_impl,
-        consumer_group_name,
-        topic_names,
-        consumer_group_opts
-      ]),
-      {Cluster.Supervisor, [Application.get_env(:event_consumer, :topologies), [name: EventConsumer.ClusterSupervisor]]}
+      %{
+        id: Kaffe.Consumer,
+        start: {Kaffe.Consumer, :start_link, []}
+      }
     ]
+
+    children =
+      if Application.get_env(:event_consumer, :env) == :prod do
+        children ++
+          [
+            {Cluster.Supervisor,
+             [Application.get_env(:event_consumer, :topologies), [name: EventConsumer.ClusterSupervisor]]}
+          ]
+      else
+        children
+      end
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

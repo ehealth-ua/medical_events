@@ -29,7 +29,6 @@ defmodule EventConsumer.MixProject do
     [
       {:confex_config_provider, "~> 0.1.0"},
       {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
-      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:core, in_umbrella: true}
     ]
   end

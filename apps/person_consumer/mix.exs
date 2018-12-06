@@ -28,7 +28,6 @@ defmodule PersonConsumer.MixProject do
   defp deps do
     [
       {:confex_config_provider, "~> 0.1.0"},
-      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:core, in_umbrella: true}
     ]
   end

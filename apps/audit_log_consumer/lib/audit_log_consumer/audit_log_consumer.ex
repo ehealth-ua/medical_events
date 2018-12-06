@@ -1,22 +1,15 @@
 defmodule AuditLogConsumer.Kafka.MongoEventConsumer do
   @moduledoc false
 
-  use KafkaEx.GenConsumer
   alias Core.Mongo.AuditLog
   alias Core.Mongo.Event
-  alias KafkaEx.Protocol.Fetch.Message
   require Logger
 
-  # note - messages are delivered in batches
-  def handle_message_set(message_set, state) do
-    for %Message{value: message, offset: offset} <- message_set do
-      value = :erlang.binary_to_term(message)
-      Logger.debug(fn -> "message: " <> inspect(value) end)
-      Logger.info(fn -> "offset: #{offset}" end)
-      :ok = consume(value)
-    end
-
-    {:async_commit, state}
+  def handle_message_set(%{key: key, value: value} = message) do
+    value = :erlang.binary_to_term(value)
+    Logger.debug(fn -> "message: " <> inspect(value) end)
+    Logger.info(fn -> "offset: #{Map.get(message, :offset)}" end)
+    :ok = consume(value)
   end
 
   def consume(%Event{} = event) do

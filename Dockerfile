@@ -8,7 +8,7 @@ WORKDIR /app
 
 ENV MIX_ENV=prod
 
-RUN apk add git
+RUN apk add git build-base
 RUN mix do \
       local.hex --force, \
       local.rebar --force, \

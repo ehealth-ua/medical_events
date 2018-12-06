@@ -11,33 +11,37 @@ defmodule Core.Kafka.Producer do
   @behaviour Core.Behaviours.KafkaProducerBehaviour
 
   def publish_medical_event(request) do
-    KafkaEx.produce(
+    Kaffe.Producer.produce_sync(
       @medical_events_topic,
       get_partition(request.patient_id, @medical_events_topic),
+      request.patient_id,
       :erlang.term_to_binary(request)
     )
   end
 
   def publish_encounter_package_event(event) do
-    KafkaEx.produce(
+    Kaffe.Producer.produce_sync(
       @secondary_events_topic,
       get_partition(event.patient_id, @secondary_events_topic),
+      event.patient_id,
       :erlang.term_to_binary(event)
     )
   end
 
   def publish_mongo_event(%Event{} = event) do
-    KafkaEx.produce(
+    Kaffe.Producer.produce_sync(
       @mongo_events_topic,
       get_partition(event.actor_id, @mongo_events_topic),
+      event.actor_id,
       :erlang.term_to_binary(event)
     )
   end
 
   def publish_job_update_status_event(event) do
-    KafkaEx.produce(
+    Kaffe.Producer.produce_sync(
       @job_update_events_topic,
       Enum.random(0..Confex.fetch_env!(:core, :kafka)[:partitions][@job_update_events_topic]),
+      UUID.uuid4(),
       :erlang.term_to_binary(event)
     )
   end
