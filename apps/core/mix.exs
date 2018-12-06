@@ -50,6 +50,7 @@ defmodule Core.MixProject do
       {:iteraptor, "~> 1.3.2"},
       {:jason, "~> 1.1"},
       {:jvalid, "~> 0.7.0"},
+      {:kaffe, git: "https://github.com/AlexKovalevych/kaffe.git", branch: "string_endpoints"},
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:mongodb, "~> 0.4.6"},
       {:poolboy, "~> 1.5"},

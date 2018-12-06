@@ -1,7 +1,6 @@
 defmodule SecondaryEventsConsumer.Kafka.Consumer do
   @moduledoc false
 
-  use KafkaEx.GenConsumer
   alias Core.Jobs
   alias Core.Jobs.JobUpdateStatusJob
   alias Core.Jobs.PackageCancelSaveConditionsJob
@@ -12,20 +11,13 @@ defmodule SecondaryEventsConsumer.Kafka.Consumer do
   alias Core.Jobs.PackageSavePatientJob
   alias Core.Patients.Encounters.Cancel
   alias Core.Patients.Package
-  alias KafkaEx.Protocol.Fetch.Message
-
   require Logger
 
-  # note - messages are delivered in batches
-  def handle_message_set(message_set, state) do
-    for %Message{value: message, offset: offset} <- message_set do
-      value = :erlang.binary_to_term(message)
-      Logger.debug(fn -> "message: " <> inspect(value) end)
-      Logger.info(fn -> "offset: #{offset}" end)
-      :ok = consume(value)
-    end
-
-    {:async_commit, state}
+  def handle_message_set(%{key: key, value: value} = message) do
+    value = :erlang.binary_to_term(message)
+    Logger.debug(fn -> "message: " <> inspect(value) end)
+    Logger.info(fn -> "offset: #{Map.get(message, :offset)}" end)
+    :ok = consume(value)
   end
 
   defp consume(%PackageSavePatientJob{} = package_save_patient_job) do

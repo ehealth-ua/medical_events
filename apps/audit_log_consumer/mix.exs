@@ -28,7 +28,6 @@ defmodule AuditLogConsumer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git", branch: "master"},
       {:confex_config_provider, "~> 0.1.0"},
       {:core, in_umbrella: true}
     ]
