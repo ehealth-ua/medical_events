@@ -14,7 +14,7 @@ defmodule Core.Kafka.Producer do
     Kaffe.Producer.produce_sync(
       @medical_events_topic,
       get_partition(request.patient_id, @medical_events_topic),
-      request.patient_id,
+      get_key(request.patient_id),
       :erlang.term_to_binary(request)
     )
   end
@@ -23,7 +23,7 @@ defmodule Core.Kafka.Producer do
     Kaffe.Producer.produce_sync(
       @secondary_events_topic,
       get_partition(event.patient_id, @secondary_events_topic),
-      event.patient_id,
+      get_key(event.patient_id),
       :erlang.term_to_binary(event)
     )
   end
@@ -32,7 +32,7 @@ defmodule Core.Kafka.Producer do
     Kaffe.Producer.produce_sync(
       @mongo_events_topic,
       get_partition(event.actor_id, @mongo_events_topic),
-      event.actor_id,
+      get_key(event.actor_id),
       :erlang.term_to_binary(event)
     )
   end
@@ -45,6 +45,12 @@ defmodule Core.Kafka.Producer do
       :erlang.term_to_binary(event)
     )
   end
+
+  defp get_key(%BSON.Binary{binary: id}) do
+    UUID.binary_to_string!(id)
+  end
+
+  defp get_key(value), do: value
 
   defp get_partition(nil, _), do: 0
   defp get_partition("", _), do: 0
