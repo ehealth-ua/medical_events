@@ -1,7 +1,7 @@
 use Mix.Config
 
-config :kaffe,
-  consumer: [
+config :audit_log_consumer,
+  kaffe_consumer: [
     endpoints: {:system, :string, "KAFKA_BROKERS"},
     topics: ["mongo_events"],
     consumer_group: "mongo_event_group",

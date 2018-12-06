@@ -2,8 +2,8 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :kaffe,
-  consumer: [
+config :person_consumer,
+  kaffe_consumer: [
     endpoints: [localhost: 9092],
     topics: ["person_events"],
     consumer_group: "person_events_group",
