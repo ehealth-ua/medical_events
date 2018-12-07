@@ -212,11 +212,14 @@ defmodule Core.Patients.Episodes.Consumer do
       case Vex.errors(episode) do
         [] ->
           set =
-            %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
+            %{"updated_by" => episode.updated_by, "updated_at" => now}
             |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
             |> Mongo.add_to_set(episode.status_reason, "episodes.#{episode.id}.status_reason")
             |> Mongo.add_to_set(episode.closing_summary, "episodes.#{episode.id}.closing_summary")
             |> Mongo.add_to_set(episode.period.end, "episodes.#{episode.id}.period.end")
+            |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
+            |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("updated_by")
 
           status_history =
@@ -303,8 +306,11 @@ defmodule Core.Patients.Episodes.Consumer do
 
           if all_encounters_canceled do
             set =
-              %{"updated_by" => episode.updated_by, "updated_at" => episode.updated_at}
+              %{"updated_by" => episode.updated_by, "updated_at" => now}
               |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
+              |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
+              |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
+              |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
               |> Mongo.add_to_set(
                 episode.explanatory_letter,
                 "episodes.#{episode.id}.explanatory_letter"
