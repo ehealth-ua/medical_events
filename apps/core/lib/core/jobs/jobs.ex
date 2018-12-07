@@ -15,15 +15,36 @@ defmodule Core.Jobs do
   end
 
   def produce_update_status(id, response, status_code) do
-    do_produce_update_status(id, limit_errors(response), Job.status(:failed), status_code)
+    do_produce_update_status(id, cut_response(response), Job.status(:failed), status_code)
   end
 
-  defp limit_errors(%{invalid: errors} = response) do
-    errors_limit = Confex.fetch_env!(:core, Core.Validators.JsonSchema)[:errors_limit]
-    %{response | invalid: Enum.take(errors, errors_limit)}
+  defp cut_response(%{invalid: errors} = response) do
+    if Job.valid_response?(response) do
+      response
+    else
+      updated_response = %{response | invalid: Enum.map(errors, &cut_params/1)}
+      cut_response(%{updated_response | invalid: Enum.take(errors, Enum.count(errors) - 1)})
+    end
   end
 
-  defp limit_errors(response), do: response
+  defp cut_response(response) when is_binary(response) do
+    if Job.valid_response?(response), do: response, else: String.slice(response, 0, Job.response_length() - 3) <> "..."
+  end
+
+  defp cut_response(%{"error" => error} = response) when is_binary(error) do
+    if Job.valid_response?(response) do
+      response
+    else
+      %{"error" => String.slice(error, 0, Job.response_length() - 3) <> "..."}
+    end
+  end
+
+  defp cut_params(%{rules: rules} = error) do
+    updated_rules = Enum.map(rules, &Map.put(&1, :params, []))
+    %{error | rules: updated_rules}
+  end
+
+  defp cut_params(error), do: error
 
   def do_produce_update_status(id, response, status, status_code) do
     event = %JobUpdateStatusJob{

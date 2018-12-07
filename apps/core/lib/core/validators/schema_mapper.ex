@@ -3,16 +3,16 @@ defmodule Core.Validators.SchemaMapper do
   Load dictionaries from Il and put enum rules into json schema
   """
 
+  alias Core.Dictionaries
   alias NExJsonSchema.Schema.Root
   require Logger
 
   @validator_cache Application.get_env(:core, :cache)[:validators]
-  @il_microservice Application.get_env(:core, :microservices)[:il]
 
   def prepare_schema(%Root{schema: schema} = nex_schema, schema_name) do
     case @validator_cache.get_json_schema(schema_name) do
       {:ok, nil} ->
-        with {:ok, dictionaries} <- get_dictionaries() do
+        with {:ok, dictionaries} <- Dictionaries.get_dictionaries() do
           new_schema = map_schema(dictionaries, schema)
 
           prepared_schema = %{nex_schema | schema: new_schema}
@@ -54,18 +54,5 @@ defmodule Core.Validators.SchemaMapper do
 
   defp process_schema_value({k, v}, acc, _) do
     Map.put(acc, k, v)
-  end
-
-  defp get_dictionaries do
-    case @validator_cache.get_dictionaries() do
-      {:ok, nil} ->
-        with {:ok, %{"data" => dictionaries}} <- @il_microservice.get_dictionaries(%{"is_active" => true}, []) do
-          @validator_cache.set_dictionaries(dictionaries)
-          {:ok, dictionaries}
-        end
-
-      {:ok, dictionaries} ->
-        {:ok, dictionaries}
-    end
   end
 end

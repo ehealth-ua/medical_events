@@ -23,6 +23,8 @@ defmodule Core.Job do
   def status(:failed), do: @status_failed
   def status(:failed_with_error), do: @status_failed_with_error
 
+  def response_length, do: @response_length
+
   @primary_key :_id
   schema :jobs do
     field(:_id)
@@ -34,6 +36,14 @@ defmodule Core.Job do
     field(:response_size, presence: true)
 
     timestamps()
+  end
+
+  def valid_response?(response) when is_binary(response) do
+    String.length(response) <= @response_length
+  end
+
+  def valid_response?(response) when is_map(response) do
+    String.length(Jason.encode!(response)) <= @response_length
   end
 
   def encode_response(%__MODULE__{response: value} = job) do
