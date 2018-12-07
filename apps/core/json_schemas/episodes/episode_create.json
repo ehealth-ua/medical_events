@@ -12,11 +12,23 @@
       "$ref": "#/definitions/uuid"
     },
     "type": {
-      "type": "string",
-      "enum": [
-        "primary_care"
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/episode_types"
+          ]
+        },
+        "code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "system"
       ],
-      "description": "Dictionary: eHealth/episode_types"
+      "additionalProperties": false
     },
     "status": {
       "type": "string",

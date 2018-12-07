@@ -17,7 +17,6 @@ defmodule Api.Web.EpisodeView do
   def render("show.json", %{episode: episode}) do
     episode
     |> Map.take(~w(
-      type
       status
       name
       explanatory_letter
@@ -27,6 +26,7 @@ defmodule Api.Web.EpisodeView do
     )a)
     |> Map.merge(%{
       id: UUIDView.render(episode.id),
+      type: ReferenceView.render(episode.type),
       status_reason: ReferenceView.render(episode.status_reason),
       period: ReferenceView.render(episode.period),
       diagnoses_history:

@@ -52,6 +52,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
                  id: episode_id,
+                 type: %{"code" => "primary_care", "system" => "eHealth/episode_types"},
                  user_id: user_id,
                  client_id: client_id,
                  managing_organization: %{
@@ -116,7 +117,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
                  id: episode_id,
-                 type: "primary_care",
+                 type: %{"code" => "primary_care", "system" => "eHealth/episode_types"},
                  name: "ОРВИ 2018",
                  status: Episode.status(:active),
                  user_id: user_id,

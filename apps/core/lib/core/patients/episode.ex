@@ -3,6 +3,7 @@ defmodule Core.Episode do
 
   use Core.Schema
   alias Core.CodeableConcept
+  alias Core.Coding
   alias Core.DatePeriod
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
@@ -31,7 +32,7 @@ defmodule Core.Episode do
     field(:explanatory_letter)
     field(:status_history)
     field(:current_diagnoses)
-    field(:type)
+    field(:type, presence: true, dictionary_reference: [path: "type", referenced_field: "system", field: "code"])
     field(:diagnoses_history)
     field(:managing_organization, presence: true, reference: [path: "managing_organization"])
     field(:period, presence: true, reference: [path: "period"])
@@ -45,6 +46,9 @@ defmodule Core.Episode do
     struct(
       __MODULE__,
       Enum.map(data, fn
+        {"type", v} ->
+          {:type, Coding.create(v)}
+
         {"managing_organization", v} ->
           {:managing_organization, Reference.create(v)}
 

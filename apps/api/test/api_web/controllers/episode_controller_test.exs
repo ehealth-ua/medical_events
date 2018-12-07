@@ -59,7 +59,7 @@ defmodule Api.Web.EpisodeControllerTest do
         "id" => UUID.uuid4(),
         "name" => "ОРВИ 2018",
         "status" => Episode.status(:active),
-        "type" => "primary_care",
+        "type" => %{"system" => "eHealth/episode_types", "code" => "primary_care"},
         "managing_organization" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "legal_entity"}]},

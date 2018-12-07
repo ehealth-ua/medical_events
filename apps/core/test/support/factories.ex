@@ -356,7 +356,7 @@ defmodule Core.Factories do
       explanatory_letter: "explanatory letter",
       status_history: build_list(1, :status_history),
       diagnoses_history: diagnoses_history,
-      type: "primary_care",
+      type: build(:coding, code: "primary_care", system: "eHealth/episode_types"),
       name: "ОРВИ 2018",
       managing_organization: reference_coding(code: "legal_entity"),
       period: build(:period, start: date, end: date),
