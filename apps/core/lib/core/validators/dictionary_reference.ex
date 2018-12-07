@@ -6,8 +6,7 @@ defmodule Core.Validators.DictionaryReference do
   use Vex.Validator
   alias Core.CodeableConcept
   alias Core.Coding
-
-  @validator_cache Application.get_env(:core, :cache)[:validators]
+  alias Core.Dictionaries
 
   def validate(%Coding{} = value, options) do
     field = String.to_atom(Keyword.get(options, :field))
@@ -15,7 +14,7 @@ defmodule Core.Validators.DictionaryReference do
     field = Map.get(value, field)
     referenced_field = Map.get(value, referenced_field)
 
-    with {:ok, dictionaries} <- @validator_cache.get_dictionaries(),
+    with {:ok, dictionaries} <- Dictionaries.get_dictionaries(),
          %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == referenced_field end),
          true <- Map.has_key?(values, field) do
       :ok
@@ -62,7 +61,7 @@ defmodule Core.Validators.DictionaryReference do
     field = Map.get(coding, field)
     referenced_field = Map.get(coding, referenced_field)
 
-    with {:ok, dictionaries} <- @validator_cache.get_dictionaries(),
+    with {:ok, dictionaries} <- Dictionaries.get_dictionaries(),
          %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == referenced_field end),
          true <- Map.has_key?(values, field) do
       :ok
