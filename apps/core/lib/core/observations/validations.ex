@@ -10,20 +10,17 @@ defmodule Core.Observations.Validations do
   alias Core.Period
   alias Core.Reference
   alias Core.Source
-  alias Core.Validators.Date, as: DateValidator
 
   def validate_issued(%Observation{} = observation) do
     now = DateTime.utc_now()
+    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:observation_max_days_passed]
 
     add_validations(
       observation,
       :issued,
-      datetime: [less_than_or_equal_to: now, message: "Issued datetime must be in past"]
+      datetime: [less_than_or_equal_to: now, message: "Issued datetime must be in past"],
+      max_days_passed: [max_days_passed: max_days_passed]
     )
-
-    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:observation_max_days_passed]
-
-    add_validations(observation, :issued, by: &DateValidator.validate_expiration(&1, max_days_passed))
   end
 
   def validate_context(%Observation{context: context} = observation, encounter_id) do

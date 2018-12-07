@@ -116,7 +116,8 @@ config :vex,
       episode_reference: Core.Validators.EpisodeReference,
       condition_reference: Core.Validators.ConditionReference,
       diagnoses_code: Core.Validators.DiagnosesCode,
-      service_request_reference: Core.Validators.ServiceRequestReference
+      service_request_reference: Core.Validators.ServiceRequestReference,
+      max_days_passed: Core.Validators.MaxDaysPassed
     ],
     Vex.Validators
   ]

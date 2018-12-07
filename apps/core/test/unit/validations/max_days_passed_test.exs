@@ -2,7 +2,7 @@ defmodule Core.Validations.DateTest do
   @moduledoc false
 
   use ExUnit.Case
-  alias Core.Validators.Date, as: DateValidator
+  alias Core.Validators.MaxDaysPassed
 
   test "validate_expiration" do
     add_to_today = &Date.add(Date.utc_today(), &1)
@@ -27,10 +27,10 @@ defmodule Core.Validations.DateTest do
 
     Enum.map(test_data_set, fn
       {date, days_passed, :ok} ->
-        assert :ok == DateValidator.validate_expiration(date, days_passed)
+        assert :ok == MaxDaysPassed.validate(date, max_days_passed: days_passed)
 
       {date, days_passed, _} ->
-        assert {:error, _} = DateValidator.validate_expiration(date, days_passed)
+        assert {:error, _} = MaxDaysPassed.validate(date, max_days_passed: days_passed)
     end)
   end
 end

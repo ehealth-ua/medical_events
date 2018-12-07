@@ -7,7 +7,6 @@ defmodule Core.Patients.Encounters.Validations do
   alias Core.Encounter
   alias Core.Headers
   alias Core.Microservices.DigitalSignature
-  alias Core.Validators.Date, as: DateValidator
   alias Core.Validators.Signature
 
   @il_microservice Application.get_env(:core, :microservices)[:il]
@@ -117,8 +116,7 @@ defmodule Core.Patients.Encounters.Validations do
 
   def validate_date(%Encounter{} = encounter) do
     max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:encounter_max_days_passed]
-
-    add_validations(encounter, :date, by: &DateValidator.validate_expiration(&1, max_days_passed))
+    add_validations(encounter, :date, max_days_passed: [max_days_passed: max_days_passed])
   end
 
   @spec validate_signatures(map, binary, binary, binary) :: :ok | {:error, term}
