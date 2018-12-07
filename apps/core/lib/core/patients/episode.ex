@@ -32,7 +32,7 @@ defmodule Core.Episode do
     field(:explanatory_letter)
     field(:status_history)
     field(:current_diagnoses)
-    field(:type, presence: true, dictionary_reference: [path: "type", referenced_field: "system", field: "code"])
+    field(:type, presence: true, dictionary_reference: [referenced_field: "system", field: "code"])
     field(:diagnoses_history)
     field(:managing_organization, presence: true, reference: [path: "managing_organization"])
     field(:period, presence: true, reference: [path: "period"])
