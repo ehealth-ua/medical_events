@@ -266,9 +266,12 @@ defmodule Core.Patients.Episodes.Consumer do
 
   def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
     now = DateTime.utc_now()
-    status = Episode.status(:active)
 
-    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
+    with {:ok, %Episode{} = episode} <- Episodes.get_by_id(patient_id_hash, id),
+         :ok <-
+           validate_status(episode, [Episode.status(:active), Episode.status(:closed)], fn status ->
+             "Episode in status #{status} can not be canceled"
+           end) do
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -352,11 +355,19 @@ defmodule Core.Patients.Episodes.Consumer do
           )
       end
     else
-      {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job._id, "Episode in status #{status} can not be canceled", 422)
+      {:error, message} ->
+        Jobs.produce_update_status(job._id, message, 422)
 
       nil ->
         Jobs.produce_update_status(job._id, "Failed to get episode", 404)
+    end
+  end
+
+  defp validate_status(%Episode{status: status}, statuses, message) when is_list(statuses) do
+    if status in statuses do
+      :ok
+    else
+      {:error, message.(status)}
     end
   end
 
