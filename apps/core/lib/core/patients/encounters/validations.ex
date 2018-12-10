@@ -116,7 +116,12 @@ defmodule Core.Patients.Encounters.Validations do
 
   def validate_date(%Encounter{} = encounter) do
     max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:encounter_max_days_passed]
-    add_validations(encounter, :date, max_days_passed: [max_days_passed: max_days_passed])
+    now = DateTime.utc_now()
+
+    add_validations(encounter, :date,
+      datetime: [less_than_or_equal_to: now, message: "Date must be in past"],
+      max_days_passed: [max_days_passed: max_days_passed]
+    )
   end
 
   @spec validate_signatures(map, binary, binary, binary) :: :ok | {:error, term}
