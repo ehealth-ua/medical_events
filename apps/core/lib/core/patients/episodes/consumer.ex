@@ -1,6 +1,7 @@
 defmodule Core.Patients.Episodes.Consumer do
   @moduledoc false
 
+  alias Core.CodeableConcept
   alias Core.DatePeriod
   alias Core.Encounter
   alias Core.Episode
@@ -205,7 +206,10 @@ defmodule Core.Patients.Episodes.Consumer do
               | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
             }
         }
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        |> Map.merge(%{
+          status_reason: CodeableConcept.create(changes["status_reason"]),
+          closing_summary: changes["closing_summary"]
+        })
         |> EpisodeValidations.validate_period()
         |> EpisodeValidations.validate_managing_organization(job.client_id)
 
@@ -225,7 +229,7 @@ defmodule Core.Patients.Episodes.Consumer do
           status_history =
             StatusHistory.create(%{
               "status" => episode.status,
-              "status_reason" => episode.status_reason,
+              "status_reason" => changes["status_reason"],
               "inserted_at" => episode.updated_at,
               "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
             })
@@ -291,7 +295,10 @@ defmodule Core.Patients.Episodes.Consumer do
               | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
             }
         }
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        |> Map.merge(%{
+          status_reason: CodeableConcept.create(changes["status_reason"]),
+          closing_summary: changes["explanatory_letter"]
+        })
         |> EpisodeValidations.validate_managing_organization(job.client_id)
 
       case Vex.errors(episode) do
@@ -324,7 +331,7 @@ defmodule Core.Patients.Episodes.Consumer do
             status_history =
               StatusHistory.create(%{
                 "status" => episode.status,
-                "status_reason" => episode.status_reason,
+                "status_reason" => changes["status_reason"],
                 "inserted_at" => episode.updated_at,
                 "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
               })

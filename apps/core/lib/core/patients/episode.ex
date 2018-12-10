@@ -22,12 +22,7 @@ defmodule Core.Episode do
     field(:id, presence: true, mongo_uuid: true)
     field(:name)
     field(:status)
-
-    field(:status_reason,
-      reference: [path: "status_reason"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
-    )
-
+    field(:status_reason, dictionary_reference: [path: "status_reason", referenced_field: "system", field: "code"])
     field(:closing_summary)
     field(:explanatory_letter)
     field(:status_history)
