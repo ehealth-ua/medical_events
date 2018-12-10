@@ -16,7 +16,7 @@ defmodule Core.Condition do
     field(:clinical_status)
     field(:verification_status)
     field(:severity, reference: [path: "severity"], dictionary_reference: [referenced_field: "system", field: "code"])
-    field(:code, reference: [path: "code"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:code, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
     field(:body_sites, dictionary_reference: [path: "body_sites", referenced_field: "system", field: "code"])
     field(:patient_id, presence: true)
     field(:context, presence: true, reference: [path: "context"])

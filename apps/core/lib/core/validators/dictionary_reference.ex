@@ -49,26 +49,23 @@ defmodule Core.Validators.DictionaryReference do
   end
 
   def validate(%CodeableConcept{} = value, options) do
-    validate(hd(value.coding), options)
+    errors =
+      value.coding
+      |> Enum.with_index()
+      |> Enum.reduce([], fn {value, i}, acc ->
+        case validate(value, Keyword.put(options, :path, "#{Keyword.get(options, :path)}.#{i}")) do
+          :ok -> acc
+          error -> acc ++ [error]
+        end
+      end)
+
+    case errors do
+      [] -> :ok
+      _ -> errors
+    end
   end
 
   def validate(%{__struct__: _}, _), do: :ok
-
-  def validate(%{} = value, options) do
-    field = Keyword.get(options, :field)
-    referenced_field = Keyword.get(options, :referenced_field)
-    coding = hd(value["coding"])
-    field = Map.get(coding, field)
-    referenced_field = Map.get(coding, referenced_field)
-
-    with {:ok, dictionaries} <- Dictionaries.get_dictionaries(),
-         %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == referenced_field end),
-         true <- Map.has_key?(values, field) do
-      :ok
-    else
-      _ -> error(options, "Value #{field} not found in the dictionary #{referenced_field}")
-    end
-  end
 
   def validate(nil, _), do: :ok
 
