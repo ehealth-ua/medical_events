@@ -51,37 +51,35 @@ defmodule Core.Microservices.DigitalSignature do
   end
 
   defp data_is_invalid_resp(path \\ "$.signed_content") do
-    data =
-      %{
-        "error" => %{
-          "invalid" => [
-            %{
-              "entry" => path,
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "Not a base64 string",
-                  "params" => [],
-                  "rule" => "invalid"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest:" <>
-              " http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        "meta" => %{
-          "code" => 422,
-          "request_id" => "2kmaguf9ec791885t40008s2",
-          "type" => "object",
-          "url" => "http://www.example.com/digital_signatures"
-        }
+    data = %{
+      "error" => %{
+        "invalid" => [
+          %{
+            "entry" => path,
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "Not a base64 string",
+                "params" => [],
+                "rule" => "invalid"
+              }
+            ]
+          }
+        ],
+        "message" =>
+          "Validation failed. You can find validators description at our API Manifest:" <>
+            " http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+        "type" => "validation_failed"
+      },
+      "meta" => %{
+        "code" => 422,
+        "request_id" => "2kmaguf9ec791885t40008s2",
+        "type" => "object",
+        "url" => "http://www.example.com/digital_signatures"
       }
-      |> Jason.encode!()
+    }
 
-    check_response({:ok, %HTTPoison.Response{body: data, status_code: 422}})
+    {:error, data}
   end
 
   defp wrap_response(data, code) do

@@ -27,6 +27,15 @@ defmodule Core.Jobs do
     end
   end
 
+  defp cut_response(%{"invalid" => errors} = response) do
+    if Job.valid_response?(response) do
+      response
+    else
+      updated_response = %{response | "invalid" => Enum.map(errors, &cut_params/1)}
+      cut_response(%{updated_response | "invalid" => Enum.take(errors, Enum.count(errors) - 1)})
+    end
+  end
+
   defp cut_response(response) when is_binary(response) do
     if Job.valid_response?(response), do: response, else: String.slice(response, 0, Job.response_length() - 3) <> "..."
   end
