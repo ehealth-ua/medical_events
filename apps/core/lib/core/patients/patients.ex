@@ -100,6 +100,9 @@ defmodule Core.Patients do
          :ok <- CancelEncounter.save(patient, content, episode, encounter_id, job) do
       :ok
     else
+      {:error, %{"error" => error, "meta" => _}} ->
+        Jobs.produce_update_status(job._id, error, 422)
+
       {:patient, _} ->
         Jobs.produce_update_status(job._id, "Patient not found", 404)
 
@@ -311,7 +314,7 @@ defmodule Core.Patients do
       end
     else
       {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job._id, Jason.encode!(error), 422)
+        Jobs.produce_update_status(job._id, error, 422)
 
       {:error, error} ->
         Jobs.produce_update_status(job._id, ValidationError.render("422.json", %{schema: error}), 422)
@@ -765,7 +768,7 @@ defmodule Core.Patients do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
       {:ok, data}
     else
-      {:error, %{"error" => _} = error} -> {:ok, error, 422}
+      {:error, %{"error" => _} = error} -> {:error, error}
       error -> {:ok, error, 500}
     end
   end
