@@ -297,7 +297,7 @@ defmodule Core.Patients.Episodes.Consumer do
         }
         |> Map.merge(%{
           status_reason: CodeableConcept.create(changes["status_reason"]),
-          closing_summary: changes["explanatory_letter"]
+          explanatory_letter: changes["explanatory_letter"]
         })
         |> EpisodeValidations.validate_managing_organization(job.client_id)
 
