@@ -32,8 +32,7 @@ defmodule Core.Observation do
 
     field(:code,
       presence: true,
-      reference: [path: "code"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "code", referenced_field: "system", field: "code"]
     )
 
     field(:patient_id, presence: true)
@@ -45,13 +44,12 @@ defmodule Core.Observation do
     field(:value, presence: true)
 
     field(:interpretation,
-      reference: [path: "interpretation"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "interpretation", referenced_field: "system", field: "code"]
     )
 
     field(:comment)
-    field(:body_site, reference: [path: "body_site"], dictionary_reference: [referenced_field: "system", field: "code"])
-    field(:method, reference: [path: "method"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:body_site, dictionary_reference: [path: "body_site", referenced_field: "system", field: "code"])
+    field(:method, dictionary_reference: [path: "method", referenced_field: "system", field: "code"])
     field(:reference_ranges, reference: [path: "reference_ranges"])
     field(:components, reference: [path: "components"])
 

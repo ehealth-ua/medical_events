@@ -7,7 +7,7 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
   embedded_schema do
     field(:dose_sequence, number: [greater_than: 0])
     field(:description)
-    field(:authority, reference: [path: "authority"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:authority, dictionary_reference: [path: "authority", referenced_field: "system", field: "code"])
     field(:series)
     field(:series_doses, number: [greater_than: 0])
 
@@ -18,13 +18,11 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
 
     field(:dose_status,
       presence: true,
-      reference: [path: "dose_status"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "dose_status", referenced_field: "system", field: "code"]
     )
 
     field(:dose_status_reason,
-      reference: [path: "dose_status_reason"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "dose_status_reason", referenced_field: "system", field: "code"]
     )
   end
 

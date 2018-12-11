@@ -27,8 +27,7 @@ defmodule Core.Encounter do
 
     field(:type,
       presence: true,
-      reference: [path: "type"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "type", referenced_field: "system", field: "code"]
     )
 
     field(:incoming_referrals, reference: [path: "incoming_referrals"])
@@ -51,8 +50,7 @@ defmodule Core.Encounter do
     field(:explanatory_letter)
 
     field(:cancellation_reason,
-      reference: [path: "cancellation_reason"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "cancellation_reason", referenced_field: "system", field: "code"]
     )
 
     field(:prescriptions)

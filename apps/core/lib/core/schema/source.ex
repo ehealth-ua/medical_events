@@ -11,8 +11,7 @@ defmodule Core.Source do
 
     field(:value,
       presence: true,
-      reference: [path: "value"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "value", referenced_field: "system", field: "code"]
     )
   end
 

@@ -5,10 +5,7 @@ defmodule Core.Stage do
   alias Core.CodeableConcept
 
   embedded_schema do
-    field(:summary,
-      reference: [path: "summary"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
-    )
+    field(:summary, dictionary_reference: [path: "summary", referenced_field: "system", field: "code"])
   end
 
   def create(data) do
