@@ -25,8 +25,7 @@ defmodule Core.Immunization do
 
     field(:vaccine_code,
       presence: true,
-      reference: [path: "vaccine_code"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "vaccine_code", referenced_field: "system", field: "code"]
     )
 
     field(:context, presence: true, reference: [path: "context"])
@@ -37,8 +36,8 @@ defmodule Core.Immunization do
     field(:manufacturer)
     field(:lot_number)
     field(:expiration_date, reference: [path: "expiration_date"])
-    field(:site, reference: [path: "site"], dictionary_reference: [referenced_field: "system", field: "code"])
-    field(:route, reference: [path: "route"], dictionary_reference: [referenced_field: "system", field: "code"])
+    field(:site, dictionary_reference: [path: "site", referenced_field: "system", field: "code"])
+    field(:route, dictionary_reference: [path: "route", referenced_field: "system", field: "code"])
     field(:dose_quantity, reference: [path: "dose_quantity"])
     field(:explanation, reference: [path: "explanation"])
     field(:reactions, reference: [path: "reactions"])

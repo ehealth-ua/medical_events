@@ -33,8 +33,7 @@ defmodule Core.AllergyIntolerance do
 
     field(:code,
       presence: true,
-      reference: [path: "code"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
+      dictionary_reference: [path: "code", referenced_field: "system", field: "code"]
     )
 
     field(:onset_date_time, presence: true)
