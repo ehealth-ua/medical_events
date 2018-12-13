@@ -11,7 +11,7 @@ defmodule Core.Jobs do
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_update_status(id, response, 200) do
-    do_produce_update_status(id, response, Job.status(:processed), 200)
+    do_produce_update_status(id, cut_response(response), Job.status(:processed), 200)
   end
 
   def produce_update_status(id, response, status_code) do
@@ -48,9 +48,16 @@ defmodule Core.Jobs do
     end
   end
 
+  defp cut_response(response), do: response
+
   defp cut_params(%{rules: rules} = error) do
     updated_rules = Enum.map(rules, &Map.put(&1, :params, []))
     %{error | rules: updated_rules}
+  end
+
+  defp cut_params(%{"rules" => rules} = error) do
+    updated_rules = Enum.map(rules, &Map.put(&1, "params", []))
+    %{error | "rules" => updated_rules}
   end
 
   defp cut_params(error), do: error

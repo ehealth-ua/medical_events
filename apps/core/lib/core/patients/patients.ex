@@ -768,8 +768,13 @@ defmodule Core.Patients do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
       {:ok, data}
     else
-      {:error, %{"error" => _} = error} -> {:error, error}
-      error -> {:ok, error, 500}
+      {:error, %{"error" => _} = error} ->
+        Logger.info(error)
+        {:error, "Invalid signed content", 422}
+
+      error ->
+        Logger.error(error)
+        {:ok, "Failed to decode signed content", 500}
     end
   end
 
