@@ -21,6 +21,7 @@ defmodule Core.ServiceRequests do
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
   alias Scrivener.Page
+  require Logger
 
   @collection ServiceRequest.metadata().collection
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
@@ -349,8 +350,13 @@ defmodule Core.ServiceRequests do
     with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
       {:ok, data}
     else
-      {:error, %{"error" => _} = error} -> {:ok, error, 422}
-      error -> {:ok, error, 500}
+      {:error, %{"error" => _} = error} ->
+        Logger.info(error)
+        {:error, "Invalid signed content", 422}
+
+      error ->
+        Logger.error(error)
+        {:ok, "Failed to decode signed content", 500}
     end
   end
 
