@@ -769,11 +769,11 @@ defmodule Core.Patients do
       {:ok, data}
     else
       {:error, %{"error" => _} = error} ->
-        Logger.info(error)
+        Logger.info(inspect(error))
         {:error, "Invalid signed content", 422}
 
       error ->
-        Logger.error(error)
+        Logger.error(inspect(error))
         {:ok, "Failed to decode signed content", 500}
     end
   end
