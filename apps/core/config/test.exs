@@ -3,6 +3,8 @@ use Mix.Config
 # Configuration for test environment
 config :ex_unit, capture_log: true
 
+config :logger, level: :warn
+
 config :core,
   microservices: [
     il: IlMock,

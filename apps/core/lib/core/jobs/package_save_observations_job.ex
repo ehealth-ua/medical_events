@@ -4,13 +4,14 @@ defmodule Core.Jobs.PackageSaveObservationsJob do
   _id is a binded Request id.
   """
 
-  defstruct [
-    :_id,
-    :patient_id,
-    :patient_id_hash,
-    :id,
-    :links,
-    :encounter,
-    :observations
-  ]
+  defstruct ~w(
+    request_id
+    _id
+    patient_id
+    patient_id_hash
+    id
+    links
+    encounter
+    observations
+  )a
 end

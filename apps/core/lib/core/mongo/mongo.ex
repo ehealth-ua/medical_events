@@ -5,6 +5,7 @@ defmodule Core.Mongo do
   alias Core.Validators.Vex
   alias DBConnection.Poolboy
   alias Mongo, as: M
+  require Logger
 
   defdelegate start_link(opts), to: M
   defdelegate object_id, to: M
@@ -20,9 +21,15 @@ defmodule Core.Mongo do
       |> List.replace_at(Enum.count(args) - 1, opts)
       |> List.insert_at(0, :mongo)
 
-    M
-    |> apply(fun, enriched_args)
-    |> AuditLog.log_operation(fun, args)
+    try do
+      M
+      |> apply(fun, enriched_args)
+      |> AuditLog.log_operation(fun, args)
+    rescue
+      error ->
+        Logger.info("Error: #{inspect(error)}, #{fun}: #{inspect(enriched_args)}")
+        reraise(error, __STACKTRACE__)
+    end
   end
 
   def generate_id do

@@ -732,7 +732,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  |> to_string()
 
         assert 2 == length(set_data["immunizations.#{db_immunization_id}.reactions"])
-        assert set_data["immunizations.#{immunization_id2}.reactions"]
+        assert set_data["immunizations.#{immunization_id}.reactions"]
 
         :ok
       end)

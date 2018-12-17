@@ -8,6 +8,7 @@ defmodule Core.Rpc.Worker do
 
   def run(basename, module, function, args, attempt \\ 0, skip_servers \\ []) do
     if attempt >= config()[:max_attempts] do
+      Logger.warn("Failed RPC request to: #{basename}. #{module}.#{function}: #{inspect(args)}")
       {:error, :badrpc}
     else
       do_run(basename, module, function, args, attempt, skip_servers)
@@ -23,10 +24,12 @@ defmodule Core.Rpc.Worker do
     case servers do
       # Invalid basename or all servers are down
       [] ->
+        Logger.warn("No RPC servers available for basename: #{basename}")
         {:error, :badrpc}
 
       _ ->
         server = Enum.random(servers)
+        Logger.info("RPC request to: #{server}, #{module}.#{function}: #{inspect(args)}")
 
         case :rpc.call(server, module, function, args) do
           # try a different server
