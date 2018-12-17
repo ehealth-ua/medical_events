@@ -4,10 +4,11 @@ defmodule Core.Jobs.PackageCancelSaveObservationsJob do
   _id is a binded Request id.
   """
 
-  defstruct [
-    :_id,
-    :patient_id,
-    :observations_ids,
-    :user_id
-  ]
+  defstruct ~w(
+    request_id
+    _id
+    patient_id
+    observations_ids
+    user_id
+  )a
 end

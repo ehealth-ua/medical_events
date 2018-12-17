@@ -68,6 +68,7 @@ defmodule Core.Patients.Episodes.Consumer do
           {:ok, _} ->
             Jobs.produce_update_status(
               job._id,
+              job.request_id,
               "Episode with such id already exists",
               422
             )
@@ -93,6 +94,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
             Jobs.produce_update_status(
               job._id,
+              job.request_id,
               %{
                 "links" => [
                   %{
@@ -108,6 +110,7 @@ defmodule Core.Patients.Episodes.Consumer do
       errors ->
         Jobs.produce_update_status(
           job._id,
+          job.request_id,
           ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
           422
         )
@@ -156,6 +159,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             %{
               "links" => [
                 %{
@@ -170,16 +174,17 @@ defmodule Core.Patients.Episodes.Consumer do
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job._id, "Episode in status #{status} can not be updated", 422)
+        Jobs.produce_update_status(job._id, job.request_id, "Episode in status #{status} can not be updated", 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
     end
   end
 
@@ -244,6 +249,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             %{
               "links" => [
                 %{
@@ -258,16 +264,17 @@ defmodule Core.Patients.Episodes.Consumer do
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job._id, "Episode in status #{status} can not be closed", 422)
+        Jobs.produce_update_status(job._id, job.request_id, "Episode in status #{status} can not be closed", 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
     end
   end
 
@@ -346,6 +353,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
             Jobs.produce_update_status(
               job._id,
+              job.request_id,
               %{
                 "links" => [
                   %{
@@ -357,22 +365,28 @@ defmodule Core.Patients.Episodes.Consumer do
               200
             )
           else
-            Jobs.produce_update_status(job._id, "Episode can not be canceled while it has not canceled encounters", 409)
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              "Episode can not be canceled while it has not canceled encounters",
+              409
+            )
           end
 
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {:error, message} ->
-        Jobs.produce_update_status(job._id, message, 422)
+        Jobs.produce_update_status(job._id, job.request_id, message, 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
     end
   end
 

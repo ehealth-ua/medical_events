@@ -10,12 +10,12 @@ defmodule Core.Jobs do
   @collection Job.metadata().collection
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
-  def produce_update_status(id, response, 200) do
-    do_produce_update_status(id, cut_response(response), Job.status(:processed), 200)
+  def produce_update_status(id, request_id, response, 200) do
+    do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
   end
 
-  def produce_update_status(id, response, status_code) do
-    do_produce_update_status(id, cut_response(response), Job.status(:failed), status_code)
+  def produce_update_status(id, request_id, response, status_code) do
+    do_produce_update_status(id, request_id, cut_response(response), Job.status(:failed), status_code)
   end
 
   defp cut_response(%{invalid: errors} = response) do
@@ -62,8 +62,9 @@ defmodule Core.Jobs do
 
   defp cut_params(error), do: error
 
-  def do_produce_update_status(id, response, status, status_code) do
+  defp do_produce_update_status(id, request_id, response, status, status_code) do
     event = %JobUpdateStatusJob{
+      request_id: request_id,
       _id: id,
       response: response,
       status: status,
@@ -127,6 +128,7 @@ defmodule Core.Jobs do
           data
           |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
           |> Map.put(:_id, to_string(job._id))
+          |> Map.put(:request_id, Logger.metadata()[:request_id])
 
         with {:ok, _} <- Mongo.insert_one(job) do
           {:ok, job, struct(module, data)}

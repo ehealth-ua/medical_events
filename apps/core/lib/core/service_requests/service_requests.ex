@@ -211,23 +211,24 @@ defmodule Core.ServiceRequests do
                 }
               ]
 
-              Jobs.produce_update_status(job._id, %{"links" => links}, 200)
+              Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
             end
           end
 
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(job._id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, response, status_code)
+        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
     end
   end
 
@@ -267,6 +268,7 @@ defmodule Core.ServiceRequests do
 
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             %{
               "links" => [
                 %{
@@ -281,16 +283,17 @@ defmodule Core.ServiceRequests do
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {_, :status} ->
-        Jobs.produce_update_status(job._id, "Can't use inactive service request", 409)
+        Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
 
       {_, :used_by} ->
-        Jobs.produce_update_status(job._id, "Service request already used", 409)
+        Jobs.produce_update_status(job._id, job.request_id, "Service request already used", 409)
     end
   end
 
@@ -322,6 +325,7 @@ defmodule Core.ServiceRequests do
 
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             %{
               "links" => [
                 %{
@@ -336,13 +340,14 @@ defmodule Core.ServiceRequests do
         errors ->
           Jobs.produce_update_status(
             job._id,
+            job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
       end
     else
       {_, :status} ->
-        Jobs.produce_update_status(job._id, "Can't use inactive service request", 409)
+        Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
     end
   end
 

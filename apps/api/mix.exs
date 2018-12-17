@@ -40,7 +40,6 @@ defmodule Api.Mixfile do
       {:core, in_umbrella: true},
       {:confex_config_provider, "~> 0.1.0"},
       {:plug, "~> 1.0"},
-      {:plug_logger_json, "~> 0.6.0"},
       {:phoenix, "~> 1.3.3"},
       {:phoenix_pubsub, "~> 1.0"},
       {:cowboy, "~> 1.1"},

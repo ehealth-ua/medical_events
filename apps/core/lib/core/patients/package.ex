@@ -13,7 +13,11 @@ defmodule Core.Patients.Package do
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def consume_save_patient(
-        %PackageSavePatientJob{patient_id: patient_id, patient_id_hash: patient_id_hash, encounter: encounter} = job
+        %PackageSavePatientJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          encounter: encounter
+        } = job
       ) do
     {:ok, %{matched_count: 1, modified_count: 1}} =
       Mongo.update_one(@collection, %{"_id" => patient_id_hash}, job.patient_save_data)
@@ -28,6 +32,7 @@ defmodule Core.Patients.Package do
         ]
 
     event = %PackageSaveConditionsJob{
+      request_id: job.request_id,
       _id: job._id,
       patient_id: patient_id,
       patient_id_hash: patient_id_hash,
@@ -43,11 +48,16 @@ defmodule Core.Patients.Package do
   end
 
   def consume_save_conditions(
-        %PackageSaveConditionsJob{patient_id: patient_id, patient_id_hash: patient_id_hash, encounter: encounter} = job
+        %PackageSaveConditionsJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          encounter: encounter
+        } = job
       ) do
     links = insert_conditions(job.links, job.conditions, patient_id)
 
     event = %PackageSaveObservationsJob{
+      request_id: job.request_id,
       _id: job._id,
       patient_id: patient_id,
       patient_id_hash: patient_id_hash,
@@ -63,7 +73,7 @@ defmodule Core.Patients.Package do
 
   def consume_save_observations(%PackageSaveObservationsJob{patient_id: patient_id} = job) do
     links = insert_observations(job.links, job.observations, patient_id)
-    Jobs.produce_update_status(job._id, %{"links" => links}, 200)
+    Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
   end
 
   defp insert_conditions(links, [], _), do: links

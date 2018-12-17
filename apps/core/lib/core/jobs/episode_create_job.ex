@@ -4,18 +4,19 @@ defmodule Core.Jobs.EpisodeCreateJob do
   _id is a binded Request id.
   """
 
-  defstruct [
-    :_id,
-    :patient_id,
-    :patient_id_hash,
-    :id,
-    :name,
-    :type,
-    :status,
-    :managing_organization,
-    :period,
-    :care_manager,
-    :user_id,
-    :client_id
-  ]
+  defstruct ~w(
+    request_id
+    _id
+    patient_id
+    patient_id_hash
+    id
+    name
+    type
+    status
+    managing_organization
+    period
+    care_manager
+    user_id
+    client_id
+  )a
 end

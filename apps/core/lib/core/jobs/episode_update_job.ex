@@ -4,13 +4,14 @@ defmodule Core.Jobs.EpisodeUpdateJob do
   _id is a binded Request id.
   """
 
-  defstruct [
-    :_id,
-    :patient_id,
-    :patient_id_hash,
-    :id,
-    :request_params,
-    :user_id,
-    :client_id
-  ]
+  defstruct ~w(
+    request_id
+    _id
+    patient_id
+    patient_id_hash
+    id
+    request_params
+    user_id
+    client_id
+  )a
 end

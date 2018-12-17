@@ -43,7 +43,7 @@ defmodule Core.MixProject do
   defp deps do
     [
       {:confex, "~> 3.3"},
-      {:ecto, "~> 3.0", override: true},
+      {:logger_json, "~> 3.0"},
       {:elixir_uuid, "~> 1.2"},
       {:eview, "~> 0.14.0"},
       {:httpoison, "~> 1.2"},

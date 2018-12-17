@@ -84,6 +84,7 @@ defmodule Core.Patients.Encounters.Cancel do
              immunizations_ids
            ) do
       event = %PackageCancelSavePatientJob{
+        request_id: job.request_id,
         _id: job._id,
         patient_id: job.patient_id,
         patient_id_hash: job.patient_id_hash,
@@ -110,6 +111,7 @@ defmodule Core.Patients.Encounters.Cancel do
     with {:ok, %{matched_count: 1, modified_count: 1}} <-
            Mongo.update_one(@patients_collection, %{"_id" => patient_id_hash}, patient_save_data) do
       event = %PackageCancelSaveConditionsJob{
+        request_id: job.request_id,
         _id: job._id,
         patient_id: job.patient_id,
         conditions_ids: job.conditions_ids,
@@ -126,6 +128,7 @@ defmodule Core.Patients.Encounters.Cancel do
   def consume_save_conditions(%PackageCancelSaveConditionsJob{conditions_ids: conditions_ids} = job) do
     with :ok <- update_conditions(Enum.map(conditions_ids, &Mongo.string_to_uuid/1), job.user_id) do
       event = %PackageCancelSaveObservationsJob{
+        request_id: job.request_id,
         _id: job._id,
         patient_id: job.patient_id,
         observations_ids: job.observations_ids,
@@ -155,7 +158,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
   def consume_save_observations(%PackageCancelSaveObservationsJob{observations_ids: observations_ids} = job) do
     with :ok <- update_observations(Enum.map(observations_ids, &Mongo.string_to_uuid/1), job.user_id) do
-      Jobs.produce_update_status(job._id, %{}, 200)
+      Jobs.produce_update_status(job._id, job.request_id, %{}, 200)
     end
   end
 

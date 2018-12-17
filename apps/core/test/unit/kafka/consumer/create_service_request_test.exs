@@ -21,7 +21,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       user_id = prepare_signature_expectations()
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = job._id
+        id = to_string(job._id)
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,
@@ -62,7 +62,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       user_id = prepare_signature_expectations()
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = job._id
+        id = to_string(job._id)
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,
@@ -129,6 +129,50 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                        rules: [
                          %{
                            description: "required property code was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.context",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property context was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.authored_on",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property authored_on was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.requester",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property requester was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.performer_type",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property performer_type was not present",
                            params: [],
                            rule: :required
                          }
@@ -218,27 +262,20 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       }
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = job._id
+        id = to_string(job._id)
+        url = "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,
                  response: %{
-                   invalid: [
+                   "links" => [
                      %{
-                       entry: "$.managing_organization.identifier.value",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description:
-                             "User is not allowed to perform actions with an episode that belongs to another legal entity",
-                           params: [],
-                           rule: :invalid
-                         }
-                       ]
+                       "entity" => "service_request",
+                       "href" => ^url
                      }
                    ]
                  },
-                 status_code: 422
+                 status_code: 200
                } = event
 
         :ok
@@ -321,7 +358,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       }
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = job._id
+        id = to_string(job._id)
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,

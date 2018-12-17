@@ -5,8 +5,7 @@ defmodule ApiWeb.Endpoint do
   alias Confex.Resolver
 
   plug(Plug.RequestId)
-  plug(Plug.Logger)
-  plug(Plug.LoggerJSON, level: Logger.level())
+  plug(LoggerJSON.Plug, level: Logger.level())
   plug(EView)
 
   plug(

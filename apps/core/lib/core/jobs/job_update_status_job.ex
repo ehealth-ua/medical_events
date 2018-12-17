@@ -3,5 +3,11 @@ defmodule Core.Jobs.JobUpdateStatusJob do
   Struct for updating job status.
   """
 
-  defstruct [:_id, :response, :status, :status_code]
+  defstruct ~w(
+    request_id
+    _id
+    response
+    status
+    status_code
+  )a
 end
