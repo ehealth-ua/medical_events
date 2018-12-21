@@ -164,7 +164,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "inpatient", "system" => "eHealth/encounter_classes"},
+          "class" => %{"code" => "PHC", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
@@ -177,7 +177,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => UUID.binary_to_string!(condition._id.binary)
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]},
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]},
               "rank" => 10
             }
           ],
@@ -321,7 +321,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "inpatient", "system" => "eHealth/encounter_classes"},
+          "class" => %{"code" => "PHC", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
@@ -334,7 +334,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
@@ -823,7 +823,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "outpatient", "system" => "eHealth/encounter_classes"},
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
@@ -836,7 +836,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
@@ -1244,7 +1244,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "outpatient", "system" => "eHealth/encounter_classes"},
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
@@ -1257,7 +1257,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                   "value" => condition_id
                 }
               },
-              "role" => %{"coding" => [%{"code" => "CC", "system" => "eHealth/diagnosis_roles"}]}
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
             }
           ],
           "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],

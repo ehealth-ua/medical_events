@@ -8,8 +8,8 @@ defmodule Core.Validators.DiagnosesCode do
 
     required_system =
       case code do
-        "inpatient" -> "eHealth/ICD10/condition_codes"
-        "outpatient" -> "eHealth/ICPC2/condition_codes"
+        "PHC" -> "eHealth/ICD10/condition_codes"
+        "AMB" -> "eHealth/ICPC2/condition_codes"
       end
 
     results =
