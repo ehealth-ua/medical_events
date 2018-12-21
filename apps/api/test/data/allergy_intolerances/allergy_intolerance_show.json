@@ -197,7 +197,7 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/allergy_intolerances_codes"
+                      "eHealth/allergy_intolerance_codes"
                     ]
                   },
                   "code": {

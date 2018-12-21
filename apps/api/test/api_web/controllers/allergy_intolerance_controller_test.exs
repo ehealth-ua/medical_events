@@ -165,7 +165,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       code =
         build(
           :codeable_concept,
-          coding: [build(:coding, code: code_value, system: "eHealth/allergy_intolerances_codes")]
+          coding: [build(:coding, code: code_value, system: "eHealth/allergy_intolerance_codes")]
         )
 
       allergy_intolerance_in = build(:allergy_intolerance, code: code)
@@ -331,8 +331,8 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         build(
           :codeable_concept,
           coding: [
-            build(:coding, code: code_value, system: "eHealth/allergy_intolerances_codes"),
-            build(:coding, code: "test", system: "eHealth/allergy_intolerances_codes")
+            build(:coding, code: code_value, system: "eHealth/allergy_intolerance_codes"),
+            build(:coding, code: "test", system: "eHealth/allergy_intolerance_codes")
           ]
         )
 

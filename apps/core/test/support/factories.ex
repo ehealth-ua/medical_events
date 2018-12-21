@@ -121,7 +121,7 @@ defmodule Core.Factories do
       type: "allergy",
       category: "food",
       criticality: "low",
-      code: codeable_concept_coding(system: "eHealth/allergy_intolerances_codes", code: "227493005"),
+      code: codeable_concept_coding(system: "eHealth/allergy_intolerance_codes", code: "227493005"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       onset_date_time: now,
       asserted_date: now,

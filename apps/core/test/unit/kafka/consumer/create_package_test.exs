@@ -699,7 +699,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/allergy_intolerances_codes",
+                  "system" => "eHealth/allergy_intolerance_codes",
                   "code" => "227493005"
                 }
               ]
@@ -1111,7 +1111,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/allergy_intolerances_codes",
+                  "system" => "eHealth/allergy_intolerance_codes",
                   "code" => "227493005"
                 }
               ]
