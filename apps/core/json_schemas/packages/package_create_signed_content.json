@@ -2412,12 +2412,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/allergy_intolerances_codes"
+                      "eHealth/allergy_intolerance_codes"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary: eHealth/allergy_intolerances_codes"
+                    "description": "Dictionary: eHealth/allergy_intolerance_codes"
                   }
                 },
                 "required": [

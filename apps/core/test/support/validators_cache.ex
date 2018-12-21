@@ -21,7 +21,7 @@ defmodule Core.Validators.CacheTest do
          "name" => "eHealth/encounter_classes",
          "values" => %{"inpatient" => "inpatient", "outpatient" => "outpatient"}
        },
-       %{"name" => "eHealth/allergy_intolerances_codes", "values" => %{"227493005" => "227493005", "1" => "1"}},
+       %{"name" => "eHealth/allergy_intolerance_codes", "values" => %{"227493005" => "227493005", "1" => "1"}},
        %{"name" => "eHealth/vaccine_codes", "values" => %{"FLUVAX" => "FLUVAX"}},
        %{"name" => "eHealth/vaccination_dose_statuse_reasons", "values" => %{"coldchbrk" => "coldchbrk"}},
        %{"name" => "eHealth/vaccination_dose_statuses", "values" => %{"1" => "1"}},
