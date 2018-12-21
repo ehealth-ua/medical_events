@@ -97,7 +97,7 @@ defmodule Core.Patients.Encounters.Validations do
     %{encounter | diagnoses: diagnoses}
     |> add_validations(
       :diagnoses,
-      diagnoses_role: [type: "CC", message: "Encounter must have at least one chief complaint"],
+      diagnoses_role: [type: "primary", message: "Encounter must have at least one chief complaint"],
       diagnoses_code: [code: class.code]
     )
   end

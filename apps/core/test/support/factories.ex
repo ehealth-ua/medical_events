@@ -324,7 +324,7 @@ defmodule Core.Factories do
       episode: reference_coding(system: "eHealth/resources", code: "episode"),
       performer: reference_coding(system: "eHealth/resources", code: "employee"),
       visit: reference_coding(system: "eHealth/resources", code: "visit"),
-      class: build(:coding, system: "eHealth/encounter_classes", code: "inpatient"),
+      class: build(:coding, system: "eHealth/encounter_classes", code: "PHC"),
       type: codeable_concept_coding(system: "eHealth/encounter_types", code: "AMB"),
       reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons", code: "reason")],
       diagnoses: [build(:diagnosis)],
@@ -380,7 +380,7 @@ defmodule Core.Factories do
   def diagnosis_factory do
     %Diagnosis{
       condition: reference_coding(system: "eHealth/resources", code: "condition"),
-      role: codeable_concept_coding(system: "eHealth/diagnosis_roles", code: "CC"),
+      role: codeable_concept_coding(system: "eHealth/diagnosis_roles", code: "primary"),
       code: codeable_concept_coding(system: "eHealth/ICPC2/condition_codes", code: "R80"),
       rank: Enum.random(1..1000)
     }
