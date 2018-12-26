@@ -18,29 +18,31 @@ defmodule Core.Jobs do
     do_produce_update_status(id, request_id, cut_response(response), Job.status(:failed), status_code)
   end
 
-  defp cut_response(%{invalid: errors} = response) do
-    if Job.valid_response?(response) do
-      response
+  def cut_response(%{invalid: errors} = response) do
+    with {false, _} <- {Job.valid_response?(response), response},
+         updated_response <- %{response | invalid: Enum.map(errors, &cut_params/1)},
+         {false, updated_response} <- {Job.valid_response?(updated_response), updated_response} do
+      cut_response(%{updated_response | invalid: Enum.take(updated_response.invalid, Enum.count(errors) - 1)})
     else
-      updated_response = %{response | invalid: Enum.map(errors, &cut_params/1)}
-      cut_response(%{updated_response | invalid: Enum.take(errors, Enum.count(errors) - 1)})
+      {_, response} -> response
     end
   end
 
-  defp cut_response(%{"invalid" => errors} = response) do
-    if Job.valid_response?(response) do
-      response
+  def cut_response(%{"invalid" => errors} = response) do
+    with {false, _} <- {Job.valid_response?(response), response},
+         updated_response <- %{response | "invalid" => Enum.map(errors, &cut_params/1)},
+         {false, updated_response} <- {Job.valid_response?(updated_response), updated_response} do
+      cut_response(%{updated_response | "invalid" => Enum.take(updated_response.invalid, Enum.count(errors) - 1)})
     else
-      updated_response = %{response | "invalid" => Enum.map(errors, &cut_params/1)}
-      cut_response(%{updated_response | "invalid" => Enum.take(errors, Enum.count(errors) - 1)})
+      {_, response} -> response
     end
   end
 
-  defp cut_response(response) when is_binary(response) do
+  def cut_response(response) when is_binary(response) do
     if Job.valid_response?(response), do: response, else: String.slice(response, 0, Job.response_length() - 3) <> "..."
   end
 
-  defp cut_response(%{"error" => error} = response) when is_binary(error) do
+  def cut_response(%{"error" => error} = response) when is_binary(error) do
     if Job.valid_response?(response) do
       response
     else
@@ -48,7 +50,7 @@ defmodule Core.Jobs do
     end
   end
 
-  defp cut_response(response), do: response
+  def cut_response(response), do: response
 
   defp cut_params(%{rules: rules} = error) do
     updated_rules = Enum.map(rules, &Map.put(&1, :params, []))
