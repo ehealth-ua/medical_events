@@ -28,7 +28,7 @@ defmodule Core.Microservices do
           query_string = if Enum.empty?(params), do: "", else: "?#{URI.encode_query(params)}"
 
           Logger.info(fn ->
-            Jason.encode!(%{
+            %{
               "log_type" => "microservice_request",
               "microservice" => config()[:endpoint],
               "action" => method,
@@ -39,7 +39,7 @@ defmodule Core.Microservices do
                 Enum.reduce(process_request_headers(headers), %{}, fn {k, v}, map ->
                   Map.put_new(map, k, v)
                 end)
-            })
+            }
           end)
 
           check_response(super(method, url, body, headers, options))

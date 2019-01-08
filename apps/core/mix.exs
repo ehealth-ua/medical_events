@@ -42,7 +42,8 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:confex, "~> 3.3"},
+      {:kube_rpc, git: "https://github.com/edenlabllc/kube_rpc.git"},
+      {:confex, "~> 3.4"},
       {:logger_json, "~> 3.0"},
       {:elixir_uuid, "~> 1.2"},
       {:eview, "~> 0.14.0"},
