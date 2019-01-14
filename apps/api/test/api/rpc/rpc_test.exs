@@ -1,4 +1,4 @@
-defmodule Core.RpcTest do
+defmodule Api.Rpc.RpcTest do
   @moduledoc false
 
   use ExUnit.Case
@@ -6,7 +6,7 @@ defmodule Core.RpcTest do
   import Mox
 
   alias Core.Patients
-  alias Core.Rpc
+  alias Api.Rpc
 
   test "get encounter status by id" do
     expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -30,5 +30,31 @@ defmodule Core.RpcTest do
              Rpc.encounter_status_by_id(patient_id, UUID.binary_to_string!(encounter_2.id.binary))
 
     refute Rpc.encounter_status_by_id(patient_id, UUID.uuid4())
+  end
+
+  describe "episode_by_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.binary_to_string!(episode_1.id.binary)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
+        }
+      )
+
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_id(patient_id, episode_id)
+    end
   end
 end
