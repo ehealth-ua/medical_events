@@ -214,7 +214,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
       expect(WorkerMock, :run, 2, fn
-        _, _, :employees_by_user_id_client_id, _ -> [employee_id]
+        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111111"
       end)
 
@@ -310,7 +310,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
       expect(WorkerMock, :run, 2, fn
-        _, _, :employees_by_user_id_client_id, _ -> [employee_id]
+        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111112"
       end)
 
