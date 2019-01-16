@@ -413,14 +413,7 @@ defmodule Core.Patients.Encounters.Cancel do
       [] ->
         :ok
 
-      [{error_path, _} | _] = errors ->
-        # todo: remove after test
-        if Mix.env() != :test do
-          IO.puts("encounter packages diff: #{inspect(errors)}")
-          IO.puts("encounter packages from db: #{inspect(package)}")
-          IO.puts("encounter packages from request: #{inspect(request_package)}")
-        end
-
+      [{error_path, _} | _] ->
         {:ok,
          %{
            "error" => "Submitted signed content does not correspond to previously created content: #{error_path}"
