@@ -23,6 +23,7 @@ defmodule Core.ServiceRequests do
   alias Scrivener.Page
   require Logger
 
+  @worker Application.get_env(:core, :rpc_worker)
   @collection ServiceRequest.metadata().collection
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
@@ -169,6 +170,16 @@ defmodule Core.ServiceRequests do
         |> ServiceRequestsValidations.validate_supporting_info(patient_id_hash)
         |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
         |> ServiceRequestsValidations.validate_permitted_episodes(patient_id_hash)
+
+      service_request =
+        with {:ok, number} <-
+               @worker.run("number_generator", NumberGenerator.Rpc, :number, [
+                 "service_request",
+                 service_request._id,
+                 user_id
+               ]) do
+          %{service_request | requisition: number}
+        end
 
       case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
         [] ->

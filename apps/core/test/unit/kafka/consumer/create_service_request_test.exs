@@ -80,17 +80,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                        ]
                      },
                      %{
-                       entry: "$.requisition",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property requisition was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
                        entry: "$.status",
                        entry_type: "json_data_property",
                        rules: [
@@ -177,6 +166,17 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                            rule: :required
                          }
                        ]
+                     },
+                     %{
+                       entry: "$.supporting_info",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property supporting_info was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
                      }
                    ]
                  },
@@ -213,14 +213,14 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 2, fn
+      expect(WorkerMock, :run, 3, fn
         _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111111"
+        _, _, :number, _ -> {:ok, UUID.uuid4()}
       end)
 
       signed_content = %{
         "id" => service_request_id,
-        "requisition" => "AX654654T",
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
@@ -309,14 +309,14 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 2, fn
+      expect(WorkerMock, :run, 3, fn
         _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111112"
+        _, _, :number, _ -> {:ok, UUID.uuid4()}
       end)
 
       signed_content = %{
         "id" => service_request_id,
-        "requisition" => "AX654654T",
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
