@@ -161,6 +161,9 @@ defmodule Core.Mongo.AuditLog do
   defp fetch_actor_id(%{updated_by: actor_id}, _opts), do: actor_id
   defp fetch_actor_id(%{"updated_by" => actor_id}, _opts), do: actor_id
 
+  defp fetch_actor_id(%{inserted_by: actor_id}, _opts), do: actor_id
+  defp fetch_actor_id(%{"inserted_by" => actor_id}, _opts), do: actor_id
+
   # fetch from $set attribute. Usually for update operations
   defp fetch_actor_id(%{"$set" => %{updated_by: actor_id}}, _opts), do: actor_id
   defp fetch_actor_id(%{"$set" => %{"updated_by" => actor_id}}, _opts), do: actor_id
