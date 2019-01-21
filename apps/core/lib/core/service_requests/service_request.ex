@@ -55,6 +55,7 @@ defmodule Core.ServiceRequest do
     field(:used_by, reference: [path: "used_by"])
     field(:assignee, reference: [path: "assignee"])
     field(:signed_content_links)
+    field(:requisition, presence: true)
 
     timestamps()
     changed_by()

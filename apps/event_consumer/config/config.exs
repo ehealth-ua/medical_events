@@ -16,6 +16,16 @@ config :event_consumer,
         polling_interval: 10_000
       ]
     ]
+  ],
+  k8s_number_generator: [
+    strategy: Elixir.Cluster.Strategy.Kubernetes,
+    config: [
+      mode: :dns,
+      kubernetes_node_basename: "number_generator",
+      kubernetes_selector: "app=number-generator",
+      kubernetes_namespace: "me",
+      polling_interval: 10_000
+    ]
   ]
 
 config :event_consumer,
