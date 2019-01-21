@@ -100,3 +100,17 @@ release :secondary_events_consumer do
 
   set(config_providers: [ConfexConfigProvider])
 end
+
+release :number_generator do
+  set(version: current_version(:number_generator))
+
+  set(
+    applications: [
+      :runtime_tools,
+      number_generator: :permanent,
+      core: :permanent
+    ]
+  )
+
+  set(config_providers: [ConfexConfigProvider])
+end

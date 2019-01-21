@@ -7,7 +7,7 @@ defmodule MedicalEvents.Umbrella.Mixfile do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: [
-        filter_prefix: "Api.Rpc"
+        filter_prefix: "*.Rpc"
       ]
     ]
   end
