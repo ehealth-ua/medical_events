@@ -23,6 +23,12 @@ defmodule Api.Web.ServiceRequestController do
     end
   end
 
+  def search(conn, params) do
+    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.search(params) do
+      render(conn, "index.json", service_requests: entries, paging: paging)
+    end
+  end
+
   def create(conn, params) do
     with {:ok, job} <-
            ServiceRequests.produce_create_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
