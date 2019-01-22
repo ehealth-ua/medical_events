@@ -119,4 +119,9 @@ defmodule Core.Patients.Episodes.Validations do
 
     %{episode | referral_requests: referral_requests}
   end
+
+  def validate_referral_requests(%Episode{} = episode, references, client_id) do
+    references = if is_list(references), do: Enum.map(references, &Reference.create(&1)), else: references
+    validate_referral_requests(%{episode | referral_requests: references}, client_id)
+  end
 end

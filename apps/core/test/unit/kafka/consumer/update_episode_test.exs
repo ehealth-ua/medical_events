@@ -75,7 +75,8 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
         |> Map.get(:value)
         |> to_string()
 
-      expect_doctor(client_id)
+      expect_doctor(client_id, 2)
+      service_request = insert(:service_request, used_by: build(:reference))
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -117,6 +118,14 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                        "value" => UUID.uuid4()
                      }
                    },
+                   "referral_requests" => [
+                     %{
+                       "identifier" => %{
+                         "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                         "value" => to_string(service_request._id)
+                       }
+                     }
+                   ],
                    "name" => "ОРВИ 2019"
                  },
                  user_id: user_id,
