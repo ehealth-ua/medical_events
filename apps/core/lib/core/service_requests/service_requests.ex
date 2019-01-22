@@ -59,8 +59,32 @@ defmodule Core.ServiceRequests do
     end
   end
 
+  def search(params) do
+    search_params = Map.take(params, ~w(requisition status))
+    paging_params = Map.take(params, ~w(page page_size))
+
+    with :ok <- JsonSchema.validate(:service_request_search, search_params),
+         [_ | _] = pipeline <- search_service_requests_search_pipe(params),
+         %Page{entries: service_requests} = page <-
+           Paging.paginate(
+             :aggregate,
+             @collection,
+             pipeline,
+             paging_params
+           ) do
+      {:ok, %Page{page | entries: Enum.map(service_requests, &ServiceRequest.create/1)}}
+    end
+  end
+
   defp search_service_requests_pipe(%{"patient_id_hash" => patient_id_hash} = params, encounters) do
     %{"$match" => %{"subject" => patient_id_hash, "context.identifier.value" => %{"$in" => encounters}}}
+    |> Search.add_param(params["status"], ["$match", "status"])
+    |> List.wrap()
+    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
+  end
+
+  defp search_service_requests_search_pipe(%{"requisition" => requisition} = params) do
+    %{"$match" => %{"requisition" => requisition}}
     |> Search.add_param(params["status"], ["$match", "status"])
     |> List.wrap()
     |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])

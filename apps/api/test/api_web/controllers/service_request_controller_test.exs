@@ -5,6 +5,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
   alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
+  alias Core.ServiceRequest
   import Mox
 
   describe "list service requests" do
@@ -136,6 +137,78 @@ defmodule Api.Web.ServiceRequestControllerTest do
       conn = get(conn, service_request_path(conn, :show, patient_id, episode_id, id))
       assert response = json_response(conn, 200)
       assert %{"data" => %{"id" => ^id}} = response
+    end
+  end
+
+  describe "search service requests" do
+    test "requisition is not present", %{conn: conn} do
+      conn = get(conn, service_request_path(conn, :search))
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.requisition",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "required property requisition was not present",
+                       "params" => [],
+                       "rule" => "required"
+                     }
+                   ]
+                 }
+               ]
+             } = json_response(conn, 422)["error"]
+    end
+
+    test "success search", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      service_request1 = insert(:service_request)
+      insert(:service_request, requisition: service_request1.requisition)
+      insert(:service_request)
+      conn = get(conn, service_request_path(conn, :search), %{requisition: service_request1.requisition})
+      response = json_response(conn, 200)
+      assert 2 == response["paging"]["total_entries"]
+      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == service_request1.requisition))
+    end
+
+    test "status search", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      service_request1 = insert(:service_request)
+      insert(:service_request, requisition: service_request1.requisition, status: ServiceRequest.status(:in_use))
+      insert(:service_request)
+
+      conn =
+        get(conn, service_request_path(conn, :search), %{
+          requisition: service_request1.requisition,
+          status: service_request1.status
+        })
+
+      response = json_response(conn, 200)
+      assert 1 == response["paging"]["total_entries"]
+      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == service_request1.requisition))
+      assert Enum.all?(response["data"], &(Map.get(&1, "status") == service_request1.status))
+    end
+
+    test "pagination search", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      service_request1 = insert(:service_request)
+      insert(:service_request, requisition: service_request1.requisition)
+      insert(:service_request, requisition: service_request1.requisition)
+
+      conn =
+        get(conn, service_request_path(conn, :search), %{
+          requisition: service_request1.requisition,
+          page: 2,
+          page_size: 2
+        })
+
+      response = json_response(conn, 200)
+      assert 3 == response["paging"]["total_entries"]
+      assert 2 == response["paging"]["page_number"]
     end
   end
 
