@@ -107,4 +107,16 @@ defmodule Core.Patients.Episodes.Validations do
   def validate_care_manager(%Episode{} = episode, %{} = reference, client_id) do
     validate_care_manager(%{episode | care_manager: Reference.create(reference)}, client_id)
   end
+
+  def validate_referral_requests(%Episode{} = episode, client_id) do
+    referral_requests = episode.referral_requests || []
+
+    referral_requests =
+      Enum.map(referral_requests, fn referral ->
+        identifier = referral.identifier
+        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [client_id: client_id])}
+      end)
+
+    %{episode | referral_requests: referral_requests}
+  end
 end

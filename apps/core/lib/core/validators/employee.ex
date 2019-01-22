@@ -7,7 +7,7 @@ defmodule Core.Validators.Employee do
   @worker Application.get_env(:core, :rpc_worker)
 
   def validate(employee_id, options) do
-    ets_key = "employee_#{employee_id}"
+    ets_key = get_key(employee_id)
 
     case get_data(ets_key, employee_id) do
       nil ->
@@ -24,6 +24,8 @@ defmodule Core.Validators.Employee do
     end
   end
 
+  def get_key(employee_id), do: "employee_#{employee_id}"
+
   def validate_field(field, remote_value, options) do
     if is_nil(Keyword.get(options, field)) or remote_value == Keyword.get(options, field) do
       :ok
@@ -36,7 +38,7 @@ defmodule Core.Validators.Employee do
     {:error, message(options, error_message)}
   end
 
-  defp get_data(ets_key, employee_id) do
+  def get_data(ets_key, employee_id) do
     case :ets.lookup(:message_cache, ets_key) do
       [{^ets_key, employee}] -> employee
       _ -> @worker.run("ehealth", Rpc, :employee_by_id, [employee_id])

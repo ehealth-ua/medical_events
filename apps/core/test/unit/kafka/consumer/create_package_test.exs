@@ -238,7 +238,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
+      expect_doctor(client_id, 2)
 
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,
@@ -293,7 +293,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       observation_id = UUID.uuid4()
       observation_id2 = UUID.uuid4()
       employee_id = UUID.uuid4()
-      service_request = insert(:service_request)
+      service_request = insert(:service_request, used_by: build(:reference))
 
       start_datetime =
         DateTime.utc_now()

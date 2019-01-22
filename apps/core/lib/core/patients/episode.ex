@@ -32,6 +32,7 @@ defmodule Core.Episode do
     field(:managing_organization, presence: true, reference: [path: "managing_organization"])
     field(:period, presence: true, reference: [path: "period"])
     field(:care_manager, presence: true, reference: [path: "care_manager"])
+    field(:referral_requests, reference: [path: "referral_requests"])
 
     timestamps()
     changed_by()
@@ -76,6 +77,12 @@ defmodule Core.Episode do
 
         {"current_diagnoses", v} ->
           {:current_diagnoses, Enum.map(v, &Diagnosis.create/1)}
+
+        {"referral_requests", nil} ->
+          {:referral_requests, nil}
+
+        {"referral_requests", v} ->
+          {:referral_requests, Enum.map(v, &Reference.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

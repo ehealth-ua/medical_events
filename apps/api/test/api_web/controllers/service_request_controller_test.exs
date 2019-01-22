@@ -177,7 +177,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       service_request1 = insert(:service_request)
-      insert(:service_request, requisition: service_request1.requisition, status: ServiceRequest.status(:in_use))
+      insert(:service_request, requisition: service_request1.requisition, status: ServiceRequest.status(:completed))
       insert(:service_request)
 
       conn =

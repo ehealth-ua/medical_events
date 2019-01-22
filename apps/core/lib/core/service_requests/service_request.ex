@@ -8,7 +8,6 @@ defmodule Core.ServiceRequest do
   alias Core.ServiceRequests.Occurence
 
   @status_active "active"
-  @status_in_use "is_use"
   @status_completed "completed"
   @status_entered_in_error "entered_in_error"
   @status_cancelled "cancelled"
@@ -17,7 +16,6 @@ defmodule Core.ServiceRequest do
   @intent_plan "plan"
 
   def status(:active), do: @status_active
-  def status(:in_use), do: @status_in_use
   def status(:completed), do: @status_completed
   def status(:entered_in_error), do: @status_entered_in_error
   def status(:cancelled), do: @status_cancelled

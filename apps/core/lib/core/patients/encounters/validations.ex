@@ -102,13 +102,13 @@ defmodule Core.Patients.Encounters.Validations do
     )
   end
 
-  def validate_incoming_referrals(%Encounter{} = encounter) do
+  def validate_incoming_referrals(%Encounter{} = encounter, client_id) do
     incoming_referrals = encounter.incoming_referrals || []
 
     incoming_referrals =
       Enum.map(incoming_referrals, fn referral ->
         identifier = referral.identifier
-        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [])}
+        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [client_id: client_id])}
       end)
 
     %{encounter | incoming_referrals: incoming_referrals}

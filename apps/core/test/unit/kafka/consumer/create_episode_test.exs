@@ -82,7 +82,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       insert(:patient, _id: patient_id_hash)
       episode_id = UUID.uuid4()
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
+      expect_doctor(client_id, 2)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -111,6 +111,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
         200
       )
 
+      service_request = insert(:service_request, used_by: build(:reference))
+
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
                  _id: to_string(job._id),
@@ -134,7 +136,15 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                      "value" => UUID.uuid4()
                    }
-                 }
+                 },
+                 referral_requests: [
+                   %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                       "value" => to_string(service_request._id)
+                     }
+                   }
+                 ]
                })
 
       assert %{"episodes" => episodes} =
