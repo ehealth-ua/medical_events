@@ -16,6 +16,7 @@ defmodule Core.Jobs.EpisodeCreateJob do
     managing_organization
     period
     care_manager
+    referral_requests
     user_id
     client_id
   )a

@@ -59,6 +59,7 @@ defmodule Core.Patients.Episodes.Consumer do
       |> EpisodeValidations.validate_period()
       |> EpisodeValidations.validate_managing_organization(client_id)
       |> EpisodeValidations.validate_care_manager(client_id)
+      |> EpisodeValidations.validate_referral_requests(client_id)
 
     episode_id = episode.id
 
