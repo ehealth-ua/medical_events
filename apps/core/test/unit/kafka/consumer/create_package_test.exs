@@ -164,7 +164,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "value" => episode_id
             }
           },
-          "class" => %{"code" => "PHC", "system" => "eHealth/encounter_classes"},
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
           "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
           "reasons" => [
             %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
@@ -369,7 +369,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]},
+            "code" => %{"coding" => [%{"code" => "R80", "system" => "eHealth/ICPC2/condition_codes"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
@@ -863,7 +863,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
-            "code" => %{"coding" => [%{"code" => "B10", "system" => "eHealth/ICPC2/condition_codes"}]},
+            "code" => %{"coding" => [%{"code" => "A10", "system" => "eHealth/ICD10/condition_codes"}]},
             "clinical_status" => "test",
             "verification_status" => "test",
             "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
