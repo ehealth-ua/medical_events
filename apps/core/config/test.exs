@@ -10,7 +10,9 @@ config :core,
     il: IlMock,
     digital_signature: DigitalSignatureMock,
     casher: CasherMock,
-    media_storage: MediaStorageMock
+    media_storage: MediaStorageMock,
+    mpi: MPIMock,
+    otp_verification: OTPVerificationMock
   ],
   cache: [
     validators: Core.Validators.CacheTest

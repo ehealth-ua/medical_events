@@ -4,6 +4,7 @@ defmodule Core.Factories do
   use ExMachina
 
   alias Core.AllergyIntolerance
+  alias Core.Approval
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
@@ -499,6 +500,35 @@ defmodule Core.Factories do
       updated_by: Mongo.string_to_uuid(user_id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now()
+    }
+  end
+
+  def approval_factory do
+    patient_id = Patients.get_pk_hash(UUID.uuid4())
+    user_id = UUID.uuid4()
+    now = DateTime.utc_now()
+    approval_expiration_minutes = Confex.fetch_env!(:core, :approval)[:expire_in_minutes]
+
+    %Approval{
+      _id: Mongo.string_to_uuid(UUID.uuid4()),
+      patient_id: patient_id,
+      granted_resources: [reference_coding(system: "eHealth/resources", code: "episode_of_care")],
+      granted_to: reference_coding(system: "eHealth/resources", code: "employee"),
+      expires_at: DateTime.to_unix(now) + approval_expiration_minutes * 60,
+      granted_by: reference_coding(system: "eHealth/resources", code: "mpi-hash"),
+      reason: nil,
+      status: Approval.status(:new),
+      access_level: Approval.access_level(:read),
+      urgent: %{
+        "authentication_method_current" => %{
+          "type" => "OTP",
+          "number" => "+38093*****85"
+        }
+      },
+      inserted_by: Mongo.string_to_uuid(user_id),
+      updated_by: Mongo.string_to_uuid(user_id),
+      inserted_at: now,
+      updated_at: now
     }
   end
 

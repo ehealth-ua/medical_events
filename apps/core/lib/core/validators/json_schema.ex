@@ -33,6 +33,7 @@ defmodule Core.Validators.JsonSchema do
   )
 
   use_schema(:service_request_use, "json_schemas/service_requests/service_request_use.json")
+  use_schema(:approval_create, "json_schemas/approvals/approval_create.json")
 
   def validate(schema, attrs) do
     @schemas
