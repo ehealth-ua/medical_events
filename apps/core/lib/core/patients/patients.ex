@@ -22,7 +22,9 @@ defmodule Core.Patients do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
+  alias Core.Patients.RiskAssessments
   alias Core.Patients.Validators
+  alias Core.RiskAssessment
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
@@ -35,6 +37,7 @@ defmodule Core.Patients do
   alias Core.Patients.Encryptor
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
+  alias Core.Patients.RiskAssessments.Validations, as: RiskAssessmentValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
   alias EView.Views.ValidationError
 
@@ -139,7 +142,8 @@ defmodule Core.Patients do
            {:ok, conditions} <- create_conditions(job, content, observations),
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, immunizations} <- create_immunizations(job, content, observations),
-           {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content) do
+           {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
+           {:ok, risk_assessments} <- create_risk_assessments(job, content) do
         visit_id = if is_map(visit), do: visit.id
 
         encounter =
@@ -253,6 +257,24 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.updated_by")
               |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.context.identifier.value")
               |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value")
+            end)
+
+          set =
+            Enum.reduce(risk_assessments, set, fn risk_assessment, acc ->
+              risk_assessment = RiskAssessments.fill_up_risk_assessment_performer(risk_assessment)
+
+              acc
+              |> Mongo.add_to_set(
+                risk_assessment,
+                "risk_assessment.#{risk_assessment.id}"
+              )
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.id")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.inserted_by")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.updated_by")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.context.identifier.value")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.performer.identifier.value")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.basis.value")
+              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.reason.reference.identifier.value")
             end)
 
           links = []
@@ -718,6 +740,53 @@ defmodule Core.Patients do
 
   defp create_allergy_intolerances(_, _), do: {:ok, []}
 
+  defp create_risk_assessments(
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
+         %{"risk_assessments" => _} = content
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    risk_assessments =
+      Enum.map(content["risk_assessments"], fn data ->
+        risk_assessment = RiskAssessment.create(data)
+
+        %{
+          risk_assessment
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> RiskAssessmentValidations.validate_context(encounter_id)
+        |> RiskAssessmentValidations.validate_asserted_date()
+        |> RiskAssessmentValidations.validate_reason_reference(patient_id_hash)
+        |> RiskAssessmentValidations.validate_basis_reference(patient_id_hash)
+        |> RiskAssessmentValidations.validate_performer(client_id)
+        |> RiskAssessmentValidations.validate_predictions()
+      end)
+
+    case Vex.errors(
+           %{risk_assessments: risk_assessments},
+           risk_assessments: [
+             unique_ids: [field: :id],
+             reference: [path: "risk_assessments"]
+           ]
+         ) do
+      [] ->
+        validate_risk_assessments(patient_id_hash, risk_assessments)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_risk_assessments(_, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
@@ -759,6 +828,18 @@ defmodule Core.Patients do
       case AllergyIntolerances.get(patient_id_hash, allergy_intolerance.id) do
         {:ok, _} ->
           {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_risk_assessments(patient_id_hash, risk_assessments) do
+    Enum.reduce_while(risk_assessments, {:ok, risk_assessments}, fn risk_assessment, acc ->
+      case RiskAssessments.get_by_id(patient_id_hash, risk_assessment.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Risk assessment with id '#{risk_assessment.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}

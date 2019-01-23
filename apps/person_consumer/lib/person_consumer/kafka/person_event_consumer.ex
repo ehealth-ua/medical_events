@@ -29,6 +29,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
           "encounters" => %{},
           "immunizations" => %{},
           "allergy_intolerances" => %{},
+          "risk_assessments" => %{},
           "status_history" => []
         }
       },
