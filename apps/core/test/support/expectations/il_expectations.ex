@@ -20,6 +20,12 @@ defmodule Core.Expectations.IlExpectations do
     end)
   end
 
+  def expect_employees_by_user_id_client_id(employee_ids, n \\ 1) when is_list(employee_ids) do
+    expect(WorkerMock, :run, n, fn _, _, :employees_by_user_id_client_id, _ ->
+      {:ok, employee_ids}
+    end)
+  end
+
   def expect_employee_users(tax_id, user_id, n \\ 1) do
     expect(IlMock, :get_employee_users, n, fn employee_id, headers ->
       client_id =

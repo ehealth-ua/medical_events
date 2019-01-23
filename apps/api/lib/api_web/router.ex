@@ -67,6 +67,11 @@ defmodule ApiWeb.Router do
       patch("/:service_request_id/actions/release", ServiceRequestController, :release)
     end
 
+    scope "/patients/:patient_id/approvals" do
+      post("/", ApprovalController, :create)
+      patch("/:id", ApprovalController, :verify)
+    end
+
     get("/jobs/:id", JobController, :show)
 
     scope "/patients/:patient_id/summary" do

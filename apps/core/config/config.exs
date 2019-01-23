@@ -7,7 +7,9 @@ config :core,
     il: Core.Microservices.Il,
     digital_signature: Core.Microservices.DigitalSignature,
     casher: Core.Microservices.Casher,
-    media_storage: Core.Microservices.MediaStorage
+    media_storage: Core.Microservices.MediaStorage,
+    mpi: Core.Microservices.MPI,
+    otp_verification: Core.Microservices.OTPVerification
   ],
   cache: [
     validators: Core.Validators.Cache
@@ -68,6 +70,22 @@ config :core, Core.Microservices.Casher,
     timeout: 30_000
   ]
 
+config :core, Core.Microservices.MPI,
+  endpoint: {:system, "MPI_ENDPOINT", "http://api-svc.mpi"},
+  hackney_options: [
+    connect_timeout: 30_000,
+    recv_timeout: 30_000,
+    timeout: 30_000
+  ]
+
+config :core, Core.Microservices.OTPVerification,
+  endpoint: {:system, "OTP_VERIFICATION_ENDPOINT", "http://api-svc.verification"},
+  hackney_options: [
+    connect_timeout: 30_000,
+    recv_timeout: 30_000,
+    timeout: 30_000
+  ]
+
 config :core, Core.Patients.Encryptor,
   keyphrase: {:system, :string, "PERSON_PK_KEYPHRASE"},
   ivphrase: {:system, :string, "PERSON_PK_IVPHRASE"}
@@ -106,7 +124,8 @@ config :vex,
       condition_reference: Core.Validators.ConditionReference,
       diagnoses_code: Core.Validators.DiagnosesCode,
       service_request_reference: Core.Validators.ServiceRequestReference,
-      max_days_passed: Core.Validators.MaxDaysPassed
+      max_days_passed: Core.Validators.MaxDaysPassed,
+      approval_granted_to_reference: Core.Validators.ApprovalGrantedToReference
     ],
     Vex.Validators
   ]
@@ -140,5 +159,7 @@ config :core, :encounter_package,
 config :core, :summary,
   conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},
   observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["8310-5", "8462-4", "8480-6", "80319-7"]}
+
+config :core, :approval, expire_in_minutes: {:system, :integer, "APPROVAL_EXPIRATION", 60 * 24}
 
 import_config "#{Mix.env()}.exs"
