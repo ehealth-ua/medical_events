@@ -715,6 +715,106 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "last_occurence" => DateTime.to_iso8601(DateTime.utc_now()),
             "onset_date_time" => DateTime.to_iso8601(DateTime.utc_now())
           }
+        ],
+        "risk_assessments" => [
+          %{
+            "id" => UUID.uuid4(),
+            "status" => "preliminary",
+            "method" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/risk_assessment_methods",
+                  "code" => "deafult_code"
+                }
+              ]
+            },
+            "code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/risk_assessment_codes",
+                  "code" => "R80"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "primary_source" => true,
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "reason_codeable_concept" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/risk_assessment_reasons",
+                  "code" => "default_reason"
+                }
+              ]
+            },
+            "basis" => %{
+              "reference" => %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "observation"
+                      }
+                    ]
+                  },
+                  "value" => UUID.binary_to_string!(db_observation._id.binary)
+                }
+              }
+            },
+            "predictions" => [
+              %{
+                "outcome" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/risk_assessment_outcomes",
+                      "code" => "default_outcome"
+                    }
+                  ]
+                },
+                "qualitative_risk" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/risk_assessment_qualitative_risks",
+                      "code" => "default_qualitative_risk"
+                    }
+                  ]
+                },
+                "when_period" => %{
+                  "start" => start_datetime,
+                  "end" => end_datetime
+                },
+                "rationale" => "some text"
+              }
+            ],
+            "mitigation" => "some text",
+            "comment" => "some text"
+          }
         ]
       }
 

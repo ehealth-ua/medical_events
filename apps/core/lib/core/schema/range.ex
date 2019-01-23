@@ -1,4 +1,4 @@
-defmodule Core.Observations.Values.Range do
+defmodule Core.Range do
   @moduledoc false
 
   use Core.Schema
@@ -13,7 +13,7 @@ defmodule Core.Observations.Values.Range do
   end
 end
 
-defimpl Vex.Blank, for: Core.Observations.Values.Range do
-  def blank?(%Core.Observations.Values.Range{}), do: false
+defimpl Vex.Blank, for: Core.Range do
+  def blank?(%Core.Range{}), do: false
   def blank?(_), do: true
 end

@@ -5,10 +5,10 @@ defmodule Core.Observations.Value do
 
   alias Core.CodeableConcept
   alias Core.Observations.Values.Quantity
-  alias Core.Observations.Values.Range
   alias Core.Observations.Values.Ratio
   alias Core.Observations.Values.SampledData
   alias Core.Period
+  alias Core.Range
 
   embedded_schema do
     field(:type, presence: true)
