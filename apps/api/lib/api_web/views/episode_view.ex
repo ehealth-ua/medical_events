@@ -34,7 +34,8 @@ defmodule Api.Web.EpisodeView do
       managing_organization: ReferenceView.render(episode.managing_organization),
       care_manager: ReferenceView.render(episode.care_manager),
       status_history: StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history),
-      current_diagnoses: DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || [])
+      current_diagnoses: DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || []),
+      referral_requests: ReferenceView.render(episode.referral_requests)
     })
   end
 end

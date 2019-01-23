@@ -361,6 +361,7 @@ defmodule Core.Factories do
       managing_organization: reference_coding(code: "legal_entity"),
       period: build(:period, start: date, end: date),
       care_manager: reference_coding(code: "employee"),
+      referral_requests: [reference_coding(system: "eHealth/resources", code: "service_request")],
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(id),
