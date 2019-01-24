@@ -8,6 +8,7 @@ defmodule Core.Patients.Package do
   alias Core.Jobs.PackageSavePatientJob
   alias Core.Mongo
   alias Core.Observation
+  require Logger
 
   @collection "patients"
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
@@ -79,32 +80,42 @@ defmodule Core.Patients.Package do
   defp insert_conditions(links, [], _), do: links
 
   defp insert_conditions(links, conditions, patient_id) do
-    {:ok, %{inserted_ids: condition_ids}} = Mongo.insert_many(Condition.metadata().collection, conditions, [])
+    case Mongo.insert_many(Condition.metadata().collection, conditions, []) do
+      {:ok, %{inserted_ids: condition_ids}} ->
+        Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
+          acc ++
+            [
+              %{
+                "entity" => "condition",
+                "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
+              }
+            ]
+        end)
 
-    Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-      acc ++
-        [
-          %{
-            "entity" => "condition",
-            "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
-          }
-        ]
-    end)
+      {:error, error} ->
+        Logger.warn("Failed to insert conditions: #{error.message}")
+        links
+    end
   end
 
   defp insert_observations(links, [], _), do: links
 
   defp insert_observations(links, observations, patient_id) do
-    {:ok, %{inserted_ids: observation_ids}} = Mongo.insert_many(Observation.metadata().collection, observations, [])
+    case Mongo.insert_many(Observation.metadata().collection, observations, []) do
+      {:ok, %{inserted_ids: observation_ids}} ->
+        Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
+          acc ++
+            [
+              %{
+                "entity" => "observation",
+                "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
+              }
+            ]
+        end)
 
-    Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-      acc ++
-        [
-          %{
-            "entity" => "observation",
-            "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
-          }
-        ]
-    end)
+      {:error, error} ->
+        Logger.warn("Failed to insert observations: #{error.message}")
+        links
+    end
   end
 end
