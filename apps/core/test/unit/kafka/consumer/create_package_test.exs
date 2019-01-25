@@ -724,7 +724,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "coding" => [
                 %{
                   "system" => "eHealth/risk_assessment_methods",
-                  "code" => "deafult_code"
+                  "code" => "default_code"
                 }
               ]
             },
@@ -750,7 +750,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             },
             "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "primary_source" => true,
             "performer" => %{
               "identifier" => %{
                 "type" => %{

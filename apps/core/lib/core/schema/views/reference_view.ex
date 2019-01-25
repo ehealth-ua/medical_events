@@ -16,6 +16,11 @@ defmodule Core.ReferenceView do
   alias Core.Patients.Immunizations.Explanation
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.VaccinationProtocol
+  alias Core.Patients.RiskAssessments.ExtendedReference
+  alias Core.Patients.RiskAssessments.Prediction
+  alias Core.Patients.RiskAssessments.Probability
+  alias Core.Patients.RiskAssessments.Reason
+  alias Core.Patients.RiskAssessments.When
   alias Core.Period
   alias Core.Reference
   alias Core.ServiceRequests.Occurence
@@ -28,6 +33,13 @@ defmodule Core.ReferenceView do
     %{
       identifier: render(reference.identifier),
       display_value: reference.display_value
+    }
+  end
+
+  def render(%ExtendedReference{} = extended_reference) do
+    %{
+      reference: render(extended_reference.reference),
+      text: extended_reference.text
     }
   end
 
@@ -77,6 +89,17 @@ defmodule Core.ReferenceView do
       dose_status: render(vaccination_protocol.dose_status),
       dose_status_reason: render(vaccination_protocol.dose_status_reason)
     })
+  end
+
+  def render(%Prediction{} = prediction) do
+    prediction
+    |> Map.take(~w(relative_risk rationale)a)
+    |> Map.merge(%{
+      outcome: render(prediction.outcome),
+      qualitative_risk: render(prediction.qualitative_risk)
+    })
+    |> Map.merge(render_probability(prediction.probability))
+    |> Map.merge(render_when(prediction.when))
   end
 
   def render(%Period{} = period) do
@@ -219,5 +242,29 @@ defmodule Core.ReferenceView do
 
   def render_effective_at(%EffectiveAt{type: "effective_period", value: value}) do
     %{effective_period: render(value)}
+  end
+
+  def render_reason(%Reason{type: "reason_codeable_concept", value: value}) do
+    %{reason_codeable_concept: render(value)}
+  end
+
+  def render_reason(%Reason{type: "reason_reference", value: value}) do
+    %{reason_reference: render(value)}
+  end
+
+  def render_probability(%Probability{type: "probability_decimal", value: value}) do
+    %{probability_decimal: value}
+  end
+
+  def render_probability(%Probability{type: "probability_range", value: value}) do
+    %{probability_range: Map.take(value, ~w(low high)a)}
+  end
+
+  def render_when(%When{type: "when_period", value: value}) do
+    %{when_period: render(value)}
+  end
+
+  def render_when(%When{type: "when_range", value: value}) do
+    %{when_range: Map.take(value, ~w(low high)a)}
   end
 end

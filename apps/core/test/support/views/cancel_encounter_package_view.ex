@@ -143,4 +143,30 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.merge(ReferenceView.render_source(allergy_intolerance.source))
     end
   end
+
+  def render(:risk_assessments, risk_assessments) do
+    risk_assessment_fields = ~w(
+      status
+      mitigation
+      comment
+    )a
+
+    for risk_assessment <- risk_assessments do
+      risk_assessment_data = %{
+        id: UUIDView.render(risk_assessment.id),
+        context: ReferenceView.render(risk_assessment.context),
+        code: ReferenceView.render(risk_assessment.code),
+        asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
+        method: ReferenceView.render(risk_assessment.method),
+        performer: ReferenceView.render(risk_assessment.performer),
+        basis: ReferenceView.render(risk_assessment.basis),
+        predictions: ReferenceView.render(risk_assessment.predictions)
+      }
+
+      risk_assessment
+      |> Map.take(risk_assessment_fields)
+      |> Map.merge(risk_assessment_data)
+      |> Map.merge(ReferenceView.render_reason(risk_assessment.reason))
+    end
+  end
 end

@@ -85,6 +85,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       allergy_intolerance2 = build(:allergy_intolerance, context: context)
       allergy_intolerance2_id = UUID.binary_to_string!(allergy_intolerance2.id.binary)
 
+      risk_assessment = build(:risk_assessment, context: context)
+      risk_assessment_id = UUID.binary_to_string!(risk_assessment.id.binary)
+
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -97,6 +100,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         allergy_intolerances: %{
           allergy_intolerance_id => allergy_intolerance,
           allergy_intolerance2_id => allergy_intolerance2
+        },
+        risk_assessments: %{
+          risk_assessment_id => risk_assessment
         }
       )
 
@@ -119,7 +125,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           "observations" => render(:observations, [%{observation | status: @entered_in_error}]),
           "immunizations" => render(:immunizations, [%{immunization | status: @entered_in_error}]),
           "allergy_intolerances" =>
-            render(:allergy_intolerances, [%{allergy_intolerance | verification_status: @entered_in_error}])
+            render(:allergy_intolerances, [%{allergy_intolerance | verification_status: @entered_in_error}]),
+          "risk_assessments" => render(:risk_assessments, [%{risk_assessment | status: @entered_in_error}])
         }
         |> Jason.encode!()
         |> Base.encode64()
@@ -134,6 +141,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  set_data["encounters.#{encounter_id}.cancellation_reason"]["coding"] |> hd() |> Map.get("system")
 
         assert @entered_in_error == set_data["allergy_intolerances.#{allergy_intolerance_id}.verification_status"]
+        assert @entered_in_error == set_data["risk_assessments.#{risk_assessment_id}.status"]
         assert @entered_in_error == set_data["immunizations.#{immunization_id}.status"]
 
         assert [condition_id] == job.conditions_ids

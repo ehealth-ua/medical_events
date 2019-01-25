@@ -26,8 +26,17 @@ defmodule Core.Patients.RiskAssessments.Prediction do
         {"probability", %{"type" => type, "value" => value}} ->
           {:probability, Probability.create(type, value)}
 
+        {"probability_decimal", value} ->
+          {:probability, Probability.create("probability_decimal", value)}
+
+        {"probability_range", value} ->
+          {:probability, Probability.create("probability_range", value)}
+
         {"qualitative_risk", v} ->
           {:qualitative_risk, CodeableConcept.create(v)}
+
+        {"when", %{"type" => type, "value" => value}} ->
+          {:when, When.create(type, value)}
 
         {"when_period", value} ->
           {:when, When.create("when_period", value)}
