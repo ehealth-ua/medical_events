@@ -266,15 +266,15 @@ defmodule Core.Patients do
               acc
               |> Mongo.add_to_set(
                 risk_assessment,
-                "risk_assessment.#{risk_assessment.id}"
+                "risk_assessments.#{risk_assessment.id}"
               )
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.id")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.inserted_by")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.updated_by")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.context.identifier.value")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.performer.identifier.value")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.basis.value")
-              |> Mongo.convert_to_uuid("risk_assessment.#{risk_assessment.id}.reason.reference.identifier.value")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.id")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.inserted_by")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.updated_by")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.context.identifier.value")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.performer.identifier.value")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.basis.value")
+              |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.reason.reference.identifier.value")
             end)
 
           links = []

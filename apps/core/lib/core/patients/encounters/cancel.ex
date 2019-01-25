@@ -21,7 +21,9 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
+  alias Core.Patients.RiskAssessments
   alias Core.ReferenceView
+  alias Core.RiskAssessment
   alias Core.UUIDView
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
@@ -39,6 +41,7 @@ defmodule Core.Patients.Encounters.Cancel do
 
   @entities_meta %{
     "allergy_intolerances" => [status: "verification_status"],
+    "risk_assessments" => [status: "status"],
     "immunizations" => [status: "status"],
     "conditions" => [status: "verification_status"],
     "observations" => [status: "status"]
@@ -68,6 +71,7 @@ defmodule Core.Patients.Encounters.Cancel do
         %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job
       ) do
     allergy_intolerances_ids = get_allergy_intolerances_ids(package_data)
+    risk_assessments_ids = get_risk_assessments_ids(package_data)
     immunizations_ids = get_immunizations_ids(package_data)
     conditions_ids = get_conditions_ids(package_data)
     observations_ids = get_observations_ids(package_data)
@@ -81,6 +85,7 @@ defmodule Core.Patients.Encounters.Cancel do
              package_data,
              current_diagnoses,
              allergy_intolerances_ids,
+             risk_assessments_ids,
              immunizations_ids
            ) do
       event = %PackageCancelSavePatientJob{
@@ -197,6 +202,13 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
+  defp get_risk_assessments_ids(package_data) do
+    package_data
+    |> Map.get("risk_assessments", [])
+    |> Enum.filter(&(Map.get(&1, "status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
   defp get_immunizations_ids(package_data) do
     package_data
     |> Map.get("immunizations", [])
@@ -224,6 +236,7 @@ defmodule Core.Patients.Encounters.Cancel do
          %{"encounter" => encounter},
          current_diagnoses,
          allergy_intolerances_ids,
+         risk_assessments_ids,
          immunizations_ids
        ) do
     now = DateTime.utc_now()
@@ -235,6 +248,7 @@ defmodule Core.Patients.Encounters.Cancel do
       "episodes.#{get_in(encounter, ~w(episode identifier value))}.current_diagnoses"
     )
     |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
+    |> set_risk_assessments(risk_assessments_ids, user_id, now)
     |> set_immunizations(immunizations_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
     |> set_encounter_diagnoses(patient, encounter)
@@ -247,6 +261,16 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(user_id, "allergy_intolerances.#{id}.updated_by")
       |> Mongo.add_to_set(now, "allergy_intolerances.#{id}.updated_at")
       |> Mongo.convert_to_uuid("allergy_intolerances.#{id}.updated_by")
+    end)
+  end
+
+  defp set_risk_assessments(set, ids, user_id, now) do
+    Enum.reduce(ids, set, fn id, acc ->
+      acc
+      |> Mongo.add_to_set(@entered_in_error, "risk_assessments.#{id}.status")
+      |> Mongo.add_to_set(user_id, "risk_assessments.#{id}.updated_by")
+      |> Mongo.add_to_set(now, "risk_assessments.#{id}.updated_at")
+      |> Mongo.convert_to_uuid("risk_assessments.#{id}.updated_by")
     end)
   end
 
@@ -351,6 +375,7 @@ defmodule Core.Patients.Encounters.Cancel do
     [
       encounter: [encounter.status],
       allergy_intolerance: get_entities_statuses(package[:allergy_intolerances] || [], :verification_status),
+      risk_assessment: get_entities_statuses(package[:risk_assessments] || [], :status),
       immunization: get_entities_statuses(package[:immunizations] || [], :status),
       condition: get_entities_statuses(package[:conditions] || [], :verification_status),
       observation: get_entities_statuses(package[:observations] || [], :status)
@@ -379,6 +404,7 @@ defmodule Core.Patients.Encounters.Cancel do
     entity_creators = %{
       "conditions" => &Condition.create/1,
       "allergy_intolerances" => &AllergyIntolerance.create/1,
+      "risk_assessments" => &RiskAssessment.create/1,
       "immunizations" => &Immunization.create/1,
       "observations" => &Observation.create/1
     }
@@ -480,6 +506,12 @@ defmodule Core.Patients.Encounters.Cancel do
   defp get_entities("allergy_intolerances", ids, patient_id_hash, encounter_uuid) do
     patient_id_hash
     |> AllergyIntolerances.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
+  end
+
+  defp get_entities("risk_assessments", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> RiskAssessments.get_by_encounter_id(encounter_uuid)
     |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
   end
 
@@ -611,6 +643,24 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Map.merge(ReferenceView.render_effective_at(observation.effective_at))
       |> Map.merge(render_source(observation.source))
       |> Map.merge(ReferenceView.render_value(observation.value))
+    end)
+  end
+
+  defp render(:risk_assessments, risk_assessments) do
+    Enum.map(risk_assessments, fn risk_assessment ->
+      risk_assessment
+      |> Map.take(~w(mitigation comment)a)
+      |> Map.merge(%{
+        id: UUIDView.render(risk_assessment.id),
+        context: ReferenceView.render(risk_assessment.context),
+        code: ReferenceView.render(risk_assessment.code),
+        asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
+        method: ReferenceView.render(risk_assessment.method),
+        performer: ReferenceView.render(risk_assessment.performer),
+        basis: ReferenceView.render(risk_assessment.basis),
+        predictions: ReferenceView.render(risk_assessment.predictions)
+      })
+      |> Map.merge(ReferenceView.render_reason(risk_assessment.reason))
     end)
   end
 

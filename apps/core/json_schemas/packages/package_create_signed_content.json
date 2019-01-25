@@ -2480,7 +2480,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Dictionary: eHealth/immunization_statuses"
+          "description": "Dictionary: eHealth/risk_assessment_statuses"
         },
         "method": {
           "type": "object",
@@ -2657,7 +2657,8 @@
             "text": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "predictions": {
           "type": "array",
@@ -2957,58 +2958,58 @@
             "text": {
               "type": "string"
             }
-          },
-          "reason_reference": {
-            "type": "object",
-            "properties": {
-              "identifier": {
-                "type": "object",
-                "properties": {
-                  "type": {
-                    "type": "object",
-                    "properties": {
-                      "coding": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "system": {
-                              "type": "string",
-                              "enum": [
-                                "eHealth/resources"
-                              ]
-                            },
-                            "code": {
-                              "type": "string",
-                              "description": "Symbol in syntax defined by the system",
-                              "enum": [
-                                "condition",
-                                "observation",
-                                "diagostic_report"
-                              ]
-                            }
+          }
+        },
+        "reason_reference": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
                           },
-                          "required": [
-                            "code"
-                          ]
-                        }
-                      },
-                      "text": {
-                        "type": "string"
+                          "code": {
+                            "type": "string",
+                            "description": "Symbol in syntax defined by the system",
+                            "enum": [
+                              "condition",
+                              "observation",
+                              "diagostic_report"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "code"
+                        ]
                       }
                     },
-                    "description": "Description of identifier"
+                    "text": {
+                      "type": "string"
+                    }
                   },
-                  "value": {
-                    "type": "string",
-                    "description": "The value that is unique"
-                  }
+                  "description": "Description of identifier"
                 },
-                "required": [
-                  "type",
-                  "value"
-                ]
-              }
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ]
             }
           }
         }
@@ -3018,8 +3019,7 @@
         "status",
         "code",
         "context",
-        "asserted_date",
-        "primary_source"
+        "asserted_date"
       ],
       "additionalProperties": false
     }

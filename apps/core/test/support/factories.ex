@@ -28,8 +28,14 @@ defmodule Core.Factories do
   alias Core.Patients.Immunizations.Explanation
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.VaccinationProtocol
+  alias Core.Patients.RiskAssessments.ExtendedReference
+  alias Core.Patients.RiskAssessments.Prediction
+  alias Core.Patients.RiskAssessments.Probability
+  alias Core.Patients.RiskAssessments.Reason
+  alias Core.Patients.RiskAssessments.When
   alias Core.Period
   alias Core.Reference
+  alias Core.RiskAssessment
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Occurence
   alias Core.Source
@@ -73,6 +79,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), allergy_intolerance}
       end)
 
+    risk_assessments = build_list(2, :risk_assessment)
+
+    risk_assessments =
+      Enum.into(risk_assessments, %{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
+        {UUID.binary_to_string!(id), risk_assessment}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -84,6 +97,7 @@ defmodule Core.Factories do
       encounters: encounters,
       immunizations: immunizations,
       allergy_intolerances: allergy_intolerances,
+      risk_assessments: risk_assessments,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: user_id,
@@ -138,6 +152,74 @@ defmodule Core.Factories do
       updated_at: now,
       inserted_by: id,
       updated_by: id
+    }
+  end
+
+  def risk_assessment_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
+    now = DateTime.utc_now()
+
+    %RiskAssessment{
+      id: id,
+      status: RiskAssessment.status(:preliminary),
+      method: codeable_concept_coding(system: "eHealth/risk_assesment_methods", code: "default_risk_assessment_method"),
+      code: codeable_concept_coding(system: "eHealth/risk_assesment_codes", code: "default_risk_assessment_code"),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      asserted_date: now,
+      performer: reference_coding(system: "eHealth/resources", code: "employee"),
+      reason: build(:reason),
+      basis: build(:extended_reference),
+      predictions: build_list(1, :prediction),
+      mitigation: "mitigation",
+      comment: "comment",
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
+  def reason_factory do
+    %Reason{
+      type: "reason_codeable_concept",
+      value: codeable_concept_coding(system: "eHealth/risk_assessment_reasons", code: "default_risk_assessment_reason")
+    }
+  end
+
+  def extended_reference_factory do
+    %ExtendedReference{
+      text: "text",
+      reference: reference_coding(system: "eHealth/resources", code: "observation")
+    }
+  end
+
+  def prediction_factory do
+    %Prediction{
+      outcome:
+        codeable_concept_coding(system: "eHealth/risk_assessment_outcomes", code: "default_risk_assessment_outcome"),
+      probability: build(:probability),
+      qualitative_risk:
+        codeable_concept_coding(
+          system: "eHealth/risk_assessment_qualitative_risks",
+          code: "default_risk_assessment_qualitative_risks"
+        ),
+      relative_risk: 10.5,
+      when: build(:when),
+      rationale: "rationale"
+    }
+  end
+
+  def probability_factory do
+    %Probability{
+      type: "probability_decimal",
+      value: 15.1
+    }
+  end
+
+  def when_factory do
+    %When{
+      type: "when_period",
+      value: build(:period)
     }
   end
 

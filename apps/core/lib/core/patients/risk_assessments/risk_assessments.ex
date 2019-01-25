@@ -22,6 +22,18 @@ defmodule Core.Patients.RiskAssessments do
     end
   end
 
+  def get_by_encounter_id(patient_id_hash, encounter_id) do
+    @collection
+    |> Mongo.aggregate([
+      %{"$match" => %{"_id" => patient_id_hash}},
+      %{"$project" => %{"risk_assessments" => %{"$objectToArray" => "$risk_assessments"}}},
+      %{"$unwind" => "$risk_assessments"},
+      %{"$match" => %{"risk_assessments.v.context.identifier.value" => encounter_id}},
+      %{"$replaceRoot" => %{"newRoot" => "$risk_assessments.v"}}
+    ])
+    |> Enum.map(&RiskAssessment.create/1)
+  end
+
   def fill_up_risk_assessment_performer(
         %RiskAssessment{performer: %Reference{identifier: identifier} = performer} = risk_assessment
       ) do
