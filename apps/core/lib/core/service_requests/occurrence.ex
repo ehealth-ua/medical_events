@@ -1,4 +1,4 @@
-defmodule Core.ServiceRequests.Occurence do
+defmodule Core.ServiceRequests.Occurrence do
   @moduledoc false
 
   use Core.Schema
@@ -17,7 +17,7 @@ defmodule Core.ServiceRequests.Occurence do
   end
 end
 
-defimpl Vex.Blank, for: Core.ServiceRequests.Occurence do
-  def blank?(%Core.ServiceRequests.Occurence{}), do: false
+defimpl Vex.Blank, for: Core.ServiceRequests.Occurrence do
+  def blank?(%Core.ServiceRequests.Occurrence{}), do: false
   def blank?(_), do: true
 end

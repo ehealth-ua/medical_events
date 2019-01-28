@@ -37,7 +37,7 @@ defmodule Core.Factories do
   alias Core.Reference
   alias Core.RiskAssessment
   alias Core.ServiceRequest
-  alias Core.ServiceRequests.Occurence
+  alias Core.ServiceRequests.Occurrence
   alias Core.Source
   alias Core.Stage
   alias Core.StatusHistory
@@ -572,7 +572,7 @@ defmodule Core.Factories do
       code: codeable_concept_coding(system: "eHealth/SNOMED/procedure_codes", code: "128004"),
       category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "409063005"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
-      occurence: %Occurence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
+      occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
       performer_type:
         codeable_concept_coding(system: "eHealth/SNOMED/service_request_performer_roles", code: "psychiatrist"),
       requester: reference_coding(system: "eHealth/resources", code: "employee"),
@@ -581,7 +581,8 @@ defmodule Core.Factories do
       inserted_by: Mongo.string_to_uuid(user_id),
       updated_by: Mongo.string_to_uuid(user_id),
       inserted_at: DateTime.utc_now(),
-      updated_at: DateTime.utc_now()
+      updated_at: DateTime.utc_now(),
+      signed_content_links: []
     }
   end
 

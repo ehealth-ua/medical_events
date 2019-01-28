@@ -719,7 +719,7 @@ defmodule Core.Patients do
         |> AllergyIntoleranceValidations.validate_context(encounter_id)
         |> AllergyIntoleranceValidations.validate_source(client_id)
         |> AllergyIntoleranceValidations.validate_onset_date_time()
-        |> AllergyIntoleranceValidations.validate_last_occurence()
+        |> AllergyIntoleranceValidations.validate_last_occurrence()
         |> AllergyIntoleranceValidations.validate_asserted_date()
       end)
 

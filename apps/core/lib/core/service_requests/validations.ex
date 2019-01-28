@@ -4,7 +4,7 @@ defmodule Core.ServiceRequests.Validations do
   import Core.Schema, only: [add_validations: 3]
 
   alias Core.ServiceRequest
-  alias Core.ServiceRequests.Occurence
+  alias Core.ServiceRequests.Occurrence
 
   def validate_signatures(%ServiceRequest{} = service_request, %{"drfo" => drfo}, user_id, client_id) do
     requester = service_request.requester
@@ -32,40 +32,40 @@ defmodule Core.ServiceRequests.Validations do
     %{service_request | context: %{context | identifier: identifier}}
   end
 
-  def validate_occurence(%ServiceRequest{occurence: %Occurence{type: "date_time"} = occurence} = service_request) do
+  def validate_occurrence(%ServiceRequest{occurrence: %Occurrence{type: "date_time"} = occurrence} = service_request) do
     now = DateTime.utc_now()
 
-    occurence =
+    occurrence =
       add_validations(
-        occurence,
+        occurrence,
         :value,
-        datetime: [greater_than: now, message: "Occurence date must be in the future"]
+        datetime: [greater_than: now, message: "Occurrence date must be in the future"]
       )
 
-    %{service_request | occurence: occurence}
+    %{service_request | occurrence: occurrence}
   end
 
-  def validate_occurence(%ServiceRequest{occurence: %Occurence{type: "period"} = occurence} = service_request) do
+  def validate_occurrence(%ServiceRequest{occurrence: %Occurrence{type: "period"} = occurrence} = service_request) do
     now = DateTime.utc_now()
 
-    occurence =
-      occurence.value
+    occurrence =
+      occurrence.value
       |> add_validations(
         :start,
-        datetime: [greater_than: now, message: "Occurence start date must be in the future"]
+        datetime: [greater_than: now, message: "Occurrence start date must be in the future"]
       )
       |> add_validations(
         :end,
         datetime: [
-          greater_than: occurence.value.start,
-          message: "Occurence end date must be greater than the start date"
+          greater_than: occurrence.value.start,
+          message: "Occurrence end date must be greater than the start date"
         ]
       )
 
-    %{service_request | occurence: occurence}
+    %{service_request | occurrence: occurrence}
   end
 
-  def validate_occurence(service_request), do: service_request
+  def validate_occurrence(service_request), do: service_request
 
   def validate_authored_on(%ServiceRequest{} = service_request) do
     add_validations(service_request, :authored_on, datetime: [less_than: DateTime.utc_now()])

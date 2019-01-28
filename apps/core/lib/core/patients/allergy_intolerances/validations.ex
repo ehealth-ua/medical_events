@@ -59,7 +59,7 @@ defmodule Core.Patients.AllergyIntolerances.Validations do
     validate_date(allergy_intolerance, :asserted_date, "Asserted date must be in past")
   end
 
-  def validate_last_occurence(%AllergyIntolerance{} = allergy_intolerance) do
+  def validate_last_occurrence(%AllergyIntolerance{} = allergy_intolerance) do
     validate_date(allergy_intolerance, :last_occurrence, "Last occurrence must be in past")
   end
 
