@@ -5,6 +5,7 @@ defmodule Core.Approvals do
   alias Core.Approvals.Validations, as: ApprovalsValidations
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
+  alias Core.Jobs.ApprovalResendJob
   alias Core.Mongo
   alias Core.Patients
   alias Core.Patients.Validators
@@ -43,6 +44,20 @@ defmodule Core.Approvals do
              Map.merge(params, %{"user_id" => user_id, "client_id" => client_id})
            ),
          :ok <- @kafka_producer.publish_medical_event(approval_create_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_resend_approval(%{"patient_id_hash" => patient_id_hash, "id" => id} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         {:ok, %Approval{}} <- get_by_id(id),
+         {:ok, job, approval_resend_job} <-
+           Jobs.create(
+             ApprovalResendJob,
+             Map.merge(params, %{"user_id" => user_id, "client_id" => client_id})
+           ),
+         :ok <- @kafka_producer.publish_medical_event(approval_resend_job) do
       {:ok, job}
     end
   end
@@ -150,6 +165,36 @@ defmodule Core.Approvals do
     else
       {:error, error} ->
         Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+    end
+  end
+
+  def consume_resend_approval(
+        %ApprovalResendJob{
+          patient_id: patient_id,
+          id: id
+        } = job
+      ) do
+    with {:ok, %Approval{status: @status_new} = approval} <- get_by_id(id),
+         {:ok, person} <- get_person(patient_id),
+         {authentication_method_current, _} <- get_person_authentication_method_current(person),
+         :ok <- initialize_otp_verification(authentication_method_current) do
+      links = [
+        %{
+          "entity" => "approval",
+          "id" => to_string(approval._id)
+        }
+      ]
+
+      Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+    else
+      nil ->
+        Jobs.produce_update_status(job._id, job.request_id, "Approval with id '#{id}' is not found", 404)
+
+      {:ok, %Approval{status: status}} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Approval in status #{status} can not be resent", 409)
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)

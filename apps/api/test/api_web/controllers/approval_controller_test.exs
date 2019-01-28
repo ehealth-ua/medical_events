@@ -308,6 +308,64 @@ defmodule Api.Web.ApprovalControllerTest do
     end
   end
 
+  describe "resend approval" do
+    test "patient not found", %{conn: conn} do
+      assert conn
+             |> post(approval_path(conn, :resend, UUID.uuid4(), UUID.uuid4()))
+             |> json_response(404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      assert conn
+             |> post(approval_path(conn, :resend, patient_id, UUID.uuid4()))
+             |> json_response(409)
+    end
+
+    test "approval not found", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+
+      assert conn
+             |> post(approval_path(conn, :resend, patient_id, UUID.uuid4()))
+             |> json_response(404)
+    end
+
+    test "success approval resend", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+
+      approval = insert(:approval, patient_id: patient_id_hash)
+      id = to_string(approval._id)
+
+      assert resp =
+               conn
+               |> post(approval_path(conn, :resend, patient_id, id))
+               |> json_response(202)
+
+      assert %{
+               "data" => %{
+                 "id" => _,
+                 "inserted_at" => _,
+                 "status" => "pending",
+                 "updated_at" => _
+               }
+             } = resp
+    end
+  end
+
   defp build_request_params(:resources) do
     episodes = build_episode_references()
 
