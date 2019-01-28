@@ -13,7 +13,7 @@ defmodule Core.Validators.Drfo do
     drfo = Keyword.get(options, :drfo)
 
     with {:ok, employee_ids} <- @worker.run("ehealth", Rpc, :employees_by_user_id_client_id, [user_id, client_id]),
-         {true, _} <- {employee_id in employee_ids, "Employees related to this party_id not in current MSP"},
+         {true, _} <- {to_string(employee_id) in employee_ids, "Employees related to this party_id not in current MSP"},
          tax_id <- @worker.run("ehealth", Rpc, :tax_id_by_employee_id, [employee_id]),
          {:ok, _} <- {Signature.validate_drfo(drfo, tax_id), "Signer DRFO doesn't match with requester tax_id"} do
       :ok

@@ -23,7 +23,7 @@ defmodule Core.ReferenceView do
   alias Core.Patients.RiskAssessments.When
   alias Core.Period
   alias Core.Reference
-  alias Core.ServiceRequests.Occurence
+  alias Core.ServiceRequests.Occurrence
   alias Core.Source
   alias Core.Stage
   alias Core.StatusHistory
@@ -228,12 +228,12 @@ defmodule Core.ReferenceView do
     %{String.to_atom(type) => render(value)}
   end
 
-  def render_occurence(%Occurence{type: "date_time", value: value}) do
-    %{"datetime" => DateView.render_datetime(value)}
+  def render_occurrence(%Occurrence{type: "date_time", value: value}) do
+    %{"occurrence_date_time" => DateView.render_datetime(value)}
   end
 
-  def render_occurence(%Occurence{type: "period", value: value}) do
-    %{"period" => render(value)}
+  def render_occurrence(%Occurrence{type: "period", value: value}) do
+    %{"occurrence_period" => render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do

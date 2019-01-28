@@ -26,10 +26,16 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:immunization_summary, "json_schemas/immunizations/immunization_summary.json")
   use_schema(:service_request_create, "json_schemas/service_requests/service_request_create.json")
   use_schema(:service_request_search, "json_schemas/service_requests/service_request_search.json")
+  use_schema(:service_request_recall, "json_schemas/service_requests/service_request_recall.json")
 
   use_schema(
     :service_request_create_signed_content,
     "json_schemas/service_requests/service_request_create_signed_content.json"
+  )
+
+  use_schema(
+    :service_request_recall_signed_content,
+    "json_schemas/service_requests/service_request_recall_signed_content.json"
   )
 
   use_schema(:service_request_use, "json_schemas/service_requests/service_request_use.json")

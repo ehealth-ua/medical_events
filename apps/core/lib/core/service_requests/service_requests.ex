@@ -4,6 +4,7 @@ defmodule Core.ServiceRequests do
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Mongo
@@ -16,6 +17,7 @@ defmodule Core.ServiceRequests do
   alias Core.Search
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
+  alias Core.ServiceRequestView
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
@@ -28,6 +30,8 @@ defmodule Core.ServiceRequests do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
+
+  @active ServiceRequest.status(:active)
 
   def list(%{"patient_id_hash" => patient_id_hash, "episode_id" => episode_id} = params) do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
@@ -163,6 +167,21 @@ defmodule Core.ServiceRequests do
     end
   end
 
+  def produce_recall_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         :ok <- JsonSchema.validate(:service_request_recall, Map.take(params, ~w(signed_data))),
+         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+         {:ok, job, service_request_recall_job} <-
+           Jobs.create(
+             ServiceRequestRecallJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(service_request_recall_job) do
+      {:ok, job}
+    end
+  end
+
   def consume_create_service_request(
         %ServiceRequestCreateJob{
           patient_id: patient_id,
@@ -189,7 +208,7 @@ defmodule Core.ServiceRequests do
         })
         |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
         |> ServiceRequestsValidations.validate_context(patient_id_hash)
-        |> ServiceRequestsValidations.validate_occurence()
+        |> ServiceRequestsValidations.validate_occurrence()
         |> ServiceRequestsValidations.validate_authored_on()
         |> ServiceRequestsValidations.validate_supporting_info(patient_id_hash)
         |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
@@ -383,6 +402,114 @@ defmodule Core.ServiceRequests do
     else
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
+    end
+  end
+
+  def consume_recall_service_request(
+        %ServiceRequestRecallJob{
+          patient_id: patient_id,
+          user_id: user_id,
+          client_id: client_id
+        } = job
+      ) do
+    with {:ok, data} <- decode_signed_data(job.signed_data),
+         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+         :ok <- JsonSchema.validate(:service_request_recall_signed_content, content) do
+      now = DateTime.utc_now()
+
+      with {:ok, service_request} <- get_by_id(content["id"]),
+           {:status, @active} <- {:status, service_request.status},
+           :ok <- compare_with_db(service_request, content) do
+        changes = %{"status" => ServiceRequest.status(:entered_in_error)}
+
+        service_request =
+          %{service_request | updated_by: user_id, updated_at: now}
+          |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+          |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
+
+        case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
+          [] ->
+            resource_name = "#{service_request._id}/recall"
+            files = [{'signed_content.txt', job.signed_data}]
+            {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
+
+            with :ok <-
+                   @media_storage.save(
+                     patient_id,
+                     compressed_content,
+                     Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
+                     resource_name
+                   ) do
+              set = %{
+                "updated_by" => service_request.updated_by,
+                "updated_at" => service_request.updated_at,
+                "signed_content_links" => service_request.signed_content_links ++ [resource_name],
+                "status" => service_request.status
+              }
+
+              id = to_string(service_request._id)
+
+              {:ok, %{matched_count: 1, modified_count: 1}} =
+                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+              Jobs.produce_update_status(
+                job._id,
+                job.request_id,
+                %{
+                  "links" => [
+                    %{
+                      "entity" => "service_request",
+                      "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                    }
+                  ]
+                },
+                200
+              )
+            end
+
+          errors ->
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+              422
+            )
+        end
+      else
+        {:status, status} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            "Service request in status #{status} cannot be recalled",
+            409
+          )
+
+        {:error, message, status_code} ->
+          Jobs.produce_update_status(job._id, job.request_id, message, status_code)
+      end
+    else
+      {:error, error} ->
+        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+    end
+  end
+
+  defp compare_with_db(%ServiceRequest{} = service_request, content) do
+    db_content =
+      service_request
+      |> ServiceRequestView.render_service_request()
+      |> Jason.encode!()
+      |> Jason.decode!()
+      |> Map.drop(~w(status_reason explanatory_letter))
+
+    content = Map.drop(content, ~w(status_reason explanatory_letter))
+
+    if content != db_content do
+      {:error, "Signed content doesn't match with previously created service request", 422}
+    else
+      :ok
     end
   end
 

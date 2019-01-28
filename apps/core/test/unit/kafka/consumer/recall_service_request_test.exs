@@ -1,0 +1,368 @@
+defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
+  @moduledoc false
+
+  use Core.ModelCase
+  alias Core.Job
+  alias Core.Jobs
+  alias Core.Jobs.ServiceRequestRecallJob
+  alias Core.Kafka.Consumer
+  alias Core.Patients
+  alias Core.Reference
+  alias Core.ReferenceView
+  import Core.Expectations.DigitalSignatureExpectation
+  import Mox
+
+  @status_pending Job.status(:pending)
+
+  setup :verify_on_exit!
+
+  describe "consume recall service_request event" do
+    test "empty content" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      job = insert(:job)
+      user_id = prepare_signature_expectations()
+
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = to_string(job._id)
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "type mismatch. Expected Object but got String",
+                           params: ["object"],
+                           rule: :cast
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestRecallJob{
+                 _id: to_string(job._id),
+                 signed_data: Base.encode64(""),
+                 user_id: user_id,
+                 client_id: UUID.uuid4()
+               })
+    end
+
+    test "empty map" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      job = insert(:job)
+      user_id = prepare_signature_expectations()
+
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = to_string(job._id)
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   invalid: [
+                     %{
+                       entry: "$.id",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property id was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.status",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property status was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.intent",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property intent was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.category",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property category was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.code",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property code was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.context",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property context was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.authored_on",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property authored_on was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.requester",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property requester was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.performer_type",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property performer_type was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.status_reason",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property status_reason was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     }
+                   ]
+                 },
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestRecallJob{
+                 _id: to_string(job._id),
+                 signed_data: Base.encode64(Jason.encode!(%{})),
+                 user_id: user_id,
+                 client_id: UUID.uuid4()
+               })
+    end
+
+    test "compare with db failed on recall service_request" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      service_request = insert(:service_request, subject: patient_id_hash)
+      %BSON.Binary{binary: id} = service_request._id
+      service_request_id = UUID.binary_to_string!(id)
+      insert(:patient, _id: patient_id_hash)
+
+      signed_content =
+        %{
+          "id" => service_request_id,
+          "status" => service_request.status,
+          "intent" => service_request.intent,
+          "category" => ReferenceView.render(service_request.category),
+          "code" => ReferenceView.render(service_request.code),
+          "context" => ReferenceView.render(service_request.context),
+          "authored_on" => service_request.authored_on,
+          "requester" => ReferenceView.render(service_request.requester),
+          "performer_type" => ReferenceView.render(service_request.performer_type),
+          "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_recall_reasons", "code" => "1"}]},
+          "note" => "invalid",
+          "expiration_date" => service_request.expiration_date,
+          "patient_instruction" => service_request.patient_instruction,
+          "permitted_episodes" => service_request.permitted_episodes,
+          "reason_reference" => service_request.reason_reference,
+          "requisition" => service_request.requisition,
+          "status_history" => ReferenceView.render(service_request.status_history),
+          "used_by" => ReferenceView.render(service_request.used_by),
+          "supporting_info" => ReferenceView.render(service_request.supporting_info),
+          "patient" =>
+            ReferenceView.render(
+              Reference.create(%{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "patient"}], "text" => ""},
+                  "value" => patient_id
+                }
+              })
+            )
+        }
+        |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
+
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = to_string(job._id)
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: "Signed content doesn't match with previously created service request",
+                 status_code: 422
+               } = event
+
+        :ok
+      end)
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestRecallJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
+    end
+
+    test "success recall service_request" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      service_request = insert(:service_request, subject: patient_id_hash)
+      %BSON.Binary{binary: id} = service_request._id
+      service_request_id = UUID.binary_to_string!(id)
+      insert(:patient, _id: patient_id_hash)
+      employee_id = to_string(service_request.requester.identifier.value)
+
+      expect(WorkerMock, :run, 2, fn
+        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
+        _, _, :tax_id_by_employee_id, _ -> "1111111111"
+      end)
+
+      signed_content =
+        %{
+          "id" => service_request_id,
+          "status" => service_request.status,
+          "intent" => service_request.intent,
+          "category" => ReferenceView.render(service_request.category),
+          "code" => ReferenceView.render(service_request.code),
+          "context" => ReferenceView.render(service_request.context),
+          "authored_on" => service_request.authored_on,
+          "requester" => ReferenceView.render(service_request.requester),
+          "performer_type" => ReferenceView.render(service_request.performer_type),
+          "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_recall_reasons", "code" => "1"}]},
+          "note" => service_request.note,
+          "expiration_date" => service_request.expiration_date,
+          "patient_instruction" => service_request.patient_instruction,
+          "permitted_episodes" => service_request.permitted_episodes,
+          "reason_reference" => service_request.reason_reference,
+          "requisition" => service_request.requisition,
+          "status_history" => ReferenceView.render(service_request.status_history),
+          "used_by" => ReferenceView.render(service_request.used_by),
+          "supporting_info" => ReferenceView.render(service_request.supporting_info),
+          "patient" =>
+            ReferenceView.render(
+              Reference.create(%{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "patient"}], "text" => ""},
+                  "value" => patient_id
+                }
+              })
+            )
+        }
+        |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
+
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = to_string(job._id)
+        url = "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
+
+        assert %Core.Jobs.JobUpdateStatusJob{
+                 _id: ^id,
+                 response: %{
+                   "links" => [
+                     %{
+                       "entity" => "service_request",
+                       "href" => ^url
+                     }
+                   ]
+                 },
+                 status_code: 200
+               } = event
+
+        :ok
+      end)
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestRecallJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
+    end
+  end
+
+  defp prepare_signature_expectations do
+    user_id = UUID.uuid4()
+    drfo = "1111111111"
+    expect_signature(drfo)
+
+    user_id
+  end
+end

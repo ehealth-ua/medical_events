@@ -712,7 +712,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "category" => "food",
             "criticality" => "low",
             "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "last_occurence" => DateTime.to_iso8601(DateTime.utc_now()),
+            "last_occurrence" => DateTime.to_iso8601(DateTime.utc_now()),
             "onset_date_time" => DateTime.to_iso8601(DateTime.utc_now())
           }
         ],
@@ -1228,7 +1228,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "category" => "food",
             "criticality" => "low",
             "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
-            "last_occurence" => DateTime.to_iso8601(DateTime.utc_now()),
+            "last_occurrence" => DateTime.to_iso8601(DateTime.utc_now()),
             "onset_date_time" => DateTime.to_iso8601(DateTime.utc_now())
           }
         ]

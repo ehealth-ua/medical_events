@@ -5,7 +5,7 @@ defmodule Core.ServiceRequest do
 
   alias Core.CodeableConcept
   alias Core.Reference
-  alias Core.ServiceRequests.Occurence
+  alias Core.ServiceRequests.Occurrence
 
   @status_active "active"
   @status_completed "completed"
@@ -35,7 +35,7 @@ defmodule Core.ServiceRequest do
     field(:code, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
     field(:subject, presence: true)
     field(:context, reference: [path: "context"])
-    field(:occurence, reference: [path: "occurence"])
+    field(:occurrence, reference: [path: "occurrence"])
     field(:authored_on, presence: true, reference: [path: "authored_on"])
     field(:requester, presence: true, reference: [path: "requester"])
 
@@ -105,11 +105,17 @@ defmodule Core.ServiceRequest do
         {"permitted_episodes", v} ->
           {:permitted_episodes, Enum.map(v, &Reference.create/1)}
 
-        {"occurence", %{"type" => type, "value" => value}} ->
-          {:occurence, Occurence.create(type, value)}
+        {"occurrence", %{"type" => type, "value" => value}} ->
+          {:occurrence, Occurrence.create(type, value)}
 
-        {"occurence_" <> type, value} ->
-          {:occurence, Occurence.create(type, value)}
+        {"occurrence_" <> type, value} ->
+          {:occurrence, Occurrence.create(type, value)}
+
+        {"status_reason", nil} ->
+          {:status_reason, nil}
+
+        {"status_reason", v} ->
+          {:status_reason, CodeableConcept.create(v)}
 
         {k, v} ->
           {String.to_atom(k), v}

@@ -13,6 +13,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
@@ -63,6 +64,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%ApprovalResendJob{} = approval_resend_job) do
     do_consume(Approvals, :consume_resend_approval, approval_resend_job)
+  end
+
+  def consume(%ServiceRequestRecallJob{} = service_request_recall_job) do
+    do_consume(ServiceRequests, :consume_recall_service_request, service_request_recall_job)
   end
 
   def consume(value) do
