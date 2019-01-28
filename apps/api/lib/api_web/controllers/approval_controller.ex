@@ -23,4 +23,13 @@ defmodule Api.Web.ApprovalController do
       render(conn, "empty.json")
     end
   end
+
+  def resend(conn, params) do
+    with {:ok, job} <- Approvals.produce_resend_approval(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
 end
