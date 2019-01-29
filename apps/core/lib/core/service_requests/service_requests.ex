@@ -286,6 +286,10 @@ defmodule Core.ServiceRequests do
               ]
 
               Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+            else
+              error ->
+                Logger.error("Failed to save signed content: #{inspect(error)}")
+                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
             end
           end
 
@@ -498,6 +502,10 @@ defmodule Core.ServiceRequests do
                 },
                 200
               )
+            else
+              error ->
+                Logger.error("Failed to save signed content: #{inspect(error)}")
+                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
             end
 
           errors ->
@@ -602,6 +610,10 @@ defmodule Core.ServiceRequests do
                 },
                 200
               )
+            else
+              error ->
+                Logger.error("Failed to save signed content: #{inspect(error)}")
+                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
             end
 
           errors ->
