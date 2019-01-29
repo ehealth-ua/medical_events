@@ -114,8 +114,8 @@ defmodule Core.Patients.Encounters do
   defp add_search_pipeline(pipeline, params) do
     path = "encounters.v"
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
-    date_from = get_filter_date(:from, params["date_from"])
-    date_to = get_filter_date(:to, params["date_to"])
+    date_from = Search.get_filter_date(:from, params["date_from"])
+    date_to = Search.get_filter_date(:to, params["date_to"])
 
     search_pipeline =
       %{"$match" => %{}}
@@ -129,27 +129,6 @@ defmodule Core.Patients.Encounters do
     |> case do
       [] -> pipeline
       _ -> pipeline ++ [search_pipeline]
-    end
-  end
-
-  defp get_filter_date(:from, nil), do: nil
-
-  defp get_filter_date(:from, date) do
-    case DateTime.from_iso8601("#{date} 00:00:00Z") do
-      {:ok, date_time, _} -> date_time
-      _ -> nil
-    end
-  end
-
-  defp get_filter_date(:to, nil), do: nil
-
-  defp get_filter_date(:to, date) do
-    with {:ok, date} <- Date.from_iso8601(date),
-         to_date <- date |> Date.add(1) |> Date.to_string(),
-         {:ok, date_time, _} <- DateTime.from_iso8601("#{to_date} 00:00:00Z") do
-      date_time
-    else
-      _ -> nil
     end
   end
 end

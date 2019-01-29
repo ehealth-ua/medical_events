@@ -8,11 +8,13 @@ defmodule Api.Web.SummaryController do
   alias Api.Web.DiagnosisView
   alias Api.Web.ImmunizationView
   alias Api.Web.ObservationView
+  alias Api.Web.RiskAssessmentView
   alias Core.Conditions
   alias Core.Diagnoses
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Immunizations
+  alias Core.Patients.RiskAssessments
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
@@ -27,6 +29,12 @@ defmodule Api.Web.SummaryController do
     with {:ok, %Page{entries: allergy_intolerances} = paging} <-
            AllergyIntolerances.list(params, :allergy_intolerance_summary) do
       render(conn, AllergyIntoleranceView, "index.json", allergy_intolerances: allergy_intolerances, paging: paging)
+    end
+  end
+
+  def list_risk_assessments(conn, params) do
+    with {:ok, %Page{entries: risk_assessments} = paging} <- RiskAssessments.list(params, :risk_assessment_summary) do
+      render(conn, RiskAssessmentView, "index.json", risk_assessments: risk_assessments, paging: paging)
     end
   end
 

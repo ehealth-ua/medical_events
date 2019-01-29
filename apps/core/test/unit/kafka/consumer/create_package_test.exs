@@ -732,7 +732,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "coding" => [
                 %{
                   "system" => "eHealth/risk_assessment_codes",
-                  "code" => "R80"
+                  "code" => "default_risk_assessment_code"
                 }
               ]
             },
@@ -772,19 +772,22 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               ]
             },
             "basis" => %{
-              "reference" => %{
-                "identifier" => %{
-                  "type" => %{
-                    "coding" => [
-                      %{
-                        "system" => "eHealth/resources",
-                        "code" => "observation"
-                      }
-                    ]
-                  },
-                  "value" => UUID.binary_to_string!(db_observation._id.binary)
+              "references" => [
+                %{
+                  "identifier" => %{
+                    "type" => %{
+                      "coding" => [
+                        %{
+                          "system" => "eHealth/resources",
+                          "code" => "observation"
+                        }
+                      ]
+                    },
+                    "value" => UUID.binary_to_string!(db_observation._id.binary)
+                  }
                 }
-              }
+              ],
+              "text" => "basis"
             },
             "predictions" => [
               %{

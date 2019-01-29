@@ -39,4 +39,25 @@ defmodule Core.Search do
       update_in(search_params, path, &Map.merge(&1, %{operator => value}))
     end
   end
+
+  def get_filter_date(:from, nil), do: nil
+
+  def get_filter_date(:from, date) do
+    case DateTime.from_iso8601("#{date}T00:00:00Z") do
+      {:ok, date_time, _} -> date_time
+      _ -> nil
+    end
+  end
+
+  def get_filter_date(:to, nil), do: nil
+
+  def get_filter_date(:to, date) do
+    with {:ok, date} <- Date.from_iso8601(date),
+         to_date <- date |> Date.add(1) |> Date.to_string(),
+         {:ok, date_time, _} <- DateTime.from_iso8601("#{to_date}T00:00:00Z") do
+      date_time
+    else
+      _ -> nil
+    end
+  end
 end

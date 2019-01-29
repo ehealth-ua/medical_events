@@ -2601,56 +2601,59 @@
         "basis": {
           "type": "object",
           "properties": {
-            "reference": {
-              "type": "object",
-              "properties": {
-                "identifier": {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "object",
-                      "properties": {
-                        "coding": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "system": {
-                                "type": "string",
-                                "enum": [
-                                  "eHealth/resources"
-                                ]
+            "references": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "coding": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "system": {
+                                  "type": "string",
+                                  "enum": [
+                                    "eHealth/resources"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "description": "Symbol in syntax defined by the system",
+                                  "enum": [
+                                    "observation",
+                                    "condition",
+                                    "diagnostic_report"
+                                  ]
+                                }
                               },
-                              "code": {
-                                "type": "string",
-                                "description": "Symbol in syntax defined by the system",
-                                "enum": [
-                                  "observation",
-                                  "condition",
-                                  "diagnostic_report"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "code"
-                            ]
+                              "required": [
+                                "code"
+                              ]
+                            }
+                          },
+                          "text": {
+                            "type": "string"
                           }
                         },
-                        "text": {
-                          "type": "string"
-                        }
+                        "description": "Description of identifier"
                       },
-                      "description": "Description of identifier"
+                      "value": {
+                        "type": "string",
+                        "description": "The value that is unique"
+                      }
                     },
-                    "value": {
-                      "type": "string",
-                      "description": "The value that is unique"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "value"
-                  ]
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  }
                 }
               }
             },
@@ -2924,9 +2927,6 @@
         },
         "comment": {
           "type": "string"
-        },
-        "report_origin": {
-          "$ref": "#/definitions/report_origin"
         },
         "performer": {
           "$ref": "#/definitions/performer"

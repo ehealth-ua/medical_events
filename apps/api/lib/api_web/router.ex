@@ -45,6 +45,9 @@ defmodule ApiWeb.Router do
 
       get("/patients/:patient_id/allergy_intolerances", AllergyIntoleranceController, :index)
       get("/patients/:patient_id/allergy_intolerances/:id", AllergyIntoleranceController, :show)
+
+      get("/patients/:patient_id/risk_assessments", RiskAssessmentController, :index)
+      get("/patients/:patient_id/risk_assessments/:id", RiskAssessmentController, :show)
     end
 
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)
@@ -83,6 +86,9 @@ defmodule ApiWeb.Router do
 
       get("/allergy_intolerances", SummaryController, :list_allergy_intolerances)
       get("/allergy_intolerances/:id", AllergyIntoleranceController, :show)
+
+      get("/risk_assessments", SummaryController, :list_risk_assessments)
+      get("/risk_assessments/:id", RiskAssessmentController, :show)
 
       get("/conditions", SummaryController, :list_conditions)
       get("/conditions/:id", SummaryController, :show_condition)

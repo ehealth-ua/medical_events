@@ -76,8 +76,8 @@ defmodule Core.Patients.Immunizations do
   defp add_search_pipeline(pipeline, patient_id_hash, params) do
     path = "immunizations.v"
     encounter_id = Maybe.map(params["encounter_id"], &Mongo.string_to_uuid(&1))
-    date_from = get_filter_date(:from, params["date_from"])
-    date_to = get_filter_date(:to, params["date_to"])
+    date_from = Search.get_filter_date(:from, params["date_from"])
+    date_to = Search.get_filter_date(:to, params["date_to"])
 
     episode_id = if params["episode_id"], do: Mongo.string_to_uuid(params["episode_id"]), else: nil
     encounter_ids = if is_nil(episode_id), do: nil, else: get_encounter_ids(patient_id_hash, episode_id)
@@ -99,33 +99,10 @@ defmodule Core.Patients.Immunizations do
     end
   end
 
-  def get_encounter_ids(_patient_id_hash, nil), do: []
-
   def get_encounter_ids(patient_id_hash, episode_id) do
     patient_id_hash
     |> Encounters.get_episode_encounters(episode_id)
     |> Enum.map(& &1["encounter_id"])
-  end
-
-  defp get_filter_date(:from, nil), do: nil
-
-  defp get_filter_date(:from, date) do
-    case DateTime.from_iso8601("#{date}T00:00:00Z") do
-      {:ok, date_time, _} -> date_time
-      _ -> nil
-    end
-  end
-
-  defp get_filter_date(:to, nil), do: nil
-
-  defp get_filter_date(:to, date) do
-    with {:ok, date} <- Date.from_iso8601(date),
-         to_date <- date |> Date.add(1) |> Date.to_string(),
-         {:ok, date_time, _} <- DateTime.from_iso8601("#{to_date}T00:00:00Z") do
-      date_time
-    else
-      _ -> nil
-    end
   end
 
   defp add_search_param(search_params, nil, _path, _operator), do: search_params

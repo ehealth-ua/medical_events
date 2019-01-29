@@ -301,6 +301,17 @@ defmodule Core.Patients do
                 ]
             end)
 
+          links =
+            Enum.reduce(risk_assessments, links, fn risk_assessment, acc ->
+              acc ++
+                [
+                  %{
+                    "entity" => "risk_assessment",
+                    "href" => "/api/patients/#{patient_id}/risk_assessments/#{risk_assessment.id}"
+                  }
+                ]
+            end)
+
           event = %PackageSavePatientJob{
             request_id: job.request_id,
             _id: job._id,
@@ -764,8 +775,16 @@ defmodule Core.Patients do
         }
         |> RiskAssessmentValidations.validate_context(encounter_id)
         |> RiskAssessmentValidations.validate_asserted_date()
-        |> RiskAssessmentValidations.validate_reason_reference(patient_id_hash)
-        |> RiskAssessmentValidations.validate_basis_reference(patient_id_hash)
+        |> RiskAssessmentValidations.validate_reason_reference(
+          content["observations"],
+          content["conditions"],
+          patient_id_hash
+        )
+        |> RiskAssessmentValidations.validate_basis_references(
+          content["observations"],
+          content["conditions"],
+          patient_id_hash
+        )
         |> RiskAssessmentValidations.validate_performer(client_id)
         |> RiskAssessmentValidations.validate_predictions()
       end)
