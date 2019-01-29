@@ -1,8 +1,11 @@
 defmodule Core.ServiceRequests do
   @moduledoc false
 
+  use Confex, otp_app: :core
+
   alias Core.Episode
   alias Core.Jobs
+  alias Core.Jobs.ServiceRequestCancelJob
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
@@ -30,8 +33,10 @@ defmodule Core.ServiceRequests do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
+  @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
 
   @active ServiceRequest.status(:active)
+  @completed ServiceRequest.status(:completed)
 
   def list(%{"patient_id_hash" => patient_id_hash, "episode_id" => episode_id} = params) do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
@@ -178,6 +183,21 @@ defmodule Core.ServiceRequests do
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_recall_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_cancel_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         :ok <- JsonSchema.validate(:service_request_cancel, Map.take(params, ~w(signed_data))),
+         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+         {:ok, job, service_request_cancel_job} <-
+           Jobs.create(
+             ServiceRequestCancelJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(service_request_cancel_job) do
       {:ok, job}
     end
   end
@@ -420,11 +440,8 @@ defmodule Core.ServiceRequests do
       with {:ok, service_request} <- get_by_id(content["id"]),
            {:status, @active} <- {:status, service_request.status},
            :ok <- compare_with_db(service_request, content) do
-        changes = %{"status" => ServiceRequest.status(:entered_in_error)}
-
         service_request =
-          %{service_request | updated_by: user_id, updated_at: now}
-          |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+          %{service_request | updated_by: user_id, updated_at: now, status: ServiceRequest.status(:entered_in_error)}
           |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
 
         case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
@@ -451,6 +468,22 @@ defmodule Core.ServiceRequests do
 
               {:ok, %{matched_count: 1, modified_count: 1}} =
                 Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+              case @worker.run("mpi", Core.Rpc, :get_auth_method, [patient_id]) do
+                nil ->
+                  Logger.error("Person #{patient_id} not found")
+
+                {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
+                  @otp_verification_api.send_sms(
+                    phone_number,
+                    EEx.eval_string(config()[:recall_sms], assigns: [number: phone_number]),
+                    "text",
+                    []
+                  )
+
+                _ ->
+                  :ok
+              end
 
               Jobs.produce_update_status(
                 job._id,
@@ -481,6 +514,110 @@ defmodule Core.ServiceRequests do
             job._id,
             job.request_id,
             "Service request in status #{status} cannot be recalled",
+            409
+          )
+
+        {:error, message, status_code} ->
+          Jobs.produce_update_status(job._id, job.request_id, message, status_code)
+      end
+    else
+      {:error, error} ->
+        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+    end
+  end
+
+  def consume_cancel_service_request(
+        %ServiceRequestCancelJob{
+          patient_id: patient_id,
+          user_id: user_id,
+          client_id: client_id
+        } = job
+      ) do
+    with {:ok, data} <- decode_signed_data(job.signed_data),
+         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+         :ok <- JsonSchema.validate(:service_request_cancel_signed_content, content) do
+      now = DateTime.utc_now()
+
+      with {:ok, service_request} <- get_by_id(content["id"]),
+           {:status, true, _} <- {:status, service_request.status in [@active, @completed], service_request.status},
+           :ok <- compare_with_db(service_request, content) do
+        service_request =
+          %{service_request | updated_by: user_id, updated_at: now, status: ServiceRequest.status(:cancelled)}
+          |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
+
+        case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
+          [] ->
+            resource_name = "#{service_request._id}/cancel"
+            files = [{'signed_content.txt', job.signed_data}]
+            {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
+
+            with :ok <-
+                   @media_storage.save(
+                     patient_id,
+                     compressed_content,
+                     Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
+                     resource_name
+                   ) do
+              set = %{
+                "updated_by" => service_request.updated_by,
+                "updated_at" => service_request.updated_at,
+                "signed_content_links" => service_request.signed_content_links ++ [resource_name],
+                "status" => service_request.status
+              }
+
+              id = to_string(service_request._id)
+
+              {:ok, %{matched_count: 1, modified_count: 1}} =
+                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+              case @worker.run("mpi", Core.Rpc, :get_auth_method, [patient_id]) do
+                nil ->
+                  Logger.error("Person #{patient_id} not found")
+
+                {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
+                  @otp_verification_api.send_sms(
+                    phone_number,
+                    EEx.eval_string(config()[:cancel_sms], assigns: [number: phone_number]),
+                    "text",
+                    []
+                  )
+
+                _ ->
+                  :ok
+              end
+
+              Jobs.produce_update_status(
+                job._id,
+                job.request_id,
+                %{
+                  "links" => [
+                    %{
+                      "entity" => "service_request",
+                      "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                    }
+                  ]
+                },
+                200
+              )
+            end
+
+          errors ->
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+              422
+            )
+        end
+      else
+        {:status, false, status} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            "Service request in status #{status} cannot be cancelled",
             409
           )
 

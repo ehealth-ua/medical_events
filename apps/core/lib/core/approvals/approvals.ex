@@ -19,6 +19,8 @@ defmodule Core.Approvals do
 
   @collection Approval.metadata().collection
 
+  @worker Application.get_env(:core, :rpc_worker)
+
   @create_request_params ~w(
     resources
     service_request
@@ -31,7 +33,6 @@ defmodule Core.Approvals do
   @service_request_status_active ServiceRequest.status(:active)
 
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
-  @mpi_api Application.get_env(:core, :microservices)[:mpi]
   @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
 
   def produce_create_approval(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
@@ -74,8 +75,7 @@ defmodule Core.Approvals do
         } = job
       ) do
     with {:ok, episodes} <- get_episodes(resources, service_request),
-         {:ok, person} <- get_person(patient_id),
-         {authentication_method_current, urgent_data} <- get_person_authentication_method_current(person) do
+         {:ok, auth_method} <- get_person_auth_method(patient_id) do
       now = DateTime.utc_now()
       approval_expiration_minutes = Confex.fetch_env!(:core, :approval)[:expire_in_minutes]
 
@@ -111,7 +111,7 @@ defmodule Core.Approvals do
           expires_at: DateTime.to_unix(now) + approval_expiration_minutes * 60,
           status: @status_new,
           access_level: access_level,
-          urgent: urgent_data,
+          urgent: hide_number(auth_method),
           inserted_by: user_id,
           updated_by: user_id,
           inserted_at: now,
@@ -129,7 +129,7 @@ defmodule Core.Approvals do
              ) do
             {:error, "Approval with id '#{approval._id}' already exists", 409}
           else
-            with :ok <- initialize_otp_verification(authentication_method_current) do
+            with :ok <- initialize_otp_verification(auth_method) do
               doc =
                 approval
                 |> Mongo.prepare_doc()
@@ -178,9 +178,8 @@ defmodule Core.Approvals do
         } = job
       ) do
     with {:ok, %Approval{status: @status_new} = approval} <- get_by_id(id),
-         {:ok, person} <- get_person(patient_id),
-         {authentication_method_current, _} <- get_person_authentication_method_current(person),
-         :ok <- initialize_otp_verification(authentication_method_current) do
+         {:ok, auth_method} <- get_person_auth_method(patient_id),
+         :ok <- initialize_otp_verification(auth_method) do
       links = [
         %{
           "entity" => "approval",
@@ -208,9 +207,8 @@ defmodule Core.Approvals do
          :ok <- Validators.is_active(patient),
          {:ok, %Approval{status: @status_new} = approval} <- get_by_id(id),
          :ok <- ApprovalsValidations.validate_patient(approval, patient_id_hash),
-         {:ok, person} <- get_person(patient_id),
-         {authentication_method_current, _} <- get_person_authentication_method_current(person),
-         :ok <- verify_auth(authentication_method_current, code) do
+         {:ok, auth_method} <- get_person_auth_method(patient_id),
+         :ok <- verify_auth(auth_method, code) do
       set =
         %{"status" => @status_active, "updated_by" => user_id, "updated_at" => DateTime.utc_now()}
         |> Mongo.convert_to_uuid("updated_by")
@@ -252,40 +250,27 @@ defmodule Core.Approvals do
   defp check_episode_references(nil), do: {:error, "Service request does not contain episode references", 409}
   defp check_episode_references(permitted_episodes), do: {:ok, permitted_episodes}
 
-  defp get_person(person_id) do
-    case @mpi_api.person(%{id: person_id}, []) do
-      {:ok, %{"data" => nil}} ->
+  defp get_person_auth_method(person_id) do
+    case @worker.run("mpi", Core.Rpc, :get_auth_method, [person_id]) do
+      nil ->
         {:error, "Person is not found", 404}
 
-      {:ok, %{"data" => person}} ->
-        {:ok, person}
+      {:ok, %{} = auth_method} ->
+        {:ok, auth_method}
 
       _ ->
         {:error, "Failed to get person data", 500}
     end
   end
 
-  defp get_person_authentication_method_current(%{"authentication_methods" => authentication_methods}) do
-    authentication_method_current = List.first(authentication_methods)
-    filtered_authentication_method_current = filter_authentication_method(authentication_method_current)
-
-    {authentication_method_current,
-     %{
-       "authentication_method_current" => filtered_authentication_method_current
-     }}
+  defp hide_number(%{
+         "type" => "OTP",
+         "phone_number" => <<code::bytes-size(6), _hidden::bytes-size(5), last_digits::bytes-size(2)>>
+       }) do
+    %{"type" => "OTP", "phone_number" => "#{code}*****#{last_digits}"}
   end
 
-  defp filter_authentication_method(nil), do: %{}
-
-  defp filter_authentication_method(%{"phone_number" => number} = method) when not is_nil(number) do
-    Map.put(method, "phone_number", hide_number(number))
-  end
-
-  defp filter_authentication_method(method), do: method
-
-  defp hide_number(<<code::bytes-size(6), _hidden::bytes-size(5), last_digits::bytes-size(2)>>) do
-    "#{code}*****#{last_digits}"
-  end
+  defp hide_number(auth_method), do: auth_method
 
   defp initialize_otp_verification(%{"type" => "OTP", "phone_number" => phone_number}) do
     case @otp_verification_api.initialize(phone_number, []) do

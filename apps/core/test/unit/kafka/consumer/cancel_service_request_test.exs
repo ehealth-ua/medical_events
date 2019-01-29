@@ -1,10 +1,10 @@
-defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
+defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
   @moduledoc false
 
   use Core.ModelCase
   alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.ServiceRequestRecallJob
+  alias Core.Jobs.ServiceRequestCancelJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.Reference
@@ -17,7 +17,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
 
   setup :verify_on_exit!
 
-  describe "consume recall service_request event" do
+  describe "consume cancel service_request event" do
     test "empty content" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -51,7 +51,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       end)
 
       assert :ok =
-               Consumer.consume(%ServiceRequestRecallJob{
+               Consumer.consume(%ServiceRequestCancelJob{
                  _id: to_string(job._id),
                  signed_data: Base.encode64(""),
                  user_id: user_id,
@@ -191,7 +191,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       end)
 
       assert :ok =
-               Consumer.consume(%ServiceRequestRecallJob{
+               Consumer.consume(%ServiceRequestCancelJob{
                  _id: to_string(job._id),
                  signed_data: Base.encode64(Jason.encode!(%{})),
                  user_id: user_id,
@@ -199,7 +199,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                })
     end
 
-    test "compare with db failed on recall service_request" do
+    test "compare with db failed on cancel service_request" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
@@ -259,7 +259,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       end)
 
       assert :ok =
-               Consumer.consume(%ServiceRequestRecallJob{
+               Consumer.consume(%ServiceRequestCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
@@ -271,7 +271,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
-    test "success recall service_request" do
+    test "success cancel service_request" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
@@ -349,7 +349,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       end)
 
       assert :ok =
-               Consumer.consume(%ServiceRequestRecallJob{
+               Consumer.consume(%ServiceRequestCancelJob{
                  _id: to_string(job._id),
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,

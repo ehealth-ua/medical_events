@@ -68,4 +68,14 @@ defmodule Api.Web.ServiceRequestController do
       |> render("create.json", job: job)
     end
   end
+
+  def cancel(conn, params) do
+    with {:ok, job} <-
+           ServiceRequests.produce_cancel_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
 end

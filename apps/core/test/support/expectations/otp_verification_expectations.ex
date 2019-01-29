@@ -24,4 +24,10 @@ defmodule Core.Expectations.OTPVerificationExpectations do
       end
     end)
   end
+
+  def expect_otp_verification_send_sms(n \\ 1) do
+    expect(OTPVerificationMock, :send_sms, n, fn phone_number, body, type, _headers ->
+      {:ok, %{"data" => %{"body" => body, "phone_number" => phone_number, "type" => type}}}
+    end)
+  end
 end
