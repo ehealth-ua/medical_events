@@ -143,7 +143,7 @@ defmodule Core.Patients do
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
-           {:ok, risk_assessments} <- create_risk_assessments(job, content) do
+           {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content) do
         visit_id = if is_map(visit), do: visit.id
 
         encounter =
@@ -757,6 +757,8 @@ defmodule Core.Patients do
            user_id: user_id,
            client_id: client_id
          },
+         observations,
+         conditions,
          %{"risk_assessments" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -775,16 +777,8 @@ defmodule Core.Patients do
         }
         |> RiskAssessmentValidations.validate_context(encounter_id)
         |> RiskAssessmentValidations.validate_asserted_date()
-        |> RiskAssessmentValidations.validate_reason_reference(
-          content["observations"],
-          content["conditions"],
-          patient_id_hash
-        )
-        |> RiskAssessmentValidations.validate_basis_references(
-          content["observations"],
-          content["conditions"],
-          patient_id_hash
-        )
+        |> RiskAssessmentValidations.validate_reason_reference(observations, conditions, patient_id_hash)
+        |> RiskAssessmentValidations.validate_basis_references(observations, conditions, patient_id_hash)
         |> RiskAssessmentValidations.validate_performer(client_id)
         |> RiskAssessmentValidations.validate_predictions()
       end)
@@ -804,7 +798,7 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_risk_assessments(_, _), do: {:ok, []}
+  defp create_risk_assessments(_, _, _, _), do: {:ok, []}
 
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->

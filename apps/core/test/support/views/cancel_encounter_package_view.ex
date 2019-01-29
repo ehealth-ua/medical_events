@@ -158,7 +158,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         code: ReferenceView.render(risk_assessment.code),
         asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
         method: ReferenceView.render(risk_assessment.method),
-        performer: ReferenceView.render(risk_assessment.performer),
+        performer: risk_assessment.performer |> ReferenceView.render() |> Map.delete(:display_value),
         basis: ReferenceView.render(risk_assessment.basis),
         predictions: ReferenceView.render(risk_assessment.predictions)
       }

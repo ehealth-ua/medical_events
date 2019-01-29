@@ -41,7 +41,7 @@ defmodule Core.Patients.RiskAssessments.Validations do
     identifier = reason.reference.identifier
 
     # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
-    reason =
+    identifier =
       case reference_type do
         "observation" ->
           add_validations(identifier, :value,
@@ -54,7 +54,7 @@ defmodule Core.Patients.RiskAssessments.Validations do
           )
       end
 
-    %{risk_assessment | reason: reason}
+    %{risk_assessment | reason: %{reason | reference: %{reason.reference | identifier: identifier}}}
   end
 
   def validate_reason_reference(%RiskAssessment{} = risk_assessment, _, _, _), do: risk_assessment
@@ -82,17 +82,20 @@ defmodule Core.Patients.RiskAssessments.Validations do
     reference_type = reference.identifier.type.coding |> List.first() |> Map.get(:code)
 
     # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
-    case reference_type do
-      "observation" ->
-        add_validations(reference.identifier, :value,
-          observation_context: [patient_id_hash: patient_id_hash, observations: observations]
-        )
+    identifier =
+      case reference_type do
+        "observation" ->
+          add_validations(reference.identifier, :value,
+            observation_context: [patient_id_hash: patient_id_hash, observations: observations]
+          )
 
-      "condition" ->
-        add_validations(reference.identifier, :value,
-          condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
-        )
-    end
+        "condition" ->
+          add_validations(reference.identifier, :value,
+            condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
+          )
+      end
+
+    %{reference | identifier: identifier}
   end
 
   def validate_performer(%RiskAssessment{performer: %Reference{} = performer} = risk_assessment, client_id) do
