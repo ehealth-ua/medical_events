@@ -3,20 +3,25 @@ defmodule Core.ServiceRequests.Validations do
 
   import Core.Schema, only: [add_validations: 3]
 
+  alias Core.Microservices.DigitalSignature
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Occurrence
 
   def validate_signatures(%ServiceRequest{} = service_request, %{"drfo" => drfo}, user_id, client_id) do
-    requester = service_request.requester
+    if DigitalSignature.config()[:enabled] do
+      requester = service_request.requester
 
-    identifier =
-      add_validations(
-        requester.identifier,
-        :value,
-        drfo: [drfo: drfo, client_id: client_id, user_id: user_id]
-      )
+      identifier =
+        add_validations(
+          requester.identifier,
+          :value,
+          drfo: [drfo: drfo, client_id: client_id, user_id: user_id]
+        )
 
-    %{service_request | requester: %{requester | identifier: identifier}}
+      %{service_request | requester: %{requester | identifier: identifier}}
+    else
+      service_request
+    end
   end
 
   def validate_context(%ServiceRequest{} = service_request, patient_id_hash) do

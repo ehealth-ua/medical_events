@@ -1,0 +1,705 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/resources"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "description": "Dictionary: eHealth/resources"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "identifier": {
+          "$ref": "#/definitions/identifier"
+        },
+        "display_value": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "presentation text"
+        }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active"
+      ]
+    },
+    "intent": {
+      "type": "string",
+      "enum": [
+        "plan",
+        "proposal",
+        "order"
+      ],
+      "description": "Dictionary: SERVICE_REQUEST_INTENT"
+    },
+    "category": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/SNOMED/service_request_categories"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "409063005"
+                ],
+                "description": "Symbol in syntax defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "code": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/SNOMED/procedure_codes"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Symbol in syntax defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "encounter"
+                        ],
+                        "description": "Symbol in syntax defined by the system"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "display_value": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "presentation text"
+        }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "authored_on": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "requester": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "employee"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "display_value": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "presentation text"
+        }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "performer_type": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/SNOMED/service_request_performer_roles"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Symbol in syntax defined by the system"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "reason_reference": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "observation",
+                            "condition"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "supporting_info": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "episode_of_care"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "note": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "patient_instruction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "permitted_episodes": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "episode_of_care"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "occurrence_date_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "occurrence_period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "additionalProperties": false
+    },
+    "explanatory_letter": {
+      "type": "string"
+    },
+    "status_reason": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/service_request_recall_reasons"
+                ],
+                "description": "Dictionary: eHealth/service_request_recall_reasons"
+              },
+              "code": {
+                "type": "string",
+                "description": "Symbol in syntax defined by the system"
+              }
+            },
+            "required": [
+              "code"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "expiration_date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "requisition": {
+      "type": "string"
+    },
+    "status_history": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "status": {
+          "type": "string"
+        },
+        "status_reason": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "inserted_by": {
+          "$ref": "#/definitions/uuid"
+        }
+      }
+    },
+    "used_by": {
+      "$ref": "#/definitions/reference"
+    },
+    "patient": {
+      "$ref": "#/definitions/reference"
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "intent",
+    "category",
+    "code",
+    "context",
+    "authored_on",
+    "requester",
+    "performer_type",
+    "status_reason",
+    "expiration_date",
+    "note",
+    "patient_instruction",
+    "permitted_episodes",
+    "reason_reference",
+    "requisition",
+    "status_history",
+    "supporting_info",
+    "used_by",
+    "patient"
+  ],
+  "additionalProperties": false
+}

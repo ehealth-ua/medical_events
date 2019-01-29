@@ -5,7 +5,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
   import Mox
   import Core.Expectations.IlExpectations
-  import Core.Expectations.MPIExpectations
   import Core.Expectations.OTPVerificationExpectations
 
   alias Core.Approval
@@ -41,9 +40,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      expect_doctor(client_id)
+      rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
-      expect_person(patient_id)
       expect_otp_verification_initialize()
 
       job = insert(:job)
@@ -124,9 +122,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      expect_doctor(client_id)
+      rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
-      expect_person(patient_id)
       expect_otp_verification_initialize()
 
       episodes = build_episode_references([episode_1.id.binary, episode_2.id.binary])
@@ -203,9 +200,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      expect_doctor(client_id)
+      offline_auth_rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
-      expect_person_offline_auth_method(patient_id)
 
       job = insert(:job)
 
@@ -423,9 +419,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      expect_doctor(client_id)
+      rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([UUID.uuid4()])
-      expect_person(patient_id)
 
       job = insert(:job)
 
@@ -505,6 +500,46 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
             type: codeable_concept_coding(system: "eHealth/resources", code: "episode_of_care")
           )
       )
+    end)
+  end
+
+  defp rpc_expectations(client_id) do
+    expect(WorkerMock, :run, 2, fn
+      _, _, :get_auth_method, _ ->
+        {:ok, %{"type" => "OTP", "phone_number" => "+38#{Enum.random(1_000_000_000..9_999_999_999)}"}}
+
+      _, _, :employee_by_id, [id] ->
+        %{
+          id: id,
+          status: "APPROVED",
+          employee_type: "DOCTOR",
+          legal_entity_id: client_id,
+          party: %{
+            first_name: "foo",
+            second_name: "bar",
+            last_name: "baz"
+          }
+        }
+    end)
+  end
+
+  defp offline_auth_rpc_expectations(client_id) do
+    expect(WorkerMock, :run, 2, fn
+      _, _, :employee_by_id, [id] ->
+        %{
+          id: id,
+          status: "APPROVED",
+          employee_type: "DOCTOR",
+          legal_entity_id: client_id,
+          party: %{
+            first_name: "foo",
+            second_name: "bar",
+            last_name: "baz"
+          }
+        }
+
+      _, _, :get_auth_method, _ ->
+        {:ok, %{"type" => "OFFLINE"}}
     end)
   end
 end

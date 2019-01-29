@@ -8,7 +8,6 @@ config :core,
     digital_signature: Core.Microservices.DigitalSignature,
     casher: Core.Microservices.Casher,
     media_storage: Core.Microservices.MediaStorage,
-    mpi: Core.Microservices.MPI,
     otp_verification: Core.Microservices.OTPVerification
   ],
   cache: [
@@ -64,14 +63,6 @@ config :core, Core.Microservices.DigitalSignature,
 
 config :core, Core.Microservices.Casher,
   endpoint: {:system, "CASHER_ENDPOINT", "http://casher-svc.il"},
-  hackney_options: [
-    connect_timeout: 30_000,
-    recv_timeout: 30_000,
-    timeout: 30_000
-  ]
-
-config :core, Core.Microservices.MPI,
-  endpoint: {:system, "MPI_ENDPOINT", "http://api-svc.mpi"},
   hackney_options: [
     connect_timeout: 30_000,
     recv_timeout: 30_000,
@@ -139,6 +130,10 @@ config :kaffe,
     endpoints: [localhost: 9092],
     topics: ["medical_events", "secondary_events", "job_update_events", "mongo_events"]
   ]
+
+config :core, Core.ServiceRequests,
+  cancel_sms: {:system, :string, "CANCEL_SMS", "Ваше направлення під номером <%= @number %> було відмінено"},
+  recall_sms: {:system, :string, "RECALL_SMS", "Ваше направлення під номером <%= @number %> було відкликано"}
 
 config :kafka_ex,
   brokers: "localhost:9092",
