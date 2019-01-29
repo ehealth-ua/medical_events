@@ -8,7 +8,7 @@ defmodule Core.Validators.ObservationContext do
   @status_entered_in_error Observation.status(:entered_in_error)
 
   def validate(value, options) do
-    observations = Keyword.get(options, :observations)
+    observations = Keyword.get(options, :observations) || []
     observation_ids = Enum.map(observations, &Map.get(&1, :_id))
     patient_id_hash = Keyword.get(options, :patient_id_hash)
 

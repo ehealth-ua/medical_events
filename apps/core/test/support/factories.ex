@@ -162,8 +162,9 @@ defmodule Core.Factories do
     %RiskAssessment{
       id: id,
       status: RiskAssessment.status(:preliminary),
-      method: codeable_concept_coding(system: "eHealth/risk_assesment_methods", code: "default_risk_assessment_method"),
-      code: codeable_concept_coding(system: "eHealth/risk_assesment_codes", code: "default_risk_assessment_code"),
+      method:
+        codeable_concept_coding(system: "eHealth/risk_assessment_methods", code: "default_risk_assessment_method"),
+      code: codeable_concept_coding(system: "eHealth/risk_assessment_codes", code: "default_risk_assessment_code"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       asserted_date: now,
       performer: reference_coding(system: "eHealth/resources", code: "employee"),
@@ -189,7 +190,7 @@ defmodule Core.Factories do
   def extended_reference_factory do
     %ExtendedReference{
       text: "text",
-      reference: reference_coding(system: "eHealth/resources", code: "observation")
+      references: [reference_coding(system: "eHealth/resources", code: "observation")]
     }
   end
 

@@ -38,7 +38,7 @@ defmodule Core.ReferenceView do
 
   def render(%ExtendedReference{} = extended_reference) do
     %{
-      reference: render(extended_reference.reference),
+      references: Enum.map(extended_reference.references, &render/1),
       text: extended_reference.text
     }
   end
@@ -260,6 +260,8 @@ defmodule Core.ReferenceView do
     %{probability_range: Map.take(value, ~w(low high)a)}
   end
 
+  def render_probability(_), do: %{}
+
   def render_when(%When{type: "when_period", value: value}) do
     %{when_period: render(value)}
   end
@@ -267,4 +269,6 @@ defmodule Core.ReferenceView do
   def render_when(%When{type: "when_range", value: value}) do
     %{when_range: Map.take(value, ~w(low high)a)}
   end
+
+  def render_when(_), do: %{}
 end

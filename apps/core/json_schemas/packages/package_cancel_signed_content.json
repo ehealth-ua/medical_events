@@ -2515,7 +2515,7 @@
         },
         "status": {
           "type": "string",
-          "description": "Dictionary: eHealth/immunization_statuses"
+          "description": "Dictionary: eHealth/risk_assessment_statuses"
         },
         "method": {
           "type": "object",
@@ -2528,12 +2528,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/risk_assesment_methods"
+                      "eHealth/risk_assessment_methods"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary: eHealth/risk_assesment_methods"
+                    "description": "Dictionary: eHealth/risk_assessment_methods"
                   }
                 },
                 "required": [
@@ -2557,12 +2557,12 @@
                   "system": {
                     "type": "string",
                     "enum": [
-                      "eHealth/risk_assesment_codes"
+                      "eHealth/risk_assessment_codes"
                     ]
                   },
                   "code": {
                     "type": "string",
-                    "description": "Dictionary: eHealth/risk_assesment_codes"
+                    "description": "Dictionary: eHealth/risk_assessment_codes"
                   }
                 },
                 "required": [
@@ -2636,56 +2636,59 @@
         "basis": {
           "type": "object",
           "properties": {
-            "reference": {
-              "type": "object",
-              "properties": {
-                "identifier": {
-                  "type": "object",
-                  "properties": {
-                    "type": {
-                      "type": "object",
-                      "properties": {
-                        "coding": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "system": {
-                                "type": "string",
-                                "enum": [
-                                  "eHealth/resources"
-                                ]
+            "references": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "identifier": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "coding": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "system": {
+                                  "type": "string",
+                                  "enum": [
+                                    "eHealth/resources"
+                                  ]
+                                },
+                                "code": {
+                                  "type": "string",
+                                  "description": "Symbol in syntax defined by the system",
+                                  "enum": [
+                                    "observation",
+                                    "condition",
+                                    "diagnostic_report"
+                                  ]
+                                }
                               },
-                              "code": {
-                                "type": "string",
-                                "description": "Symbol in syntax defined by the system",
-                                "enum": [
-                                  "observation",
-                                  "condition",
-                                  "diagnostic_report"
-                                ]
-                              }
-                            },
-                            "required": [
-                              "code"
-                            ]
+                              "required": [
+                                "code"
+                              ]
+                            }
+                          },
+                          "text": {
+                            "type": "string"
                           }
                         },
-                        "text": {
-                          "type": "string"
-                        }
+                        "description": "Description of identifier"
                       },
-                      "description": "Description of identifier"
+                      "value": {
+                        "type": "string",
+                        "description": "The value that is unique"
+                      }
                     },
-                    "value": {
-                      "type": "string",
-                      "description": "The value that is unique"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "value"
-                  ]
+                    "required": [
+                      "type",
+                      "value"
+                    ]
+                  }
                 }
               }
             },
@@ -2963,9 +2966,6 @@
         "comment": {
           "type": "string"
         },
-        "report_origin": {
-          "$ref": "#/definitions/report_origin"
-        },
         "performer": {
           "$ref": "#/definitions/performer"
         },
@@ -3052,64 +3052,64 @@
           }
         }
       },
-        "required": [
-          "id",
-          "status",
-          "code",
-          "context",
-          "asserted_date"
-        ],
-        "additionalProperties": false
+      "required": [
+        "id",
+        "status",
+        "code",
+        "context",
+        "asserted_date"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "encounter": {
+      "$ref": "#/definitions/encounter"
+    },
+    "conditions": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/condition"
       }
     },
-    "type": "object",
-    "properties": {
-      "encounter": {
-        "$ref": "#/definitions/encounter"
-      },
-      "conditions": {
-        "type": "array",
-        "minItems": 0,
-        "maxItems": 50,
-        "items": {
-          "$ref": "#/definitions/condition"
-        }
-      },
-      "observations": {
-        "type": "array",
-        "minItems": 0,
-        "maxItems": 50,
-        "items": {
-          "$ref": "#/definitions/observation"
-        }
-      },
-      "allergy_intolerances": {
-        "type": "array",
-        "minItems": 0,
-        "maxItems": 50,
-        "items": {
-          "$ref": "#/definitions/allergy_intolerances"
-        }
-      },
-      "immunizations": {
-        "type": "array",
-        "minItems": 0,
-        "maxItems": 50,
-        "items": {
-          "$ref": "#/definitions/immunization"
-        }
-      },
-      "risk_assessments": {
-        "type": "array",
-        "minItems": 0,
-        "maxItems": 50,
-        "items": {
-          "$ref": "#/definitions/risk_assessment"
-        }
+    "observations": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/observation"
       }
     },
-    "required": [
-      "encounter"
-    ],
-    "additionalProperties": false
-  }
+    "allergy_intolerances": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/allergy_intolerances"
+      }
+    },
+    "immunizations": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/immunization"
+      }
+    },
+    "risk_assessments": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/risk_assessment"
+      }
+    }
+  },
+  "required": [
+    "encounter"
+  ],
+  "additionalProperties": false
+}

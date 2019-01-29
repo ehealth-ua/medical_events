@@ -6,15 +6,15 @@ defmodule Core.Patients.RiskAssessments.ExtendedReference do
 
   embedded_schema do
     field(:text)
-    field(:reference, reference: [path: "reference"])
+    field(:references, reference: [path: "references"])
   end
 
   def create(data) do
     struct(
       __MODULE__,
       Enum.map(data, fn
-        {"reference", v} ->
-          {:reference, Reference.create(v)}
+        {"references", v} ->
+          {:references, Enum.map(v, &Reference.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}
