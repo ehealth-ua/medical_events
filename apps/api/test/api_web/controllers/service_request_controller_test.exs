@@ -284,32 +284,10 @@ defmodule Api.Web.ServiceRequestControllerTest do
   end
 
   describe "use service request" do
-    test "patient not found", %{conn: conn} do
-      conn = patch(conn, service_request_path(conn, :use, UUID.uuid4(), UUID.uuid4()))
-      assert json_response(conn, 404)
-    end
-
-    test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
-
-      conn = patch(conn, service_request_path(conn, :use, patient_id, UUID.uuid4()))
-      assert json_response(conn, 409)
-    end
-
     test "used_by is not set", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      insert(:patient, _id: patient_id_hash)
-
-      conn = patch(conn, service_request_path(conn, :use, patient_id, UUID.uuid4()))
+      conn = patch(conn, service_request_path(conn, :use, UUID.uuid4()))
       assert response = json_response(conn, 422)
 
       assert [
@@ -331,15 +309,11 @@ defmodule Api.Web.ServiceRequestControllerTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
       conn =
-        patch(conn, service_request_path(conn, :use, patient_id, UUID.binary_to_string!(id)), %{
+        patch(conn, service_request_path(conn, :use, UUID.binary_to_string!(id)), %{
           "used_by" => %{"identifier" => %{"value" => ""}}
         })
 
@@ -357,23 +331,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
   end
 
   describe "release service request" do
-    test "patient not found", %{conn: conn} do
-      conn = patch(conn, service_request_path(conn, :release, UUID.uuid4(), UUID.uuid4()))
-      assert json_response(conn, 404)
-    end
-
-    test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
-      patient_id = UUID.uuid4()
-      patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
-
-      conn = patch(conn, service_request_path(conn, :release, patient_id, UUID.uuid4()))
-      assert json_response(conn, 409)
-    end
-
     test "success release service request", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
@@ -384,7 +341,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
-      conn = patch(conn, service_request_path(conn, :release, patient_id, UUID.binary_to_string!(id)))
+      conn = patch(conn, service_request_path(conn, :release, UUID.binary_to_string!(id)))
 
       assert response = json_response(conn, 202)
 
