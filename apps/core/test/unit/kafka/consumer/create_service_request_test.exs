@@ -69,17 +69,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                  response: %{
                    invalid: [
                      %{
-                       entry: "$.id",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property id was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
                        entry: "$.status",
                        entry_type: "json_data_property",
                        rules: [
@@ -202,7 +191,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       user_id = prepare_signature_expectations()
       job = insert(:job)
 
-      service_request_id = UUID.uuid4()
       employee_id = UUID.uuid4()
 
       patient_id = UUID.uuid4()
@@ -220,7 +208,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       end)
 
       signed_content = %{
-        "id" => service_request_id,
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
@@ -263,15 +250,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
         id = to_string(job._id)
-        url = "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,
                  response: %{
                    "links" => [
                      %{
-                       "entity" => "service_request",
-                       "href" => ^url
+                       "entity" => "service_request"
                      }
                    ]
                  },

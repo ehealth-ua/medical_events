@@ -119,6 +119,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
     test "episode was closed" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
