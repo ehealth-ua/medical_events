@@ -62,11 +62,11 @@ defmodule Core.RiskAssessment do
         {"reason", %{"type" => type, "value" => value}} ->
           {:reason, Reason.create(type, value)}
 
-        {"reason_codeable_concept", value} ->
-          {:reason, Reason.create("reason_codeable_concept", value)}
+        {"reason_codes", value} ->
+          {:reason, Reason.create("reason_codes", value)}
 
-        {"reason_reference", value} ->
-          {:reason, Reason.create("reason_reference", value)}
+        {"reason_references", value} ->
+          {:reason, Reason.create("reason_references", value)}
 
         {"basis", v} ->
           {:basis, ExtendedReference.create(v)}

@@ -244,12 +244,12 @@ defmodule Core.ReferenceView do
     %{effective_period: render(value)}
   end
 
-  def render_reason(%Reason{type: "reason_codeable_concept", value: value}) do
-    %{reason_codeable_concept: render(value)}
+  def render_reason(%Reason{type: "reason_codes", value: value}) do
+    %{reason_codes: render(value)}
   end
 
-  def render_reason(%Reason{type: "reason_reference", value: value}) do
-    %{reason_reference: render(value)}
+  def render_reason(%Reason{type: "reason_references", value: value}) do
+    %{reason_references: render(value)}
   end
 
   def render_probability(%Probability{type: "probability_decimal", value: value}) do

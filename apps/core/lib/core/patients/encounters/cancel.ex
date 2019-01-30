@@ -356,6 +356,7 @@ defmodule Core.Patients.Encounters.Cancel do
     [
       [encounter["status"]],
       get_entities_statuses(decoded_content["allergy_intolerances"], "verification_status"),
+      get_entities_statuses(decoded_content["risk_assessments"], "status"),
       get_entities_statuses(decoded_content["immunizations"], "status"),
       get_entities_statuses(decoded_content["conditions"], "verification_status"),
       get_entities_statuses(decoded_content["observations"], "status")
@@ -656,7 +657,7 @@ defmodule Core.Patients.Encounters.Cancel do
         code: ReferenceView.render(risk_assessment.code),
         asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
         method: ReferenceView.render(risk_assessment.method),
-        performer: ReferenceView.render(risk_assessment.performer),
+        performer: render(risk_assessment.performer),
         basis: ReferenceView.render(risk_assessment.basis),
         predictions: ReferenceView.render(risk_assessment.predictions)
       })

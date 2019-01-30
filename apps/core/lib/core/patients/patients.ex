@@ -777,7 +777,7 @@ defmodule Core.Patients do
         }
         |> RiskAssessmentValidations.validate_context(encounter_id)
         |> RiskAssessmentValidations.validate_asserted_date()
-        |> RiskAssessmentValidations.validate_reason_reference(observations, conditions, patient_id_hash)
+        |> RiskAssessmentValidations.validate_reason_references(observations, conditions, patient_id_hash)
         |> RiskAssessmentValidations.validate_basis_references(observations, conditions, patient_id_hash)
         |> RiskAssessmentValidations.validate_performer(client_id)
         |> RiskAssessmentValidations.validate_predictions()

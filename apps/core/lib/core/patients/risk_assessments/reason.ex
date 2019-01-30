@@ -10,12 +10,12 @@ defmodule Core.Patients.RiskAssessments.Reason do
     field(:value, presence: true, reference: [path: "value"])
   end
 
-  def create("reason_codeable_concept" = type, value) do
-    %__MODULE__{type: type, value: CodeableConcept.create(value)}
+  def create("reason_codes" = type, value) do
+    %__MODULE__{type: type, value: Enum.map(value, &CodeableConcept.create/1)}
   end
 
-  def create("reason_reference" = type, value) do
-    %__MODULE__{type: type, value: Reference.create(value)}
+  def create("reason_references" = type, value) do
+    %__MODULE__{type: type, value: Enum.map(value, &Reference.create/1)}
   end
 end
 

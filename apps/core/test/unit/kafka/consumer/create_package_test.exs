@@ -763,14 +763,21 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => employee_id
               }
             },
-            "reason_codeable_concept" => %{
-              "coding" => [
-                %{
-                  "system" => "eHealth/risk_assessment_reasons",
-                  "code" => "default_reason"
+            "reason_references" => [
+              %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "observation"
+                      }
+                    ]
+                  },
+                  "value" => UUID.binary_to_string!(db_observation._id.binary)
                 }
-              ]
-            },
+              }
+            ],
             "basis" => %{
               "references" => [
                 %{
