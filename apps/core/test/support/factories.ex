@@ -182,8 +182,10 @@ defmodule Core.Factories do
 
   def reason_factory do
     %Reason{
-      type: "reason_codeable_concept",
-      value: codeable_concept_coding(system: "eHealth/risk_assessment_reasons", code: "default_risk_assessment_reason")
+      type: "reason_codes",
+      value: [
+        codeable_concept_coding(system: "eHealth/risk_assessment_reasons", code: "default_risk_assessment_reason")
+      ]
     }
   end
 

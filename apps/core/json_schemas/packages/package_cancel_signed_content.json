@@ -2969,85 +2969,91 @@
         "performer": {
           "$ref": "#/definitions/performer"
         },
-        "reason_codeable_concept": {
-          "type": "object",
-          "properties": {
-            "coding": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "system": {
-                    "type": "string",
-                    "enum": [
-                      "eHealth/risk_assessment_reasons"
-                    ]
+        "reason_codes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "coding": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/risk_assessment_reasons"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Dictionary:  eHealth/risk_assessment_reasons"
+                    }
                   },
-                  "code": {
-                    "type": "string",
-                    "description": "Dictionary:  eHealth/risk_assessment_reasons"
-                  }
-                },
-                "required": [
-                  "code"
-                ]
+                  "required": [
+                    "code"
+                  ]
+                }
+              },
+              "text": {
+                "type": "string"
               }
-            },
-            "text": {
-              "type": "string"
             }
           }
         },
-        "reason_reference": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "object",
-                  "properties": {
-                    "coding": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/resources"
-                            ]
+        "reason_references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "identifier": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "object",
+                    "properties": {
+                      "coding": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "system": {
+                              "type": "string",
+                              "enum": [
+                                "eHealth/resources"
+                              ]
+                            },
+                            "code": {
+                              "type": "string",
+                              "description": "Symbol in syntax defined by the system",
+                              "enum": [
+                                "condition",
+                                "observation",
+                                "diagostic_report"
+                              ]
+                            }
                           },
-                          "code": {
-                            "type": "string",
-                            "description": "Symbol in syntax defined by the system",
-                            "enum": [
-                              "condition",
-                              "observation",
-                              "diagostic_report"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "code"
-                        ]
+                          "required": [
+                            "code"
+                          ]
+                        }
+                      },
+                      "text": {
+                        "type": "string"
                       }
                     },
-                    "text": {
-                      "type": "string"
-                    }
+                    "description": "Description of identifier"
                   },
-                  "description": "Description of identifier"
+                  "value": {
+                    "type": "string",
+                    "description": "The value that is unique"
+                  }
                 },
-                "value": {
-                  "type": "string",
-                  "description": "The value that is unique"
-                }
-              },
-              "required": [
-                "type",
-                "value"
-              ]
+                "required": [
+                  "type",
+                  "value"
+                ]
+              }
             }
           }
         }

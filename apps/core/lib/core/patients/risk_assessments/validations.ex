@@ -30,34 +30,37 @@ defmodule Core.Patients.RiskAssessments.Validations do
     %{risk_assessment | context: %{context | identifier: identifier}}
   end
 
-  def validate_reason_reference(
-        %RiskAssessment{reason: %Reason{type: "reason_reference"} = reason} = risk_assessment,
+  def validate_reason_references(
+        %RiskAssessment{reason: %Reason{type: "reason_references"} = reason} = risk_assessment,
         observations,
         conditions,
         patient_id_hash
       ) do
-    reference_type = reason.reference.identifier.type.coding |> List.first() |> Map.get(:code)
+    value =
+      Enum.map(reason.value, fn value ->
+        reference_type = value.identifier.type.coding |> List.first() |> Map.get(:code)
 
-    identifier = reason.reference.identifier
+        # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
+        identifier =
+          case reference_type do
+            "observation" ->
+              add_validations(value.identifier, :value,
+                observation_context: [patient_id_hash: patient_id_hash, observations: observations]
+              )
 
-    # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
-    identifier =
-      case reference_type do
-        "observation" ->
-          add_validations(identifier, :value,
-            observation_context: [patient_id_hash: patient_id_hash, observations: observations]
-          )
+            "condition" ->
+              add_validations(value.identifier, :value,
+                condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
+              )
+          end
 
-        "condition" ->
-          add_validations(identifier, :value,
-            condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
-          )
-      end
+        %{value | identifier: identifier}
+      end)
 
-    %{risk_assessment | reason: %{reason | reference: %{reason.reference | identifier: identifier}}}
+    %{risk_assessment | reason: %{reason | value: value}}
   end
 
-  def validate_reason_reference(%RiskAssessment{} = risk_assessment, _, _, _), do: risk_assessment
+  def validate_reason_references(%RiskAssessment{} = risk_assessment, _, _, _), do: risk_assessment
 
   def validate_basis_references(%RiskAssessment{basis: nil} = risk_assessment, _, _, _), do: risk_assessment
 
