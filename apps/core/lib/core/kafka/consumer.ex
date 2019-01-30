@@ -13,6 +13,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Jobs.ServiceRequestCancelJob
+  alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
@@ -73,6 +74,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%ServiceRequestCancelJob{} = service_request_cancel_job) do
     do_consume(ServiceRequests, :consume_cancel_service_request, service_request_cancel_job)
+  end
+
+  def consume(%ServiceRequestCloseJob{} = service_request_close_job) do
+    do_consume(ServiceRequests, :consume_close_service_request, service_request_close_job)
   end
 
   def consume(value) do

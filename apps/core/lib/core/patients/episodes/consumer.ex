@@ -10,6 +10,7 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
+  alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Mongo
   alias Core.Patient
   alias Core.Patients.Encounters
@@ -21,6 +22,7 @@ defmodule Core.Patients.Episodes.Consumer do
   require Logger
 
   @collection Patient.metadata().collection
+  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def consume_create_episode(
         %EpisodeCreateJob{
@@ -249,6 +251,24 @@ defmodule Core.Patients.Episodes.Consumer do
               "$set" => set,
               "$push" => push
             })
+
+          Enum.each(episode.referral_requests || [], fn referral_request ->
+            with {:ok, _, close_service_request} <-
+                   Jobs.create(
+                     ServiceRequestCloseJob,
+                     %{
+                       "request_id" => job.request_id,
+                       "patient_id" => job.patient_id,
+                       "patient_id_hash" => job.patient_id_hash,
+                       "id" => referral_request.identifier.value,
+                       "user_id" => job.user_id,
+                       "client_id" => job.client_id
+                     }
+                   ),
+                 :ok <- @kafka_producer.publish_medical_event(close_service_request) do
+              :ok
+            end
+          end)
 
           Jobs.produce_update_status(
             job._id,

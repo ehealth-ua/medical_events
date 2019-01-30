@@ -6,6 +6,7 @@ defmodule Core.ServiceRequests do
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
+  alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
@@ -219,6 +220,7 @@ defmodule Core.ServiceRequests do
         content
         |> ServiceRequest.create()
         |> Map.merge(%{
+          _id: UUID.uuid4(),
           subject: patient_id_hash,
           inserted_by: user_id,
           updated_by: user_id,
@@ -233,16 +235,7 @@ defmodule Core.ServiceRequests do
         |> ServiceRequestsValidations.validate_supporting_info(patient_id_hash)
         |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
         |> ServiceRequestsValidations.validate_permitted_episodes(patient_id_hash)
-
-      service_request =
-        with {:ok, number} <-
-               @worker.run("number_generator", NumberGenerator.Rpc, :number, [
-                 "service_request",
-                 service_request._id,
-                 user_id
-               ]) do
-          %{service_request | requisition: number}
-        end
+        |> generate_requisition_number(patient_id_hash, user_id)
 
       case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
         [] ->
@@ -645,6 +638,72 @@ defmodule Core.ServiceRequests do
     end
   end
 
+  def consume_close_service_request(
+        %ServiceRequestCloseJob{
+          patient_id: patient_id,
+          user_id: user_id
+        } = job
+      ) do
+    with {:ok, %ServiceRequest{status: @active} = service_request} <- get_by_id(job.id) do
+      now = DateTime.utc_now()
+      service_request = %{service_request | updated_by: user_id, updated_at: now, status: @completed}
+
+      case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
+        [] ->
+          set =
+            %{
+              "updated_by" => service_request.updated_by,
+              "updated_at" => service_request.updated_at,
+              "status" => service_request.status
+            }
+            |> Mongo.convert_to_uuid("updated_by")
+
+          id = to_string(service_request._id)
+
+          {:ok, %{matched_count: 1, modified_count: 1}} =
+            Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                }
+              ]
+            },
+            200
+          )
+
+        errors ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
+      end
+    else
+      nil ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request #{job.id} was not found",
+          404
+        )
+
+      {:ok, %ServiceRequest{status: status}} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request with status #{status} can't be closed",
+          409
+        )
+    end
+  end
+
   defp compare_with_db(%ServiceRequest{} = service_request, content) do
     db_content =
       service_request
@@ -681,6 +740,20 @@ defmodule Core.ServiceRequests do
       validation_result
     else
       {:error, error} -> {:error, error, 422}
+    end
+  end
+
+  defp generate_requisition_number(%ServiceRequest{} = service_request, patient_id_hash, user_id) do
+    encounter_id = service_request.context.identifier.value
+
+    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, encounter_id),
+         {:ok, number} <-
+           @worker.run("number_generator", NumberGenerator.Rpc, :number, [
+             "episode",
+             encounter.episode.identifier.value,
+             user_id
+           ]) do
+      %{service_request | requisition: number}
     end
   end
 end
