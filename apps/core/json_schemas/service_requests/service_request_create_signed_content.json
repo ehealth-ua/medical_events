@@ -493,5 +493,6 @@
     "requester",
     "performer_type",
     "supporting_info"
-  ]
+  ],
+  "additionalProperties": false
 }

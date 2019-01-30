@@ -283,7 +283,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       user_id = prepare_signature_expectations()
       job = insert(:job)
 
-      service_request_id = UUID.uuid4()
       employee_id = UUID.uuid4()
 
       patient_id = UUID.uuid4()
@@ -301,7 +300,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       end)
 
       signed_content = %{
-        "id" => service_request_id,
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{

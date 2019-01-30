@@ -322,20 +322,29 @@ defmodule Core.ServiceRequests do
     with {:ok, %ServiceRequest{} = service_request} <- get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
          {true, _} <- {is_nil(service_request.used_by), :used_by} do
-      changes = %{"used_by" => Reference.create(used_by)}
-
       service_request =
-        %{service_request | updated_by: user_id, updated_at: now}
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        %{service_request | updated_by: user_id, updated_at: now, used_by: Reference.create(used_by)}
         |> ServiceRequestsValidations.validate_used_by(client_id)
 
       case Vex.errors(service_request) do
         [] ->
+          used_by = %{
+            service_request.used_by
+            | identifier: %{
+                service_request.used_by.identifier
+                | value: Mongo.string_to_uuid(service_request.used_by.identifier.value)
+              }
+          }
+
           set =
-            %{"updated_by" => service_request.updated_by, "updated_at" => now}
-            |> Mongo.add_to_set(service_request.used_by, "service_request.used_by")
-            |> Mongo.convert_to_uuid("service_request.used_by.identifier.value")
-            |> Mongo.convert_to_uuid("updated_by")
+            Mongo.convert_to_uuid(
+              %{
+                "updated_by" => service_request.updated_by,
+                "updated_at" => now,
+                "used_by" => Mongo.prepare_doc(used_by)
+              },
+              "updated_by"
+            )
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
             Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
@@ -751,11 +760,11 @@ defmodule Core.ServiceRequests do
   defp generate_requisition_number(%ServiceRequest{} = service_request, patient_id_hash, user_id) do
     encounter_id = service_request.context.identifier.value
 
-    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, encounter_id),
+    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, to_string(encounter_id)),
          {:ok, number} <-
            @worker.run("number_generator", NumberGenerator.Rpc, :number, [
              "episode",
-             encounter.episode.identifier.value,
+             to_string(encounter.episode.identifier.value),
              user_id
            ]) do
       %{service_request | requisition: number}
