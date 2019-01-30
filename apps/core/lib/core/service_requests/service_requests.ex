@@ -15,6 +15,7 @@ defmodule Core.ServiceRequests do
   alias Core.Paging
   alias Core.Patients
   alias Core.Patients.Encounters
+  alias Core.Patients.Encryptor
   alias Core.Patients.Episodes
   alias Core.Patients.Validators
   alias Core.Reference
@@ -144,29 +145,33 @@ defmodule Core.ServiceRequests do
     end
   end
 
-  def produce_use_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         :ok <- JsonSchema.validate(:service_request_use, Map.take(params, ~w(used_by))),
-         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+  def produce_use_service_request(params, user_id, client_id) do
+    with :ok <- JsonSchema.validate(:service_request_use, Map.take(params, ~w(used_by))),
+         {:ok, %ServiceRequest{subject: patient_id_hash}} <- get_by_id(params["service_request_id"]),
          {:ok, job, service_request_use_job} <-
            Jobs.create(
              ServiceRequestUseJob,
-             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+             params
+             |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
+             |> Map.put("patient_id_hash", patient_id_hash)
+             |> Map.put("user_id", user_id)
+             |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_use_job) do
       {:ok, job}
     end
   end
 
-  def produce_release_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient),
-         {:ok, %ServiceRequest{}} <- get_by_id(params["service_request_id"]),
+  def produce_release_service_request(params, user_id, client_id) do
+    with {:ok, %ServiceRequest{subject: patient_id_hash}} <- get_by_id(params["service_request_id"]),
          {:ok, job, service_request_release_job} <-
            Jobs.create(
              ServiceRequestReleaseJob,
-             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+             params
+             |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
+             |> Map.put("patient_id_hash", patient_id_hash)
+             |> Map.put("user_id", user_id)
+             |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_release_job) do
       {:ok, job}
