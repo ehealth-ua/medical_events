@@ -248,7 +248,15 @@ defmodule Core.Approvals do
   end
 
   defp check_episode_references(nil), do: {:error, "Service request does not contain episode references", 409}
-  defp check_episode_references(permitted_episodes), do: {:ok, permitted_episodes}
+  defp check_episode_references([]), do: check_episode_references(nil)
+
+  defp check_episode_references(permitted_episodes) do
+    {:ok,
+     Enum.map(permitted_episodes, fn episode_ref ->
+       identifier = episode_ref.identifier
+       %{episode_ref | identifier: %{identifier | value: to_string(identifier.value)}}
+     end)}
+  end
 
   defp get_person_auth_method(person_id) do
     case @worker.run("mpi", Core.Rpc, :get_auth_method, [person_id]) do

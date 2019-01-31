@@ -126,7 +126,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       expect_employees_by_user_id_client_id([employee_id])
       expect_otp_verification_initialize()
 
-      episodes = build_episode_references([episode_1.id.binary, episode_2.id.binary])
+      episodes = build_episode_references([episode_1.id, episode_2.id])
       service_request = insert(:service_request, subject: patient_id_hash, permitted_episodes: episodes)
       service_request_id = to_string(service_request._id)
 
@@ -496,7 +496,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       build(:reference,
         identifier:
           build(:identifier,
-            value: UUID.binary_to_string!(episode_id),
+            value: episode_id,
             type: codeable_concept_coding(system: "eHealth/resources", code: "episode_of_care")
           )
       )
