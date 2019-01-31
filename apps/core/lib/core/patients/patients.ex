@@ -6,6 +6,7 @@ defmodule Core.Patients do
   alias Core.AllergyIntolerance
   alias Core.Condition
   alias Core.Conditions
+  alias Core.Device
   alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Episode
@@ -19,6 +20,7 @@ defmodule Core.Patients do
   alias Core.Observations
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
+  alias Core.Patients.Devices
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
@@ -32,6 +34,7 @@ defmodule Core.Patients do
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
+  alias Core.Patients.Devices.Validations, as: DeviceValidations
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Encryptor
@@ -143,7 +146,8 @@ defmodule Core.Patients do
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
-           {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content) do
+           {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content),
+           {:ok, devices} <- create_devices(job, content) do
         visit_id = if is_map(visit), do: visit.id
 
         encounter =
@@ -275,6 +279,22 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.performer.identifier.value")
               |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.basis.value")
               |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.reason.reference.identifier.value")
+            end)
+
+          set =
+            Enum.reduce(devices, set, fn device, acc ->
+              device = Devices.fill_up_device_asserter(device)
+
+              acc
+              |> Mongo.add_to_set(
+                device,
+                "devices.#{device.id}"
+              )
+              |> Mongo.convert_to_uuid("devices.#{device.id}.id")
+              |> Mongo.convert_to_uuid("devices.#{device.id}.inserted_by")
+              |> Mongo.convert_to_uuid("devices.#{device.id}.updated_by")
+              |> Mongo.convert_to_uuid("devices.#{device.id}.context.identifier.value")
+              |> Mongo.convert_to_uuid("devices.#{device.id}.source.value.identifier.value")
             end)
 
           links = []
@@ -800,6 +820,51 @@ defmodule Core.Patients do
 
   defp create_risk_assessments(_, _, _, _), do: {:ok, []}
 
+  defp create_devices(
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
+         %{"devices" => _} = content
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    devices =
+      Enum.map(content["devices"], fn data ->
+        device = Device.create(data)
+
+        %{
+          device
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> DeviceValidations.validate_context(encounter_id)
+        |> DeviceValidations.validate_asserted_date()
+        |> DeviceValidations.validate_source(client_id)
+        |> DeviceValidations.validate_usage_period()
+      end)
+
+    case Vex.errors(
+           %{devices: devices},
+           devices: [
+             unique_ids: [field: :id],
+             reference: [path: "devices"]
+           ]
+         ) do
+      [] ->
+        validate_devices(patient_id_hash, devices)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_devices(_, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
@@ -853,6 +918,18 @@ defmodule Core.Patients do
       case RiskAssessments.get_by_id(patient_id_hash, risk_assessment.id) do
         {:ok, _} ->
           {:halt, {:error, "Risk assessment with id '#{risk_assessment.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_devices(patient_id_hash, devices) do
+    Enum.reduce_while(devices, {:ok, devices}, fn device, acc ->
+      case Devices.get_by_id(patient_id_hash, device.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Device with id '#{device.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}
