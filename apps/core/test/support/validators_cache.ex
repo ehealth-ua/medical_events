@@ -35,6 +35,7 @@ defmodule Core.Validators.CacheTest do
        %{"name" => "eHealth/encounter_types", "values" => %{"AMB" => "AMB"}},
        %{"name" => "eHealth/episode_types", "values" => %{"primary_care" => "primary_care"}},
        %{"name" => "eHealth/service_request_recall_reasons", "values" => %{"1" => "1"}},
+       %{"name" => "eHealth/service_request_cancel_reasons", "values" => %{"1" => "1"}},
        %{
          "name" => "eHealth/episode_closing_reasons",
          "values" => %{
