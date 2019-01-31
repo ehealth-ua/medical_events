@@ -12,7 +12,10 @@
           "$ref": "#/definitions/coding"
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -139,7 +142,10 @@
           }
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -176,7 +182,10 @@
           }
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -221,7 +230,10 @@
                   }
                 },
                 "text": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -292,7 +304,10 @@
                   }
                 },
                 "text": {
-                  "type": "string"
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -352,7 +367,10 @@
           }
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
@@ -365,7 +383,6 @@
         "null",
         "array"
       ],
-      "minItems": 1,
       "items": {
         "type": "object",
         "properties": {
@@ -404,7 +421,10 @@
                     }
                   },
                   "text": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -472,7 +492,10 @@
                     }
                   },
                   "text": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -489,6 +512,13 @@
               "value"
             ],
             "additionalProperties": false
+          },
+          "display_value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "presentation text"
           }
         },
         "required": [
@@ -552,7 +582,10 @@
                     }
                   },
                   "text": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -569,6 +602,13 @@
               "value"
             ],
             "additionalProperties": false
+          },
+          "display_value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "presentation text"
           }
         },
         "required": [
@@ -632,7 +672,10 @@
           }
         },
         "text": {
-          "type": "string"
+          "type": [
+            "string",
+            "null"
+          ]
         }
       },
       "required": [
