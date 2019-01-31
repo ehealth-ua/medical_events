@@ -837,6 +837,59 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "mitigation" => "some text",
             "comment" => "some text"
           }
+        ],
+        "devices" => [
+          %{
+            "id" => UUID.uuid4(),
+            "status" => "inactive",
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "usage_period" => %{
+              "start" => start_datetime,
+              "end" => end_datetime
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "asserter" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "type" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/device_types",
+                  "code" => "Spine_board"
+                }
+              ]
+            },
+            "lot_number" => "RZ12345678",
+            "manufacturer" => "GlobalMed, Inc",
+            "manufacture_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "expiration_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "model" => "NSPX30",
+            "version" => "v1.0.1",
+            "note" => "Імплант був вилучений по причині заміни на новий"
+          }
         ]
       }
 

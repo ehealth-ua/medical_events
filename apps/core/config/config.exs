@@ -150,7 +150,8 @@ config :core, :encounter_package,
   observation_max_days_passed: {:system, :integer, "OBSERVATION_MAX_DAYS_PASSED", 150 * 365},
   risk_assessment_max_days_passed: {:system, :integer, "RISK_ASSESSMENT_MAX_DAYS_PASSED", 150 * 365},
   allergy_intolerance_max_days_passed: {:system, :integer, "ALLERGY_INTOLERANCE_MAX_DAYS_PASSED", 150 * 365},
-  immunization_max_days_passed: {:system, :integer, "IMMUNIZATION_MAX_DAYS_PASSED", 150 * 365}
+  immunization_max_days_passed: {:system, :integer, "IMMUNIZATION_MAX_DAYS_PASSED", 150 * 365},
+  device_max_days_passed: {:system, :integer, "DEVICE_MAX_DAYS_PASSED", 150 * 365}
 
 config :core, :summary,
   conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},
