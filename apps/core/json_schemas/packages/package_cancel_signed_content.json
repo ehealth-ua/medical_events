@@ -2767,198 +2767,197 @@
               "rationale": {
                 "type": "string"
               },
-                 "probability_decimal": {
-                    "type": "number"
-                  }
+              "probability_decimal": {
+                "type": "number"
+              }
             },
-              "probability_range": {
-                    "type": "object",
-                    "properties": {
-                      "low": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number"
-                          },
-                          "comparator": {
-                            "type": "string",
-                            "enum": [
-                              ">",
-                              ">=",
-                              "=",
-                              "<=",
-                              "<"
-                            ]
-                          },
-                          "unit": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          },
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/ucum/units"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          }
-                        },
-                        "required": [
-                          "value",
-                          "system",
-                          "code"
-                        ]
-                      },
-                      "high": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number"
-                          },
-                          "comparator": {
-                            "type": "string",
-                            "enum": [
-                              ">",
-                              ">=",
-                              "=",
-                              "<=",
-                              "<"
-                            ]
-                          },
-                          "unit": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          },
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/ucum/units"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          }
-                        },
-                        "required": [
-                          "value",
-                          "system",
-                          "code"
-                        ]
-                      }
+            "probability_range": {
+              "type": "object",
+              "properties": {
+                "low": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
                     },
-                    "required": [
-                      "low",
-                      "high"
-                    ]
+                    "comparator": {
+                      "type": "string",
+                      "enum": [
+                        ">",
+                        ">=",
+                        "=",
+                        "<=",
+                        "<"
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/ucum/units"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    }
                   },
-                     "when_period": {
-                    "type": "object",
-                    "properties": {
-                      "start": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "C? Starting time with inclusive boundary",
-                        "format": "date-time"
-                      },
-                      "end": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "C? End time with inclusive boundary, if not ongoing",
-                        "format": "date-time"
-                      }
+                  "required": [
+                    "value",
+                    "system",
+                    "code"
+                  ]
+                },
+                "high": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
                     },
-                    "required": [
-                      "start"
-                    ]
+                    "comparator": {
+                      "type": "string",
+                      "enum": [
+                        ">",
+                        ">=",
+                        "=",
+                        "<=",
+                        "<"
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/ucum/units"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    }
                   },
-                    "when_range": {
-                    "type": "object",
-                    "properties": {
-                      "low": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number"
-                          },
-                          "comparator": {
-                            "type": "string",
-                            "enum": [
-                              ">",
-                              ">=",
-                              "=",
-                              "<=",
-                              "<"
-                            ]
-                          },
-                          "unit": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          },
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/ucum/units"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          }
-                        },
-                        "required": [
-                          "value",
-                          "system",
-                          "code"
-                        ]
-                      },
-                      "high": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number"
-                          },
-                          "comparator": {
-                            "type": "string",
-                            "enum": [
-                              ">",
-                              ">=",
-                              "=",
-                              "<=",
-                              "<"
-                            ]
-                          },
-                          "unit": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          },
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/ucum/units"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "description": "Dictionary: eHealth/ucum/units"
-                          }
-                        },
-                        "required": [
-                          "value",
-                          "system",
-                          "code"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "low",
-                      "high"
-                    ]
-                  }
+                  "required": [
+                    "value",
+                    "system",
+                    "code"
+                  ]
                 }
-          
+              },
+              "required": [
+                "low",
+                "high"
+              ]
+            },
+            "when_period": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "C? Starting time with inclusive boundary",
+                  "format": "date-time"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "C? End time with inclusive boundary, if not ongoing",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "start"
+              ]
+            },
+            "when_range": {
+              "type": "object",
+              "properties": {
+                "low": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "comparator": {
+                      "type": "string",
+                      "enum": [
+                        ">",
+                        ">=",
+                        "=",
+                        "<=",
+                        "<"
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/ucum/units"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "system",
+                    "code"
+                  ]
+                },
+                "high": {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "number"
+                    },
+                    "comparator": {
+                      "type": "string",
+                      "enum": [
+                        ">",
+                        ">=",
+                        "=",
+                        "<=",
+                        "<"
+                      ]
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "eHealth/ucum/units"
+                      ]
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Dictionary: eHealth/ucum/units"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "system",
+                    "code"
+                  ]
+                }
+              },
+              "required": [
+                "low",
+                "high"
+              ]
+            }
+          }
         },
         "mitigation": {
           "type": "string"
@@ -3066,6 +3065,172 @@
         "asserted_date"
       ],
       "additionalProperties": false
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string",
+          "description": "Dictionary: eHealth/device_statuses"
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "usage_period": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "description": "C? Starting time with inclusive boundary",
+              "format": "date-time"
+            },
+            "end": {
+              "type": "string",
+              "description": "C? End time with inclusive boundary, if not ongoing",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "start"
+          ]
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "maxItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ]
+                      }
+                    },
+                    "text": {
+                      "type": "string",
+                      "maxLength": 2000
+                    }
+                  },
+                  "description": "Description of identifier"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ]
+            }
+          }
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/device_types"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary:  eHealth/device_types"
+                  }
+                },
+                "required": [
+                  "system",
+                  "code"
+                ]
+              }
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          }
+        },
+        "lot_number": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "manufacturer": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "manufacture_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "asserter": {
+          "$ref": "#/definitions/performer"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "asserted_date",
+        "usage_period",
+        "context",
+        "primary_source",
+        "type"
+      ],
+      "additionalProperties": false
     }
   },
   "type": "object",
@@ -3111,6 +3276,14 @@
       "maxItems": 50,
       "items": {
         "$ref": "#/definitions/risk_assessment"
+      }
+    },
+    "devices": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/device"
       }
     }
   },

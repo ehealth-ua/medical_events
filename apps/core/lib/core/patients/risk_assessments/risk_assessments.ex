@@ -93,7 +93,7 @@ defmodule Core.Patients.RiskAssessments do
     end
   end
 
-  def get_by_encounter_id(patient_id_hash, encounter_id) do
+  def get_by_encounter_id(patient_id_hash, %BSON.Binary{} = encounter_id) do
     @collection
     |> Mongo.aggregate([
       %{"$match" => %{"_id" => patient_id_hash}},

@@ -169,4 +169,33 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.merge(ReferenceView.render_reason(risk_assessment.reason))
     end
   end
+
+  def render(:devices, devices) do
+    device_fields = ~w(
+      status
+      primary_source
+      lot_number
+      manufacturer
+      model
+      version
+      note
+    )a
+
+    for device <- devices do
+      device_data = %{
+        id: UUIDView.render(device.id),
+        context: ReferenceView.render(device.context),
+        asserted_date: DateView.render_datetime(device.asserted_date),
+        usage_period: ReferenceView.render(device.usage_period),
+        type: ReferenceView.render(device.type),
+        manufacture_date: DateView.render_datetime(device.manufacture_date),
+        expiration_date: DateView.render_datetime(device.expiration_date)
+      }
+
+      device
+      |> Map.take(device_fields)
+      |> Map.merge(device_data)
+      |> Map.merge(ReferenceView.render_source(device.source))
+    end
+  end
 end

@@ -8,6 +8,7 @@ defmodule Core.Factories do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
+  alias Core.Device
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
   alias Core.Encounter
@@ -86,6 +87,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), risk_assessment}
       end)
 
+    devices = build_list(2, :device)
+
+    devices =
+      Enum.into(devices, %{}, fn %{id: %BSON.Binary{binary: id}} = device ->
+        {UUID.binary_to_string!(id), device}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -98,6 +106,7 @@ defmodule Core.Factories do
       immunizations: immunizations,
       allergy_intolerances: allergy_intolerances,
       risk_assessments: risk_assessments,
+      devices: devices,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: user_id,
@@ -173,6 +182,38 @@ defmodule Core.Factories do
       predictions: build_list(1, :prediction),
       mitigation: "mitigation",
       comment: "comment",
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
+  def device_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
+    now = DateTime.utc_now()
+
+    %Device{
+      id: id,
+      status: Device.status(:active),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      asserted_date: now,
+      usage_period: build(:period),
+      primary_source: true,
+      source:
+        build(
+          :source,
+          type: "asserter",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
+      type: codeable_concept_coding(system: "eHealth/device_types", code: "default_device_type"),
+      lot_number: "lot number",
+      manufacturer: "manufacturer",
+      manufacture_date: now,
+      expiration_date: now,
+      model: "model",
+      version: "v1",
+      note: "note",
       inserted_at: now,
       updated_at: now,
       inserted_by: id,

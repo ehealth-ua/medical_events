@@ -22,6 +22,20 @@ defmodule Core.Patients.Devices do
     end
   end
 
+  def get_by_encounter_id(patient_id_hash, %BSON.Binary{} = encounter_id) do
+    @collection
+    |> Mongo.aggregate([
+      %{"$match" => %{"_id" => patient_id_hash}},
+      %{"$project" => %{"devices" => %{"$objectToArray" => "$devices"}}},
+      %{"$unwind" => "$devices"},
+      %{"$match" => %{"devices.v.context.identifier.value" => encounter_id}},
+      %{"$replaceRoot" => %{"newRoot" => "$devices.v"}}
+    ])
+    |> Enum.map(&Device.create/1)
+  end
+
+  def fill_up_device_asserter(%Device{source: %Source{type: "report_origin"}} = device), do: device
+
   def fill_up_device_asserter(%Device{source: %Source{value: value}} = device) do
     with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{value.identifier.value}") do
       first_name = employee.party.first_name
