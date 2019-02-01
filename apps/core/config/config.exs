@@ -134,7 +134,8 @@ config :kaffe,
 
 config :core, Core.ServiceRequests,
   cancel_sms: {:system, :string, "CANCEL_SMS", "Ваше направлення під номером <%= @number %> було відмінено"},
-  recall_sms: {:system, :string, "RECALL_SMS", "Ваше направлення під номером <%= @number %> було відкликано"}
+  recall_sms: {:system, :string, "RECALL_SMS", "Ваше направлення під номером <%= @number %> було відкликано"},
+  service_request_expiration_days: {:system, :integer, "SERVICE_REQUEST_EXPIRATION_DAYS", 7}
 
 config :kafka_ex,
   brokers: "localhost:9092",

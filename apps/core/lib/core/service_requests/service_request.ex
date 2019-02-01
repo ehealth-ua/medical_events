@@ -117,6 +117,9 @@ defmodule Core.ServiceRequest do
         {"status_reason", v} ->
           {:status_reason, CodeableConcept.create(v)}
 
+        {"expiration_date", v} ->
+          {:expiration_date, create_datetime(v)}
+
         {k, v} ->
           {String.to_atom(k), v}
       end)
