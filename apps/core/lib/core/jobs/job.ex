@@ -39,27 +39,31 @@ defmodule Core.Job do
   end
 
   def valid_response?(response) when is_binary(response) do
-    String.length(response) <= @response_length
+    byte_size(response) <= @response_length
   end
 
   def valid_response?(response) when is_map(response) do
-    String.length(Jason.encode!(response)) <= @response_length
+    byte_size(Jason.encode!(response)) <= @response_length
   end
 
   def encode_response(%__MODULE__{response: value} = job) do
     response = Jason.encode!(value)
-    %{job | response: String.pad_trailing(response, @response_length, "."), response_size: byte_size(response)}
+    %{job | response: pad_trailing(response), response_size: byte_size(response)}
   end
 
   def encode_response(%{"response" => value} = data) do
     response = Jason.encode!(value)
 
     data
-    |> Map.put("response", String.pad_trailing(response, @response_length, "."))
+    |> Map.put("response", pad_trailing(response))
     |> Map.put("response_size", byte_size(response))
   end
 
   def decode_response(%__MODULE__{response: response, response_size: response_size} = job) do
     %{job | response: Jason.decode!(binary_part(response, 0, response_size))}
+  end
+
+  defp pad_trailing(data) do
+    data <> String.duplicate(".", @response_length - byte_size(data))
   end
 end
