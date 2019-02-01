@@ -39,7 +39,7 @@ defmodule Core.Conditions do
     end
   end
 
-  def get_by_encounter_id(patient_id_hash, encounter_id) do
+  def get_by_encounter_id(patient_id_hash, %BSON.Binary{} = encounter_id) do
     @condition_collection
     |> Mongo.find(%{"patient_id" => patient_id_hash, "context.identifier.value" => encounter_id})
     |> Enum.map(&Condition.create/1)
