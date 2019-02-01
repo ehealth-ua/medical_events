@@ -220,6 +220,13 @@ defmodule Core.ServiceRequests do
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:service_request_create_signed_content, content) do
       now = DateTime.utc_now()
+      expiration_days = config()[:service_request_expiration_days]
+      expiration_erl_date = now |> DateTime.to_date() |> Date.add(expiration_days) |> Date.to_erl()
+
+      expiration_date =
+        {expiration_erl_date, {23, 59, 59}}
+        |> NaiveDateTime.from_erl!()
+        |> DateTime.from_naive!("Etc/UTC")
 
       service_request =
         content
@@ -231,7 +238,8 @@ defmodule Core.ServiceRequests do
           updated_by: user_id,
           inserted_at: now,
           updated_at: now,
-          status_history: []
+          status_history: [],
+          expiration_date: expiration_date
         })
         |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
         |> ServiceRequestsValidations.validate_context(patient_id_hash)
