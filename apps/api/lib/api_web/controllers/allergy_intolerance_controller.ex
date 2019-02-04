@@ -15,7 +15,7 @@ defmodule Api.Web.AllergyIntoleranceController do
   end
 
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => allergy_intolerance_id}) do
-    with {:ok, allergy_intolerance} <- AllergyIntolerances.get(patient_id_hash, allergy_intolerance_id) do
+    with {:ok, allergy_intolerance} <- AllergyIntolerances.get_by_id(patient_id_hash, allergy_intolerance_id) do
       render(conn, "show.json", allergy_intolerance: allergy_intolerance)
     end
   end

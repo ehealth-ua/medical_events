@@ -15,7 +15,7 @@ defmodule Api.Web.ImmunizationController do
   end
 
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => immunization_id}) do
-    with {:ok, immunization} <- Immunizations.get(patient_id_hash, immunization_id) do
+    with {:ok, immunization} <- Immunizations.get_by_id(patient_id_hash, immunization_id) do
       render(conn, "show.json", immunization: immunization)
     end
   end

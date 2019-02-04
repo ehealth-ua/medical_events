@@ -15,7 +15,7 @@ defmodule Core.Patients.AllergyIntolerances do
 
   @collection Patient.metadata().collection
 
-  def get(patient_id_hash, id) do
+  def get_by_id(patient_id_hash, id) do
     with %{"allergy_intolerances" => %{^id => allergy_intolerance}} <-
            Mongo.find_one(@collection, %{
              "_id" => patient_id_hash,
