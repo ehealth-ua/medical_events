@@ -709,7 +709,7 @@ defmodule Core.Patients.Encounters.Cancel do
         manufacture_date: DateView.render_datetime(device.manufacture_date),
         expiration_date: DateView.render_datetime(device.expiration_date)
       })
-      |> Map.merge(ReferenceView.render_source(device.source))
+      |> Map.merge(render_source(device.source))
     end)
   end
 
