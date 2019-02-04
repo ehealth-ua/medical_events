@@ -48,6 +48,9 @@ defmodule ApiWeb.Router do
 
       get("/patients/:patient_id/risk_assessments", RiskAssessmentController, :index)
       get("/patients/:patient_id/risk_assessments/:id", RiskAssessmentController, :show)
+
+      get("/patients/:patient_id/devices", DeviceController, :index)
+      get("/patients/:patient_id/devices/:id", DeviceController, :show)
     end
 
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)
@@ -97,6 +100,9 @@ defmodule ApiWeb.Router do
 
       get("/observations", SummaryController, :list_observations)
       get("/observations/:id", SummaryController, :show_observation)
+
+      get("/devices", SummaryController, :list_devices)
+      get("/devices/:id", DeviceController, :show)
 
       get("/diagnoses", SummaryController, :list_diagnoses)
     end

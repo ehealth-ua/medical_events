@@ -1,0 +1,338 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "report_origin": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/report_origins"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Dictionary: eHealth/report_origins"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "performer": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "employee"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "device": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/uuid"
+        },
+        "status": {
+          "type": "string",
+          "description": "Dictionary: eHealth/device_statuses"
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "usage_period": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "description": "C? Starting time with inclusive boundary",
+              "format": "date-time"
+            },
+            "end": {
+              "type": "string",
+              "description": "C? End time with inclusive boundary, if not ongoing",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "start"
+          ]
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "maxItems": 1,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ]
+                      }
+                    },
+                    "text": {
+                      "type": "string",
+                      "maxLength": 2000
+                    }
+                  },
+                  "description": "Description of identifier"
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ]
+            }
+          }
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "maxItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/device_types"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary:  eHealth/device_types"
+                  }
+                },
+                "required": [
+                  "system",
+                  "code"
+                ]
+              }
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          }
+        },
+        "lot_number": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "manufacturer": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "manufacture_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expiration_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "asserter": {
+          "$ref": "#/definitions/performer"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "asserted_date",
+        "usage_period",
+        "context",
+        "primary_source",
+        "type",
+        "inserted_at",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "data": {
+      "$ref": "#/definitions/device"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "additionalProperties": false
+}

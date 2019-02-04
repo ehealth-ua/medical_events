@@ -540,6 +540,185 @@ defmodule Api.Web.SummaryControllerTest do
     end
   end
 
+  describe "list devices" do
+    test "successful search", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_devices, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("devices/device_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "invalid search parameters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      search_params = %{"encounter_id" => UUID.uuid4(), "episode_id" => UUID.uuid4()}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_devices, patient_id), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.encounter_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.episode_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
+    test "successful search with search parameters: type", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      type_value = "1"
+
+      type =
+        build(
+          :codeable_concept,
+          coding: [build(:coding, code: type_value, system: "eHealth/device_types")]
+        )
+
+      device_in = build(:device, type: type)
+      device_out = build(:device)
+
+      devices =
+        [device_in, device_out]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
+          {UUID.binary_to_string!(id), device}
+        end)
+
+      insert(:patient, _id: patient_id_hash, devices: devices)
+      expect_get_person_data(patient_id)
+
+      search_params = %{"type" => type_value}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_devices, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("devices/device_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(device_out.id.binary)
+    end
+
+    test "successful search with search parameters: date", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      asserted_date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
+      asserted_date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
+
+      device_1 = build(:device, asserted_date: get_datetime(-30))
+      device_2 = build(:device, asserted_date: get_datetime(-20))
+      device_3 = build(:device, asserted_date: get_datetime(-15))
+      device_4 = build(:device, asserted_date: get_datetime(-10))
+      device_5 = build(:device, asserted_date: get_datetime(-5))
+
+      devices =
+        [
+          device_1,
+          device_2,
+          device_3,
+          device_4,
+          device_5
+        ]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
+          {UUID.binary_to_string!(id), device}
+        end)
+
+      insert(:patient, _id: patient_id_hash, devices: devices)
+      expect_get_person_data(patient_id, 4)
+
+      call_endpoint = fn search_params ->
+        conn
+        |> get(summary_path(conn, :list_devices, patient_id), search_params)
+        |> json_response(200)
+      end
+
+      # both dates
+      assert %{"page_number" => 1, "total_entries" => 3, "total_pages" => 1} =
+               call_endpoint.(%{
+                 "asserted_date_from" => asserted_date_from,
+                 "asserted_date_to" => asserted_date_to
+               })
+               |> Map.get("paging")
+
+      # date_from only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"asserted_date_from" => asserted_date_from})
+               |> Map.get("paging")
+
+      # date_to only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"asserted_date_to" => asserted_date_to})
+               |> Map.get("paging")
+
+      # without date search params
+      assert %{"page_number" => 1, "total_entries" => 5, "total_pages" => 1} =
+               call_endpoint.(%{})
+               |> Map.get("paging")
+    end
+
+    test "get patient when devices list is null", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash, devices: nil)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_devices, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("devices/device_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+  end
+
   describe "search conditions" do
     test "success by code, onset_date", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
