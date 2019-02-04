@@ -891,7 +891,7 @@ defmodule Core.Patients do
 
   defp validate_immunizations(patient_id_hash, immunizations) do
     Enum.reduce_while(immunizations, {:ok, immunizations}, fn immunization, acc ->
-      case Immunizations.get(patient_id_hash, immunization.id) do
+      case Immunizations.get_by_id(patient_id_hash, immunization.id) do
         {:ok, _} ->
           {:halt, {:error, "Immunization with id '#{immunization.id}' already exists", 409}}
 
@@ -903,7 +903,7 @@ defmodule Core.Patients do
 
   defp validate_allergy_intolerances(patient_id_hash, allergy_intolerances) do
     Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance, acc ->
-      case AllergyIntolerances.get(patient_id_hash, allergy_intolerance.id) do
+      case AllergyIntolerances.get_by_id(patient_id_hash, allergy_intolerance.id) do
         {:ok, _} ->
           {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
 

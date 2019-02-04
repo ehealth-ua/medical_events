@@ -16,7 +16,7 @@ defmodule Core.Observations do
 
   @observation_collection Observation.metadata().collection
 
-  def get(patient_id_hash, id) do
+  def get_by_id(patient_id_hash, id) do
     @observation_collection
     |> Mongo.find_one(%{
       "_id" => Mongo.string_to_uuid(id),
