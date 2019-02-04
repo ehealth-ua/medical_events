@@ -5,8 +5,8 @@ defmodule Api.Rpc.RpcTest do
   import Core.Factories
   import Mox
 
-  alias Core.Patients
   alias Api.Rpc
+  alias Core.Patients
 
   test "get encounter status by id" do
     expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -55,6 +55,24 @@ defmodule Api.Rpc.RpcTest do
       )
 
       assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_id(patient_id, episode_id)
+    end
+  end
+
+  describe "approvals_by_episode/3" do
+    test "success get approvals by episode" do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      approval = insert(:approval, patient_id: patient_id_hash)
+      insert(:approval, patient_id: patient_id_hash)
+      [%{identifier: %{value: episode_id}}] = approval.granted_resources
+      approval_id = to_string(approval._id)
+
+      approvals =
+        Rpc.approvals_by_episode(patient_id, [to_string(approval.granted_to.identifier.value)], to_string(episode_id))
+
+      assert [%{id: ^approval_id}] = approvals
     end
   end
 end

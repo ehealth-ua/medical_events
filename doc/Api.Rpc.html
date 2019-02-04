@@ -5,9 +5,9 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.19.2">
-    <title>Api.Rpc —  vdev</title>
+    <title>Api.Rpc —  v1.0.1</title>
     <link rel="stylesheet" href="dist/html-c1666276880c0f8e3769.css" />
-    <script src="dist/sidebar_items-2d0f96a21d.js"></script>
+    <script src="dist/sidebar_items-2c2b91505d.js"></script>
     
   </head>
   <body data-type="modules">
@@ -28,7 +28,7 @@
       <h1 class="sidebar-projectName">
       </h1>
       <h2 class="sidebar-projectVersion">
-        vdev
+        v1.0.1
       </h2>
     </div>
   </a>
@@ -57,7 +57,7 @@
 
 
       <h1>
-        <small class="visible-xs"> vdev</small>
+        <small class="visible-xs"> v1.0.1</small>
 Api.Rpc              </h1>
 
 
@@ -77,6 +77,11 @@ Api.Rpc              </h1>
     <h2>
       <a href="#types">Types</a>
     </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:approval/0">approval()</a>
+  </div>
+</div>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#t:codeable_concept/0">codeable_concept()</a>
@@ -134,6 +139,13 @@ Api.Rpc              </h1>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#approvals_by_episode/3">approvals_by_episode(patient_id, employee_ids, episode_id)</a>
+  </div>
+    <div class="summary-synopsis"><p>Get approvals by patient id, employee ids, eipsode id</p>
+</div>
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#encounter_status_by_id/2">encounter_status_by_id(patient_id, encounter_id)</a>
   </div>
     <div class="summary-synopsis"><p>Get encounter status by patient id, encounter id</p>
@@ -157,6 +169,32 @@ Api.Rpc              </h1>
             </a>
 Types          </h1>
           <div class="types-list">
+<section class="detail" id="t:approval/0">
+    <div class="detail-header">
+    <a href="#t:approval/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">approval()</span>
+        
+      <div class="specs">
+          <pre>approval() :: %{
+  access_level: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  granted_by: <a href="#t:reference_/0">reference_</a>(),
+  granted_resources: [<a href="#t:reference_/0">reference_</a>()],
+  granted_to: <a href="#t:reference_/0">reference_</a>(),
+  id: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  inserted_at: DateTime,
+  reason: nil | <a href="#t:reference_/0">reference_</a>(),
+  status: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  updated_at: DateTime,
+  urgent: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()
+}</pre>
+      </div>
+  </div>
+  <section class="docstring">
+  </section>
+</section>
 <section class="detail" id="t:codeable_concept/0">
     <div class="detail-header">
     <a href="#t:codeable_concept/0" class="detail-link" title="Link to this type">
@@ -348,6 +386,84 @@ Types          </h1>
             </a>
 Functions          </h1>
           <div class="functions-list">
+<section class="detail" id="approvals_by_episode/3">
+    <div class="detail-header">
+    <a href="#approvals_by_episode/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">approvals_by_episode(patient_id, employee_ids, episode_id)</span>
+        
+      <div class="specs">
+          <pre>approvals_by_episode(
+  patient_id :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>(),
+  employee_ids :: [<a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()],
+  episode_id :: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">binary</a>()
+) :: [<a href="#t:approval/0">approval</a>()]</pre>
+      </div>
+  </div>
+  <section class="docstring">
+<p>Get approvals by patient id, employee ids, eipsode id</p>
+<h2 id="approvals_by_episode/3-examples" class="section-heading">
+  <a href="#approvals_by_episode/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Api.Rpc</span><span class="o">.</span><span class="n">approvals_by_episode</span><span class="p" data-group-id="4156150046-1">(</span><span class="w">
+  </span><span class="s">&quot;26e673e1-1d68-413e-b96c-407b45d9f572&quot;</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="4156150046-2">[</span><span class="s">&quot;79707880-e3f6-471a-b6bf-e19725ad749e&quot;</span><span class="p" data-group-id="4156150046-2">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;d221d7f1-81cb-44d3-b6d4-8d7e42f97ff9&quot;</span><span class="w">
+</span><span class="p" data-group-id="4156150046-1">)</span><span class="w">
+</span><span class="p" data-group-id="4156150046-3">[</span><span class="w">
+  </span><span class="p" data-group-id="4156150046-4">%{</span><span class="w">
+    </span><span class="ss">access_level</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;read&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">granted_by</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-5">%{</span><span class="w">
+      </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-6">%{</span><span class="w">
+        </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-7">%{</span><span class="w">
+          </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-8">[</span><span class="p" data-group-id="4156150046-9">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;mpi-hash&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="4156150046-9">}</span><span class="p" data-group-id="4156150046-8">]</span><span class="p">,</span><span class="w">
+          </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
+        </span><span class="p" data-group-id="4156150046-7">}</span><span class="p">,</span><span class="w">
+        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;32f74603-9d19-4ebc-aea6-08668d766e38&quot;</span><span class="w">
+      </span><span class="p" data-group-id="4156150046-6">}</span><span class="w">
+    </span><span class="p" data-group-id="4156150046-5">}</span><span class="p">,</span><span class="w">
+    </span><span class="ss">granted_resources</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-10">[</span><span class="w">
+      </span><span class="p" data-group-id="4156150046-11">%{</span><span class="w">
+        </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-12">%{</span><span class="w">
+          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-13">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-14">[</span><span class="p" data-group-id="4156150046-15">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;episode_of_care&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="4156150046-15">}</span><span class="p" data-group-id="4156150046-14">]</span><span class="p">,</span><span class="w">
+            </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
+          </span><span class="p" data-group-id="4156150046-13">}</span><span class="p">,</span><span class="w">
+          </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;34ad80db-77cb-48c4-aacb-ade41aa7fcfc&quot;</span><span class="w">
+        </span><span class="p" data-group-id="4156150046-12">}</span><span class="w">
+      </span><span class="p" data-group-id="4156150046-11">}</span><span class="w">
+    </span><span class="p" data-group-id="4156150046-10">]</span><span class="p">,</span><span class="w">
+    </span><span class="ss">granted_to</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-16">%{</span><span class="w">
+      </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+      </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-17">%{</span><span class="w">
+        </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-18">%{</span><span class="w">
+          </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-19">[</span><span class="p" data-group-id="4156150046-20">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;employee&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="4156150046-20">}</span><span class="p" data-group-id="4156150046-19">]</span><span class="p">,</span><span class="w">
+          </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
+        </span><span class="p" data-group-id="4156150046-18">}</span><span class="p">,</span><span class="w">
+        </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;4a3386ff-ccfe-41e8-8e77-55147c41aa15&quot;</span><span class="w">
+      </span><span class="p" data-group-id="4156150046-17">}</span><span class="w">
+    </span><span class="p" data-group-id="4156150046-16">}</span><span class="p">,</span><span class="w">
+    </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;196ccb6f-0195-4bf2-b639-800292b1ba10&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">inserted_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-21">#</span><span class="nc" data-group-id="4156150046-21">DateTime</span><span class="p" data-group-id="4156150046-21">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">04</span><span class="w"> </span><span class="mi">09</span><span class="p">:</span><span class="mi">09</span><span class="p">:</span><span class="mf">25.070</span><span class="nc">Z</span><span class="p" data-group-id="4156150046-21">&gt;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">reason</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
+    </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;new&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">updated_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-22">#</span><span class="nc" data-group-id="4156150046-22">DateTime</span><span class="p" data-group-id="4156150046-22">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">02</span><span class="o">-</span><span class="mi">04</span><span class="w"> </span><span class="mi">09</span><span class="p">:</span><span class="mi">09</span><span class="p">:</span><span class="mf">25.070</span><span class="nc">Z</span><span class="p" data-group-id="4156150046-22">&gt;</span><span class="p">,</span><span class="w">
+    </span><span class="ss">urgent</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4156150046-23">%{</span><span class="w">
+      </span><span class="s">&quot;authentication_method_current&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4156150046-24">%{</span><span class="w">
+        </span><span class="s">&quot;number&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;+38093*****85&quot;</span><span class="p">,</span><span class="w">
+        </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;OTP&quot;</span><span class="w">
+      </span><span class="p" data-group-id="4156150046-24">}</span><span class="w">
+    </span><span class="p" data-group-id="4156150046-23">}</span><span class="w">
+  </span><span class="p" data-group-id="4156150046-4">}</span><span class="w">
+</span><span class="p" data-group-id="4156150046-3">]</span></code></pre>
+  </section>
+</section>
 <section class="detail" id="encounter_status_by_id/2">
     <div class="detail-header">
     <a href="#encounter_status_by_id/2" class="detail-link" title="Link to this function">
@@ -368,11 +484,11 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Api.Rpc</span><span class="o">.</span><span class="n">encounter_status_by_id</span><span class="p" data-group-id="1615130860-1">(</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Api.Rpc</span><span class="o">.</span><span class="n">encounter_status_by_id</span><span class="p" data-group-id="8572553935-1">(</span><span class="w">
   </span><span class="s">&quot;26e673e1-1d68-413e-b96c-407b45d9f572&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;d221d7f1-81cb-44d3-b6d4-8d7e42f97ff9&quot;</span><span class="w">
-</span><span class="p" data-group-id="1615130860-1">)</span><span class="w">
-</span><span class="p" data-group-id="1615130860-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;finished&quot;</span><span class="p" data-group-id="1615130860-2">}</span></code></pre>
+</span><span class="p" data-group-id="8572553935-1">)</span><span class="w">
+</span><span class="p" data-group-id="8572553935-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;finished&quot;</span><span class="p" data-group-id="8572553935-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="episode_by_id/2">
@@ -395,160 +511,160 @@ Functions          </h1>
   Examples
 </h2>
 
-<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Api.Rpc</span><span class="o">.</span><span class="n">episode_by_id</span><span class="p" data-group-id="6050009758-1">(</span><span class="w">
+<pre><code class="nohighlight makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="nc">Api.Rpc</span><span class="o">.</span><span class="n">episode_by_id</span><span class="p" data-group-id="6250693969-1">(</span><span class="w">
   </span><span class="s">&quot;26e673e1-1d68-413e-b96c-407b45d9f572&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;d221d7f1-81cb-44d3-b6d4-8d7e42f97ff9&quot;</span><span class="w">
-</span><span class="p" data-group-id="6050009758-1">)</span><span class="w">
-</span><span class="p" data-group-id="6050009758-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6050009758-3">%{</span><span class="w">
-  </span><span class="ss">care_manager</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-4">%{</span><span class="w">
+</span><span class="p" data-group-id="6250693969-1">)</span><span class="w">
+</span><span class="p" data-group-id="6250693969-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6250693969-3">%{</span><span class="w">
+  </span><span class="ss">care_manager</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-4">%{</span><span class="w">
     </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-    </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-5">%{</span><span class="w">
-      </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-6">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-7">[</span><span class="p" data-group-id="6050009758-8">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;employee&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-8">}</span><span class="p" data-group-id="6050009758-7">]</span><span class="p">,</span><span class="w">
+    </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-5">%{</span><span class="w">
+      </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-6">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-7">[</span><span class="p" data-group-id="6250693969-8">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;employee&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-8">}</span><span class="p" data-group-id="6250693969-7">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-6">}</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-6">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;6e3db345-f493-404d-bac0-83e7ef13bd64&quot;</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-5">}</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-4">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-5">}</span><span class="w">
+  </span><span class="p" data-group-id="6250693969-4">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">closing_summary</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;closing summary&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">current_diagnoses</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-9">[</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-10">%{</span><span class="w">
-      </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-11">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-12">[</span><span class="p" data-group-id="6050009758-13">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6050009758-13">}</span><span class="p" data-group-id="6050009758-12">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">current_diagnoses</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-9">[</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-10">%{</span><span class="w">
+      </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-11">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-12">[</span><span class="p" data-group-id="6250693969-13">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6250693969-13">}</span><span class="p" data-group-id="6250693969-12">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-11">}</span><span class="p">,</span><span class="w">
-      </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-14">%{</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-11">}</span><span class="p">,</span><span class="w">
+      </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-14">%{</span><span class="w">
         </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-15">%{</span><span class="w">
-          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-16">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-17">[</span><span class="p" data-group-id="6050009758-18">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-18">}</span><span class="p" data-group-id="6050009758-17">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-15">%{</span><span class="w">
+          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-16">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-17">[</span><span class="p" data-group-id="6250693969-18">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-18">}</span><span class="p" data-group-id="6250693969-17">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-16">}</span><span class="p">,</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-16">}</span><span class="p">,</span><span class="w">
           </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;9b319b2c-644f-45b2-b35b-e01181e053c7&quot;</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-15">}</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-14">}</span><span class="p">,</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-15">}</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-14">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">rank</span><span class="p">:</span><span class="w"> </span><span class="mi">554</span><span class="p">,</span><span class="w">
-      </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-19">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-20">[</span><span class="p" data-group-id="6050009758-21">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6050009758-21">}</span><span class="p" data-group-id="6050009758-20">]</span><span class="p">,</span><span class="w">
+      </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-19">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-20">[</span><span class="p" data-group-id="6250693969-21">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6250693969-21">}</span><span class="p" data-group-id="6250693969-20">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-19">}</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-10">}</span><span class="p">,</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-22">%{</span><span class="w">
-      </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-23">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-24">[</span><span class="p" data-group-id="6050009758-25">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6050009758-25">}</span><span class="p" data-group-id="6050009758-24">]</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-19">}</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-10">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-22">%{</span><span class="w">
+      </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-23">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-24">[</span><span class="p" data-group-id="6250693969-25">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6250693969-25">}</span><span class="p" data-group-id="6250693969-24">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-23">}</span><span class="p">,</span><span class="w">
-      </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-26">%{</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-23">}</span><span class="p">,</span><span class="w">
+      </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-26">%{</span><span class="w">
         </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-27">%{</span><span class="w">
-          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-28">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-29">[</span><span class="p" data-group-id="6050009758-30">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-30">}</span><span class="p" data-group-id="6050009758-29">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-27">%{</span><span class="w">
+          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-28">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-29">[</span><span class="p" data-group-id="6250693969-30">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-30">}</span><span class="p" data-group-id="6250693969-29">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-28">}</span><span class="p">,</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-28">}</span><span class="p">,</span><span class="w">
           </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;09576df2-a2dd-4dbe-84e6-8c875379eeed&quot;</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-27">}</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-26">}</span><span class="p">,</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-27">}</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-26">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">rank</span><span class="p">:</span><span class="w"> </span><span class="mi">843</span><span class="p">,</span><span class="w">
-      </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-31">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-32">[</span><span class="p" data-group-id="6050009758-33">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6050009758-33">}</span><span class="p" data-group-id="6050009758-32">]</span><span class="p">,</span><span class="w">
+      </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-31">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-32">[</span><span class="p" data-group-id="6250693969-33">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6250693969-33">}</span><span class="p" data-group-id="6250693969-32">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-31">}</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-22">}</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-9">]</span><span class="p">,</span><span class="w">
-  </span><span class="ss">diagnoses_history</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-34">[</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-35">%{</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-31">}</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-22">}</span><span class="w">
+  </span><span class="p" data-group-id="6250693969-9">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">diagnoses_history</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-34">[</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-35">%{</span><span class="w">
       </span><span class="ss">date</span><span class="p">:</span><span class="w"> </span><span class="ld">~D[2019-01-14]</span><span class="p">,</span><span class="w">
-      </span><span class="ss">diagnoses</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-36">[</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-37">%{</span><span class="w">
-          </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-38">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-39">[</span><span class="p" data-group-id="6050009758-40">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6050009758-40">}</span><span class="p" data-group-id="6050009758-39">]</span><span class="p">,</span><span class="w">
+      </span><span class="ss">diagnoses</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-36">[</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-37">%{</span><span class="w">
+          </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-38">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-39">[</span><span class="p" data-group-id="6250693969-40">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6250693969-40">}</span><span class="p" data-group-id="6250693969-39">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-38">}</span><span class="p">,</span><span class="w">
-          </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-41">%{</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-38">}</span><span class="p">,</span><span class="w">
+          </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-41">%{</span><span class="w">
             </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-            </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-42">%{</span><span class="w">
-              </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-43">%{</span><span class="w">
-                </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-44">[</span><span class="p" data-group-id="6050009758-45">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-45">}</span><span class="p" data-group-id="6050009758-44">]</span><span class="p">,</span><span class="w">
+            </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-42">%{</span><span class="w">
+              </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-43">%{</span><span class="w">
+                </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-44">[</span><span class="p" data-group-id="6250693969-45">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-45">}</span><span class="p" data-group-id="6250693969-44">]</span><span class="p">,</span><span class="w">
                 </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-              </span><span class="p" data-group-id="6050009758-43">}</span><span class="p">,</span><span class="w">
+              </span><span class="p" data-group-id="6250693969-43">}</span><span class="p">,</span><span class="w">
               </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;9b319b2c-644f-45b2-b35b-e01181e053c7&quot;</span><span class="w">
-            </span><span class="p" data-group-id="6050009758-42">}</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-41">}</span><span class="p">,</span><span class="w">
+            </span><span class="p" data-group-id="6250693969-42">}</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-41">}</span><span class="p">,</span><span class="w">
           </span><span class="ss">rank</span><span class="p">:</span><span class="w"> </span><span class="mi">554</span><span class="p">,</span><span class="w">
-          </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-46">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-47">[</span><span class="p" data-group-id="6050009758-48">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6050009758-48">}</span><span class="p" data-group-id="6050009758-47">]</span><span class="p">,</span><span class="w">
+          </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-46">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-47">[</span><span class="p" data-group-id="6250693969-48">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6250693969-48">}</span><span class="p" data-group-id="6250693969-47">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-46">}</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-37">}</span><span class="p">,</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-49">%{</span><span class="w">
-          </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-50">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-51">[</span><span class="p" data-group-id="6050009758-52">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6050009758-52">}</span><span class="p" data-group-id="6050009758-51">]</span><span class="p">,</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-46">}</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-37">}</span><span class="p">,</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-49">%{</span><span class="w">
+          </span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-50">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-51">[</span><span class="p" data-group-id="6250693969-52">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;R80&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/ICPC2/condition_codes&quot;</span><span class="p" data-group-id="6250693969-52">}</span><span class="p" data-group-id="6250693969-51">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-50">}</span><span class="p">,</span><span class="w">
-          </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-53">%{</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-50">}</span><span class="p">,</span><span class="w">
+          </span><span class="ss">condition</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-53">%{</span><span class="w">
             </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-            </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-54">%{</span><span class="w">
-              </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-55">%{</span><span class="w">
-                </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-56">[</span><span class="p" data-group-id="6050009758-57">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-57">}</span><span class="p" data-group-id="6050009758-56">]</span><span class="p">,</span><span class="w">
+            </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-54">%{</span><span class="w">
+              </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-55">%{</span><span class="w">
+                </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-56">[</span><span class="p" data-group-id="6250693969-57">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;condition&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-57">}</span><span class="p" data-group-id="6250693969-56">]</span><span class="p">,</span><span class="w">
                 </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-              </span><span class="p" data-group-id="6050009758-55">}</span><span class="p">,</span><span class="w">
+              </span><span class="p" data-group-id="6250693969-55">}</span><span class="p">,</span><span class="w">
               </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;09576df2-a2dd-4dbe-84e6-8c875379eeed&quot;</span><span class="w">
-            </span><span class="p" data-group-id="6050009758-54">}</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-53">}</span><span class="p">,</span><span class="w">
+            </span><span class="p" data-group-id="6250693969-54">}</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-53">}</span><span class="p">,</span><span class="w">
           </span><span class="ss">rank</span><span class="p">:</span><span class="w"> </span><span class="mi">843</span><span class="p">,</span><span class="w">
-          </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-58">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-59">[</span><span class="p" data-group-id="6050009758-60">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6050009758-60">}</span><span class="p" data-group-id="6050009758-59">]</span><span class="p">,</span><span class="w">
+          </span><span class="ss">role</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-58">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-59">[</span><span class="p" data-group-id="6250693969-60">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/diagnosis_roles&quot;</span><span class="p" data-group-id="6250693969-60">}</span><span class="p" data-group-id="6250693969-59">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-58">}</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-49">}</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-36">]</span><span class="p">,</span><span class="w">
-      </span><span class="ss">evidence</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-61">%{</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-58">}</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-49">}</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-36">]</span><span class="p">,</span><span class="w">
+      </span><span class="ss">evidence</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-61">%{</span><span class="w">
         </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-62">%{</span><span class="w">
-          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-63">%{</span><span class="w">
-            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-64">[</span><span class="p" data-group-id="6050009758-65">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-65">}</span><span class="p" data-group-id="6050009758-64">]</span><span class="p">,</span><span class="w">
+        </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-62">%{</span><span class="w">
+          </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-63">%{</span><span class="w">
+            </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-64">[</span><span class="p" data-group-id="6250693969-65">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-65">}</span><span class="p" data-group-id="6250693969-64">]</span><span class="p">,</span><span class="w">
             </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-          </span><span class="p" data-group-id="6050009758-63">}</span><span class="p">,</span><span class="w">
+          </span><span class="p" data-group-id="6250693969-63">}</span><span class="p">,</span><span class="w">
           </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;e2e8d8ed-7c68-4721-a202-0fab733a3a00&quot;</span><span class="w">
-        </span><span class="p" data-group-id="6050009758-62">}</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-61">}</span><span class="p">,</span><span class="w">
+        </span><span class="p" data-group-id="6250693969-62">}</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-61">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">is_active</span><span class="p">:</span><span class="w"> </span><span class="no">true</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-35">}</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-34">]</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-35">}</span><span class="w">
+  </span><span class="p" data-group-id="6250693969-34">]</span><span class="p">,</span><span class="w">
   </span><span class="ss">explanatory_letter</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;explanatory letter&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2b1479b2-aa5f-4ea4-b333-662f1236dff5&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">inserted_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-66">#</span><span class="nc" data-group-id="6050009758-66">DateTime</span><span class="p" data-group-id="6050009758-66">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">14</span><span class="w"> </span><span class="mi">14</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">44.167</span><span class="nc">Z</span><span class="p" data-group-id="6050009758-66">&gt;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">managing_organization</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-67">%{</span><span class="w">
+  </span><span class="ss">inserted_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-66">#</span><span class="nc" data-group-id="6250693969-66">DateTime</span><span class="p" data-group-id="6250693969-66">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">14</span><span class="w"> </span><span class="mi">14</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">44.167</span><span class="nc">Z</span><span class="p" data-group-id="6250693969-66">&gt;</span><span class="p">,</span><span class="w">
+  </span><span class="ss">managing_organization</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-67">%{</span><span class="w">
     </span><span class="ss">display_value</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
-    </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-68">%{</span><span class="w">
-      </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-69">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-70">[</span><span class="p" data-group-id="6050009758-71">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;legal_entity&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-71">}</span><span class="p" data-group-id="6050009758-70">]</span><span class="p">,</span><span class="w">
+    </span><span class="ss">identifier</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-68">%{</span><span class="w">
+      </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-69">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-70">[</span><span class="p" data-group-id="6250693969-71">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;legal_entity&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-71">}</span><span class="p" data-group-id="6250693969-70">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-69">}</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-69">}</span><span class="p">,</span><span class="w">
       </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;79707880-e3f6-471a-b6bf-e19725ad749e&quot;</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-68">}</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-67">}</span><span class="p">,</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-68">}</span><span class="w">
+  </span><span class="p" data-group-id="6250693969-67">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ОРВИ 2018&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">period</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-72">%{</span><span class="ss">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2019-01-14&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2019-01-14&quot;</span><span class="p" data-group-id="6050009758-72">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">period</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-72">%{</span><span class="ss">end</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2019-01-14&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">start</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2019-01-14&quot;</span><span class="p" data-group-id="6250693969-72">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;active&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="ss">status_history</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-73">[</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-74">%{</span><span class="w">
+  </span><span class="ss">status_history</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-73">[</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-74">%{</span><span class="w">
       </span><span class="ss">inserted_at</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;2019-01-14T14:29:44.167Z&quot;</span><span class="p">,</span><span class="w">
       </span><span class="ss">inserted_by</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cfaaca23-0536-42da-9f0c-055dcd32c467&quot;</span><span class="p">,</span><span class="w">
       </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;active&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="ss">status_reason</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-75">%{</span><span class="w">
-        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-76">[</span><span class="p" data-group-id="6050009758-77">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/episode_closing_reasons&quot;</span><span class="p" data-group-id="6050009758-77">}</span><span class="p" data-group-id="6050009758-76">]</span><span class="p">,</span><span class="w">
+      </span><span class="ss">status_reason</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-75">%{</span><span class="w">
+        </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-76">[</span><span class="p" data-group-id="6250693969-77">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/episode_closing_reasons&quot;</span><span class="p" data-group-id="6250693969-77">}</span><span class="p" data-group-id="6250693969-76">]</span><span class="p">,</span><span class="w">
         </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-      </span><span class="p" data-group-id="6050009758-75">}</span><span class="w">
-    </span><span class="p" data-group-id="6050009758-74">}</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-73">]</span><span class="p">,</span><span class="w">
-  </span><span class="ss">status_reason</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-78">%{</span><span class="w">
-    </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-79">[</span><span class="p" data-group-id="6050009758-80">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6050009758-80">}</span><span class="p" data-group-id="6050009758-79">]</span><span class="p">,</span><span class="w">
+      </span><span class="p" data-group-id="6250693969-75">}</span><span class="w">
+    </span><span class="p" data-group-id="6250693969-74">}</span><span class="w">
+  </span><span class="p" data-group-id="6250693969-73">]</span><span class="p">,</span><span class="w">
+  </span><span class="ss">status_reason</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-78">%{</span><span class="w">
+    </span><span class="ss">coding</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-79">[</span><span class="p" data-group-id="6250693969-80">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/resources&quot;</span><span class="p" data-group-id="6250693969-80">}</span><span class="p" data-group-id="6250693969-79">]</span><span class="p">,</span><span class="w">
     </span><span class="ss">text</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;code text&quot;</span><span class="w">
-  </span><span class="p" data-group-id="6050009758-78">}</span><span class="p">,</span><span class="w">
-  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-81">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary_care&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/episode_types&quot;</span><span class="p" data-group-id="6050009758-81">}</span><span class="p">,</span><span class="w">
-  </span><span class="ss">updated_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6050009758-82">#</span><span class="nc" data-group-id="6050009758-82">DateTime</span><span class="p" data-group-id="6050009758-82">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">14</span><span class="w"> </span><span class="mi">14</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">44.167</span><span class="nc">Z</span><span class="p" data-group-id="6050009758-82">&gt;</span><span class="w">
-</span><span class="p" data-group-id="6050009758-3">}</span><span class="p" data-group-id="6050009758-2">}</span></code></pre>
+  </span><span class="p" data-group-id="6250693969-78">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-81">%{</span><span class="ss">code</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;primary_care&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">system</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;eHealth/episode_types&quot;</span><span class="p" data-group-id="6250693969-81">}</span><span class="p">,</span><span class="w">
+  </span><span class="ss">updated_at</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6250693969-82">#</span><span class="nc" data-group-id="6250693969-82">DateTime</span><span class="p" data-group-id="6250693969-82">&lt;</span><span class="mi">2019</span><span class="o">-</span><span class="mi">01</span><span class="o">-</span><span class="mi">14</span><span class="w"> </span><span class="mi">14</span><span class="p">:</span><span class="mi">29</span><span class="p">:</span><span class="mf">44.167</span><span class="nc">Z</span><span class="p" data-group-id="6250693969-82">&gt;</span><span class="w">
+</span><span class="p" data-group-id="6250693969-3">}</span><span class="p" data-group-id="6250693969-2">}</span></code></pre>
   </section>
 </section>
           </div>

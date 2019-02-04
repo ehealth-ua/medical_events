@@ -232,6 +232,21 @@ defmodule Core.Approvals do
     end
   end
 
+  def get_by_patient_id_granted_to_episode_id(patient_id, employee_ids, episode_id) do
+    @collection
+    |> Mongo.find(%{
+      "patient_id" => Patients.get_pk_hash(patient_id),
+      "granted_to.identifier.value" => %{"$in" => Enum.map(employee_ids, &Mongo.string_to_uuid/1)},
+      "granted_resources" => %{
+        "$elemMatch" => %{
+          "identifier.type.coding.code" => "episode_of_care",
+          "identifier.value" => Mongo.string_to_uuid(episode_id)
+        }
+      }
+    })
+    |> Enum.map(&Approval.create/1)
+  end
+
   defp get_episodes(resources, nil), do: {:ok, Enum.map(resources, &Reference.create/1)}
 
   defp get_episodes(nil, %{"identifier" => %{"value" => service_request_id}}) do

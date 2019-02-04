@@ -3,10 +3,25 @@ defmodule Api.Rpc do
   This module contains functions that are called from other pods via RPC.
   """
 
+  alias Api.Web.ApprovalView
   alias Api.Web.EpisodeView
+  alias Core.Approvals
   alias Core.Patients
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
+
+  @type approval() :: %{
+          access_level: binary(),
+          granted_by: reference_(),
+          granted_resources: list(reference_()),
+          granted_to: reference_(),
+          id: binary(),
+          inserted_at: DateTime,
+          reason: nil | reference_(),
+          status: binary(),
+          updated_at: DateTime,
+          urgent: map()
+        }
 
   @type coding() :: %{
           system: binary(),
@@ -263,5 +278,74 @@ defmodule Api.Rpc do
            |> Episodes.get_by_id(episode_id) do
       {:ok, EpisodeView.render("show.json", %{episode: episode})}
     end
+  end
+
+  @doc """
+  Get approvals by patient id, employee ids, eipsode id
+
+  ## Examples
+
+      iex> Api.Rpc.approvals_by_episode(
+        "26e673e1-1d68-413e-b96c-407b45d9f572",
+        ["79707880-e3f6-471a-b6bf-e19725ad749e"],
+        "d221d7f1-81cb-44d3-b6d4-8d7e42f97ff9"
+      )
+      [
+        %{
+          access_level: "read",
+          granted_by: %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "mpi-hash", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "32f74603-9d19-4ebc-aea6-08668d766e38"
+            }
+          },
+          granted_resources: [
+            %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "episode_of_care", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "34ad80db-77cb-48c4-aacb-ade41aa7fcfc"
+              }
+            }
+          ],
+          granted_to: %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "employee", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "4a3386ff-ccfe-41e8-8e77-55147c41aa15"
+            }
+          },
+          id: "196ccb6f-0195-4bf2-b639-800292b1ba10",
+          inserted_at: #DateTime<2019-02-04 09:09:25.070Z>,
+          reason: nil,
+          status: "new",
+          updated_at: #DateTime<2019-02-04 09:09:25.070Z>,
+          urgent: %{
+            "authentication_method_current" => %{
+              "number" => "+38093*****85",
+              "type" => "OTP"
+            }
+          }
+        }
+      ]
+  """
+  @spec approvals_by_episode(
+          patient_id :: binary(),
+          employee_ids :: list(binary),
+          episode_id :: binary()
+        ) :: list(approval)
+  def approvals_by_episode(patient_id, employee_ids, episode_id) do
+    approvals = Approvals.get_by_patient_id_granted_to_episode_id(patient_id, employee_ids, episode_id)
+    ApprovalView.render("index.json", %{approvals: approvals})
   end
 end
