@@ -16,6 +16,7 @@ defmodule Core.Approvals do
   alias Core.Validators.JsonSchema
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
+  require Logger
 
   @collection Approval.metadata().collection
 
@@ -42,7 +43,11 @@ defmodule Core.Approvals do
          {:ok, job, approval_create_job} <-
            Jobs.create(
              ApprovalCreateJob,
-             Map.merge(params, %{"user_id" => user_id, "client_id" => client_id})
+             Map.merge(params, %{
+               "user_id" => user_id,
+               "client_id" => client_id,
+               "salt" => DateTime.utc_now()
+             })
            ),
          :ok <- @kafka_producer.publish_medical_event(approval_create_job) do
       {:ok, job}
@@ -151,6 +156,10 @@ defmodule Core.Approvals do
               ]
 
               Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+            else
+              error ->
+                Logger.error("Failed to initialize otp verification: #{inspect(error)}")
+                Jobs.produce_update_status(job._id, job.request_id, "Failed to initialize otp verification", 500)
             end
           end
 
@@ -197,6 +206,10 @@ defmodule Core.Approvals do
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+
+      error ->
+        Logger.error("Failed to initialize otp verification: #{inspect(error)}")
+        Jobs.produce_update_status(job._id, job.request_id, "Failed to initialize otp verification", 500)
     end
   end
 
