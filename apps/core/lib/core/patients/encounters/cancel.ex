@@ -383,7 +383,8 @@ defmodule Core.Patients.Encounters.Cancel do
       get_entities_statuses(decoded_content["risk_assessments"], "status"),
       get_entities_statuses(decoded_content["immunizations"], "status"),
       get_entities_statuses(decoded_content["conditions"], "verification_status"),
-      get_entities_statuses(decoded_content["observations"], "status")
+      get_entities_statuses(decoded_content["observations"], "status"),
+      get_entities_statuses(decoded_content["devices"], "status")
     ]
     |> Enum.flat_map(& &1)
     |> Enum.any?(&(&1 == @entered_in_error))
@@ -403,7 +404,8 @@ defmodule Core.Patients.Encounters.Cancel do
       risk_assessment: get_entities_statuses(package[:risk_assessments] || [], :status),
       immunization: get_entities_statuses(package[:immunizations] || [], :status),
       condition: get_entities_statuses(package[:conditions] || [], :verification_status),
-      observation: get_entities_statuses(package[:observations] || [], :status)
+      observation: get_entities_statuses(package[:observations] || [], :status),
+      device: get_entities_statuses(package[:devices] || [], :status)
     ]
     |> Enum.reject(fn {_, statuses} -> statuses == [] end)
     |> Enum.reduce_while(:ok, fn {key, statuses}, _acc ->
