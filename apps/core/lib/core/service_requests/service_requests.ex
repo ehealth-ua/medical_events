@@ -488,7 +488,7 @@ defmodule Core.ServiceRequests do
               {:ok, %{matched_count: 1, modified_count: 1}} =
                 Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
 
-              case @worker.run("mpi", Core.Rpc, :get_auth_method, [patient_id]) do
+              case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
                   Logger.error("Person #{patient_id} not found")
 
@@ -596,7 +596,7 @@ defmodule Core.ServiceRequests do
               {:ok, %{matched_count: 1, modified_count: 1}} =
                 Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
 
-              case @worker.run("mpi", Core.Rpc, :get_auth_method, [patient_id]) do
+              case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
                   Logger.error("Person #{patient_id} not found")
 

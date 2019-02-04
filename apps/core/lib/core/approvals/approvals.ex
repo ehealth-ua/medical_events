@@ -274,7 +274,7 @@ defmodule Core.Approvals do
   end
 
   defp get_person_auth_method(person_id) do
-    case @worker.run("mpi", Core.Rpc, :get_auth_method, [person_id]) do
+    case @worker.run("mpi", MPI.Rpc, :get_auth_method, [person_id]) do
       nil ->
         {:error, "Person is not found", 404}
 
