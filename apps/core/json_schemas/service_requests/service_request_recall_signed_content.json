@@ -441,6 +441,13 @@
               "value"
             ],
             "additionalProperties": false
+          },
+          "display_value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "presentation text"
           }
         },
         "required": [
