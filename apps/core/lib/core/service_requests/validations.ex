@@ -126,9 +126,11 @@ defmodule Core.ServiceRequests.Validations do
     identifier =
       add_validations(used_by.identifier, :value,
         employee: [
+          type: "DOCTOR",
           status: "APPROVED",
           legal_entity_id: client_id,
           messages: [
+            type: "Employee is not an active doctor",
             status: "Employee is not approved",
             legal_entity_id: "Employee #{used_by.identifier.value} doesn't belong to your legal entity"
           ]
