@@ -250,62 +250,73 @@ defmodule Core.ServiceRequests do
         |> ServiceRequestsValidations.validate_permitted_episodes(patient_id_hash)
         |> generate_requisition_number(patient_id_hash, user_id)
 
-      case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
-        [] ->
-          if Mongo.find_one(
-               ServiceRequest.metadata().collection,
-               %{"_id" => Mongo.string_to_uuid(service_request._id)},
-               projection: %{"_id" => true}
-             ) do
-            {:error, "Service request with id '#{service_request._id}' already exists", 409}
-          else
-            resource_name = "#{service_request._id}/create"
-            files = [{'signed_content.txt', job.signed_data}]
-            {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
-
-            with :ok <-
-                   @media_storage.save(
-                     patient_id,
-                     compressed_content,
-                     Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
-                     resource_name
-                   ) do
-              doc =
-                %{service_request | signed_content_links: [resource_name]}
-                |> Mongo.prepare_doc()
-                |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
-                |> Mongo.convert_to_uuid("_id")
-                |> Mongo.convert_to_uuid("inserted_by")
-                |> Mongo.convert_to_uuid("updated_by")
-                |> Mongo.convert_to_uuid("requester", ~w(identifier value)a)
-                |> Mongo.convert_to_uuid("context", ~w(identifier value)a)
-                |> Mongo.convert_to_uuid("supporting_info", ~w(identifier value)a)
-                |> Mongo.convert_to_uuid("permitted_episodes", ~w(identifier value)a)
-
-              {:ok, %{inserted_id: _}} = Mongo.insert_one(@collection, doc, [])
-
-              links = [
-                %{
-                  "entity" => "service_request",
-                  "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
-                }
-              ]
-
-              Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
-            else
-              error ->
-                Logger.error("Failed to save signed content: #{inspect(error)}")
-                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
-            end
-          end
-
-        errors ->
+      case service_request do
+        [_] = errors ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
             422
           )
+
+        %{} ->
+          case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
+            [] ->
+              if Mongo.find_one(
+                   ServiceRequest.metadata().collection,
+                   %{"_id" => Mongo.string_to_uuid(service_request._id)},
+                   projection: %{"_id" => true}
+                 ) do
+                {:error, "Service request with id '#{service_request._id}' already exists", 409}
+              else
+                resource_name = "#{service_request._id}/create"
+                files = [{'signed_content.txt', job.signed_data}]
+                {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
+
+                with :ok <-
+                       @media_storage.save(
+                         patient_id,
+                         compressed_content,
+                         Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
+                         resource_name
+                       ) do
+                  doc =
+                    %{service_request | signed_content_links: [resource_name]}
+                    |> Mongo.prepare_doc()
+                    |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
+                    |> Mongo.convert_to_uuid("_id")
+                    |> Mongo.convert_to_uuid("inserted_by")
+                    |> Mongo.convert_to_uuid("updated_by")
+                    |> Mongo.convert_to_uuid("requester", ~w(identifier value)a)
+                    |> Mongo.convert_to_uuid("context", ~w(identifier value)a)
+                    |> Mongo.convert_to_uuid("supporting_info", ~w(identifier value)a)
+                    |> Mongo.convert_to_uuid("permitted_episodes", ~w(identifier value)a)
+
+                  {:ok, %{inserted_id: _}} = Mongo.insert_one(@collection, doc, [])
+
+                  links = [
+                    %{
+                      "entity" => "service_request",
+                      "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
+                    }
+                  ]
+
+                  Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+                else
+                  error ->
+                    Logger.error("Failed to save signed content: #{inspect(error)}")
+                    Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+                end
+              end
+
+            errors ->
+              Jobs.produce_update_status(
+                job._id,
+                job.request_id,
+                ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+                422
+              )
+          end
       end
     else
       {:error, error} ->
@@ -768,7 +779,7 @@ defmodule Core.ServiceRequests do
   defp generate_requisition_number(%ServiceRequest{} = service_request, patient_id_hash, user_id) do
     encounter_id = service_request.context.identifier.value
 
-    with {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, to_string(encounter_id)),
+    with {_, {:ok, encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, to_string(encounter_id))},
          {:ok, number} <-
            @worker.run("number_generator", NumberGenerator.Rpc, :number, [
              "episode",
@@ -776,6 +787,15 @@ defmodule Core.ServiceRequests do
              user_id
            ]) do
       %{service_request | requisition: number}
+    else
+      {:encounter, _} ->
+        [
+          {:error, "service_request.context.identifier.value", :encounter_reference,
+           "Encounter with such id is not found"}
+        ]
+
+      error ->
+        error
     end
   end
 end
