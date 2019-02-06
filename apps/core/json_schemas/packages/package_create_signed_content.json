@@ -135,7 +135,8 @@
             "high": {
               "$ref": "#/definitions/value_quantity"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "text": {
           "type": "string"
@@ -262,7 +263,8 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     },
     "report_origin": {
       "type": "object",
@@ -294,7 +296,8 @@
         "text": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "interpretation": {
       "type": "object",
@@ -326,7 +329,8 @@
         "text": {
           "type": "string"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "coding_item": {
       "type": "object",
@@ -533,7 +537,8 @@
               "additionalProperties": false
             }
           },
-          "description": ""
+          "description": "",
+          "additionalProperties": false
         },
         "role": {
           "type": "object",
@@ -751,7 +756,8 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     },
     "condition": {
       "type": "object",
@@ -771,7 +777,8 @@
             "identifier": {
               "$ref": "#/definitions/identifier"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "asserted_date": {
           "type": "string",
@@ -832,7 +839,8 @@
               ],
               "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "code": {
           "type": "object",
@@ -1001,7 +1009,8 @@
           },
           "required": [
             "summary"
-          ]
+          ],
+          "additionalProperties": false
         },
         "evidences": {
           "type": "array",
@@ -1107,7 +1116,8 @@
                       ],
                       "additionalProperties": false
                     }
-                  }
+                  },
+                  "additionalProperties": false
                 }
               }
             },
@@ -1404,7 +1414,8 @@
               ],
               "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "prescriptions": {
           "type": "string"
@@ -1499,7 +1510,8 @@
               ],
               "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "based_on": {
           "type": "array",
@@ -1560,7 +1572,8 @@
                 ],
                 "additionalProperties": false
               }
-            }
+            },
+            "additionalProperties": false
           }
         },
         "categories": {
@@ -1704,7 +1717,8 @@
             "text": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "method": {
           "type": "object",
@@ -1736,7 +1750,8 @@
             "text": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "value_quantity": {
           "$ref": "#/definitions/value_quantity"
@@ -1949,7 +1964,8 @@
               ],
               "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         }
       },
       "required": [
@@ -2070,7 +2086,8 @@
               ],
               "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "date": {
           "type": "string",
@@ -2288,7 +2305,8 @@
                 "additionalProperties": false
               }
             }
-          }
+          },
+          "additionalProperties": false
         },
         "vaccination_protocols": {
           "type": "array",
@@ -2397,7 +2415,8 @@
               "additionalProperties": false
             }
           },
-          "description": ""
+          "description": "",
+          "additionalProperties": false
         },
         "code": {
           "type": "object",
@@ -2470,7 +2489,8 @@
         "onset_date_time",
         "asserted_date",
         "primary_source"
-      ]
+      ],
+      "additionalProperties": false
     },
     "risk_assessment": {
       "type": "object",
@@ -2503,13 +2523,15 @@
                 },
                 "required": [
                   "code"
-                ]
+                ],
+                "additionalProperties": false
               }
             },
             "text": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "code": {
           "type": "object",
@@ -2532,13 +2554,15 @@
                 },
                 "required": [
                   "code"
-                ]
+                ],
+                "additionalProperties": false
               }
             },
             "text": {
               "type": "string"
             }
-          }
+          },
+          "additionalProperties": false
         },
         "context": {
           "type": "object",
@@ -2570,14 +2594,16 @@
                         },
                         "required": [
                           "code"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "text": {
                       "type": "string"
                     }
                   },
-                  "description": "Description of identifier"
+                  "description": "Description of identifier",
+                  "additionalProperties": false
                 },
                 "value": {
                   "type": "string",
@@ -2587,9 +2613,11 @@
               "required": [
                 "type",
                 "value"
-              ]
+              ],
+              "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "asserted_date": {
           "type": "string",
@@ -2635,14 +2663,16 @@
                               },
                               "required": [
                                 "code"
-                              ]
+                              ],
+                              "additionalProperties": false
                             }
                           },
                           "text": {
                             "type": "string"
                           }
                         },
-                        "description": "Description of identifier"
+                        "description": "Description of identifier",
+                        "additionalProperties": false
                       },
                       "value": {
                         "type": "string",
@@ -2652,9 +2682,11 @@
                     "required": [
                       "type",
                       "value"
-                    ]
+                    ],
+                    "additionalProperties": false
                   }
-                }
+                },
+                "additionalProperties": false
               }
             },
             "text": {
@@ -2689,13 +2721,15 @@
                       },
                       "required": [
                         "code"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "text": {
                     "type": "string"
                   }
-                }
+                },
+                "additionalProperties": false
               },
               "qualitative_risk": {
                 "type": "object",
@@ -2718,13 +2752,15 @@
                       },
                       "required": [
                         "code"
-                      ]
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "text": {
                     "type": "string"
                   }
-                }
+                },
+                "additionalProperties": false
               },
               "relative_risk": {
                 "type": "number"
@@ -2734,192 +2770,200 @@
               },
               "probability_decimal": {
                 "type": "number"
+              },
+              "probability_range": {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          ">",
+                          ">=",
+                          "=",
+                          "<=",
+                          "<"
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      },
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/ucum/units"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "system",
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "high": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          ">",
+                          ">=",
+                          "=",
+                          "<=",
+                          "<"
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      },
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/ucum/units"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "system",
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "low",
+                  "high"
+                ],
+                "additionalProperties": false
+              },
+              "when_period": {
+                "type": "object",
+                "properties": {
+                  "start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "C? Starting time with inclusive boundary"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "C? End time with inclusive boundary, if not ongoing"
+                  }
+                },
+                "required": [
+                  "start"
+                ],
+                "additionalProperties": false
+              },
+              "when_range": {
+                "type": "object",
+                "properties": {
+                  "low": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          ">",
+                          ">=",
+                          "=",
+                          "<=",
+                          "<"
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      },
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/ucum/units"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "system",
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "high": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number"
+                      },
+                      "comparator": {
+                        "type": "string",
+                        "enum": [
+                          ">",
+                          ">=",
+                          "=",
+                          "<=",
+                          "<"
+                        ]
+                      },
+                      "unit": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      },
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/ucum/units"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/ucum/units"
+                      }
+                    },
+                    "required": [
+                      "value",
+                      "system",
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "low",
+                  "high"
+                ],
+                "additionalProperties": false
               }
             },
-            "probability_range": {
-              "type": "object",
-              "properties": {
-                "low": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "number"
-                    },
-                    "comparator": {
-                      "type": "string",
-                      "enum": [
-                        ">",
-                        ">=",
-                        "=",
-                        "<=",
-                        "<"
-                      ]
-                    },
-                    "unit": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    },
-                    "system": {
-                      "type": "string",
-                      "enum": [
-                        "eHealth/ucum/units"
-                      ]
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    }
-                  },
-                  "required": [
-                    "value",
-                    "system",
-                    "code"
-                  ]
-                },
-                "high": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "number"
-                    },
-                    "comparator": {
-                      "type": "string",
-                      "enum": [
-                        ">",
-                        ">=",
-                        "=",
-                        "<=",
-                        "<"
-                      ]
-                    },
-                    "unit": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    },
-                    "system": {
-                      "type": "string",
-                      "enum": [
-                        "eHealth/ucum/units"
-                      ]
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    }
-                  },
-                  "required": [
-                    "value",
-                    "system",
-                    "code"
-                  ]
-                }
-              },
-              "required": [
-                "low",
-                "high"
-              ]
-            },
-            "when_period": {
-              "type": "object",
-              "properties": {
-                "start": {
-                  "type": "string",
-                  "format": "date-time",
-                  "description": "C? Starting time with inclusive boundary"
-                },
-                "end": {
-                  "type": "string",
-                  "format": "date-time",
-                  "description": "C? End time with inclusive boundary, if not ongoing"
-                }
-              },
-              "required": [
-                "start"
-              ]
-            },
-            "when_range": {
-              "type": "object",
-              "properties": {
-                "low": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "number"
-                    },
-                    "comparator": {
-                      "type": "string",
-                      "enum": [
-                        ">",
-                        ">=",
-                        "=",
-                        "<=",
-                        "<"
-                      ]
-                    },
-                    "unit": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    },
-                    "system": {
-                      "type": "string",
-                      "enum": [
-                        "eHealth/ucum/units"
-                      ]
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    }
-                  },
-                  "required": [
-                    "value",
-                    "system",
-                    "code"
-                  ]
-                },
-                "high": {
-                  "type": "object",
-                  "properties": {
-                    "value": {
-                      "type": "number"
-                    },
-                    "comparator": {
-                      "type": "string",
-                      "enum": [
-                        ">",
-                        ">=",
-                        "=",
-                        "<=",
-                        "<"
-                      ]
-                    },
-                    "unit": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    },
-                    "system": {
-                      "type": "string",
-                      "enum": [
-                        "eHealth/ucum/units"
-                      ]
-                    },
-                    "code": {
-                      "type": "string",
-                      "description": "Dictionary: eHealth/ucum/units"
-                    }
-                  },
-                  "required": [
-                    "value",
-                    "system",
-                    "code"
-                  ]
-                }
-              },
-              "required": [
-                "low",
-                "high"
-              ]
-            }
+            "additionalProperties": false
           }
         },
         "mitigation": {
@@ -2954,13 +2998,15 @@
                   },
                   "required": [
                     "code"
-                  ]
+                  ],
+                  "additionalProperties": false
                 }
               },
               "text": {
                 "type": "string"
               }
-            }
+            },
+            "additionalProperties": false
           }
         },
         "reason_references": {
@@ -2997,14 +3043,16 @@
                           },
                           "required": [
                             "code"
-                          ]
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "text": {
                         "type": "string"
                       }
                     },
-                    "description": "Description of identifier"
+                    "description": "Description of identifier",
+                    "additionalProperties": false
                   },
                   "value": {
                     "type": "string",
@@ -3014,9 +3062,11 @@
                 "required": [
                   "type",
                   "value"
-                ]
+                ],
+                "additionalProperties": false
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
       },
@@ -3059,7 +3109,8 @@
           },
           "required": [
             "start"
-          ]
+          ],
+          "additionalProperties": false
         },
         "context": {
           "type": "object",
@@ -3092,7 +3143,8 @@
                         "required": [
                           "system",
                           "code"
-                        ]
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "text": {
@@ -3100,7 +3152,8 @@
                       "maxLength": 2000
                     }
                   },
-                  "description": "Description of identifier"
+                  "description": "Description of identifier",
+                  "additionalProperties": false
                 },
                 "value": {
                   "type": "string",
@@ -3110,9 +3163,11 @@
               "required": [
                 "type",
                 "value"
-              ]
+              ],
+              "additionalProperties": false
             }
-          }
+          },
+          "additionalProperties": false
         },
         "primary_source": {
           "type": "boolean"
@@ -3140,14 +3195,16 @@
                 "required": [
                   "system",
                   "code"
-                ]
+                ],
+                "additionalProperties": false
               }
             },
             "text": {
               "type": "string",
               "maxLength": 2000
             }
-          }
+          },
+          "additionalProperties": false
         },
         "lot_number": {
           "type": "string",
@@ -3192,6 +3249,196 @@
         "context",
         "primary_source",
         "type"
+      ],
+      "additionalProperties": false
+    },
+    "medication_statement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "$ref": "#/definitions/uuid"
+        },
+        "based_on": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "medication_request"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string",
+                      "maxLenght": 2000
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "$ref": "#/definitions/uuid"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "asserted_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Dictionary: eHealth/medication_satement_statuses`"
+        },
+        "context": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "description": "Symbol in syntax defined by the system",
+                            "enum": [
+                              "encounter"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string",
+                      "maxLenght": 2000
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "$ref": "#/definitions/uuid"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "primary_source": {
+          "type": "boolean"
+        },
+        "effective_period": {
+          "type": "string",
+          "maxLenght": 2000
+        },
+        "medication_code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary: eHealth/medication_statement_medications`"
+                  }
+                },
+                "required": [
+                  "system",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string",
+              "maxLenght": 2000
+            }
+          },
+          "additionalProperties": false
+        },
+        "note": {
+          "type": "string",
+          "maxLenght": 2000
+        },
+        "dosage": {
+          "type": "string",
+          "maxLenght": 2000
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "asserter": {
+          "$ref": "#/definitions/performer"
+        }
+      },
+      "required": [
+        "id",
+        "asserted_date",
+        "status",
+        "context",
+        "primary_source",
+        "medication_code"
       ],
       "additionalProperties": false
     }
@@ -3247,6 +3494,14 @@
       "maxItems": 50,
       "items": {
         "$ref": "#/definitions/device"
+      }
+    },
+    "medication_statements": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/definitions/medication_statement"
       }
     }
   },

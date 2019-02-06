@@ -240,6 +240,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 
+      expect(WorkerMock, :run, 1, fn
+        _, _, :medication_request_by_id, [id] ->
+          %{
+            id: id
+          }
+      end)
+
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,
          %{
@@ -890,6 +897,64 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "version" => "v1.0.1",
             "note" => "Імплант був вилучений по причині заміни на новий"
           }
+        ],
+        "medication_statements" => [
+          %{
+            "id" => UUID.uuid4(),
+            "based_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "medication_request"
+                    }
+                  ]
+                },
+                "value" => UUID.uuid4()
+              }
+            },
+            "asserted_date" => "2018-08-02T10:45:00.000Z",
+            "status" => "active",
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "asserter" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "effective_period" => "Вживає з 2017-го року регулярно",
+            "medication_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/medical_statement_medications",
+                  "code" => "Spine_board"
+                }
+              ]
+            },
+            "note" => "Some text",
+            "dosage" => "5 ml/day"
+          }
         ]
       }
 
@@ -1291,7 +1356,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "asserter" => %{
+            "performer" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                 "value" => employee_id
