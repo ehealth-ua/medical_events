@@ -15,6 +15,7 @@ defmodule Core.Patients do
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
   alias Core.Jobs.PackageSavePatientJob
+  alias Core.MedicationStatement
   alias Core.Mongo
   alias Core.Observation
   alias Core.Observations
@@ -24,6 +25,7 @@ defmodule Core.Patients do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
+  alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
   alias Core.Patients.Validators
   alias Core.RiskAssessment
@@ -40,6 +42,7 @@ defmodule Core.Patients do
   alias Core.Patients.Encryptor
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
+  alias Core.Patients.MedicationStatements.Validations, as: MedicationStatementValidations
   alias Core.Patients.RiskAssessments.Validations, as: RiskAssessmentValidations
   alias Core.Patients.Visits.Validations, as: VisitValidations
   alias EView.Views.ValidationError
@@ -147,7 +150,8 @@ defmodule Core.Patients do
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
            {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content),
-           {:ok, devices} <- create_devices(job, content) do
+           {:ok, devices} <- create_devices(job, content),
+           {:ok, medication_statements} <- create_medication_statements(job, content) do
         visit_id = if is_map(visit), do: visit.id
 
         encounter =
@@ -297,6 +301,23 @@ defmodule Core.Patients do
               |> Mongo.convert_to_uuid("devices.#{device.id}.source.value.identifier.value")
             end)
 
+          set =
+            Enum.reduce(medication_statements, set, fn medication_statement, acc ->
+              medication_statement = MedicationStatements.fill_up_medication_statement_asserter(medication_statement)
+
+              acc
+              |> Mongo.add_to_set(
+                medication_statement,
+                "medication_statements.#{medication_statement.id}"
+              )
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.id")
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.inserted_by")
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.updated_by")
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.context.identifier.value")
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.source.value.identifier.value")
+              |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.based_on.identifier.value")
+            end)
+
           links = []
 
           links =
@@ -328,6 +349,17 @@ defmodule Core.Patients do
                   %{
                     "entity" => "risk_assessment",
                     "href" => "/api/patients/#{patient_id}/risk_assessments/#{risk_assessment.id}"
+                  }
+                ]
+            end)
+
+          links =
+            Enum.reduce(devices, links, fn device, acc ->
+              acc ++
+                [
+                  %{
+                    "entity" => "device",
+                    "href" => "/api/patients/#{patient_id}/devices/#{device.id}"
                   }
                 ]
             end)
@@ -865,6 +897,51 @@ defmodule Core.Patients do
 
   defp create_devices(_, _), do: {:ok, []}
 
+  defp create_medication_statements(
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
+         %{"medication_statements" => _} = content
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    medication_statements =
+      Enum.map(content["medication_statements"], fn data ->
+        medication_statement = MedicationStatement.create(data)
+
+        %{
+          medication_statement
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> MedicationStatementValidations.validate_context(encounter_id)
+        |> MedicationStatementValidations.validate_asserted_date()
+        |> MedicationStatementValidations.validate_source(client_id)
+        |> MedicationStatementValidations.validate_based_on()
+      end)
+
+    case Vex.errors(
+           %{medication_statements: medication_statements},
+           medication_statements: [
+             unique_ids: [field: :id],
+             reference: [path: "medication_statements"]
+           ]
+         ) do
+      [] ->
+        validate_medication_statements(patient_id_hash, medication_statements)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_medication_statements(_, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
@@ -930,6 +1007,18 @@ defmodule Core.Patients do
       case Devices.get_by_id(patient_id_hash, device.id) do
         {:ok, _} ->
           {:halt, {:error, "Device with id '#{device.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_medication_statements(patient_id_hash, medication_statements) do
+    Enum.reduce_while(medication_statements, {:ok, medication_statements}, fn medication_statement, acc ->
+      case MedicationStatements.get_by_id(patient_id_hash, medication_statement.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Medication statement with id '#{medication_statement.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}

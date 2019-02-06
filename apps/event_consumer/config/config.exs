@@ -35,6 +35,16 @@ config :event_consumer,
         kubernetes_namespace: "mpi",
         polling_interval: 10_000
       ]
+    ],
+    k8s_ops: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "ops",
+        kubernetes_selector: "app=api",
+        kubernetes_namespace: "ops",
+        polling_interval: 10_000
+      ]
     ]
   ]
 
