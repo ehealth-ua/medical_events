@@ -53,6 +53,23 @@ defmodule ApiWeb.Router do
       get("/patients/:patient_id/devices/:id", DeviceController, :show)
     end
 
+    scope "/patients/:patient_id/episodes/:episode_id", as: :episode_context do
+      get("/encounters", EncounterController, :index)
+      get("/encounters/:id", EncounterController, :show)
+
+      get("/conditions", ConditionController, :index)
+      get("/conditions/:id", ConditionController, :show)
+
+      get("/observations", ObservationController, :index)
+      get("/observations/:id", ObservationController, :show)
+
+      get("/immunizations", ImmunizationController, :index)
+      get("/immunizations/:id", ImmunizationController, :show)
+
+      get("/allergy_intolerances", AllergyIntoleranceController, :index)
+      get("/allergy_intolerances/:id", AllergyIntoleranceController, :show)
+    end
+
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)
     patch("/patients/:patient_id/episodes/:id/actions/close", EpisodeController, :close)
     patch("/patients/:patient_id/episodes/:id/actions/cancel", EpisodeController, :cancel)

@@ -154,6 +154,41 @@ defmodule Api.Web.EncounterControllerTest do
       |> get(encounter_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
     end
+
+    test "success show encounter in episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      encounter_in = build(:encounter)
+      encounter_out = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        encounters: %{
+          to_string(encounter_in.id) => encounter_in,
+          to_string(encounter_out.id) => encounter_out
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      assert conn
+             |> get(
+               episode_context_encounter_path(
+                 conn,
+                 :show,
+                 patient_id,
+                 to_string(encounter_in.episode.identifier.value),
+                 to_string(encounter_in.id)
+               )
+             )
+             |> json_response(200)
+             |> Map.get("data")
+             |> assert_json_schema("encounters/encounter_show.json")
+    end
   end
 
   describe "index encounter" do
@@ -173,6 +208,34 @@ defmodule Api.Web.EncounterControllerTest do
 
       Enum.each(resp["data"], &assert_json_schema(&1, "encounters/encounter_show.json"))
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "successful search in episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      encounter1 = build(:encounter)
+      encounter2 = build(:encounter)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_context_encounter_path(conn, :index, patient_id, to_string(encounter1.episode.identifier.value)))
+        |> json_response(200)
+
+      Enum.each(resp["data"], &assert_json_schema(&1, "encounters/encounter_show.json"))
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
     end
 
     test "successful search with search parameters", %{conn: conn} do

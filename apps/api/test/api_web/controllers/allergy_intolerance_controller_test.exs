@@ -44,6 +44,62 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(allergy_intolerance_out.id.binary)
     end
 
+    test "successful show by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      allergy_intolerance1 = build(:allergy_intolerance, context: context)
+      allergy_intolerance2 = build(:allergy_intolerance)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        allergy_intolerances: %{
+          to_string(allergy_intolerance1.id) => allergy_intolerance1,
+          to_string(allergy_intolerance2.id) => allergy_intolerance2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(
+          episode_context_allergy_intolerance_path(
+            conn,
+            :show,
+            patient_id,
+            to_string(episode1.id),
+            to_string(allergy_intolerance1.id)
+          )
+        )
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("allergy_intolerances/allergy_intolerance_show.json")
+
+      assert get_in(resp, ~w(data id)) == to_string(allergy_intolerance1.id)
+      refute get_in(resp, ~w(data id)) == to_string(allergy_intolerance2.id)
+    end
+
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect_get_person_data_empty()
@@ -257,6 +313,61 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
       assert Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_in.id.binary)
       refute Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_out.id.binary)
+    end
+
+    test "successful index by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      allergy_intolerance1 = build(:allergy_intolerance, context: context)
+      allergy_intolerance2 = build(:allergy_intolerance)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        allergy_intolerances: %{
+          to_string(allergy_intolerance1.id) => allergy_intolerance1,
+          to_string(allergy_intolerance2.id) => allergy_intolerance2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_context_allergy_intolerance_path(conn, :index, patient_id, to_string(episode1.id)))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("allergy_intolerances/allergy_intolerance_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == to_string(allergy_intolerance1.id)
+      refute Map.get(resp, "id") == to_string(allergy_intolerance2.id)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do

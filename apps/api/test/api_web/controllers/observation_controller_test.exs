@@ -37,6 +37,37 @@ defmodule Api.Web.ObservationControllerTest do
       assert %{"start" => _, "end" => _} = response_data["value_period"]
     end
 
+    test "success by episode context", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode = build(:episode)
+      insert(:patient, _id: patient_id_hash)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      context = build_encounter_context(encounter1.id)
+
+      observation =
+        insert(:observation,
+          patient_id: patient_id_hash,
+          value: %Value{type: "period", value: build(:period)},
+          context: context
+        )
+
+      expect_get_person_data(patient_id)
+
+      response_data =
+        conn
+        |> get(
+          episode_context_observation_path(conn, :show, patient_id, to_string(episode.id), to_string(observation._id))
+        )
+        |> json_response(200)
+        |> Map.get("data")
+        |> assert_json_schema("observations/observation_show.json")
+
+      assert %{"start" => _, "end" => _} = response_data["value_period"]
+    end
+
     test "not found - invalid patient", %{conn: conn} do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -256,6 +287,40 @@ defmodule Api.Web.ObservationControllerTest do
       assert 3 == get_in(response, ["paging", "total_entries"])
     end
 
+    test "success by episode context", %{conn: conn} do
+      episode = build(:episode)
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter2 = build(:encounter)
+      context = build_encounter_context(encounter1.id)
+      context2 = build_encounter_context(encounter2.id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{to_string(episode.id) => episode},
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+
+      # Next observations have no episode_id
+      insert_list(10, :observation, patient_id: patient_id_hash, context: context2)
+
+      response =
+        conn
+        |> get(episode_context_observation_path(conn, :index, patient_id, to_string(episode.id)))
+        |> json_response(200)
+
+      assert 3 == get_in(response, ["paging", "total_entries"])
+    end
+
     test "success by patient_id with pagination", %{conn: conn} do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -358,6 +423,8 @@ defmodule Api.Web.ObservationControllerTest do
   end
 
   defp build_encounter_context(%BSON.Binary{} = encounter_id) do
-    build(:reference, identifier: build(:identifier, value: encounter_id))
+    build(:reference,
+      identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
+    )
   end
 end
