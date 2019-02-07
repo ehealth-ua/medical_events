@@ -196,6 +196,47 @@ defmodule Api.Web.ConditionControllerTest do
       end)
     end
 
+    test "success by episode context", %{conn: conn} do
+      episode = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{to_string(episode.id) => episode},
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      insert_list(4, :condition, patient_id: patient_id_hash, context: context)
+
+      # Missed encounter, episode_id
+      insert_list(5, :condition, patient_id: patient_id_hash)
+      insert_list(5, :condition)
+
+      response =
+        conn
+        |> get(episode_context_condition_path(conn, :index, patient_id, to_string(encounter1.episode.identifier.value)))
+        |> json_response(200)
+
+      assert 4 == get_in(response, ["paging", "total_entries"])
+
+      Enum.each(response["data"], fn %{"context" => %{"identifier" => %{"value" => entity_encounter_id}}} ->
+        assert entity_encounter_id == to_string(encounter1.id)
+      end)
+    end
+
     test "success by encounter_id with pagination", %{conn: conn} do
       encounter = build(:encounter)
 
@@ -332,6 +373,25 @@ defmodule Api.Web.ConditionControllerTest do
       conn
       |> get(condition_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
+    end
+
+    test "success by episode context", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      episode = build(:episode)
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+
+      context = build_encounter_context(encounter1.id)
+      condition = insert(:condition, patient_id: patient_id_hash, context: context, asserted_date: nil)
+
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(episode_context_condition_path(conn, :show, patient_id, to_string(episode.id), to_string(condition._id)))
+      |> json_response(200)
+      |> assert_json_schema("conditions/condition_show.json")
     end
   end
 

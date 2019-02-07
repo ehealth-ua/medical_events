@@ -42,6 +42,62 @@ defmodule Api.Web.ImmunizationControllerTest do
       refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(immunization_out.id.binary)
     end
 
+    test "successful show by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      immunization1 = build(:immunization, context: context)
+      immunization2 = build(:immunization)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        immunizations: %{
+          to_string(immunization1.id) => immunization1,
+          to_string(immunization2.id) => immunization2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(
+          episode_context_immunization_path(
+            conn,
+            :show,
+            patient_id,
+            to_string(episode1.id),
+            to_string(immunization1.id)
+          )
+        )
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("immunizations/immunization_show.json")
+
+      assert get_in(resp, ~w(data id)) == to_string(immunization1.id)
+      refute get_in(resp, ~w(data id)) == to_string(immunization2.id)
+    end
+
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect_get_person_data_empty()
@@ -258,6 +314,61 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
       refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
+    end
+
+    test "successful search by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      immunization1 = build(:immunization, context: context)
+      immunization2 = build(:immunization)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        immunizations: %{
+          to_string(immunization1.id) => immunization1,
+          to_string(immunization2.id) => immunization2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_context_immunization_path(conn, :index, patient_id, to_string(episode1.id)))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("immunizations/immunization_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == to_string(immunization1.id)
+      refute Map.get(resp, "id") == to_string(immunization2.id)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
