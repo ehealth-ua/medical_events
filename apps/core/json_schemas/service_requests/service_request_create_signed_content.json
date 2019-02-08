@@ -490,9 +490,7 @@
     "code",
     "context",
     "authored_on",
-    "requester",
-    "performer_type",
-    "supporting_info"
+    "requester"
   ],
   "additionalProperties": false
 }

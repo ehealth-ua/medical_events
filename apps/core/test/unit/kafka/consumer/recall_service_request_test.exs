@@ -161,22 +161,22 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                        ]
                      },
                      %{
-                       entry: "$.performer_type",
+                       entry: "$.status_reason",
                        entry_type: "json_data_property",
                        rules: [
                          %{
-                           description: "required property performer_type was not present",
+                           description: "required property status_reason was not present",
                            params: [],
                            rule: :required
                          }
                        ]
                      },
                      %{
-                       entry: "$.status_reason",
+                       entry: "$.expiration_date",
                        entry_type: "json_data_property",
                        rules: [
                          %{
-                           description: "required property status_reason was not present",
+                           description: "required property expiration_date was not present",
                            params: [],
                            rule: :required
                          }
