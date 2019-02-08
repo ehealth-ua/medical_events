@@ -738,7 +738,6 @@
     "context",
     "authored_on",
     "requester",
-    "performer_type",
     "status_reason",
     "expiration_date",
     "note",
@@ -747,7 +746,6 @@
     "reason_reference",
     "requisition",
     "status_history",
-    "supporting_info",
     "used_by",
     "patient"
   ],

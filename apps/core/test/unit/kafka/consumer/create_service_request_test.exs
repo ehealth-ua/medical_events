@@ -144,28 +144,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                            rule: :required
                          }
                        ]
-                     },
-                     %{
-                       entry: "$.performer_type",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property performer_type was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.supporting_info",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property supporting_info was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
                      }
                    ]
                  },
