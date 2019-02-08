@@ -2,6 +2,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
   @moduledoc false
 
   use Core.ModelCase
+  alias Core.DateView
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestRecallJob
@@ -324,7 +325,9 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                   "value" => patient_id
                 }
               })
-            )
+            ),
+          "inserted_at" => DateView.render_datetime(service_request.inserted_at),
+          "updated_at" => DateView.render_datetime(service_request.updated_at)
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 
