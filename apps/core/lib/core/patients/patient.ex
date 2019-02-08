@@ -20,6 +20,7 @@ defmodule Core.Patient do
     field(:allergy_intolerances)
     field(:risk_assessments)
     field(:devices)
+    field(:medication_statements)
 
     timestamps()
     changed_by()

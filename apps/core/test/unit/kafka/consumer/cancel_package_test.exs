@@ -91,6 +91,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       device = build(:device, context: context)
       device_id = UUID.binary_to_string!(device.id.binary)
 
+      medication_statement = build(:medication_statement, context: context)
+      medication_statement_id = UUID.binary_to_string!(medication_statement.id.binary)
+
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -109,6 +112,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         },
         devices: %{
           device_id => device
+        },
+        medication_statements: %{
+          medication_statement_id => medication_statement
         }
       )
 
@@ -133,7 +139,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           "allergy_intolerances" =>
             render(:allergy_intolerances, [%{allergy_intolerance | verification_status: @entered_in_error}]),
           "risk_assessments" => render(:risk_assessments, [%{risk_assessment | status: @entered_in_error}]),
-          "devices" => render(:devices, [%{device | status: @entered_in_error}])
+          "devices" => render(:devices, [%{device | status: @entered_in_error}]),
+          "medication_statements" =>
+            render(:medication_statements, [%{medication_statement | status: @entered_in_error}])
         }
         |> Jason.encode!()
         |> Base.encode64()
@@ -151,6 +159,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         assert @entered_in_error == set_data["risk_assessments.#{risk_assessment_id}.status"]
         assert @entered_in_error == set_data["immunizations.#{immunization_id}.status"]
         assert @entered_in_error == set_data["devices.#{device_id}.status"]
+        assert @entered_in_error == set_data["medication_statements.#{medication_statement_id}.status"]
 
         assert [condition_id] == job.conditions_ids
         assert [observation_id] == job.observations_ids

@@ -264,6 +264,9 @@
           "additionalProperties": false
         }
       },
+      "required": [
+        "identifier"
+      ],
       "additionalProperties": false
     },
     "report_origin": {
@@ -538,6 +541,9 @@
             }
           },
           "description": "",
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "role": {
@@ -594,7 +600,7 @@
         "dose_sequence": {
           "type": "number"
         },
-        "name": {
+        "description": {
           "type": "string",
           "minLength": 1
         },
@@ -778,6 +784,9 @@
               "$ref": "#/definitions/identifier"
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "asserted_date": {
@@ -840,6 +849,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "code": {
@@ -1117,6 +1129,9 @@
                       "additionalProperties": false
                     }
                   },
+                  "required": [
+                    "identifier"
+                  ],
                   "additionalProperties": false
                 }
               }
@@ -1415,6 +1430,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "prescriptions": {
@@ -1511,6 +1529,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "based_on": {
@@ -1573,6 +1594,9 @@
                 "additionalProperties": false
               }
             },
+            "required": [
+              "identifier"
+            ],
             "additionalProperties": false
           }
         },
@@ -1965,6 +1989,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         }
       },
@@ -2087,6 +2114,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "date": {
@@ -2416,6 +2446,9 @@
             }
           },
           "description": "",
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "code": {
@@ -2469,7 +2502,7 @@
         "report_origin": {
           "$ref": "#/definitions/report_origin"
         },
-        "performer": {
+        "asserter": {
           "$ref": "#/definitions/performer"
         },
         "last_occurrence": {
@@ -2617,6 +2650,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "asserted_date": {
@@ -2686,6 +2722,9 @@
                     "additionalProperties": false
                   }
                 },
+                "required": [
+                  "identifier"
+                ],
                 "additionalProperties": false
               }
             },
@@ -3066,6 +3105,9 @@
                 "additionalProperties": false
               }
             },
+            "required": [
+              "identifier"
+            ],
             "additionalProperties": false
           }
         }
@@ -3167,6 +3209,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "primary_source": {
@@ -3313,6 +3358,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "asserted_date": {
@@ -3378,6 +3426,9 @@
               "additionalProperties": false
             }
           },
+          "required": [
+            "identifier"
+          ],
           "additionalProperties": false
         },
         "primary_source": {

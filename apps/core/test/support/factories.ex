@@ -17,6 +17,7 @@ defmodule Core.Factories do
   alias Core.Identifier
   alias Core.Immunization
   alias Core.Job
+  alias Core.MedicationStatement
   alias Core.Mongo
   alias Core.Observation
   alias Core.Observations.Component
@@ -94,6 +95,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), device}
       end)
 
+    medication_statements = build_list(2, :medication_statement)
+
+    medication_statements =
+      Enum.into(medication_statements, %{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+        {UUID.binary_to_string!(id), medication_statement}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -107,6 +115,7 @@ defmodule Core.Factories do
       allergy_intolerances: allergy_intolerances,
       risk_assessments: risk_assessments,
       devices: devices,
+      medication_statements: medication_statements,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: user_id,
@@ -221,6 +230,34 @@ defmodule Core.Factories do
     }
   end
 
+  def medication_statement_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
+    now = DateTime.utc_now()
+
+    %MedicationStatement{
+      id: id,
+      based_on: reference_coding(system: "eHealth/resources", code: "medication_request"),
+      status: MedicationStatement.status(:active),
+      medication_code: codeable_concept_coding(system: "eHealth/medication_statement_medications", code: "Spine_board"),
+      context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      effective_period: "Effective period",
+      asserted_date: now,
+      primary_source: true,
+      source:
+        build(
+          :source,
+          type: "asserter",
+          value: reference_coding(system: "eHealth/resources", code: "employee")
+        ),
+      note: "note",
+      dosage: "dosage",
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
   def reason_factory do
     %Reason{
       type: "reason_codes",
@@ -305,7 +342,7 @@ defmodule Core.Factories do
   def explanation_factory do
     %Explanation{
       type: "reasons",
-      value: [build(:codeable_concept)]
+      value: [codeable_concept_coding(system: "eHealth/reason_explanations", code: "429060002")]
     }
   end
 

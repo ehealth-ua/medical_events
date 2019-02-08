@@ -922,7 +922,7 @@ defmodule Core.Patients do
         |> MedicationStatementValidations.validate_context(encounter_id)
         |> MedicationStatementValidations.validate_asserted_date()
         |> MedicationStatementValidations.validate_source(client_id)
-        |> MedicationStatementValidations.validate_based_on()
+        |> MedicationStatementValidations.validate_based_on(patient_id_hash)
       end)
 
     case Vex.errors(

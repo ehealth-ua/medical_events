@@ -13,12 +13,11 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       date: DateTime.to_iso8601(encounter.date),
       explanatory_letter: encounter.explanatory_letter,
       cancellation_reason: ReferenceView.render(encounter.cancellation_reason),
-      visit: encounter.visit |> ReferenceView.render() |> Map.delete(:display_value),
-      episode: encounter.episode |> ReferenceView.render() |> Map.delete(:display_value),
+      visit: ReferenceView.render(encounter.visit),
+      episode: ReferenceView.render(encounter.episode),
       class: ReferenceView.render(encounter.class),
       type: ReferenceView.render(encounter.type),
-      incoming_referrals:
-        encounter.incoming_referrals |> ReferenceView.render() |> Enum.map(&Map.delete(&1, :display_value)),
+      incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
       performer: ReferenceView.render(encounter.performer),
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
@@ -26,6 +25,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       division: ReferenceView.render(encounter.division),
       prescriptions: encounter.prescriptions
     }
+    |> remove_display_values()
   end
 
   def render(:conditions, conditions) do
@@ -52,6 +52,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.take(condition_fields)
       |> Map.merge(condition_data)
       |> Map.merge(ReferenceView.render_source(condition.source))
+      |> remove_display_values()
     end
   end
 
@@ -83,6 +84,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.merge(ReferenceView.render_effective_at(observation.effective_at))
       |> Map.merge(ReferenceView.render_source(observation.source))
       |> Map.merge(ReferenceView.render_value(observation.value))
+      |> remove_display_values()
     end
   end
 
@@ -101,7 +103,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         vaccine_code: ReferenceView.render(immunization.vaccine_code),
         context: ReferenceView.render(immunization.context),
         date: DateView.render_datetime(immunization.date),
-        legal_entity: immunization.legal_entity |> ReferenceView.render() |> Map.delete(:display_value),
+        legal_entity: ReferenceView.render(immunization.legal_entity),
         expiration_date: DateView.render_datetime(immunization.expiration_date),
         site: ReferenceView.render(immunization.site),
         route: ReferenceView.render(immunization.route),
@@ -114,6 +116,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.take(immunization_fields)
       |> Map.merge(immunization_data)
       |> Map.merge(ReferenceView.render_source(immunization.source))
+      |> remove_display_values()
     end
   end
 
@@ -141,6 +144,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.take(allergy_intolerance_fields)
       |> Map.merge(allergy_intolerance_data)
       |> Map.merge(ReferenceView.render_source(allergy_intolerance.source))
+      |> remove_display_values()
     end
   end
 
@@ -158,7 +162,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         code: ReferenceView.render(risk_assessment.code),
         asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
         method: ReferenceView.render(risk_assessment.method),
-        performer: risk_assessment.performer |> ReferenceView.render() |> Map.delete(:display_value),
+        performer: ReferenceView.render(risk_assessment.performer),
         basis: ReferenceView.render(risk_assessment.basis),
         predictions: ReferenceView.render(risk_assessment.predictions)
       }
@@ -167,6 +171,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.take(risk_assessment_fields)
       |> Map.merge(risk_assessment_data)
       |> Map.merge(ReferenceView.render_reason(risk_assessment.reason))
+      |> remove_display_values()
     end
   end
 
@@ -196,6 +201,52 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       |> Map.take(device_fields)
       |> Map.merge(device_data)
       |> Map.merge(ReferenceView.render_source(device.source))
+      |> remove_display_values()
     end
   end
+
+  def render(:medication_statements, medication_statements) do
+    medication_statement_fields = ~w(
+      status
+      effective_period
+      primary_source
+      note
+      dosage
+    )a
+
+    for medication_statement <- medication_statements do
+      medication_statement_data = %{
+        id: UUIDView.render(medication_statement.id),
+        based_on: ReferenceView.render(medication_statement.based_on),
+        medication_code: ReferenceView.render(medication_statement.medication_code),
+        context: ReferenceView.render(medication_statement.context),
+        asserted_date: DateView.render_datetime(medication_statement.asserted_date)
+      }
+
+      medication_statement
+      |> Map.take(medication_statement_fields)
+      |> Map.merge(medication_statement_data)
+      |> Map.merge(ReferenceView.render_source(medication_statement.source))
+      |> remove_display_values()
+    end
+  end
+
+  defp remove_display_values(map) do
+    map = Map.drop(map, [:display_value])
+
+    map
+    |> Map.keys()
+    |> Enum.reduce(map, fn key, map ->
+      value =
+        map
+        |> Map.get(key)
+        |> process_value()
+
+      Map.put(map, key, value)
+    end)
+  end
+
+  defp process_value(value) when is_list(value), do: Enum.map(value, &process_value/1)
+  defp process_value(value) when is_map(value), do: remove_display_values(value)
+  defp process_value(value), do: value
 end

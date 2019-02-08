@@ -153,7 +153,7 @@ defmodule Core.ReferenceView do
   end
 
   def render(%Explanation{type: type, value: value}) do
-    %{type: type, value: render(value)}
+    %{type => render(value)}
   end
 
   def render(%Quantity{} = quantity) do
