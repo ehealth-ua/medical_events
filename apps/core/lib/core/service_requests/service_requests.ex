@@ -738,14 +738,16 @@ defmodule Core.ServiceRequests do
   end
 
   defp compare_with_db(%ServiceRequest{} = service_request, content) do
+    excluded_fields = ~w(status_reason explanatory_letter inserted_at updated_at)
+
     db_content =
       service_request
       |> ServiceRequestView.render_service_request()
       |> Jason.encode!()
       |> Jason.decode!()
-      |> Map.drop(~w(status_reason explanatory_letter))
+      |> Map.drop(excluded_fields)
 
-    content = Map.drop(content, ~w(status_reason explanatory_letter))
+    content = Map.drop(content, excluded_fields)
 
     if content != db_content do
       {:error, "Signed content doesn't match with previously created service request", 422}

@@ -1,6 +1,7 @@
 defmodule Core.ServiceRequestView do
   @moduledoc false
 
+  alias Core.DateView
   alias Core.Patients.Encryptor
   alias Core.Reference
   alias Core.ReferenceView
@@ -43,7 +44,9 @@ defmodule Core.ServiceRequestView do
               "value" => UUIDView.render(Encryptor.decrypt(service_request.subject))
             }
           })
-        )
+        ),
+      inserted_at: DateView.render_datetime(service_request.inserted_at),
+      updated_at: DateView.render_datetime(service_request.updated_at)
     })
     |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
   end
