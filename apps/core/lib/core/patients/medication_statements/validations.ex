@@ -63,8 +63,11 @@ defmodule Core.Patients.MedicationStatements.Validations do
     %{asserter | identifier: identifier}
   end
 
-  def validate_based_on(%MedicationStatement{based_on: based_on} = medication_statement) do
-    identifier = add_validations(based_on.identifier, :value, medication_request_reference: [])
+  def validate_based_on(%MedicationStatement{based_on: nil} = medication_statement, _), do: medication_statement
+
+  def validate_based_on(%MedicationStatement{based_on: based_on} = medication_statement, patient_id_hash) do
+    identifier =
+      add_validations(based_on.identifier, :value, medication_request_reference: [patient_id_hash: patient_id_hash])
 
     %{medication_statement | based_on: %{based_on | identifier: identifier}}
   end

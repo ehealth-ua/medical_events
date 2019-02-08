@@ -240,13 +240,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 
-      expect(WorkerMock, :run, 1, fn
-        _, _, :medication_request_by_id, [id] ->
-          %{
-            id: id
-          }
-      end)
-
       expect(IlMock, :get_division, fn id, _ ->
         {:ok,
          %{
@@ -262,6 +255,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      expect(WorkerMock, :run, 1, fn
+        _, _, :medication_request_by_id, [id] ->
+          %{
+            id: id,
+            patient_id: patient_id
+          }
+      end)
 
       episode =
         build(
@@ -593,7 +594,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "vaccination_protocols" => [
               %{
                 "dose_sequence" => 1,
-                "name" => "Vaccination Protocol Sequence 1",
+                "description" => "Vaccination Protocol Sequence 1",
                 "authority" => %{
                   "coding" => [
                     %{
@@ -947,7 +948,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "medication_code" => %{
               "coding" => [
                 %{
-                  "system" => "eHealth/medical_statement_medications",
+                  "system" => "eHealth/medication_statement_medications",
                   "code" => "Spine_board"
                 }
               ]
@@ -1291,7 +1292,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             "vaccination_protocols" => [
               %{
                 "dose_sequence" => 1,
-                "name" => "Vaccination Protocol Sequence 1",
+                "description" => "Vaccination Protocol Sequence 1",
                 "authority" => %{
                   "coding" => [
                     %{
@@ -1356,7 +1357,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 }
               ]
             },
-            "performer" => %{
+            "asserter" => %{
               "identifier" => %{
                 "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                 "value" => employee_id

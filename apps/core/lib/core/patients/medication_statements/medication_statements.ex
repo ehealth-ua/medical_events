@@ -22,6 +22,18 @@ defmodule Core.Patients.MedicationStatements do
     end
   end
 
+  def get_by_encounter_id(patient_id_hash, %BSON.Binary{} = encounter_id) do
+    @collection
+    |> Mongo.aggregate([
+      %{"$match" => %{"_id" => patient_id_hash}},
+      %{"$project" => %{"medication_statements" => %{"$objectToArray" => "$medication_statements"}}},
+      %{"$unwind" => "$medication_statements"},
+      %{"$match" => %{"medication_statements.v.context.identifier.value" => encounter_id}},
+      %{"$replaceRoot" => %{"newRoot" => "$medication_statements.v"}}
+    ])
+    |> Enum.map(&MedicationStatement.create/1)
+  end
+
   def fill_up_medication_statement_asserter(
         %MedicationStatement{source: %Source{type: "report_origin"}} = medication_statement
       ),

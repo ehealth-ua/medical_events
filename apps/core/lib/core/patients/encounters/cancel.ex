@@ -15,6 +15,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Jobs.PackageCancelSaveConditionsJob
   alias Core.Jobs.PackageCancelSaveObservationsJob
   alias Core.Jobs.PackageCancelSavePatientJob
+  alias Core.MedicationStatement
   alias Core.Mongo
   alias Core.Observation
   alias Core.Observations
@@ -23,6 +24,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Patients.Devices
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
+  alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
   alias Core.ReferenceView
   alias Core.RiskAssessment
@@ -47,7 +49,8 @@ defmodule Core.Patients.Encounters.Cancel do
     "immunizations" => [status: "status"],
     "conditions" => [status: "verification_status"],
     "observations" => [status: "status"],
-    "devices" => [status: "status"]
+    "devices" => [status: "status"],
+    "medication_statements" => [status: "status"]
   }
 
   @doc """
@@ -73,13 +76,17 @@ defmodule Core.Patients.Encounters.Cancel do
         encounter_id,
         %PackageCancelJob{patient_id: patient_id, user_id: user_id} = job
       ) do
-    allergy_intolerances_ids = get_allergy_intolerances_ids(package_data)
-    risk_assessments_ids = get_risk_assessments_ids(package_data)
-    immunizations_ids = get_immunizations_ids(package_data)
     conditions_ids = get_conditions_ids(package_data)
     observations_ids = get_observations_ids(package_data)
-    devices_ids = get_devices_ids(package_data)
-    current_diagnoses = get_current_diagnoses(episode, encounter_id)
+
+    update_data = %{
+      allergy_intolerances_ids: get_allergy_intolerances_ids(package_data),
+      risk_assessments_ids: get_risk_assessments_ids(package_data),
+      immunizations_ids: get_immunizations_ids(package_data),
+      devices_ids: get_devices_ids(package_data),
+      medication_statements_ids: get_medication_statements_ids(package_data),
+      current_diagnoses: get_current_diagnoses(episode, encounter_id)
+    }
 
     with :ok <- save_signed_content(patient_id, encounter_id, job.signed_data),
          set <-
@@ -87,11 +94,7 @@ defmodule Core.Patients.Encounters.Cancel do
              user_id,
              patient,
              package_data,
-             current_diagnoses,
-             allergy_intolerances_ids,
-             risk_assessments_ids,
-             immunizations_ids,
-             devices_ids
+             update_data
            ) do
       event = %PackageCancelSavePatientJob{
         request_id: job.request_id,
@@ -242,28 +245,32 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
+  defp get_medication_statements_ids(package_data) do
+    package_data
+    |> Map.get("medication_statements", [])
+    |> Enum.filter(&(Map.get(&1, "status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
   defp update_patient(
          user_id,
          patient,
          %{"encounter" => encounter},
-         current_diagnoses,
-         allergy_intolerances_ids,
-         risk_assessments_ids,
-         immunizations_ids,
-         devices_ids
+         update_data
        ) do
     now = DateTime.utc_now()
 
     %{"updated_by" => user_id, "updated_at" => now}
     |> Mongo.convert_to_uuid("updated_by")
     |> Mongo.add_to_set(
-      current_diagnoses,
+      update_data.current_diagnoses,
       "episodes.#{get_in(encounter, ~w(episode identifier value))}.current_diagnoses"
     )
-    |> set_allergy_intolerances(allergy_intolerances_ids, user_id, now)
-    |> set_risk_assessments(risk_assessments_ids, user_id, now)
-    |> set_immunizations(immunizations_ids, user_id, now)
-    |> set_devices(devices_ids, user_id, now)
+    |> set_allergy_intolerances(update_data.allergy_intolerances_ids, user_id, now)
+    |> set_risk_assessments(update_data.risk_assessments_ids, user_id, now)
+    |> set_immunizations(update_data.immunizations_ids, user_id, now)
+    |> set_devices(update_data.devices_ids, user_id, now)
+    |> set_medication_statements(update_data.medication_statements_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
     |> set_encounter_diagnoses(patient, encounter)
   end
@@ -305,6 +312,16 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(user_id, "devices.#{id}.updated_by")
       |> Mongo.add_to_set(now, "devices.#{id}.updated_at")
       |> Mongo.convert_to_uuid("devices.#{id}.updated_by")
+    end)
+  end
+
+  defp set_medication_statements(set, ids, user_id, now) do
+    Enum.reduce(ids, set, fn id, acc ->
+      acc
+      |> Mongo.add_to_set(@entered_in_error, "medication_statements.#{id}.status")
+      |> Mongo.add_to_set(user_id, "medication_statements.#{id}.updated_by")
+      |> Mongo.add_to_set(now, "medication_statements.#{id}.updated_at")
+      |> Mongo.convert_to_uuid("medication_statements.#{id}.updated_by")
     end)
   end
 
@@ -384,7 +401,8 @@ defmodule Core.Patients.Encounters.Cancel do
       get_entities_statuses(decoded_content["immunizations"], "status"),
       get_entities_statuses(decoded_content["conditions"], "verification_status"),
       get_entities_statuses(decoded_content["observations"], "status"),
-      get_entities_statuses(decoded_content["devices"], "status")
+      get_entities_statuses(decoded_content["devices"], "status"),
+      get_entities_statuses(decoded_content["medication_statements"], "status")
     ]
     |> Enum.flat_map(& &1)
     |> Enum.any?(&(&1 == @entered_in_error))
@@ -400,12 +418,13 @@ defmodule Core.Patients.Encounters.Cancel do
   defp validate_package_has_no_entered_in_error_entities(%{encounter: encounter} = package) do
     [
       encounter: [encounter.status],
-      allergy_intolerance: get_entities_statuses(package[:allergy_intolerances] || [], :verification_status),
-      risk_assessment: get_entities_statuses(package[:risk_assessments] || [], :status),
-      immunization: get_entities_statuses(package[:immunizations] || [], :status),
-      condition: get_entities_statuses(package[:conditions] || [], :verification_status),
-      observation: get_entities_statuses(package[:observations] || [], :status),
-      device: get_entities_statuses(package[:devices] || [], :status)
+      allergy_intolerance: get_entities_statuses(package[:allergy_intolerances], :verification_status),
+      risk_assessment: get_entities_statuses(package[:risk_assessments], :status),
+      immunization: get_entities_statuses(package[:immunizations], :status),
+      condition: get_entities_statuses(package[:conditions], :verification_status),
+      observation: get_entities_statuses(package[:observations], :status),
+      device: get_entities_statuses(package[:devices], :status),
+      medication_statement: get_entities_statuses(package[:medication_statements], :status)
     ]
     |> Enum.reject(fn {_, statuses} -> statuses == [] end)
     |> Enum.reduce_while(:ok, fn {key, statuses}, _acc ->
@@ -434,7 +453,8 @@ defmodule Core.Patients.Encounters.Cancel do
       "risk_assessments" => &RiskAssessment.create/1,
       "immunizations" => &Immunization.create/1,
       "observations" => &Observation.create/1,
-      "devices" => &Device.create/1
+      "devices" => &Device.create/1,
+      "medication_statements" => &MedicationStatement.create/1
     }
 
     entities_to_load
@@ -564,6 +584,12 @@ defmodule Core.Patients.Encounters.Cancel do
   defp get_entities("devices", ids, patient_id_hash, encounter_uuid) do
     patient_id_hash
     |> Devices.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
+  end
+
+  defp get_entities("medication_statements", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> MedicationStatements.get_by_encounter_id(encounter_uuid)
     |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
   end
 
@@ -712,6 +738,21 @@ defmodule Core.Patients.Encounters.Cancel do
         expiration_date: DateView.render_datetime(device.expiration_date)
       })
       |> Map.merge(render_source(device.source))
+    end)
+  end
+
+  defp render(:medication_statements, medication_statements) do
+    Enum.map(medication_statements, fn medication_statement ->
+      medication_statement
+      |> Map.take(~w(effective_period primary_source note dosage)a)
+      |> Map.merge(%{
+        id: UUIDView.render(medication_statement.id),
+        based_on: ReferenceView.render(medication_statement.based_on),
+        medication_code: ReferenceView.render(medication_statement.medication_code),
+        context: ReferenceView.render(medication_statement.context),
+        asserted_date: DateView.render_datetime(medication_statement.asserted_date)
+      })
+      |> Map.merge(render_source(medication_statement.source))
     end)
   end
 

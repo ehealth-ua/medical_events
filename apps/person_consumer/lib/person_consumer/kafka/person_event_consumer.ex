@@ -31,6 +31,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
           "allergy_intolerances" => %{},
           "risk_assessments" => %{},
           "devices" => %{},
+          "medication_statements" => %{},
           "status_history" => []
         }
       },
