@@ -104,11 +104,17 @@ defmodule Core.Patients.Encounters.Validations do
 
   def validate_incoming_referrals(%Encounter{} = encounter, client_id) do
     incoming_referrals = encounter.incoming_referrals || []
+    now = DateTime.utc_now()
 
     incoming_referrals =
       Enum.map(incoming_referrals, fn referral ->
         identifier = referral.identifier
-        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [client_id: client_id])}
+
+        %{
+          referral
+          | identifier:
+              add_validations(identifier, :value, service_request_reference: [client_id: client_id, datetime: now])
+        }
       end)
 
     %{encounter | incoming_referrals: incoming_referrals}

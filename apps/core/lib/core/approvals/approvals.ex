@@ -263,15 +263,30 @@ defmodule Core.Approvals do
   defp get_episodes(resources, nil), do: {:ok, Enum.map(resources, &Reference.create/1)}
 
   defp get_episodes(nil, %{"identifier" => %{"value" => service_request_id}}) do
-    case ServiceRequests.get_by_id(service_request_id) do
-      {:ok, %ServiceRequest{status: @service_request_status_active} = service_request} ->
-        check_episode_references(service_request.permitted_episodes)
-
+    with {:ok, %ServiceRequest{status: @service_request_status_active} = service_request} <-
+           ServiceRequests.get_by_id(service_request_id),
+         {:expiration_date, nil} <- {:expiration_date, validate_expiration_date(service_request)} do
+      check_episode_references(service_request.permitted_episodes)
+    else
       {:ok, %ServiceRequest{} = _} ->
         {:error, "Service request should be active", 409}
 
-      _ ->
+      {:expiration_date, now} ->
+        {:error, "Service request expiration date must be a datetime greater than or equal #{now}", 409}
+
+      nil ->
         {:error, "Service request is not found", 409}
+    end
+  end
+
+  defp validate_expiration_date(%ServiceRequest{expiration_date: nil}), do: nil
+
+  defp validate_expiration_date(%ServiceRequest{expiration_date: expiration_date}) do
+    now = DateTime.utc_now()
+
+    case DateTime.compare(expiration_date, now) do
+      :lt -> now
+      _ -> nil
     end
   end
 

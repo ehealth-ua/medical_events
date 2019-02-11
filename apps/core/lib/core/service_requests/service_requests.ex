@@ -344,6 +344,7 @@ defmodule Core.ServiceRequests do
       service_request =
         %{service_request | updated_by: user_id, updated_at: now, used_by: Reference.create(used_by)}
         |> ServiceRequestsValidations.validate_used_by(client_id)
+        |> ServiceRequestsValidations.validate_expiration_date()
 
       case Vex.errors(service_request) do
         [] ->
@@ -393,6 +394,9 @@ defmodule Core.ServiceRequests do
           )
       end
     else
+      nil ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
 
@@ -417,6 +421,7 @@ defmodule Core.ServiceRequests do
       service_request =
         %{service_request | updated_by: user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
+        |> ServiceRequestsValidations.validate_expiration_date()
 
       case Vex.errors(service_request) do
         [] ->
@@ -450,6 +455,9 @@ defmodule Core.ServiceRequests do
           )
       end
     else
+      nil ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
     end
@@ -466,8 +474,9 @@ defmodule Core.ServiceRequests do
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:service_request_recall_signed_content, content) do
       now = DateTime.utc_now()
+      service_request_id = content["id"]
 
-      with {:ok, service_request} <- get_by_id(content["id"]),
+      with {:ok, service_request} <- get_by_id(service_request_id),
            {:status, @active} <- {:status, service_request.status},
            :ok <- compare_with_db(service_request, content) do
         service_request =
@@ -543,6 +552,14 @@ defmodule Core.ServiceRequests do
             )
         end
       else
+        nil ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            "Service request with id '#{service_request_id}' is not found",
+            404
+          )
+
         {:status, status} ->
           Jobs.produce_update_status(
             job._id,

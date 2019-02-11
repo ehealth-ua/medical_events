@@ -16,6 +16,7 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
+  alias Core.Reference
   alias Core.StatusHistory
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
@@ -134,12 +135,19 @@ defmodule Core.Patients.Episodes.Consumer do
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
       changes = Map.take(job.request_params, ~w(name care_manager referral_requests))
 
+      existing_referral_request_ids =
+        get_existing_referral_request_ids(episode.referral_requests, job.request_params["referral_requests"])
+
       episode =
         %{episode | updated_by: job.user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
         |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
         |> EpisodeValidations.validate_managing_organization(client_id)
-        |> EpisodeValidations.validate_referral_requests(job.request_params["referral_requests"], client_id)
+        |> EpisodeValidations.validate_referral_requests(
+          job.request_params["referral_requests"],
+          client_id,
+          existing_referral_request_ids
+        )
 
       case Vex.errors(episode) do
         [] ->
@@ -158,6 +166,7 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
             |> Mongo.convert_to_uuid("updated_by")
+            |> Mongo.convert_to_uuid("episodes.#{episode.id}.referral_requests", ~w(identifier value)a)
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
             Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
@@ -455,5 +464,16 @@ defmodule Core.Patients.Episodes.Consumer do
         Logger.warn("Failed to fill up legal_entity value for episode")
         episode
     end
+  end
+
+  defp get_existing_referral_request_ids(episode_referral_requests, request_referral_requests) do
+    episode_referral_requests_ids =
+      Enum.map(episode_referral_requests, fn referral_request ->
+        to_string(referral_request.identifier.value)
+      end)
+
+    request_referral_requests
+    |> Enum.map(&get_in(&1, ~w(identifier value)))
+    |> Enum.filter(&Enum.member?(episode_referral_requests_ids, &1))
   end
 end

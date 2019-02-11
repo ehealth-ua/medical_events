@@ -139,4 +139,8 @@ defmodule Core.ServiceRequests.Validations do
 
     %{service_request | used_by: %{used_by | identifier: identifier}}
   end
+
+  def validate_expiration_date(%ServiceRequest{} = service_request) do
+    add_validations(service_request, :expiration_date, datetime: [greater_than_or_equal_to: DateTime.utc_now()])
+  end
 end

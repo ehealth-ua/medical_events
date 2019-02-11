@@ -108,20 +108,28 @@ defmodule Core.Patients.Episodes.Validations do
     validate_care_manager(%{episode | care_manager: Reference.create(reference)}, client_id)
   end
 
-  def validate_referral_requests(%Episode{} = episode, client_id) do
+  def validate_referral_requests(%Episode{} = episode, client_id, excluded_ids \\ []) do
     referral_requests = episode.referral_requests || []
+    now = DateTime.utc_now()
 
     referral_requests =
       Enum.map(referral_requests, fn referral ->
-        identifier = referral.identifier
-        %{referral | identifier: add_validations(identifier, :value, service_request_reference: [client_id: client_id])}
+        identifier =
+          if referral.identifier.value in excluded_ids do
+            referral.identifier
+          else
+            referral.identifier
+            |> add_validations(:value, service_request_reference: [client_id: client_id, datetime: now])
+          end
+
+        %{referral | identifier: identifier}
       end)
 
     %{episode | referral_requests: referral_requests}
   end
 
-  def validate_referral_requests(%Episode{} = episode, references, client_id) do
+  def validate_referral_requests(%Episode{} = episode, references, client_id, excluded_ids) do
     references = if is_list(references), do: Enum.map(references, &Reference.create(&1)), else: references
-    validate_referral_requests(%{episode | referral_requests: references}, client_id)
+    validate_referral_requests(%{episode | referral_requests: references}, client_id, excluded_ids)
   end
 end
