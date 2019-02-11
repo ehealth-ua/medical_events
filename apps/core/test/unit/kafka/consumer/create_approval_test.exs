@@ -319,6 +319,91 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                })
     end
 
+    test "failed approval create with service_request request param when service_request expiration_date is invalid" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      current_config = Application.get_env(:core, :service_request_expiration_days)
+      expiration_days = 2
+
+      on_exit(fn ->
+        Application.put_env(:core, :service_request_expiration_days, current_config)
+      end)
+
+      Application.put_env(:core, :service_request_expiration_days, expiration_days)
+
+      user_id = UUID.uuid4()
+      client_id = UUID.uuid4()
+      employee_id = UUID.uuid4()
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      now = DateTime.utc_now()
+
+      episode_1 =
+        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+
+      episode_2 =
+        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
+        }
+      )
+
+      episodes = build_episode_references([episode_1.id.binary, episode_2.id.binary])
+
+      service_request =
+        insert(:service_request,
+          subject: patient_id_hash,
+          permitted_episodes: episodes,
+          inserted_at: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * (expiration_days + 1)),
+          expiration_date: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * expiration_days)
+        )
+
+      service_request_id = to_string(service_request._id)
+
+      job = insert(:job)
+
+      expect(KafkaMock, :publish_job_update_status_event, fn event ->
+        id = to_string(job._id)
+
+        case event do
+          %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 409} ->
+            assert event.response =~ "Service request expiration date must be a datetime greater than or equal"
+            :ok
+
+          _ ->
+            raise ExUnit.AssertionError
+        end
+      end)
+
+      assert :ok =
+               Consumer.consume(%ApprovalCreateJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 resources: nil,
+                 service_request: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                     "value" => service_request_id
+                   }
+                 },
+                 granted_to: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => employee_id
+                   }
+                 },
+                 access_level: Approval.access_level(:read),
+                 user_id: user_id,
+                 client_id: client_id
+               })
+    end
+
     test "failed approval create with service_request request param when service_request does not contain episode references" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 

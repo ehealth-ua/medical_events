@@ -644,6 +644,14 @@ defmodule Core.Factories do
   def service_request_factory do
     patient_id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
+    now = DateTime.utc_now()
+    expiration_erl_date = now |> DateTime.to_date() |> Date.add(1) |> Date.to_erl()
+
+    expiration_date =
+      {expiration_erl_date, {23, 59, 59}}
+      |> NaiveDateTime.from_erl!()
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.to_iso8601()
 
     %ServiceRequest{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
@@ -661,8 +669,9 @@ defmodule Core.Factories do
       subject: patient_id,
       inserted_by: Mongo.string_to_uuid(user_id),
       updated_by: Mongo.string_to_uuid(user_id),
-      inserted_at: DateTime.utc_now(),
-      updated_at: DateTime.utc_now(),
+      inserted_at: now,
+      updated_at: now,
+      expiration_date: expiration_date,
       signed_content_links: []
     }
   end
