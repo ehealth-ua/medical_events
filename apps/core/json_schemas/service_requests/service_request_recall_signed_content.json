@@ -735,6 +735,12 @@
     "updated_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "priority": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "required": [

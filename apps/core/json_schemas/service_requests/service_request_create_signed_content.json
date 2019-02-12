@@ -481,6 +481,12 @@
         "end"
       ],
       "additionalProperties": false
+    },
+    "priority": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "required": [

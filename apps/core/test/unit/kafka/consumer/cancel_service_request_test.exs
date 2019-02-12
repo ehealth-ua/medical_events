@@ -324,7 +324,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
                   "value" => patient_id
                 }
               })
-            )
+            ),
+          "priority" => nil
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 

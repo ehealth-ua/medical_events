@@ -727,6 +727,12 @@
     },
     "patient": {
       "$ref": "#/definitions/reference"
+    },
+    "priority": {
+      "type": [
+        "string",
+        "null"
+      ]
     }
   },
   "required": [

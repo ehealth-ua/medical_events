@@ -20,6 +20,7 @@ defmodule Core.ServiceRequestView do
       note
       patient_instruction
       expiration_date
+      priority
     )a)
     |> Map.merge(%{
       id: to_string(service_request._id),
