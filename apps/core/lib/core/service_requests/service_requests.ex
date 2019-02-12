@@ -23,6 +23,7 @@ defmodule Core.ServiceRequests do
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
   alias Core.ServiceRequestView
+  alias Core.StatusHistory
   alias Core.Validators.JsonSchema
   alias Core.Validators.Signature
   alias Core.Validators.Vex
@@ -241,6 +242,18 @@ defmodule Core.ServiceRequests do
           status_history: [],
           expiration_date: expiration_date
         })
+
+      status_history =
+        StatusHistory.create(%{
+          "status" => service_request.status,
+          "status_reason" => service_request.status_reason,
+          "inserted_at" => now,
+          "inserted_by" => Mongo.string_to_uuid(job.user_id)
+        })
+
+      service_request =
+        service_request
+        |> Map.put(:status_history, [status_history])
         |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
         |> ServiceRequestsValidations.validate_context(patient_id_hash)
         |> ServiceRequestsValidations.validate_occurrence()
@@ -505,8 +518,18 @@ defmodule Core.ServiceRequests do
 
               id = to_string(service_request._id)
 
+              status_history =
+                StatusHistory.create(%{
+                  "status" => service_request.status,
+                  "status_reason" => service_request.status_reason,
+                  "inserted_at" => service_request.updated_at,
+                  "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
+                })
+
+              push = Mongo.add_to_push(%{}, status_history, "status_history")
+
               {:ok, %{matched_count: 1, modified_count: 1}} =
-                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set, "$push" => push})
 
               case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
@@ -621,8 +644,18 @@ defmodule Core.ServiceRequests do
 
               id = to_string(service_request._id)
 
+              status_history =
+                StatusHistory.create(%{
+                  "status" => service_request.status,
+                  "status_reason" => service_request.status_reason,
+                  "inserted_at" => service_request.updated_at,
+                  "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
+                })
+
+              push = Mongo.add_to_push(%{}, status_history, "status_history")
+
               {:ok, %{matched_count: 1, modified_count: 1}} =
-                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+                Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set, "$push" => push})
 
               case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
@@ -708,10 +741,20 @@ defmodule Core.ServiceRequests do
             }
             |> Mongo.convert_to_uuid("updated_by")
 
+          status_history =
+            StatusHistory.create(%{
+              "status" => service_request.status,
+              "status_reason" => service_request.status_reason,
+              "inserted_at" => service_request.updated_at,
+              "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
+            })
+
+          push = Mongo.add_to_push(%{}, status_history, "status_history")
+
           id = to_string(service_request._id)
 
           {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set})
+            Mongo.update_one(@collection, %{"_id" => service_request._id}, %{"$set" => set, "$push" => push})
 
           Jobs.produce_update_status(
             job._id,

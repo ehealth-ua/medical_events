@@ -5,8 +5,8 @@ defmodule Api.Web.EpisodeView do
 
   alias Api.Web.DiagnosesHistoryView
   alias Api.Web.DiagnosisView
-  alias Api.Web.StatusHistoryView
   alias Core.ReferenceView
+  alias Core.StatusHistoryView
   alias Core.UUIDView
   alias Scrivener.Page
 
@@ -33,7 +33,7 @@ defmodule Api.Web.EpisodeView do
         DiagnosesHistoryView.render("diagnoses_history.json", diagnoses_history: episode.diagnoses_history),
       managing_organization: ReferenceView.render(episode.managing_organization),
       care_manager: ReferenceView.render(episode.care_manager),
-      status_history: StatusHistoryView.render("statuses_history.json", statuses_history: episode.status_history),
+      status_history: StatusHistoryView.render("index.json", %{statuses_history: episode.status_history}),
       current_diagnoses: DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || []),
       referral_requests: ReferenceView.render(episode.referral_requests)
     })

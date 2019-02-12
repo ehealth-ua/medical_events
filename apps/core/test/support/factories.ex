@@ -672,7 +672,8 @@ defmodule Core.Factories do
       inserted_at: now,
       updated_at: now,
       expiration_date: expiration_date,
-      signed_content_links: []
+      signed_content_links: [],
+      status_history: []
     }
   end
 
