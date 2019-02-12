@@ -179,7 +179,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       assert {:ok,
               %Core.Job{
-                response_size: _,
                 response: "",
                 status: @status_pending,
                 status_code: 200
@@ -675,11 +674,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  signed_data: signed_data
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: _,
-                status: @status_pending
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Core.Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode not found" do

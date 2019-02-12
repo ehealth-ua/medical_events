@@ -182,6 +182,94 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                            rule: :required
                          }
                        ]
+                     },
+                     %{
+                       entry: "$.note",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property note was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.patient_instruction",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property patient_instruction was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.permitted_episodes",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property permitted_episodes was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.reason_reference",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property reason_reference was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.requisition",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property requisition was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.status_history",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property status_history was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.used_by",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property used_by was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
+                     },
+                     %{
+                       entry: "$.patient",
+                       entry_type: "json_data_property",
+                       rules: [
+                         %{
+                           description: "required property patient was not present",
+                           params: [],
+                           rule: :required
+                         }
+                       ]
                      }
                    ]
                  },

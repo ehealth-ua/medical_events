@@ -995,11 +995,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
 
-      assert {:ok,
-              %Core.Job{
-                response_size: 2,
-                status: @status_pending
-              }} = Jobs.get_by_id(to_string(job._id))
+      assert {:ok, %Core.Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when encounter reference episode doesnt match episode managing organization" do

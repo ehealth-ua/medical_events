@@ -11,11 +11,11 @@ defmodule Core.Jobs do
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_update_status(id, request_id, response, 200) do
-    do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
+    do_produce_update_status(id, request_id, response, Job.status(:processed), 200)
   end
 
   def produce_update_status(id, request_id, response, status_code) do
-    do_produce_update_status(id, request_id, cut_response(response), Job.status(:failed), status_code)
+    do_produce_update_status(id, request_id, response, Job.status(:failed), status_code)
   end
 
   def cut_response(%{invalid: errors} = response) do
@@ -93,13 +93,12 @@ defmodule Core.Jobs do
   end
 
   def update(id, status, response, status_code) when is_binary(id) do
-    set_data =
-      Job.encode_response(%{
-        "status" => status,
-        "status_code" => status_code,
-        "updated_at" => DateTime.utc_now(),
-        "response" => response
-      })
+    set_data = %{
+      "status" => status,
+      "status_code" => status_code,
+      "updated_at" => DateTime.utc_now(),
+      "response" => response
+    }
 
     Mongo.update_one(@collection, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
   rescue
@@ -114,17 +113,16 @@ defmodule Core.Jobs do
         {:job_exists, to_string(id)}
 
       _ ->
-        job =
-          Job.encode_response(%Job{
-            _id: Mongo.generate_id(),
-            hash: hash,
-            status: Job.status(:pending),
-            status_code: 202,
-            inserted_at: DateTime.utc_now(),
-            updated_at: DateTime.utc_now(),
-            eta: count_eta(),
-            response: ""
-          })
+        job = %Job{
+          _id: Mongo.generate_id(),
+          hash: hash,
+          status: Job.status(:pending),
+          status_code: 202,
+          inserted_at: DateTime.utc_now(),
+          updated_at: DateTime.utc_now(),
+          eta: count_eta(),
+          response: ""
+        }
 
         data =
           data
@@ -161,9 +159,7 @@ defmodule Core.Jobs do
   end
 
   defp map_to_job(data) do
-    Job
-    |> struct(Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
-    |> Job.decode_response()
+    struct(Job, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
 
   def fetch_links(%Job{status_code: 200, response: response}), do: Map.get(response, "links", [])

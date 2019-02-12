@@ -32,38 +32,21 @@ defmodule Core.Job do
     field(:eta, presence: true)
     field(:status, presence: true, inclusion: [@status_pending, @status_processed, @status_failed])
     field(:status_code, presence: true, inclusion: [200, 202, 404, 422])
-    field(:response, length: [is: @response_length])
-    field(:response_size, presence: true)
+    field(:response)
 
     timestamps()
   end
 
+  @doc """
+  Function is not used.
+  Checks the validity of the response depending on its size.
+  """
+  @spec valid_response?(binary() | map()) :: boolean()
   def valid_response?(response) when is_binary(response) do
     byte_size(response) <= @response_length
   end
 
   def valid_response?(response) when is_map(response) do
     byte_size(Jason.encode!(response)) <= @response_length
-  end
-
-  def encode_response(%__MODULE__{response: value} = job) do
-    response = Jason.encode!(value)
-    %{job | response: pad_trailing(response), response_size: byte_size(response)}
-  end
-
-  def encode_response(%{"response" => value} = data) do
-    response = Jason.encode!(value)
-
-    data
-    |> Map.put("response", pad_trailing(response))
-    |> Map.put("response_size", byte_size(response))
-  end
-
-  def decode_response(%__MODULE__{response: response, response_size: response_size} = job) do
-    %{job | response: Jason.decode!(binary_part(response, 0, response_size))}
-  end
-
-  defp pad_trailing(data) do
-    data <> String.duplicate(".", @response_length - byte_size(data))
   end
 end

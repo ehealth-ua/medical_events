@@ -13,6 +13,16 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
   alias Core.Patients
   alias Core.ServiceRequest
 
+  @approval_create_response_fields ~w(
+    access_level
+    expires_at
+    granted_resources
+    granted_to
+    id
+    reason
+    status
+  )a
+
   setup :verify_on_exit!
 
   describe "consume create approval event" do
@@ -48,20 +58,30 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
         id = to_string(job._id)
-        link_id = event.response |> Map.get("links") |> hd() |> Map.get("id")
+        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "approval",
-                       "id" => ^link_id
-                     }
-                   ]
-                 },
-                 status_code: 200
-               } = event
+        data =
+          event.response
+          |> Map.get("links")
+          |> hd()
+          |> Map.get("data")
+
+        Enum.each(@approval_create_response_fields, fn field ->
+          assert Map.has_key?(data, field)
+        end)
+
+        granted_resources_ids =
+          data
+          |> Map.get(:granted_resources)
+          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          |> Enum.map(&to_string/1)
+
+        Enum.each([episode_1.id, episode_2.id], fn episode_id ->
+          assert to_string(episode_id) in granted_resources_ids
+        end)
+
+        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
+        refute get_in(data, ~w(reason identifier value)a)
 
         :ok
       end)
@@ -134,20 +154,30 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
         id = to_string(job._id)
-        link_id = event.response |> Map.get("links") |> hd() |> Map.get("id")
+        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "approval",
-                       "id" => ^link_id
-                     }
-                   ]
-                 },
-                 status_code: 200
-               } = event
+        data =
+          event.response
+          |> Map.get("links")
+          |> hd()
+          |> Map.get("data")
+
+        Enum.each(@approval_create_response_fields, fn field ->
+          assert Map.has_key?(data, field)
+        end)
+
+        granted_resources_ids =
+          data
+          |> Map.get(:granted_resources)
+          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          |> Enum.map(&to_string/1)
+
+        Enum.each([episode_1.id, episode_2.id], fn episode_id ->
+          assert to_string(episode_id) in granted_resources_ids
+        end)
+
+        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
+        assert get_in(data, ~w(reason identifier value)a) == service_request_id
 
         :ok
       end)
@@ -207,20 +237,30 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       expect(KafkaMock, :publish_job_update_status_event, fn event ->
         id = to_string(job._id)
-        link_id = event.response |> Map.get("links") |> hd() |> Map.get("id")
+        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "approval",
-                       "id" => ^link_id
-                     }
-                   ]
-                 },
-                 status_code: 200
-               } = event
+        data =
+          event.response
+          |> Map.get("links")
+          |> hd()
+          |> Map.get("data")
+
+        Enum.each(@approval_create_response_fields, fn field ->
+          assert Map.has_key?(data, field)
+        end)
+
+        granted_resources_ids =
+          data
+          |> Map.get(:granted_resources)
+          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          |> Enum.map(&to_string/1)
+
+        Enum.each([episode_1.id, episode_2.id], fn episode_id ->
+          assert to_string(episode_id) in granted_resources_ids
+        end)
+
+        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
+        refute get_in(data, ~w(reason identifier value)a)
 
         :ok
       end)

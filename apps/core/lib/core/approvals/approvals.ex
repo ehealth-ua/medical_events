@@ -2,6 +2,7 @@ defmodule Core.Approvals do
   @moduledoc false
 
   alias Core.Approval
+  alias Core.Approvals.Renderer, as: ApprovalsRenderer
   alias Core.Approvals.Validations, as: ApprovalsValidations
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
@@ -151,7 +152,7 @@ defmodule Core.Approvals do
               links = [
                 %{
                   "entity" => "approval",
-                  "id" => to_string(approval._id)
+                  "data" => ApprovalsRenderer.render(approval)
                 }
               ]
 
