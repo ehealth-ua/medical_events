@@ -38,6 +38,7 @@ defmodule Core.ServiceRequest do
     field(:occurrence, reference: [path: "occurrence"])
     field(:authored_on, presence: true, reference: [path: "authored_on"])
     field(:requester, presence: true, reference: [path: "requester"])
+    field(:priority)
 
     field(:performer_type,
       reference: [path: "performer_type"],

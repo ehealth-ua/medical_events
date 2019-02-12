@@ -326,6 +326,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                 }
               })
             ),
+          "priority" => nil,
           "inserted_at" => DateView.render_datetime(service_request.inserted_at),
           "updated_at" => DateView.render_datetime(service_request.updated_at)
         }
