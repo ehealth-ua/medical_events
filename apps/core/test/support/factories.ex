@@ -720,7 +720,6 @@ defmodule Core.Factories do
   def insert(:job, args) do
     :job
     |> build(args)
-    |> Job.encode_response()
     |> insert_entity()
   end
 
