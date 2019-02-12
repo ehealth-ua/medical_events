@@ -1,4 +1,4 @@
-defmodule Api.Web.RiskAssessmentControllerTest do
+defmodule Api.Web.MedicationStatementControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
@@ -8,12 +8,12 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
   alias Core.Patients
 
-  describe "show risk assessment" do
+  describe "show medication statement" do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      risk_assessment_1 = build(:risk_assessment)
-      risk_assessment_2 = build(:risk_assessment)
+      medication_statement_1 = build(:medication_statement)
+      medication_statement_2 = build(:medication_statement)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -21,9 +21,9 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       insert(
         :patient,
         _id: patient_id_hash,
-        risk_assessments: %{
-          UUID.binary_to_string!(risk_assessment_1.id.binary) => risk_assessment_1,
-          UUID.binary_to_string!(risk_assessment_2.id.binary) => risk_assessment_2
+        medication_statements: %{
+          UUID.binary_to_string!(medication_statement_1.id.binary) => medication_statement_1,
+          UUID.binary_to_string!(medication_statement_2.id.binary) => medication_statement_2
         }
       )
 
@@ -31,15 +31,17 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :show, patient_id, UUID.binary_to_string!(risk_assessment_1.id.binary)))
+        |> get(
+          medication_statement_path(conn, :show, patient_id, UUID.binary_to_string!(medication_statement_1.id.binary))
+        )
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_show.json")
+      |> assert_json_schema("medication_statements/medication_statement_show.json")
 
-      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(risk_assessment_1.id.binary)
-      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(risk_assessment_2.id.binary)
+      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(medication_statement_1.id.binary)
+      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(medication_statement_2.id.binary)
     end
 
     test "invalid patient uuid", %{conn: conn} do
@@ -47,14 +49,14 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       expect_get_person_data_empty()
 
       conn
-      |> get(risk_assessment_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
+      |> get(medication_statement_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
       |> json_response(403)
     end
 
-    test "invalid risk assessment uuid", %{conn: conn} do
+    test "invalid medication statement uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      risk_assessment = build(:risk_assessment)
+      medication_statement = build(:medication_statement)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -62,32 +64,32 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       insert(
         :patient,
         _id: patient_id_hash,
-        risk_assessments: %{UUID.binary_to_string!(risk_assessment.id.binary) => risk_assessment}
+        medication_statements: %{UUID.binary_to_string!(medication_statement.id.binary) => medication_statement}
       )
 
       expect_get_person_data(patient_id)
 
       conn
-      |> get(risk_assessment_path(conn, :show, patient_id, UUID.uuid4()))
+      |> get(medication_statement_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
     end
 
-    test "get patient when no risk assessments", %{conn: conn} do
+    test "get patient when no medication statements", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: %{})
+      insert(:patient, _id: patient_id_hash, medication_statements: %{})
       expect_get_person_data(patient_id)
 
       conn
-      |> get(risk_assessment_path(conn, :show, patient_id, UUID.uuid4()))
+      |> get(medication_statement_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
     end
   end
 
-  describe "index risk assessments" do
+  describe "index medication statements" do
     test "successful search", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
@@ -99,12 +101,12 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id))
+        |> get(medication_statement_path(conn, :index, patient_id))
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
     end
@@ -117,28 +119,28 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       encounter_id = UUID.uuid4()
       context = build_encounter_context(Mongo.string_to_uuid(encounter_id))
-      risk_assessment_1 = build(:risk_assessment, context: context)
-      risk_assessment_2 = build(:risk_assessment)
+      medication_statement_1 = build(:medication_statement, context: context)
+      medication_statement_2 = build(:medication_statement)
 
-      risk_assessments =
-        [risk_assessment_1, risk_assessment_2]
-        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
-          {UUID.binary_to_string!(id), risk_assessment}
+      medication_statements =
+        [medication_statement_1, medication_statement_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
         end)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
+      insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
       expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
 
@@ -147,47 +149,47 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         |> Map.get("data")
         |> hd()
 
-      refute Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_2.id.binary)
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id
     end
 
-    test "successful search with search parameters: code", %{conn: conn} do
+    test "successful search with search parameters: medication_code", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      code_value = "1"
+      medication_code_value = "1"
 
-      code =
+      medication_code =
         build(
           :codeable_concept,
-          coding: [build(:coding, code: code_value, system: "eHealth/risk_assessment_codes")]
+          coding: [build(:coding, code: medication_code_value, system: "eHealth/medication_statement_medications")]
         )
 
-      risk_assessment_1 = build(:risk_assessment, code: code)
-      risk_assessment_2 = build(:risk_assessment)
+      medication_statement_1 = build(:medication_statement, medication_code: medication_code)
+      medication_statement_2 = build(:medication_statement)
 
-      risk_assessments =
-        [risk_assessment_1, risk_assessment_2]
-        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
-          {UUID.binary_to_string!(id), risk_assessment}
+      medication_statements =
+        [medication_statement_1, medication_statement_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
         end)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
+      insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
       expect_get_person_data(patient_id)
 
-      search_params = %{"code" => code_value}
+      search_params = %{"medication_code" => medication_code_value}
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
 
@@ -196,8 +198,8 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_1.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_2.id.binary)
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
@@ -210,8 +212,8 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       encounter_2 = build(:encounter)
 
       context = build_encounter_context(encounter_1.id)
-      risk_assessment_1 = build(:risk_assessment, context: context)
-      risk_assessment_2 = build(:risk_assessment)
+      medication_statement_1 = build(:medication_statement, context: context)
+      medication_statement_2 = build(:medication_statement)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -227,9 +229,9 @@ defmodule Api.Web.RiskAssessmentControllerTest do
           UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
           UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
-        risk_assessments: %{
-          UUID.binary_to_string!(risk_assessment_1.id.binary) => risk_assessment_1,
-          UUID.binary_to_string!(risk_assessment_2.id.binary) => risk_assessment_2
+        medication_statements: %{
+          UUID.binary_to_string!(medication_statement_1.id.binary) => medication_statement_1,
+          UUID.binary_to_string!(medication_statement_2.id.binary) => medication_statement_2
         }
       )
 
@@ -239,12 +241,12 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
 
@@ -253,8 +255,8 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_1.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -266,30 +268,30 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       asserted_date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
       asserted_date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
 
-      risk_assessment_1 = build(:risk_assessment, asserted_date: get_datetime(-30))
-      risk_assessment_2 = build(:risk_assessment, asserted_date: get_datetime(-20))
-      risk_assessment_3 = build(:risk_assessment, asserted_date: get_datetime(-15))
-      risk_assessment_4 = build(:risk_assessment, asserted_date: get_datetime(-10))
-      risk_assessment_5 = build(:risk_assessment, asserted_date: get_datetime(-5))
+      medication_statement_1 = build(:medication_statement, asserted_date: get_datetime(-30))
+      medication_statement_2 = build(:medication_statement, asserted_date: get_datetime(-20))
+      medication_statement_3 = build(:medication_statement, asserted_date: get_datetime(-15))
+      medication_statement_4 = build(:medication_statement, asserted_date: get_datetime(-10))
+      medication_statement_5 = build(:medication_statement, asserted_date: get_datetime(-5))
 
-      risk_assessments =
+      medication_statements =
         [
-          risk_assessment_1,
-          risk_assessment_2,
-          risk_assessment_3,
-          risk_assessment_4,
-          risk_assessment_5
+          medication_statement_1,
+          medication_statement_2,
+          medication_statement_3,
+          medication_statement_4,
+          medication_statement_5
         ]
-        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
-          {UUID.binary_to_string!(id), risk_assessment}
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
         end)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
+      insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
       expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
       end
 
@@ -323,14 +325,14 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      code_value = "1"
+      medication_code_value = "1"
 
-      code =
+      medication_code =
         build(
           :codeable_concept,
           coding: [
-            build(:coding, code: code_value, system: "eHealth/risk_assessment_codes"),
-            build(:coding, code: "test", system: "eHealth/risk_assessment_codes")
+            build(:coding, code: medication_code_value, system: "eHealth/medication_statement_medications"),
+            build(:coding, code: "test", system: "eHealth/medication_statement_medications")
           ]
         )
 
@@ -345,38 +347,48 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       encounter_id_2 = UUID.binary_to_string!(encounter.id.binary)
       context_episode_id = build_encounter_context(Mongo.string_to_uuid(encounter_id_2))
 
-      risk_assessment_1 =
-        build(:risk_assessment, context: context_encounter_id, code: code, asserted_date: get_datetime(-15))
+      medication_statement_1 =
+        build(:medication_statement,
+          context: context_encounter_id,
+          medication_code: medication_code,
+          asserted_date: get_datetime(-15)
+        )
 
-      risk_assessment_2 = build(:risk_assessment, context: context_encounter_id, asserted_date: get_datetime(-15))
+      medication_statement_2 =
+        build(:medication_statement, context: context_encounter_id, asserted_date: get_datetime(-15))
 
-      risk_assessment_3 = build(:risk_assessment, code: code, asserted_date: get_datetime(-15))
+      medication_statement_3 =
+        build(:medication_statement, medication_code: medication_code, asserted_date: get_datetime(-15))
 
-      risk_assessment_4 =
-        build(:risk_assessment, context: context_episode_id, code: code, asserted_date: get_datetime(-15))
+      medication_statement_4 =
+        build(:medication_statement,
+          context: context_episode_id,
+          medication_code: medication_code,
+          asserted_date: get_datetime(-15)
+        )
 
-      risk_assessment_5 = build(:risk_assessment, asserted_date: get_datetime(-30))
-      risk_assessment_6 = build(:risk_assessment, asserted_date: get_datetime(-15))
-      risk_assessment_7 = build(:risk_assessment, asserted_date: get_datetime(-5))
+      medication_statement_5 = build(:medication_statement, asserted_date: get_datetime(-30))
+      medication_statement_6 = build(:medication_statement, asserted_date: get_datetime(-15))
+      medication_statement_7 = build(:medication_statement, asserted_date: get_datetime(-5))
 
-      risk_assessments =
+      medication_statements =
         [
-          risk_assessment_1,
-          risk_assessment_2,
-          risk_assessment_3,
-          risk_assessment_4,
-          risk_assessment_5,
-          risk_assessment_6,
-          risk_assessment_7
+          medication_statement_1,
+          medication_statement_2,
+          medication_statement_3,
+          medication_statement_4,
+          medication_statement_5,
+          medication_statement_6,
+          medication_statement_7
         ]
-        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
-          {UUID.binary_to_string!(id), risk_assessment}
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
         end)
 
       insert(
         :patient,
         _id: patient_id_hash,
-        risk_assessments: risk_assessments,
+        medication_statements: medication_statements,
         episodes: %{
           UUID.binary_to_string!(episode.id.binary) => episode
         },
@@ -389,7 +401,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       search_params = %{
         "encounter_id" => encounter_id_1,
-        "code" => code_value,
+        "medication_code" => medication_code_value,
         "episode_id" => UUID.binary_to_string!(episode.id.binary),
         "asserted_date_from" => asserted_date_from,
         "asserted_date_to" => asserted_date_to
@@ -397,7 +409,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       call_endpoint = fn search_params ->
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
       end
 
@@ -416,7 +428,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_4.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_4.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_2
 
       # all params except episode_id
@@ -429,7 +441,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_1.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_1
     end
 
@@ -443,8 +455,8 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       encounter_2 = build(:encounter)
 
       context = build_encounter_context(encounter_1.id)
-      risk_assessment_1 = build(:risk_assessment, context: context)
-      risk_assessment_2 = build(:risk_assessment)
+      medication_statement_1 = build(:medication_statement, context: context)
+      medication_statement_2 = build(:medication_statement)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -460,9 +472,9 @@ defmodule Api.Web.RiskAssessmentControllerTest do
           UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
           UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
-        risk_assessments: %{
-          UUID.binary_to_string!(risk_assessment_1.id.binary) => risk_assessment_1,
-          UUID.binary_to_string!(risk_assessment_2.id.binary) => risk_assessment_2
+        medication_statements: %{
+          UUID.binary_to_string!(medication_statement_1.id.binary) => medication_statement_1,
+          UUID.binary_to_string!(medication_statement_2.id.binary) => medication_statement_2
         }
       )
 
@@ -472,12 +484,12 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end
@@ -493,7 +505,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       search_params = %{
         "encounter_id" => "test",
-        "code" => 12345,
+        "medication_code" => 12345,
         "episode_id" => "test",
         "asserted_date_from" => "2018-02-31",
         "asserted_date_to" => "2018-8-t"
@@ -501,7 +513,7 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id), search_params)
+        |> get(medication_statement_path(conn, :index, patient_id), search_params)
         |> json_response(422)
 
       assert %{
@@ -531,17 +543,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
                    ]
                  },
                  %{
-                   "entry" => "$.code",
-                   "entry_type" => "json_data_property",
-                   "rules" => [
-                     %{
-                       "description" => "type mismatch. Expected String but got Integer",
-                       "params" => ["string"],
-                       "rule" => "cast"
-                     }
-                   ]
-                 },
-                 %{
                    "entry" => "$.encounter_id",
                    "entry_type" => "json_data_property",
                    "rules" => [
@@ -564,6 +565,17 @@ defmodule Api.Web.RiskAssessmentControllerTest do
                        "rule" => "format"
                      }
                    ]
+                 },
+                 %{
+                   "entry" => "$.medication_code",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "type mismatch. Expected String but got Integer",
+                       "params" => ["string"],
+                       "rule" => "cast"
+                     }
+                   ]
                  }
                ]
              } = resp["error"]
@@ -574,48 +586,48 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       expect_get_person_data_empty()
 
       conn
-      |> get(risk_assessment_path(conn, :index, UUID.uuid4()))
+      |> get(medication_statement_path(conn, :index, UUID.uuid4()))
       |> json_response(403)
     end
 
-    test "get patient when no risk assessments", %{conn: conn} do
+    test "get patient when no medication_statements", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: %{})
+      insert(:patient, _id: patient_id_hash, medication_statements: %{})
       expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id))
+        |> get(medication_statement_path(conn, :index, patient_id))
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end
 
-    test "get patient when risk assessments list is null", %{conn: conn} do
+    test "get patient when medication_statements list is null", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, _id: patient_id_hash, risk_assessments: nil)
+      insert(:patient, _id: patient_id_hash, medication_statements: nil)
       expect_get_person_data(patient_id)
 
       resp =
         conn
-        |> get(risk_assessment_path(conn, :index, patient_id))
+        |> get(medication_statement_path(conn, :index, patient_id))
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
-      |> assert_json_schema("risk_assessments/risk_assessment_list.json")
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end

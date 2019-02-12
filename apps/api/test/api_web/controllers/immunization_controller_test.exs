@@ -12,8 +12,8 @@ defmodule Api.Web.ImmunizationControllerTest do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      immunization_in = build(:immunization)
-      immunization_out = build(:immunization)
+      immunization_1 = build(:immunization)
+      immunization_2 = build(:immunization)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -22,8 +22,8 @@ defmodule Api.Web.ImmunizationControllerTest do
         :patient,
         _id: patient_id_hash,
         immunizations: %{
-          UUID.binary_to_string!(immunization_in.id.binary) => immunization_in,
-          UUID.binary_to_string!(immunization_out.id.binary) => immunization_out
+          UUID.binary_to_string!(immunization_1.id.binary) => immunization_1,
+          UUID.binary_to_string!(immunization_2.id.binary) => immunization_2
         }
       )
 
@@ -31,15 +31,15 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       resp =
         conn
-        |> get(immunization_path(conn, :show, patient_id, UUID.binary_to_string!(immunization_in.id.binary)))
+        |> get(immunization_path(conn, :show, patient_id, UUID.binary_to_string!(immunization_1.id.binary)))
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
       |> assert_json_schema("immunizations/immunization_show.json")
 
-      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(immunization_in.id.binary)
-      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(immunization_out.id.binary)
+      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(immunization_1.id.binary)
+      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(immunization_2.id.binary)
     end
 
     test "successful show by episode context", %{conn: conn} do
@@ -173,11 +173,11 @@ defmodule Api.Web.ImmunizationControllerTest do
 
       encounter_id = UUID.uuid4()
       context = build_encounter_context(Mongo.string_to_uuid(encounter_id))
-      immunization_in = build(:immunization, context: context)
-      immunization_out = build(:immunization)
+      immunization_1 = build(:immunization, context: context)
+      immunization_2 = build(:immunization)
 
       immunizations =
-        [immunization_in, immunization_out]
+        [immunization_1, immunization_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = immunization ->
           {UUID.binary_to_string!(id), immunization}
         end)
@@ -203,8 +203,8 @@ defmodule Api.Web.ImmunizationControllerTest do
         |> Map.get("data")
         |> hd()
 
-      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id
     end
 
@@ -225,11 +225,11 @@ defmodule Api.Web.ImmunizationControllerTest do
           ]
         )
 
-      immunization_in = build(:immunization, vaccine_code: vaccine_code)
-      immunization_out = build(:immunization)
+      immunization_1 = build(:immunization, vaccine_code: vaccine_code)
+      immunization_2 = build(:immunization)
 
       immunizations =
-        [immunization_in, immunization_out]
+        [immunization_1, immunization_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = immunization ->
           {UUID.binary_to_string!(id), immunization}
         end)
@@ -255,22 +255,22 @@ defmodule Api.Web.ImmunizationControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_2.id.binary)
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      episode_in = build(:episode)
-      episode_out = build(:episode)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
 
-      encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_1.id)))
+      encounter_2 = build(:encounter)
 
-      context = build_encounter_context(encounter_in.id)
-      immunization_in = build(:immunization, context: context)
-      immunization_out = build(:immunization)
+      context = build_encounter_context(encounter_1.id)
+      immunization_1 = build(:immunization, context: context)
+      immunization_2 = build(:immunization)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -279,22 +279,22 @@ defmodule Api.Web.ImmunizationControllerTest do
         :patient,
         _id: patient_id_hash,
         episodes: %{
-          UUID.binary_to_string!(episode_in.id.binary) => episode_in,
-          UUID.binary_to_string!(episode_out.id.binary) => episode_out
+          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
         },
         encounters: %{
-          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
-          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+          UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
+          UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
         immunizations: %{
-          UUID.binary_to_string!(immunization_in.id.binary) => immunization_in,
-          UUID.binary_to_string!(immunization_out.id.binary) => immunization_out
+          UUID.binary_to_string!(immunization_1.id.binary) => immunization_1,
+          UUID.binary_to_string!(immunization_2.id.binary) => immunization_2
         }
       )
 
       expect_get_person_data(patient_id)
 
-      search_params = %{"episode_id" => UUID.binary_to_string!(episode_in.id.binary)}
+      search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
         conn
@@ -312,8 +312,8 @@ defmodule Api.Web.ImmunizationControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_2.id.binary)
     end
 
     test "successful search by episode context", %{conn: conn} do
@@ -450,28 +450,28 @@ defmodule Api.Web.ImmunizationControllerTest do
       encounter_id_2 = UUID.binary_to_string!(encounter.id.binary)
       context_episode_id = build_encounter_context(Mongo.string_to_uuid(encounter_id_2))
 
-      immunization_in_1 =
+      immunization_1 =
         build(:immunization, context: context_encounter_id, vaccine_code: vaccine_code, date: get_datetime(-15))
 
-      immunization_out_1 = build(:immunization, context: context_encounter_id, date: get_datetime(-15))
-      immunization_out_2 = build(:immunization, vaccine_code: vaccine_code, date: get_datetime(-15))
+      immunization_2 = build(:immunization, context: context_encounter_id, date: get_datetime(-15))
+      immunization_3 = build(:immunization, vaccine_code: vaccine_code, date: get_datetime(-15))
 
-      immunization_in_2 =
+      immunization_4 =
         build(:immunization, context: context_episode_id, vaccine_code: vaccine_code, date: get_datetime(-15))
 
-      immunization_out_3 = build(:immunization, date: get_datetime(-30))
-      immunization_out_4 = build(:immunization, date: get_datetime(-15))
-      immunization_out_5 = build(:immunization, date: get_datetime(-5))
+      immunization_5 = build(:immunization, date: get_datetime(-30))
+      immunization_6 = build(:immunization, date: get_datetime(-15))
+      immunization_7 = build(:immunization, date: get_datetime(-5))
 
       immunizations =
         [
-          immunization_in_1,
-          immunization_in_2,
-          immunization_out_1,
-          immunization_out_2,
-          immunization_out_3,
-          immunization_out_4,
-          immunization_out_5
+          immunization_1,
+          immunization_2,
+          immunization_3,
+          immunization_4,
+          immunization_5,
+          immunization_6,
+          immunization_7
         ]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = immunization ->
           {UUID.binary_to_string!(id), immunization}
@@ -520,7 +520,7 @@ defmodule Api.Web.ImmunizationControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_4.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_2
 
       # all params except episode_id
@@ -533,22 +533,22 @@ defmodule Api.Web.ImmunizationControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in_1.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_1
     end
 
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      episode_in = build(:episode)
-      episode_out = build(:episode)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
 
-      encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_1.id)))
+      encounter_2 = build(:encounter)
 
-      context = build_encounter_context(encounter_in.id.binary)
-      immunization_in = build(:immunization, context: context)
-      immunization_out = build(:immunization)
+      context = build_encounter_context(encounter_1.id.binary)
+      immunization_1 = build(:immunization, context: context)
+      immunization_2 = build(:immunization)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -557,16 +557,16 @@ defmodule Api.Web.ImmunizationControllerTest do
         :patient,
         _id: patient_id_hash,
         episodes: %{
-          UUID.binary_to_string!(episode_in.id.binary) => episode_in,
-          UUID.binary_to_string!(episode_out.id.binary) => episode_out
+          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
         },
         encounters: %{
-          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
-          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+          UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
+          UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
         immunizations: %{
-          UUID.binary_to_string!(immunization_in.id.binary) => immunization_in,
-          UUID.binary_to_string!(immunization_out.id.binary) => immunization_out
+          UUID.binary_to_string!(immunization_1.id.binary) => immunization_1,
+          UUID.binary_to_string!(immunization_2.id.binary) => immunization_2
         }
       )
 

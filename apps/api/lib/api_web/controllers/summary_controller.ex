@@ -8,6 +8,7 @@ defmodule Api.Web.SummaryController do
   alias Api.Web.DeviceView
   alias Api.Web.DiagnosisView
   alias Api.Web.ImmunizationView
+  alias Api.Web.MedicationStatementView
   alias Api.Web.ObservationView
   alias Api.Web.RiskAssessmentView
   alias Core.Conditions
@@ -16,6 +17,7 @@ defmodule Api.Web.SummaryController do
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
   alias Core.Patients.Immunizations
+  alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
   alias Scrivener.Page
 
@@ -73,6 +75,13 @@ defmodule Api.Web.SummaryController do
   def list_devices(conn, params) do
     with {:ok, %Page{entries: devices} = paging} <- Devices.list(params, :device_summary) do
       render(conn, DeviceView, "index.json", devices: devices, paging: paging)
+    end
+  end
+
+  def list_medication_statements(conn, params) do
+    with {:ok, %Page{entries: medication_statements} = paging} <-
+           MedicationStatements.list(params, :medication_statement_summary) do
+      render(conn, MedicationStatementView, "index.json", medication_statements: medication_statements, paging: paging)
     end
   end
 end

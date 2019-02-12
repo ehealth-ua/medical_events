@@ -12,8 +12,8 @@ defmodule Api.Web.DeviceControllerTest do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      device_in = build(:device)
-      device_out = build(:device)
+      device_1 = build(:device)
+      device_2 = build(:device)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -22,8 +22,8 @@ defmodule Api.Web.DeviceControllerTest do
         :patient,
         _id: patient_id_hash,
         devices: %{
-          UUID.binary_to_string!(device_in.id.binary) => device_in,
-          UUID.binary_to_string!(device_out.id.binary) => device_out
+          UUID.binary_to_string!(device_1.id.binary) => device_1,
+          UUID.binary_to_string!(device_2.id.binary) => device_2
         }
       )
 
@@ -31,15 +31,15 @@ defmodule Api.Web.DeviceControllerTest do
 
       resp =
         conn
-        |> get(device_path(conn, :show, patient_id, UUID.binary_to_string!(device_in.id.binary)))
+        |> get(device_path(conn, :show, patient_id, UUID.binary_to_string!(device_1.id.binary)))
         |> json_response(200)
 
       resp
       |> Map.take(["data"])
       |> assert_json_schema("devices/device_show.json")
 
-      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(device_in.id.binary)
-      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(device_out.id.binary)
+      assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(device_1.id.binary)
+      refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(device_2.id.binary)
     end
 
     test "invalid patient uuid", %{conn: conn} do
@@ -117,11 +117,11 @@ defmodule Api.Web.DeviceControllerTest do
 
       encounter_id = UUID.uuid4()
       context = build_encounter_context(Mongo.string_to_uuid(encounter_id))
-      device_in = build(:device, context: context)
-      device_out = build(:device)
+      device_1 = build(:device, context: context)
+      device_2 = build(:device)
 
       devices =
-        [device_in, device_out]
+        [device_1, device_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
           {UUID.binary_to_string!(id), device}
         end)
@@ -147,8 +147,8 @@ defmodule Api.Web.DeviceControllerTest do
         |> Map.get("data")
         |> hd()
 
-      refute Map.get(resp, "id") == UUID.binary_to_string!(device_out.id.binary)
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(device_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id
     end
 
@@ -166,11 +166,11 @@ defmodule Api.Web.DeviceControllerTest do
           coding: [build(:coding, code: type_value, system: "eHealth/device_types")]
         )
 
-      device_in = build(:device, type: type)
-      device_out = build(:device)
+      device_1 = build(:device, type: type)
+      device_2 = build(:device)
 
       devices =
-        [device_in, device_out]
+        [device_1, device_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
           {UUID.binary_to_string!(id), device}
         end)
@@ -196,22 +196,22 @@ defmodule Api.Web.DeviceControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(device_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(device_2.id.binary)
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      episode_in = build(:episode)
-      episode_out = build(:episode)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
 
-      encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_1.id)))
+      encounter_2 = build(:encounter)
 
-      context = build_encounter_context(encounter_in.id)
-      device_in = build(:device, context: context)
-      device_out = build(:device)
+      context = build_encounter_context(encounter_1.id)
+      device_1 = build(:device, context: context)
+      device_2 = build(:device)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -220,22 +220,22 @@ defmodule Api.Web.DeviceControllerTest do
         :patient,
         _id: patient_id_hash,
         episodes: %{
-          UUID.binary_to_string!(episode_in.id.binary) => episode_in,
-          UUID.binary_to_string!(episode_out.id.binary) => episode_out
+          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
         },
         encounters: %{
-          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
-          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+          UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
+          UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
         devices: %{
-          UUID.binary_to_string!(device_in.id.binary) => device_in,
-          UUID.binary_to_string!(device_out.id.binary) => device_out
+          UUID.binary_to_string!(device_1.id.binary) => device_1,
+          UUID.binary_to_string!(device_2.id.binary) => device_2
         }
       )
 
       expect_get_person_data(patient_id)
 
-      search_params = %{"episode_id" => UUID.binary_to_string!(episode_in.id.binary)}
+      search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
         conn
@@ -253,8 +253,8 @@ defmodule Api.Web.DeviceControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(device_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(device_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -345,27 +345,27 @@ defmodule Api.Web.DeviceControllerTest do
       encounter_id_2 = UUID.binary_to_string!(encounter.id.binary)
       context_episode_id = build_encounter_context(Mongo.string_to_uuid(encounter_id_2))
 
-      device_in_1 = build(:device, context: context_encounter_id, type: type, asserted_date: get_datetime(-15))
+      device_1 = build(:device, context: context_encounter_id, type: type, asserted_date: get_datetime(-15))
 
-      device_out_1 = build(:device, context: context_encounter_id, asserted_date: get_datetime(-15))
+      device_2 = build(:device, context: context_encounter_id, asserted_date: get_datetime(-15))
 
-      device_out_2 = build(:device, type: type, asserted_date: get_datetime(-15))
+      device_3 = build(:device, type: type, asserted_date: get_datetime(-15))
 
-      device_in_2 = build(:device, context: context_episode_id, type: type, asserted_date: get_datetime(-15))
+      device_4 = build(:device, context: context_episode_id, type: type, asserted_date: get_datetime(-15))
 
-      device_out_3 = build(:device, asserted_date: get_datetime(-30))
-      device_out_4 = build(:device, asserted_date: get_datetime(-15))
-      device_out_5 = build(:device, asserted_date: get_datetime(-5))
+      device_5 = build(:device, asserted_date: get_datetime(-30))
+      device_6 = build(:device, asserted_date: get_datetime(-15))
+      device_7 = build(:device, asserted_date: get_datetime(-5))
 
       devices =
         [
-          device_in_1,
-          device_in_2,
-          device_out_1,
-          device_out_2,
-          device_out_3,
-          device_out_4,
-          device_out_5
+          device_1,
+          device_2,
+          device_3,
+          device_4,
+          device_5,
+          device_6,
+          device_7
         ]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
           {UUID.binary_to_string!(id), device}
@@ -414,7 +414,7 @@ defmodule Api.Web.DeviceControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in_2.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_4.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_2
 
       # all params except episode_id
@@ -427,22 +427,22 @@ defmodule Api.Web.DeviceControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in_1.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_1.id.binary)
       assert get_in(resp, ~w(context identifier value)) == encounter_id_1
     end
 
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
-      episode_in = build(:episode)
-      episode_out = build(:episode)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
 
-      encounter_in = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_in.id)))
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode_1.id)))
+      encounter_2 = build(:encounter)
 
-      context = build_encounter_context(encounter_in.id)
-      device_in = build(:device, context: context)
-      device_out = build(:device)
+      context = build_encounter_context(encounter_1.id)
+      device_1 = build(:device, context: context)
+      device_2 = build(:device)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -451,16 +451,16 @@ defmodule Api.Web.DeviceControllerTest do
         :patient,
         _id: patient_id_hash,
         episodes: %{
-          UUID.binary_to_string!(episode_in.id.binary) => episode_in,
-          UUID.binary_to_string!(episode_out.id.binary) => episode_out
+          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+          UUID.binary_to_string!(episode_2.id.binary) => episode_2
         },
         encounters: %{
-          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
-          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+          UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
+          UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         },
         devices: %{
-          UUID.binary_to_string!(device_in.id.binary) => device_in,
-          UUID.binary_to_string!(device_out.id.binary) => device_out
+          UUID.binary_to_string!(device_1.id.binary) => device_1,
+          UUID.binary_to_string!(device_2.id.binary) => device_2
         }
       )
 

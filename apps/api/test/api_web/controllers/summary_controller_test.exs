@@ -75,11 +75,11 @@ defmodule Api.Web.SummaryControllerTest do
           ]
         )
 
-      immunization_in = build(:immunization, vaccine_code: vaccine_code)
-      immunization_out = build(:immunization)
+      immunization_1 = build(:immunization, vaccine_code: vaccine_code)
+      immunization_2 = build(:immunization)
 
       immunizations =
-        [immunization_in, immunization_out]
+        [immunization_1, immunization_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = immunization ->
           {UUID.binary_to_string!(id), immunization}
         end)
@@ -105,8 +105,8 @@ defmodule Api.Web.SummaryControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(immunization_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(immunization_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -245,11 +245,11 @@ defmodule Api.Web.SummaryControllerTest do
           coding: [build(:coding, code: code_value, system: "eHealth/allergy_intolerance_codes")]
         )
 
-      allergy_intolerance_in = build(:allergy_intolerance, code: code)
-      allergy_intolerance_out = build(:allergy_intolerance)
+      allergy_intolerance_1 = build(:allergy_intolerance, code: code)
+      allergy_intolerance_2 = build(:allergy_intolerance)
 
       allergy_intolerances =
-        [allergy_intolerance_in, allergy_intolerance_out]
+        [allergy_intolerance_1, allergy_intolerance_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = allergy_intolerance ->
           {UUID.binary_to_string!(id), allergy_intolerance}
         end)
@@ -275,8 +275,8 @@ defmodule Api.Web.SummaryControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(allergy_intolerance_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -424,11 +424,11 @@ defmodule Api.Web.SummaryControllerTest do
           coding: [build(:coding, code: code_value, system: "eHealth/risk_assessment_codes")]
         )
 
-      risk_assessment_in = build(:risk_assessment, code: code)
-      risk_assessment_out = build(:risk_assessment)
+      risk_assessment_1 = build(:risk_assessment, code: code)
+      risk_assessment_2 = build(:risk_assessment)
 
       risk_assessments =
-        [risk_assessment_in, risk_assessment_out]
+        [risk_assessment_1, risk_assessment_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = risk_assessment ->
           {UUID.binary_to_string!(id), risk_assessment}
         end)
@@ -454,8 +454,8 @@ defmodule Api.Web.SummaryControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(risk_assessment_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -603,11 +603,11 @@ defmodule Api.Web.SummaryControllerTest do
           coding: [build(:coding, code: type_value, system: "eHealth/device_types")]
         )
 
-      device_in = build(:device, type: type)
-      device_out = build(:device)
+      device_1 = build(:device, type: type)
+      device_2 = build(:device)
 
       devices =
-        [device_in, device_out]
+        [device_1, device_2]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = device ->
           {UUID.binary_to_string!(id), device}
         end)
@@ -633,8 +633,8 @@ defmodule Api.Web.SummaryControllerTest do
         |> Map.get("data")
         |> hd()
 
-      assert Map.get(resp, "id") == UUID.binary_to_string!(device_in.id.binary)
-      refute Map.get(resp, "id") == UUID.binary_to_string!(device_out.id.binary)
+      assert Map.get(resp, "id") == UUID.binary_to_string!(device_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(device_2.id.binary)
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
@@ -714,6 +714,185 @@ defmodule Api.Web.SummaryControllerTest do
       resp
       |> Map.take(["data"])
       |> assert_json_schema("devices/device_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+  end
+
+  describe "list medication statements" do
+    test "successful search", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_medication_statements, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "invalid search parameters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      search_params = %{"encounter_id" => UUID.uuid4(), "episode_id" => UUID.uuid4()}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_medication_statements, patient_id), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.encounter_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.episode_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
+    test "successful search with search parameters: medication_code", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      medication_code_value = "1"
+
+      medication_code =
+        build(
+          :codeable_concept,
+          coding: [build(:coding, code: medication_code_value, system: "eHealth/medication_statement_medications")]
+        )
+
+      medication_statement_1 = build(:medication_statement, medication_code: medication_code)
+      medication_statement_2 = build(:medication_statement)
+
+      medication_statements =
+        [medication_statement_1, medication_statement_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
+        end)
+
+      insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
+      expect_get_person_data(patient_id)
+
+      search_params = %{"medication_code" => medication_code_value}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_medication_statements, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(medication_statement_2.id.binary)
+    end
+
+    test "successful search with search parameters: date", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      asserted_date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
+      asserted_date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
+
+      medication_statement_1 = build(:medication_statement, asserted_date: get_datetime(-30))
+      medication_statement_2 = build(:medication_statement, asserted_date: get_datetime(-20))
+      medication_statement_3 = build(:medication_statement, asserted_date: get_datetime(-15))
+      medication_statement_4 = build(:medication_statement, asserted_date: get_datetime(-10))
+      medication_statement_5 = build(:medication_statement, asserted_date: get_datetime(-5))
+
+      medication_statements =
+        [
+          medication_statement_1,
+          medication_statement_2,
+          medication_statement_3,
+          medication_statement_4,
+          medication_statement_5
+        ]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = medication_statement ->
+          {UUID.binary_to_string!(id), medication_statement}
+        end)
+
+      insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
+      expect_get_person_data(patient_id, 4)
+
+      call_endpoint = fn search_params ->
+        conn
+        |> get(summary_path(conn, :list_medication_statements, patient_id), search_params)
+        |> json_response(200)
+      end
+
+      # both dates
+      assert %{"page_number" => 1, "total_entries" => 3, "total_pages" => 1} =
+               call_endpoint.(%{
+                 "asserted_date_from" => asserted_date_from,
+                 "asserted_date_to" => asserted_date_to
+               })
+               |> Map.get("paging")
+
+      # date_from only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"asserted_date_from" => asserted_date_from})
+               |> Map.get("paging")
+
+      # date_to only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"asserted_date_to" => asserted_date_to})
+               |> Map.get("paging")
+
+      # without date search params
+      assert %{"page_number" => 1, "total_entries" => 5, "total_pages" => 1} =
+               call_endpoint.(%{})
+               |> Map.get("paging")
+    end
+
+    test "get patient when medication statements list is null", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash, medication_statements: nil)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_medication_statements, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("medication_statements/medication_statement_list.json")
 
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end

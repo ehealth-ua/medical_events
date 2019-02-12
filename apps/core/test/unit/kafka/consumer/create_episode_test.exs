@@ -216,9 +216,9 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
         422
       )
 
-      service_request_in = insert(:service_request, used_by: build(:reference))
+      service_request_1 = insert(:service_request, used_by: build(:reference))
 
-      service_request_out =
+      service_request_2 =
         insert(:service_request,
           used_by: build(:reference),
           inserted_at: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * (expiration_days + 1)),
@@ -253,13 +253,13 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                    %{
                      "identifier" => %{
                        "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                       "value" => to_string(service_request_in._id)
+                       "value" => to_string(service_request_1._id)
                      }
                    },
                    %{
                      "identifier" => %{
                        "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                       "value" => to_string(service_request_out._id)
+                       "value" => to_string(service_request_2._id)
                      }
                    }
                  ]
