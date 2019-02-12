@@ -1,15 +1,13 @@
-defmodule Api.Web.StatusHistoryView do
+defmodule Core.StatusHistoryView do
   @moduledoc false
-
-  use ApiWeb, :view
 
   alias Core.DateView
   alias Core.ReferenceView
   alias Core.StatusHistory
   alias Core.UUIDView
 
-  def render("statuses_history.json", %{statuses_history: statuses_history}) do
-    render_many(statuses_history, __MODULE__, "show.json", as: :status_history)
+  def render("index.json", %{statuses_history: statuses_history}) do
+    Enum.map(statuses_history, &render("show.json", %{status_history: &1}))
   end
 
   def render("show.json", %{status_history: %StatusHistory{} = status_history}) do

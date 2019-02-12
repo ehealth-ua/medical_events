@@ -16,7 +16,6 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
-  alias Core.Reference
   alias Core.StatusHistory
   alias Core.Validators.Vex
   alias EView.Views.ValidationError

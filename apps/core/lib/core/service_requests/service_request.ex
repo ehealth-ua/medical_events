@@ -6,6 +6,7 @@ defmodule Core.ServiceRequest do
   alias Core.CodeableConcept
   alias Core.Reference
   alias Core.ServiceRequests.Occurrence
+  alias Core.StatusHistory
 
   @status_active "active"
   @status_completed "completed"
@@ -55,6 +56,7 @@ defmodule Core.ServiceRequest do
     field(:assignee, reference: [path: "assignee"])
     field(:signed_content_links)
     field(:requisition, presence: true)
+    field(:status_history)
 
     timestamps()
     changed_by()
@@ -120,6 +122,12 @@ defmodule Core.ServiceRequest do
 
         {"expiration_date", v} ->
           {:expiration_date, create_datetime(v)}
+
+        {"status_history", nil} ->
+          {:status_history, nil}
+
+        {"status_history", v} ->
+          {:status_history, Enum.map(v, &StatusHistory.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

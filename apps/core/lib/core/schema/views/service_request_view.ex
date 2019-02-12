@@ -6,6 +6,7 @@ defmodule Core.ServiceRequestView do
   alias Core.Reference
   alias Core.ReferenceView
   alias Core.ServiceRequest
+  alias Core.StatusHistoryView
   alias Core.UUIDView
 
   def render_service_request(%ServiceRequest{} = service_request) do
@@ -25,7 +26,6 @@ defmodule Core.ServiceRequestView do
     |> Map.merge(%{
       id: to_string(service_request._id),
       category: ReferenceView.render(service_request.category),
-      status_history: ReferenceView.render(service_request.status_history),
       code: ReferenceView.render(service_request.code),
       context: ReferenceView.render(service_request.context),
       requester: ReferenceView.render(service_request.requester),
@@ -47,7 +47,8 @@ defmodule Core.ServiceRequestView do
           })
         ),
       inserted_at: DateView.render_datetime(service_request.inserted_at),
-      updated_at: DateView.render_datetime(service_request.updated_at)
+      updated_at: DateView.render_datetime(service_request.updated_at),
+      status_history: StatusHistoryView.render("index.json", %{statuses_history: service_request.status_history})
     })
     |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
   end
