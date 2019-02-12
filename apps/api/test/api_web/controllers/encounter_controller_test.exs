@@ -92,8 +92,8 @@ defmodule Api.Web.EncounterControllerTest do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      encounter_in = build(:encounter)
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter)
+      encounter_2 = build(:encounter)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -102,15 +102,15 @@ defmodule Api.Web.EncounterControllerTest do
         :patient,
         _id: patient_id_hash,
         encounters: %{
-          UUID.binary_to_string!(encounter_in.id.binary) => encounter_in,
-          UUID.binary_to_string!(encounter_out.id.binary) => encounter_out
+          UUID.binary_to_string!(encounter_1.id.binary) => encounter_1,
+          UUID.binary_to_string!(encounter_2.id.binary) => encounter_2
         }
       )
 
       expect_get_person_data(patient_id)
 
       assert conn
-             |> get(encounter_path(conn, :show, patient_id, UUID.binary_to_string!(encounter_in.id.binary)))
+             |> get(encounter_path(conn, :show, patient_id, UUID.binary_to_string!(encounter_1.id.binary)))
              |> json_response(200)
              |> Map.get("data")
              |> assert_json_schema("encounters/encounter_show.json")
@@ -158,8 +158,8 @@ defmodule Api.Web.EncounterControllerTest do
     test "success show encounter in episode context", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      encounter_in = build(:encounter)
-      encounter_out = build(:encounter)
+      encounter_1 = build(:encounter)
+      encounter_2 = build(:encounter)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -168,8 +168,8 @@ defmodule Api.Web.EncounterControllerTest do
         :patient,
         _id: patient_id_hash,
         encounters: %{
-          to_string(encounter_in.id) => encounter_in,
-          to_string(encounter_out.id) => encounter_out
+          to_string(encounter_1.id) => encounter_1,
+          to_string(encounter_2.id) => encounter_2
         }
       )
 
@@ -181,8 +181,8 @@ defmodule Api.Web.EncounterControllerTest do
                  conn,
                  :show,
                  patient_id,
-                 to_string(encounter_in.episode.identifier.value),
-                 to_string(encounter_in.id)
+                 to_string(encounter_1.episode.identifier.value),
+                 to_string(encounter_1.id)
                )
              )
              |> json_response(200)
@@ -248,12 +248,12 @@ defmodule Api.Web.EncounterControllerTest do
       date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
       date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
 
-      encounter_in = build(:encounter, date: get_datetime(-15), episode: episode)
-      encounter_out_1 = build(:encounter, date: get_datetime(-15))
-      encounter_out_2 = build(:encounter, date: get_datetime())
+      encounter_1 = build(:encounter, date: get_datetime(-15), episode: episode)
+      encounter_2 = build(:encounter, date: get_datetime(-15))
+      encounter_3 = build(:encounter, date: get_datetime())
 
       encounters =
-        [encounter_in, encounter_out_1, encounter_out_2]
+        [encounter_1, encounter_2, encounter_3]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = encounter ->
           {UUID.binary_to_string!(id), encounter}
         end)
@@ -276,9 +276,9 @@ defmodule Api.Web.EncounterControllerTest do
       assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
 
       encounter = hd(resp["data"])
-      assert encounter["id"] == UUID.binary_to_string!(encounter_in.id.binary)
-      refute encounter["id"] == UUID.binary_to_string!(encounter_out_1.id.binary)
-      refute encounter["id"] == UUID.binary_to_string!(encounter_out_2.id.binary)
+      assert encounter["id"] == UUID.binary_to_string!(encounter_1.id.binary)
+      refute encounter["id"] == UUID.binary_to_string!(encounter_2.id.binary)
+      refute encounter["id"] == UUID.binary_to_string!(encounter_3.id.binary)
 
       {:ok, datetime, _} = DateTime.from_iso8601(encounter["date"])
       assert Date.compare(Date.from_iso8601!(date_from), DateTime.to_date(datetime)) in [:lt, :eq]

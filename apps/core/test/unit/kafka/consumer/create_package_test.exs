@@ -260,7 +260,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         _, _, :medication_request_by_id, [id] ->
           %{
             id: id,
-            patient_id: patient_id
+            person_id: patient_id
           }
       end)
 

@@ -364,6 +364,17 @@ defmodule Core.Patients do
                 ]
             end)
 
+          links =
+            Enum.reduce(medication_statements, links, fn medication_statement, acc ->
+              acc ++
+                [
+                  %{
+                    "entity" => "medication_statement",
+                    "href" => "/api/patients/#{patient_id}/medication_statements/#{medication_statement.id}"
+                  }
+                ]
+            end)
+
           event = %PackageSavePatientJob{
             request_id: job.request_id,
             _id: job._id,
