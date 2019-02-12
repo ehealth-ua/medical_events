@@ -14,25 +14,29 @@ defmodule Api.Web.FallbackController do
   def call(conn, {:error, {:access_denied, reason}}) do
     conn
     |> put_status(:forbidden)
-    |> render(Error, :"403", %{message: reason})
+    |> put_view(Error)
+    |> render(:"403", %{message: reason})
   end
 
   def call(conn, {:error, errors}) when is_list(errors) do
     conn
     |> put_status(422)
-    |> render(ValidationError, "422.json", %{schema: errors})
+    |> put_view(ValidationError)
+    |> render("422.json", %{schema: errors})
   end
 
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
-    |> render(Error, :"404")
+    |> put_view(Error)
+    |> render(:"404")
   end
 
   def call(conn, {:error, {:not_found, message}}) do
     conn
     |> put_status(:not_found)
-    |> render(Error, :"404", %{message: message})
+    |> put_view(Error)
+    |> render(:"404", %{message: message})
   end
 
   def call(conn, {:error, {:conflict, reason}}) when is_binary(reason) do
@@ -42,18 +46,21 @@ defmodule Api.Web.FallbackController do
   def call(conn, {:error, {:conflict, reason}}) when is_map(reason) do
     conn
     |> put_status(:conflict)
-    |> render(Error, :"409", reason)
+    |> put_view(Error)
+    |> render(:"409", reason)
   end
 
   def call(conn, {:error, {:not_implemented, reason}}) when is_binary(reason) do
     conn
     |> put_status(:not_implemented)
-    |> render(Error, :"501", reason)
+    |> put_view(Error)
+    |> render(:"501", reason)
   end
 
   def call(conn, {:error, {:"422", error}}) do
     conn
     |> put_status(422)
-    |> render(Error, :"400", %{message: error})
+    |> put_view(Error)
+    |> render(:"400", %{message: error})
   end
 end

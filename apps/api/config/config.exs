@@ -8,6 +8,8 @@ use Mix.Config
 # General application configuration
 config :api, namespace: Api
 
+config :phoenix, :json_library, Jason
+
 # Configures the endpoint
 config :api, ApiWeb.Endpoint,
   url: [host: "localhost"],
