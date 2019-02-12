@@ -25,63 +25,83 @@ defmodule Api.Web.SummaryController do
 
   def list_immunizations(conn, params) do
     with {:ok, %Page{entries: immunizations} = paging} <- Immunizations.list(params, :immunization_summary) do
-      render(conn, ImmunizationView, "index.json", immunizations: immunizations, paging: paging)
+      conn
+      |> put_view(ImmunizationView)
+      |> render("index.json", immunizations: immunizations, paging: paging)
     end
   end
 
   def list_allergy_intolerances(conn, params) do
     with {:ok, %Page{entries: allergy_intolerances} = paging} <-
            AllergyIntolerances.list(params, :allergy_intolerance_summary) do
-      render(conn, AllergyIntoleranceView, "index.json", allergy_intolerances: allergy_intolerances, paging: paging)
+      conn
+      |> put_view(AllergyIntoleranceView)
+      |> render("index.json", allergy_intolerances: allergy_intolerances, paging: paging)
     end
   end
 
   def list_risk_assessments(conn, params) do
     with {:ok, %Page{entries: risk_assessments} = paging} <- RiskAssessments.list(params, :risk_assessment_summary) do
-      render(conn, RiskAssessmentView, "index.json", risk_assessments: risk_assessments, paging: paging)
+      conn
+      |> put_view(RiskAssessmentView)
+      |> render("index.json", risk_assessments: risk_assessments, paging: paging)
     end
   end
 
   def list_conditions(conn, params) do
     with {:ok, %Page{entries: conditions} = paging} <- Conditions.summary(params) do
-      render(conn, ConditionView, "index.json", conditions: conditions, paging: paging)
+      conn
+      |> put_view(ConditionView)
+      |> render("index.json", conditions: conditions, paging: paging)
     end
   end
 
   def show_condition(conn, %{"patient_id_hash" => patient_id_hash, "id" => condition_id}) do
     with {:ok, condition} <- Conditions.get_summary(patient_id_hash, condition_id) do
-      render(conn, ConditionView, "show.json", condition: condition)
+      conn
+      |> put_view(ConditionView)
+      |> render("show.json", condition: condition)
     end
   end
 
   def list_observations(conn, params) do
     with {:ok, %Page{entries: observations} = paging} <- Observations.summary(params) do
-      render(conn, ObservationView, "index.json", observations: observations, paging: paging)
+      conn
+      |> put_view(ObservationView)
+      |> render("index.json", observations: observations, paging: paging)
     end
   end
 
   def show_observation(conn, %{"patient_id_hash" => patient_id_hash, "id" => observation_id}) do
     with {:ok, observation} <- Observations.get_summary(patient_id_hash, observation_id) do
-      render(conn, ObservationView, "show.json", observation: observation)
+      conn
+      |> put_view(ObservationView)
+      |> render("show.json", observation: observation)
     end
   end
 
   def list_diagnoses(conn, params) do
     with {:ok, %Page{entries: diagnoses} = paging} <- Diagnoses.list_active_diagnoses(params) do
-      render(conn, DiagnosisView, "diagnoses.json", diagnoses: diagnoses, paging: paging)
+      conn
+      |> put_view(DiagnosisView)
+      |> render("diagnoses.json", diagnoses: diagnoses, paging: paging)
     end
   end
 
   def list_devices(conn, params) do
     with {:ok, %Page{entries: devices} = paging} <- Devices.list(params, :device_summary) do
-      render(conn, DeviceView, "index.json", devices: devices, paging: paging)
+      conn
+      |> put_view(DeviceView)
+      |> render("index.json", devices: devices, paging: paging)
     end
   end
 
   def list_medication_statements(conn, params) do
     with {:ok, %Page{entries: medication_statements} = paging} <-
            MedicationStatements.list(params, :medication_statement_summary) do
-      render(conn, MedicationStatementView, "index.json", medication_statements: medication_statements, paging: paging)
+      conn
+      |> put_view(MedicationStatementView)
+      |> render("index.json", medication_statements: medication_statements, paging: paging)
     end
   end
 end
