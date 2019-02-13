@@ -11,11 +11,11 @@ defmodule Core.Jobs do
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_update_status(id, request_id, response, 200) do
-    do_produce_update_status(id, request_id, response, Job.status(:processed), 200)
+    do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
   end
 
   def produce_update_status(id, request_id, response, status_code) do
-    do_produce_update_status(id, request_id, response, Job.status(:failed), status_code)
+    do_produce_update_status(id, request_id, cut_response(response), Job.status(:failed), status_code)
   end
 
   def cut_response(%{invalid: errors} = response) do

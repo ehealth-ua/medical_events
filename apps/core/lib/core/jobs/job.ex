@@ -6,7 +6,7 @@ defmodule Core.Job do
 
   use Core.Schema
 
-  @response_length 1800
+  @response_length 10_000
 
   @status_pending 0
   @status_processed 1
@@ -38,7 +38,6 @@ defmodule Core.Job do
   end
 
   @doc """
-  Function is not used.
   Checks the validity of the response depending on its size.
   """
   @spec valid_response?(binary() | map()) :: boolean()
