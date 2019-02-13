@@ -77,6 +77,8 @@ defmodule Core.ServiceRequests.Validations do
     add_validations(service_request, :authored_on, datetime: [less_than: DateTime.utc_now()])
   end
 
+  def validate_supporting_info(%ServiceRequest{supporting_info: nil} = service_request, _), do: service_request
+
   def validate_supporting_info(%ServiceRequest{} = service_request, patient_id_hash) do
     supporting_info =
       Enum.map(service_request.supporting_info, fn info ->

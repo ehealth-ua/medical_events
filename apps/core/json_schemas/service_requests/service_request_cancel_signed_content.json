@@ -728,6 +728,14 @@
     "patient": {
       "$ref": "#/definitions/reference"
     },
+    "inserted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "priority": {
       "type": [
         "string",
