@@ -5,6 +5,7 @@ defmodule Core.Patients.Encounters.Validations do
 
   alias Core.Coding
   alias Core.Encounter
+  alias Core.Episode
   alias Core.Headers
   alias Core.Microservices.DigitalSignature
   alias Core.Validators.Signature
@@ -16,7 +17,7 @@ defmodule Core.Patients.Encounters.Validations do
       add_validations(
         episode.identifier,
         :value,
-        episode_context: [client_id: client_id, patient_id_hash: patient_id_hash]
+        episode_reference: [client_id: client_id, status: Episode.status(:active), patient_id_hash: patient_id_hash]
       )
 
     %{encounter | episode: %{episode | identifier: identifier}}

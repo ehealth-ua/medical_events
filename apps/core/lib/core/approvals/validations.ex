@@ -26,14 +26,14 @@ defmodule Core.Approvals.Validations do
     %{approval | granted_to: %{granted_to | identifier: identifier}}
   end
 
-  def validate_granted_resources(%Approval{granted_resources: granted_resources} = approval, patient_id_hash, client_id) do
+  def validate_granted_resources(%Approval{granted_resources: granted_resources} = approval, patient_id_hash) do
     granted_resources =
       Enum.map(granted_resources, fn resource ->
         identifier =
           add_validations(
             resource.identifier,
             :value,
-            episode_context: [client_id: client_id, patient_id_hash: patient_id_hash]
+            episode_reference: [patient_id_hash: patient_id_hash]
           )
 
         %{resource | identifier: identifier}
