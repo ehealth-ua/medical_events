@@ -38,8 +38,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       episode_1 =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
-      episode_2 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+      episode_2 = build(:episode)
 
       insert(
         :patient,
@@ -60,11 +59,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data =
-          event.response
-          |> Map.get("links")
-          |> hd()
-          |> Map.get("data")
+        data = event.response["data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)
@@ -130,8 +125,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       episode_1 =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
-      episode_2 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+      episode_2 = build(:episode)
 
       insert(
         :patient,
@@ -156,11 +150,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data =
-          event.response
-          |> Map.get("links")
-          |> hd()
-          |> Map.get("data")
+        data = event.response["data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)
@@ -218,8 +208,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       episode_1 =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
-      episode_2 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+      episode_2 = build(:episode)
 
       insert(
         :patient,
@@ -239,11 +228,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data =
-          event.response
-          |> Map.get("links")
-          |> hd()
-          |> Map.get("data")
+        data = event.response["data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)
@@ -309,8 +294,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       episode_1 =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
-      episode_2 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+      episode_2 = build(:episode)
 
       insert(
         :patient,
@@ -381,8 +365,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       episode_1 =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
 
-      episode_2 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
+      episode_2 = build(:episode)
 
       insert(
         :patient,
@@ -529,19 +512,12 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       employee_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      episode_1 =
-        build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
-
-      episode_2 = build(:episode)
+      episode = build(:episode)
 
       insert(
         :patient,
         _id: patient_id_hash,
-        episodes: %{
-          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
-          UUID.binary_to_string!(episode_2.id.binary) => episode_2
-        }
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}
       )
 
       rpc_expectations(client_id)
@@ -558,7 +534,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
               entry_type: "json_data_property",
               rules: [
                 %{
-                  description: "Managing_organization does not correspond to user's legal_entity",
+                  description: "Episode with such ID is not found",
                   params: [],
                   rule: :invalid
                 }
@@ -592,13 +568,13 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                    %{
                      "identifier" => %{
                        "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
-                       "value" => UUID.binary_to_string!(episode_1.id.binary)
+                       "value" => UUID.binary_to_string!(episode.id.binary)
                      }
                    },
                    %{
                      "identifier" => %{
                        "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
-                       "value" => UUID.binary_to_string!(episode_2.id.binary)
+                       "value" => UUID.uuid4()
                      }
                    }
                  ],

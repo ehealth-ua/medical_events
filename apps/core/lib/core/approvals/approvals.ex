@@ -124,7 +124,7 @@ defmodule Core.Approvals do
           updated_at: now
         })
         |> ApprovalsValidations.validate_granted_to(user_id, client_id)
-        |> ApprovalsValidations.validate_granted_resources(patient_id_hash, client_id)
+        |> ApprovalsValidations.validate_granted_resources(patient_id_hash)
 
       case Vex.errors(approval) do
         [] ->
@@ -149,14 +149,7 @@ defmodule Core.Approvals do
 
               {:ok, %{inserted_id: _}} = Mongo.insert_one(@collection, doc, [])
 
-              links = [
-                %{
-                  "entity" => "approval",
-                  "data" => ApprovalsRenderer.render(approval)
-                }
-              ]
-
-              Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+              Jobs.produce_update_status(job._id, job.request_id, %{"data" => ApprovalsRenderer.render(approval)}, 200)
             else
               error ->
                 Logger.error("Failed to initialize otp verification: #{inspect(error)}")
@@ -187,17 +180,10 @@ defmodule Core.Approvals do
           id: id
         } = job
       ) do
-    with {:ok, %Approval{status: @status_new} = approval} <- get_by_id(id),
+    with {:ok, %Approval{status: @status_new}} <- get_by_id(id),
          {:ok, auth_method} <- get_person_auth_method(patient_id),
          :ok <- initialize_otp_verification(auth_method) do
-      links = [
-        %{
-          "entity" => "approval",
-          "id" => to_string(approval._id)
-        }
-      ]
-
-      Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+      Jobs.produce_update_status(job._id, job.request_id, "", 200)
     else
       nil ->
         Jobs.produce_update_status(job._id, job.request_id, "Approval with id '#{id}' is not found", 404)

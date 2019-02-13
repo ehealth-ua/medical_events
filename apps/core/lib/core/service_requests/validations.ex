@@ -3,6 +3,7 @@ defmodule Core.ServiceRequests.Validations do
 
   import Core.Schema, only: [add_validations: 3]
 
+  alias Core.Episode
   alias Core.Microservices.DigitalSignature
   alias Core.ServiceRequest
   alias Core.ServiceRequests.Occurrence
@@ -79,7 +80,11 @@ defmodule Core.ServiceRequests.Validations do
   def validate_supporting_info(%ServiceRequest{} = service_request, patient_id_hash) do
     supporting_info =
       Enum.map(service_request.supporting_info, fn info ->
-        identifier = add_validations(info.identifier, :value, episode_reference: [patient_id_hash: patient_id_hash])
+        identifier =
+          add_validations(info.identifier, :value,
+            episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
+          )
+
         %{info | identifier: identifier}
       end)
 
@@ -112,7 +117,9 @@ defmodule Core.ServiceRequests.Validations do
     references =
       Enum.map(episodes, fn reference ->
         identifier =
-          add_validations(reference.identifier, :value, episode_reference: [patient_id_hash: patient_id_hash])
+          add_validations(reference.identifier, :value,
+            episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
+          )
 
         %{reference | identifier: identifier}
       end)

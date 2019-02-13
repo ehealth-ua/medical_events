@@ -38,14 +38,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
         assert %Core.Jobs.JobUpdateStatusJob{
                  _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "approval",
-                       "id" => ^approval_id
-                     }
-                   ]
-                 },
+                 response: "",
                  status_code: 200
                } = event
 
@@ -86,14 +79,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
       assert %Core.Jobs.JobUpdateStatusJob{
                _id: ^id,
-               response: %{
-                 "links" => [
-                   %{
-                     "entity" => "approval",
-                     "id" => ^approval_id
-                   }
-                 ]
-               },
+               response: "",
                status_code: 200
              } = event
 
