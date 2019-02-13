@@ -39,7 +39,6 @@ defmodule Api.Mixfile do
     [
       {:core, in_umbrella: true},
       {:confex_config_provider, "~> 0.1.0"},
-      {:plug, "~> 1.0"},
       {:phoenix, "~> 1.4.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
@@ -48,8 +47,7 @@ defmodule Api.Mixfile do
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
       {:scrivener, "~> 2.5"},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:jason, "~> 1.0"}
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false}
     ]
   end
 
