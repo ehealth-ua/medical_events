@@ -3,6 +3,7 @@ defmodule Core.ServiceRequests do
 
   use Confex, otp_app: :core
 
+  alias Core.CodeableConcept
   alias Core.Episode
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
@@ -493,7 +494,13 @@ defmodule Core.ServiceRequests do
            {:status, @active} <- {:status, service_request.status},
            :ok <- compare_with_db(service_request, content) do
         service_request =
-          %{service_request | updated_by: user_id, updated_at: now, status: ServiceRequest.status(:entered_in_error)}
+          %{
+            service_request
+            | updated_by: user_id,
+              updated_at: now,
+              status: ServiceRequest.status(:entered_in_error),
+              status_reason: CodeableConcept.create(content["status_reason"])
+          }
           |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
 
         case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
@@ -513,18 +520,20 @@ defmodule Core.ServiceRequests do
                 "updated_by" => service_request.updated_by,
                 "updated_at" => service_request.updated_at,
                 "signed_content_links" => service_request.signed_content_links ++ [resource_name],
-                "status" => service_request.status
+                "status" => service_request.status,
+                "status_reason" => Mongo.prepare_doc(service_request.status_reason)
               }
 
               id = to_string(service_request._id)
 
               status_history =
-                StatusHistory.create(%{
+                %{
                   "status" => service_request.status,
-                  "status_reason" => service_request.status_reason,
                   "inserted_at" => service_request.updated_at,
                   "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
-                })
+                }
+                |> StatusHistory.create()
+                |> Map.put(:status_reason, service_request.status_reason)
 
               push = Mongo.add_to_push(%{}, status_history, "status_history")
 
