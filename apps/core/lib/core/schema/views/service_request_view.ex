@@ -14,7 +14,6 @@ defmodule Core.ServiceRequestView do
     |> Map.take(~w(
       requisition
       status
-      status_reason
       intent
       explanator_letter
       authored_on
@@ -48,7 +47,8 @@ defmodule Core.ServiceRequestView do
         ),
       inserted_at: DateView.render_datetime(service_request.inserted_at),
       updated_at: DateView.render_datetime(service_request.updated_at),
-      status_history: StatusHistoryView.render("index.json", %{statuses_history: service_request.status_history})
+      status_history: StatusHistoryView.render("index.json", %{statuses_history: service_request.status_history}),
+      status_reason: ReferenceView.render(service_request.status_reason)
     })
     |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
   end
