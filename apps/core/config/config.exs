@@ -124,7 +124,9 @@ config :vex,
 
 config :core, Core.Validators.JsonSchema, errors_limit: {:system, :integer, "JSON_SCHEMA_ERRORS_LIMIT", 6}
 
-config :core, Core.Rpc.Worker, max_attempts: {:system, :integer, "RPC_MAX_ATTEMPTS", 3}
+config :core, Core.Rpc.Worker,
+  max_attempts: {:system, :integer, "RPC_MAX_ATTEMPTS", 3},
+  ergonodes: [%{"basename" => "me_transactions", "process" => :mongo_transaction, "pid_message" => :pid}]
 
 config :kaffe,
   producer: [

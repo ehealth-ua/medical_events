@@ -161,4 +161,45 @@ defmodule Core.Jobs do
   defp map_to_job(data) do
     struct(Job, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
+
+  def fetch_links(%Job{status_code: 200, response: response}), do: Map.get(response, "links", [])
+
+  def fetch_links(%Job{_id: id}),
+    do: [
+      %{
+        entity: "job",
+        href: "/jobs/#{id}"
+      }
+    ]
+
+  def query_to_bson(collection, :insert, value) do
+    value_bson =
+      value
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    %{"set" => value_bson, "operation" => "insert", "collection" => collection}
+  end
+
+  def query_to_bson(collection, :update, filter, set) do
+    filter_bson =
+      filter
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    set_bson =
+      set
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    %{"filter" => filter_bson, "set" => set_bson, "operation" => "update_one", "collection" => collection}
+  end
+
+  defp do_bson_encode(value, acc) when is_binary(value), do: acc <> value
+  defp do_bson_encode(value, acc) when is_integer(value), do: acc <> <<value>>
+  defp do_bson_encode([h | tail], acc), do: acc <> do_bson_encode(h, acc) <> do_bson_encode(tail, "")
+  defp do_bson_encode([], acc), do: acc
 end

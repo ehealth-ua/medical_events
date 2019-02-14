@@ -45,6 +45,16 @@ config :event_consumer,
         kubernetes_namespace: "ops",
         polling_interval: 10_000
       ]
+    ],
+    k8s_transactions: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "me_transactions",
+        kubernetes_selector: "app=me-transactions",
+        kubernetes_namespace: "me",
+        polling_interval: 10_000
+      ]
     ]
   ]
 
