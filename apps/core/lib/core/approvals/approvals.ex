@@ -149,7 +149,12 @@ defmodule Core.Approvals do
 
               {:ok, %{inserted_id: _}} = Mongo.insert_one(@collection, doc, [])
 
-              Jobs.produce_update_status(job._id, job.request_id, %{"data" => ApprovalsRenderer.render(approval)}, 200)
+              Jobs.produce_update_status(
+                job._id,
+                job.request_id,
+                %{"response_data" => ApprovalsRenderer.render(approval)},
+                200
+              )
             else
               error ->
                 Logger.error("Failed to initialize otp verification: #{inspect(error)}")

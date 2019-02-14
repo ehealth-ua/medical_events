@@ -59,7 +59,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data = event.response["data"]
+        data = event.response["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)
@@ -150,7 +150,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data = event.response["data"]
+        data = event.response["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)
@@ -228,7 +228,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         id = to_string(job._id)
         assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
 
-        data = event.response["data"]
+        data = event.response["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
           assert Map.has_key?(data, field)

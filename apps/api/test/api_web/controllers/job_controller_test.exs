@@ -83,6 +83,29 @@ defmodule Api.Web.JobControllerTest do
       assert job_response["links"] == response["links"]
     end
 
+    test "status: processed, response contains response_data field", %{conn: conn} do
+      job =
+        insert(
+          :job,
+          status: Job.status(:processed),
+          status_code: 200,
+          response: %{"response_data" => %{"test" => "test"}}
+        )
+
+      response =
+        conn
+        |> get(job_path(conn, :show, to_string(job._id)))
+        |> json_response(303)
+        |> Map.get("data")
+        |> assert_json_schema("jobs/job_details_with_response_data.json")
+
+      assert Job.status_to_string(job.status) == response["status"]
+      assert 200 == response["status_code"]
+      assert Map.has_key?(response, "eta")
+      assert Map.has_key?(response, "response_data")
+      assert response["response_data"] == %{"test" => "test"}
+    end
+
     test "status: processed with failed validation", %{conn: conn} do
       job =
         insert(
