@@ -339,7 +339,10 @@
       "additionalProperties": false
     },
     "performer_type": {
-      "type": "object",
+      "type": [
+        "object",
+        "null"
+      ],
       "properties": {
         "coding": {
           "type": "array",

@@ -486,7 +486,8 @@
       "type": [
         "string",
         "null"
-      ]
+      ],
+      "description": "Dictionary: SERVICE_REQUEST_PRIORITY"
     }
   },
   "required": [
