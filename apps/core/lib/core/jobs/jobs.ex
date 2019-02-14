@@ -161,14 +161,4 @@ defmodule Core.Jobs do
   defp map_to_job(data) do
     struct(Job, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
-
-  def fetch_links(%Job{status_code: 200, response: response}), do: Map.get(response, "links", [])
-
-  def fetch_links(%Job{_id: id}),
-    do: [
-      %{
-        entity: "job",
-        href: "/jobs/#{id}"
-      }
-    ]
 end
