@@ -134,6 +134,70 @@
     },
     "care_manager": {
       "$ref": "#/definitions/care_manager"
+    },
+    "referral_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "service_request"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "anyOf": [
@@ -145,6 +209,11 @@
     {
       "required": [
         "care_manager"
+      ]
+    },
+    {
+      "required": [
+        "referral_requests"
       ]
     }
   ],
