@@ -29,7 +29,7 @@ defmodule Api.Web.ApprovalControllerTest do
              |> json_response(409)
     end
 
-    test "invalid request params", %{conn: conn} do
+    test "invalid request params except oneOf validation", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -43,18 +43,6 @@ defmodule Api.Web.ApprovalControllerTest do
 
       assert %{
                "invalid" => [
-                 %{
-                   "entry" => "$",
-                   "entry_type" => "json_data_property",
-                   "rules" => [
-                     %{
-                       "description" =>
-                         "expected exactly one of the schemata to match, but the schemata at the following indexes did: 0, 1",
-                       "params" => [],
-                       "rule" => "schemata"
-                     }
-                   ]
-                 },
                  %{
                    "entry" => "$.access_level",
                    "entry_type" => "json_data_property",
@@ -74,6 +62,86 @@ defmodule Api.Web.ApprovalControllerTest do
                        "description" => "value is not allowed in enum",
                        "params" => ["employee"],
                        "rule" => "inclusion"
+                     }
+                   ]
+                 }
+               ]
+             } = resp["error"]
+    end
+
+    test "invalid request params: both oneOf parameters are sent", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+
+      resp =
+        conn
+        |> post(approval_path(conn, :create, patient_id), build_request_params(:invalid_one_of_all))
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.resources",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "Only one of the parameters must be present",
+                       "params" => ["$.resources", "$.service_request"],
+                       "rule" => "oneOf"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.service_request",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "Only one of the parameters must be present",
+                       "params" => ["$.resources", "$.service_request"],
+                       "rule" => "oneOf"
+                     }
+                   ]
+                 }
+               ]
+             } = resp["error"]
+    end
+
+    test "invalid request params: none of the oneOf parameters are sent", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+
+      resp =
+        conn
+        |> post(approval_path(conn, :create, patient_id), build_request_params(:invalid_one_of_none))
+        |> json_response(422)
+
+      assert %{
+               "invalid" => [
+                 %{
+                   "entry" => "$.resources",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "At least one of the parameters must be present",
+                       "params" => ["$.resources", "$.service_request"],
+                       "rule" => "oneOf"
+                     }
+                   ]
+                 },
+                 %{
+                   "entry" => "$.service_request",
+                   "entry_type" => "json_data_property",
+                   "rules" => [
+                     %{
+                       "description" => "At least one of the parameters must be present",
+                       "params" => ["$.resources", "$.service_request"],
+                       "rule" => "oneOf"
                      }
                    ]
                  }
@@ -416,7 +484,6 @@ defmodule Api.Web.ApprovalControllerTest do
     service_request_id = to_string(service_request._id)
 
     to_map(%{
-      resources: episodes,
       service_request:
         build(:reference,
           identifier:
@@ -434,6 +501,47 @@ defmodule Api.Web.ApprovalControllerTest do
             )
         ),
       access_level: "write"
+    })
+  end
+
+  defp build_request_params(:invalid_one_of_all) do
+    episodes = build_episode_references()
+    service_request = build(:service_request, permitted_episodes: episodes)
+    service_request_id = to_string(service_request._id)
+
+    to_map(%{
+      resources: episodes,
+      service_request:
+        build(:reference,
+          identifier:
+            build(:identifier,
+              value: service_request_id,
+              type: codeable_concept_coding(system: "eHealth/resources", code: "service_request")
+            )
+        ),
+      granted_to:
+        build(:reference,
+          identifier:
+            build(:identifier,
+              value: UUID.uuid4(),
+              type: codeable_concept_coding(system: "eHealth/resources", code: "employee")
+            )
+        ),
+      access_level: "read"
+    })
+  end
+
+  defp build_request_params(:invalid_one_of_none) do
+    to_map(%{
+      granted_to:
+        build(:reference,
+          identifier:
+            build(:identifier,
+              value: UUID.uuid4(),
+              type: codeable_concept_coding(system: "eHealth/resources", code: "employee")
+            )
+        ),
+      access_level: "read"
     })
   end
 

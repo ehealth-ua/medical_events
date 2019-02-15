@@ -197,17 +197,5 @@
     "granted_to",
     "access_level"
   ],
-  "additionalProperties": false,
-  "oneOf": [
-    {
-      "required": [
-        "resources"
-      ]
-    },
-    {
-      "required": [
-        "service_request"
-      ]
-    }
-  ]
+  "additionalProperties": false
 }

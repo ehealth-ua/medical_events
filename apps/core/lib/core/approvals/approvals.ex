@@ -15,6 +15,7 @@ defmodule Core.Approvals do
   alias Core.ServiceRequests
   alias Core.Validators.Error
   alias Core.Validators.JsonSchema
+  alias Core.Validators.OneOf
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
   require Logger
@@ -30,6 +31,8 @@ defmodule Core.Approvals do
     access_level
   )
 
+  @one_of_create_request_params %{"$" => %{"params" => ["resources", "service_request"], "required" => true}}
+
   @status_new Approval.status(:new)
   @status_active Approval.status(:active)
   @service_request_status_active ServiceRequest.status(:active)
@@ -41,6 +44,7 @@ defmodule Core.Approvals do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:approval_create, Map.take(params, @create_request_params)),
+         :ok <- OneOf.validate(Map.take(params, @create_request_params), @one_of_create_request_params),
          {:ok, job, approval_create_job} <-
            Jobs.create(
              ApprovalCreateJob,
