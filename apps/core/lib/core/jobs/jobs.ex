@@ -5,6 +5,7 @@ defmodule Core.Jobs do
   alias Core.Job
   alias Core.Jobs.JobUpdateStatusJob
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   require Logger
 
   @collection Job.metadata().collection
@@ -100,9 +101,9 @@ defmodule Core.Jobs do
       "response" => response
     }
 
-    Mongo.update_one(@collection, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
-  rescue
-    _ in FunctionClauseError -> nil
+    %Transaction{}
+    |> Transaction.add_operation("jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
+    |> Transaction.flush()
   end
 
   def create(module, data) do
@@ -139,8 +140,7 @@ defmodule Core.Jobs do
   def update_status(%JobUpdateStatusJob{_id: id} = event) do
     case get_by_id(id) do
       {:ok, _} ->
-        {:ok, %{matched_count: 1, modified_count: 1}} = update(id, event.status, event.response, event.status_code)
-        :ok
+        update(id, event.status, event.response, event.status_code)
 
       _ ->
         Logger.warn(fn -> "Can't get job by id #{id}" end)
@@ -161,45 +161,4 @@ defmodule Core.Jobs do
   defp map_to_job(data) do
     struct(Job, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
   end
-
-  def fetch_links(%Job{status_code: 200, response: response}), do: Map.get(response, "links", [])
-
-  def fetch_links(%Job{_id: id}),
-    do: [
-      %{
-        entity: "job",
-        href: "/jobs/#{id}"
-      }
-    ]
-
-  def query_to_bson(collection, :insert, value) do
-    value_bson =
-      value
-      |> BSON.Encoder.encode()
-      |> do_bson_encode("")
-      |> Base.encode64()
-
-    %{"set" => value_bson, "operation" => "insert", "collection" => collection}
-  end
-
-  def query_to_bson(collection, :update, filter, set) do
-    filter_bson =
-      filter
-      |> BSON.Encoder.encode()
-      |> do_bson_encode("")
-      |> Base.encode64()
-
-    set_bson =
-      set
-      |> BSON.Encoder.encode()
-      |> do_bson_encode("")
-      |> Base.encode64()
-
-    %{"filter" => filter_bson, "set" => set_bson, "operation" => "update_one", "collection" => collection}
-  end
-
-  defp do_bson_encode(value, acc) when is_binary(value), do: acc <> value
-  defp do_bson_encode(value, acc) when is_integer(value), do: acc <> <<value>>
-  defp do_bson_encode([h | tail], acc), do: acc <> do_bson_encode(h, acc) <> do_bson_encode(tail, "")
-  defp do_bson_encode([], acc), do: acc
 end
