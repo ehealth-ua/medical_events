@@ -28,7 +28,8 @@
       "type": "object",
       "required": [
         "identifier"
-      ]
+      ],
+      "additionalProperties": false
     },
     "coding": {
       "type": "array",
@@ -94,9 +95,13 @@
             "value": {
               "$ref": "#/definitions/uuid"
             }
-          }
+          },
+          "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ]
     },
     "diagnosis": {
       "type": "object",
@@ -213,26 +218,53 @@
               "$ref": "#/definitions/diagnosis"
             }
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "status_history": {
       "type": "array",
       "items": {
         "type": "object",
-        "status": {
-          "type": "string"
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "status_reason": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/episode_closing_reasons"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Symbol in syntax defined by the system"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "inserted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "inserted_by": {
+            "$ref": "#/definitions/uuid"
+          }
         },
-        "status_reason": {
-          "$ref": "#/definitions/codeable_concept"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "inserted_by": {
-          "$ref": "#/definitions/uuid"
-        }
+        "additionalProperties": false
       }
     }
   },
@@ -355,7 +387,10 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ]
     },
     "care_manager": {
       "type": "object",
@@ -419,7 +454,10 @@
           ],
           "additionalProperties": false
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ]
     },
     "closing_summary": {
       "type": [
@@ -438,11 +476,88 @@
     "status_reason": {
       "$ref": "#/definitions/codeable_concept"
     },
+    "current_diagnoses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/diagnosis"
+      }
+    },
+    "referral_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "service_request"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "identifier"
+        ]
+      }
+    },
     "diagnoses_history": {
       "$ref": "#/definitions/diagnoses_history"
     },
     "status_history": {
       "$ref": "#/definitions/status_history"
+    },
+    "inserted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
@@ -455,8 +570,10 @@
     "care_manager",
     "diagnoses_history",
     "inserted_at",
+    "updated_at",
     "closing_summary",
     "status_reason",
     "explanatory_letter"
-  ]
+  ],
+  "additionalProperties": false
 }

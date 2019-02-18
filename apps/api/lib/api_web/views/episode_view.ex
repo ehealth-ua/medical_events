@@ -14,6 +14,10 @@ defmodule Api.Web.EpisodeView do
     render_many(episodes, __MODULE__, "show.json", as: :episode)
   end
 
+  def render("summary.json", %{paging: %Page{entries: episodes}}) do
+    render_many(episodes, __MODULE__, "short.json", as: :episode)
+  end
+
   def render("show.json", %{episode: episode}) do
     episode
     |> Map.take(~w(
@@ -36,6 +40,20 @@ defmodule Api.Web.EpisodeView do
       status_history: StatusHistoryView.render("index.json", %{statuses_history: episode.status_history}),
       current_diagnoses: DiagnosisView.render("diagnoses.json", diagnoses: episode.current_diagnoses || []),
       referral_requests: ReferenceView.render(episode.referral_requests)
+    })
+  end
+
+  def render("short.json", %{episode: episode}) do
+    episode
+    |> Map.take(~w(
+      status
+      name
+      inserted_at
+      updated_at
+    )a)
+    |> Map.merge(%{
+      id: UUIDView.render(episode.id),
+      period: ReferenceView.render(episode.period)
     })
   end
 end

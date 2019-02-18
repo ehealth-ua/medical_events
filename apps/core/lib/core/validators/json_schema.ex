@@ -16,6 +16,7 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:episode_close, "json_schemas/episodes/episode_close.json")
   use_schema(:episode_cancel, "json_schemas/episodes/episode_cancel.json")
   use_schema(:episode_get, "json_schemas/episodes/episode_get.json")
+  use_schema(:episode_get_summary, "json_schemas/episodes/episode_get_summary.json")
   use_schema(:condition_request, "json_schemas/conditions/condition_request.json")
   use_schema(:condition_summary, "json_schemas/conditions/condition_summary.json")
   use_schema(:observation_request, "json_schemas/observations/observation_request.json")

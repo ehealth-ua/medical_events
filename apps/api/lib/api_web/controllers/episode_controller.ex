@@ -7,19 +7,13 @@ defmodule Api.Web.EpisodeController do
   alias Core.Episode
   alias Core.Patients.Episodes
   alias Core.Patients.Episodes.Producer
-  alias Core.Validators.JsonSchema
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
 
   def index(conn, params) do
-    with :ok <- JsonSchema.validate(:episode_get, params),
-         %Page{entries: entries} = paging <- Episodes.list(params) do
-      render(
-        conn,
-        "index.json",
-        paging: %{paging | entries: Enum.map(entries, &Episode.create/1)}
-      )
+    with {:ok, %Page{entries: episodes} = paging} <- Episodes.list(params) do
+      render(conn, "index.json", episodes: episodes, paging: paging)
     end
   end
 

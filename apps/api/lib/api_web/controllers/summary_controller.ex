@@ -7,6 +7,7 @@ defmodule Api.Web.SummaryController do
   alias Api.Web.ConditionView
   alias Api.Web.DeviceView
   alias Api.Web.DiagnosisView
+  alias Api.Web.EpisodeView
   alias Api.Web.ImmunizationView
   alias Api.Web.MedicationStatementView
   alias Api.Web.ObservationView
@@ -16,12 +17,21 @@ defmodule Api.Web.SummaryController do
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
+  alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
+
+  def list_episodes(conn, params) do
+    with {:ok, %Page{entries: episodes} = paging} <- Episodes.list(params, :episode_get_summary) do
+      conn
+      |> put_view(EpisodeView)
+      |> render("summary.json", episodes: episodes, paging: paging)
+    end
+  end
 
   def list_immunizations(conn, params) do
     with {:ok, %Page{entries: immunizations} = paging} <- Immunizations.list(params, :immunization_summary) do

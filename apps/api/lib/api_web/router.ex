@@ -106,6 +106,9 @@ defmodule ApiWeb.Router do
 
     scope "/patients/:patient_id/summary" do
       pipe_through(:summary)
+
+      get("/episodes", SummaryController, :list_episodes)
+
       get("/immunizations", SummaryController, :list_immunizations)
       get("/immunizations/:id", ImmunizationController, :show)
 

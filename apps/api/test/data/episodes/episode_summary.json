@@ -1,0 +1,163 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "C? End time with inclusive boundary, if not ongoing"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": [
+            "eHealth/resources"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        },
+        "display": {
+          "type": "string",
+          "description": "Representation defined by the system"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "codeable_concept": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "$ref": "#/definitions/codeable_concept"
+            },
+            "value": {
+              "$ref": "#/definitions/uuid"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "identifier"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/uuid"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active"
+      ],
+      "description": "Dictionary: TBD"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "period": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date",
+          "description": "C? Starting time with inclusive boundary"
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date",
+          "description": "C? Starting time with inclusive boundary"
+        }
+      },
+      "required": [
+        "start"
+      ],
+      "additionalProperties": false
+    },
+    "inserted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "id",
+    "status",
+    "name",
+    "period",
+    "inserted_at",
+    "updated_at"
+  ],
+  "additionalProperties": false
+}
