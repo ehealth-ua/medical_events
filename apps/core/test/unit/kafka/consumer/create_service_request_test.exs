@@ -3,13 +3,14 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
   use Core.ModelCase
 
-  import Core.Expectations.DigitalSignatureExpectation
-  import Mox
-
+  alias Core.Job
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.ServiceRequest
+
+  import Core.Expectations.DigitalSignatureExpectation
+  import Mox
 
   setup :verify_on_exit!
 
@@ -20,31 +21,29 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   invalid: [
-                     %{
-                       entry: "$",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "type mismatch. Expected Object but got String",
-                           params: ["object"],
-                           rule: :cast
-                         }
-                       ]
-                     }
-                   ]
-                 },
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "type mismatch. Expected Object but got String",
+                  "params" => ["object"],
+                  "rule" => "cast"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
@@ -61,97 +60,97 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
+      response = %{
+        "invalid" => [
+          %{
+            "entry" => "$.status",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property status was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.intent",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property intent was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.category",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property category was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.code",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property code was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.context",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property context was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.authored_on",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property authored_on was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.requester",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property requester was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          }
+        ],
+        "message" =>
+          "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+        "type" => "validation_failed"
+      }
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   invalid: [
-                     %{
-                       entry: "$.status",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property status was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.intent",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property intent was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.category",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property category was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.code",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property code was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.context",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property context was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.authored_on",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property authored_on was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.requester",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property requester was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     }
-                   ]
-                 },
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        response,
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
@@ -179,10 +178,42 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 3, fn
-        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
-        _, _, :tax_id_by_employee_id, _ -> "1111111111"
-        _, _, :number, _ -> {:ok, UUID.uuid4()}
+      expect(WorkerMock, :run, 4, fn
+        _, _, :employees_by_user_id_client_id, _ ->
+          {:ok, [employee_id]}
+
+        _, _, :tax_id_by_employee_id, _ ->
+          "1111111111"
+
+        _, _, :number, _ ->
+          {:ok, UUID.uuid4()}
+
+        _, _, :transaction, args ->
+          assert [
+                   %{"collection" => "service_requests", "operation" => "insert"},
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ] = Jason.decode!(args)
+
+          assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+          set_bson = set |> Base.decode64!() |> BSON.decode()
+          status = Job.status(:processed)
+
+          assert %{
+                   "$set" => %{
+                     "status" => ^status,
+                     "status_code" => 200,
+                     "response" => %{
+                       "links" => [
+                         %{
+                           "entity" => "service_request"
+                         }
+                       ]
+                     }
+                   }
+                 } = set_bson
+
+          :ok
       end)
 
       signed_content = %{
@@ -225,24 +256,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         ]
       }
-
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "service_request"
-                     }
-                   ]
-                 },
-                 status_code: 200
-               } = event
-
-        :ok
-      end)
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{
@@ -318,31 +331,29 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         ]
       }
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   invalid: [
-                     %{
-                       entry: "$.service_request.requester.identifier.value",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "Signer DRFO doesn't match with requester tax_id",
-                           params: [],
-                           rule: :invalid
-                         }
-                       ]
-                     }
-                   ]
-                 },
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.service_request.requester.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Signer DRFO doesn't match with requester tax_id",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{

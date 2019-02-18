@@ -3,14 +3,15 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
   use Core.ModelCase
 
-  import Mox
-  import Core.Expectations.MPIExpectations
-  import Core.Expectations.OTPVerificationExpectations
-
   alias Core.Approval
+  alias Core.Job
   alias Core.Jobs.ApprovalResendJob
   alias Core.Kafka.Consumer
   alias Core.Patients
+
+  import Mox
+  import Core.Expectations.MPIExpectations
+  import Core.Expectations.OTPVerificationExpectations
 
   setup :verify_on_exit!
 
@@ -33,17 +34,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
       job = insert(:job)
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: "",
-                 status_code: 200
-               } = event
-
-        :ok
-      end)
+      expect_job_update(job._id, "", 200)
 
       assert :ok =
                Consumer.consume(%ApprovalResendJob{
@@ -74,17 +65,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
     job = insert(:job)
 
-    expect(KafkaMock, :publish_job_update_status_event, fn event ->
-      id = to_string(job._id)
-
-      assert %Core.Jobs.JobUpdateStatusJob{
-               _id: ^id,
-               response: "",
-               status_code: 200
-             } = event
-
-      :ok
-    end)
+    expect_job_update(job._id, "", 200)
 
     assert :ok =
              Consumer.consume(%ApprovalResendJob{
@@ -112,17 +93,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
     job = insert(:job)
 
-    expect(KafkaMock, :publish_job_update_status_event, fn event ->
-      id = to_string(job._id)
-
-      assert %Core.Jobs.JobUpdateStatusJob{
-               _id: ^id,
-               response: "Approval in status active can not be resent",
-               status_code: 409
-             } = event
-
-      :ok
-    end)
+    expect_job_update(job._id, Job.status(:failed), "Approval in status active can not be resent", 409)
 
     assert :ok =
              Consumer.consume(%ApprovalResendJob{

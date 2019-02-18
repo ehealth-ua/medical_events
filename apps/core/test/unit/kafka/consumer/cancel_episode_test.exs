@@ -5,14 +5,11 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
   import Mox
   alias Core.Episode
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.EpisodeCancelJob
   alias Core.Kafka.Consumer
   alias Core.Patients
-  alias Core.Patients.Episodes
 
   @canceled Episode.status(:cancelled)
-  @status_pending Job.status(:pending)
   setup :verify_on_exit!
 
   describe "consume cancel episode event" do
@@ -27,7 +24,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
-      expect_job_update(job._id, "Episode in status entered_in_error can not be canceled", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode in status entered_in_error can not be canceled", 422)
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
@@ -44,8 +41,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  user_id: user_id,
                  client_id: client_id
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when episode's managing organization is invalid" do
@@ -74,23 +69,24 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.managing_organization.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.managing_organization.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Managing_organization does not correspond to user's legal_entity",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Managing_organization does not correspond to user's legal_entity",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -110,8 +106,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  user_id: user_id,
                  client_id: client_id
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was canceled" do
@@ -140,18 +134,28 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
       episode_id = UUID.binary_to_string!(episode.id.binary)
 
-      expect_job_update(
-        job._id,
-        %{
-          "links" => [
-            %{
-              "entity" => "episode",
-              "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
-            }
-          ]
-        },
-        200
-      )
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => %{}
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{
@@ -168,9 +172,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
                  user_id: user_id,
                  client_id: client_id
                })
-
-      assert {:ok, %Episode{status: @canceled}} = Episodes.get_by_id(patient_id_hash, episode_id)
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

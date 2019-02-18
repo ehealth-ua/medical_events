@@ -32,18 +32,37 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect_job_update(
-        job._id,
-        %{
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "service_requests", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        response = %{
           "links" => [
             %{
               "entity" => "service_request",
               "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
             }
           ]
-        },
-        200
-      )
+        }
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       assert :ok =
                Consumer.consume(%ServiceRequestUseJob{
@@ -84,23 +103,24 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.used_by.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.used_by.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Employee #{employee_id} doesn't belong to your legal entity",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Employee #{employee_id} doesn't belong to your legal entity",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -158,39 +178,37 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
+                 Jason.decode!(args)
 
-        case event do
-          %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 422} ->
-            assert %{
-                     invalid: [
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+        status = Job.status(:failed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 422,
+                   "response" => %{
+                     "invalid" => [
                        %{
-                         entry: "$.expiration_date",
-                         entry_type: "json_data_property",
-                         rules: [
+                         "entry" => "$.expiration_date",
+                         "entry_type" => "json_data_property",
+                         "rules" => [
                            %{
-                             params: [],
-                             rule: :invalid
+                             "params" => [],
+                             "rule" => "invalid"
                            }
                          ]
                        }
                      ]
-                   } = event.response
+                   }
+                 }
+               } = set_bson
 
-            assert event
-                   |> Map.from_struct()
-                   |> get_in([:response, :invalid])
-                   |> hd()
-                   |> Map.get(:rules)
-                   |> hd()
-                   |> Map.get(:description) =~ "must be a datetime greater than or equal"
-
-            :ok
-
-          _ ->
-            raise ExUnit.AssertionError
-        end
+        :ok
       end)
 
       assert :ok =
@@ -208,8 +226,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                    }
                  }
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

@@ -27,7 +27,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       client_id = UUID.uuid4()
       job = insert(:job)
       user_id = UUID.uuid4()
-      expect_job_update(job._id, "Episode in status closed can not be updated", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode in status closed can not be updated", 422)
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
@@ -129,18 +129,56 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
 
-      expect_job_update(
-        job._id,
-        %{
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one", "set" => updated_episode},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        updated_episode = updated_episode |> Base.decode64!() |> BSON.decode()
+        assert updated_episode["$set"]["episodes.#{episode_id}.name"] == "ОРВИ 2019"
+
+        referral_requests_ids =
+          Enum.map(updated_episode["$set"]["episodes.#{episode_id}.referral_requests"], fn referral_request ->
+            get_in(referral_request, ~w(identifier value))
+          end)
+
+        Enum.each(
+          [service_request_prev_2._id, service_request_upd_1._id, service_request_upd_2._id],
+          fn referral_request_id ->
+            assert referral_request_id in referral_requests_ids
+          end
+        )
+
+        Enum.each([service_request_prev_1._id, service_request_prev_3._id], fn referral_request_id ->
+          refute referral_request_id in referral_requests_ids
+        end)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        response = %{
           "links" => [
             %{
               "entity" => "episode",
               "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
             }
           ]
-        },
-        200
-      )
+        }
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{
@@ -180,26 +218,6 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
                  user_id: user_id,
                  client_id: client_id
                })
-
-      assert {:ok, %Episode{name: "ОРВИ 2019"} = episode_updated} = Episodes.get_by_id(patient_id_hash, episode_id)
-
-      referral_requests_ids =
-        Enum.map(episode_updated.referral_requests, fn referral_request ->
-          referral_request.identifier.value
-        end)
-
-      Enum.each(
-        [service_request_prev_2._id, service_request_upd_1._id, service_request_upd_2._id],
-        fn referral_request_id ->
-          assert referral_request_id in referral_requests_ids
-        end
-      )
-
-      Enum.each([service_request_prev_1._id, service_request_prev_3._id], fn referral_request_id ->
-        refute referral_request_id in referral_requests_ids
-      end)
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when additional referral_request is invalid" do
@@ -282,23 +300,24 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.referral_requests.[2].identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.referral_requests.[2].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Service request expiration date must be a datetime greater than or equal",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Service request expiration date must be a datetime greater than or equal",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )

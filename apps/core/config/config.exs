@@ -18,9 +18,7 @@ config :core,
     partitions: %{
       "medical_events" => {:system, :integer, "MEDICAL_EVENTS_PARTITIONS"},
       "person_events" => {:system, :integer, "PERSON_EVENTS_PARTITIONS"},
-      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"},
-      "secondary_events" => {:system, :integer, "SECONDARY_EVENTS_PARTITIONS"},
-      "job_update_events" => {:system, :integer, "JOB_UPDATE_EVENTS_PARTITIONS"}
+      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"}
     }
   ],
   rpc_worker: Core.Rpc.Worker
@@ -131,10 +129,10 @@ config :core, Core.Rpc.Worker,
 config :kaffe,
   producer: [
     endpoints: [localhost: 9092],
-    topics: ["medical_events", "secondary_events", "job_update_events", "mongo_events"]
+    topics: ["medical_events", "mongo_events"]
   ]
 
-config :core, Core.ServiceRequests,
+config :core, Core.ServiceRequests.Consumer,
   cancel_sms: {:system, :string, "CANCEL_SMS", "Ваше направлення під номером <%= @number %> було відмінено"},
   recall_sms: {:system, :string, "RECALL_SMS", "Ваше направлення під номером <%= @number %> було відкликано"},
   service_request_expiration_days: {:system, :integer, "SERVICE_REQUEST_EXPIRATION_DAYS", 7}

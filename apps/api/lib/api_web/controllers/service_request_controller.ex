@@ -6,6 +6,7 @@ defmodule Api.Web.ServiceRequestController do
   alias Api.Web.JobView
   alias Core.ServiceRequest
   alias Core.ServiceRequests
+  alias Core.ServiceRequests.Producer
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
@@ -31,7 +32,7 @@ defmodule Api.Web.ServiceRequestController do
 
   def create(conn, params) do
     with {:ok, job} <-
-           ServiceRequests.produce_create_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_create_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -41,7 +42,7 @@ defmodule Api.Web.ServiceRequestController do
 
   def use(conn, params) do
     with {:ok, job} <-
-           ServiceRequests.produce_use_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_use_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -51,7 +52,7 @@ defmodule Api.Web.ServiceRequestController do
 
   def release(conn, params) do
     with {:ok, job} <-
-           ServiceRequests.produce_release_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_release_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -61,7 +62,7 @@ defmodule Api.Web.ServiceRequestController do
 
   def recall(conn, params) do
     with {:ok, job} <-
-           ServiceRequests.produce_recall_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_recall_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -71,7 +72,7 @@ defmodule Api.Web.ServiceRequestController do
 
   def cancel(conn, params) do
     with {:ok, job} <-
-           ServiceRequests.produce_cancel_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_cancel_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)

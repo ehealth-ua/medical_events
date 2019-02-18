@@ -20,7 +20,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
   alias Core.Patients.Episodes.Consumer, as: EpisodesConsumer
-  alias Core.ServiceRequests
+  alias Core.ServiceRequests.Consumer, as: ServiceRequestsConsumer
 
   require Logger
 
@@ -49,15 +49,27 @@ defmodule Core.Kafka.Consumer do
   end
 
   def consume(%ServiceRequestCreateJob{} = service_request_create_job) do
-    do_consume(ServiceRequests, :consume_create_service_request, service_request_create_job)
+    do_consume(ServiceRequestsConsumer, :consume_create_service_request, service_request_create_job)
   end
 
   def consume(%ServiceRequestUseJob{} = service_request_use_job) do
-    do_consume(ServiceRequests, :consume_use_service_request, service_request_use_job)
+    do_consume(ServiceRequestsConsumer, :consume_use_service_request, service_request_use_job)
   end
 
   def consume(%ServiceRequestReleaseJob{} = service_request_release_job) do
-    do_consume(ServiceRequests, :consume_release_service_request, service_request_release_job)
+    do_consume(ServiceRequestsConsumer, :consume_release_service_request, service_request_release_job)
+  end
+
+  def consume(%ServiceRequestCancelJob{} = service_request_cancel_job) do
+    do_consume(ServiceRequestsConsumer, :consume_cancel_service_request, service_request_cancel_job)
+  end
+
+  def consume(%ServiceRequestCloseJob{} = service_request_close_job) do
+    do_consume(ServiceRequestsConsumer, :consume_close_service_request, service_request_close_job)
+  end
+
+  def consume(%ServiceRequestRecallJob{} = service_request_recall_job) do
+    do_consume(ServiceRequestsConsumer, :consume_recall_service_request, service_request_recall_job)
   end
 
   def consume(%ApprovalCreateJob{} = approval_create_job) do
@@ -66,18 +78,6 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%ApprovalResendJob{} = approval_resend_job) do
     do_consume(Approvals, :consume_resend_approval, approval_resend_job)
-  end
-
-  def consume(%ServiceRequestRecallJob{} = service_request_recall_job) do
-    do_consume(ServiceRequests, :consume_recall_service_request, service_request_recall_job)
-  end
-
-  def consume(%ServiceRequestCancelJob{} = service_request_cancel_job) do
-    do_consume(ServiceRequests, :consume_cancel_service_request, service_request_cancel_job)
-  end
-
-  def consume(%ServiceRequestCloseJob{} = service_request_close_job) do
-    do_consume(ServiceRequests, :consume_close_service_request, service_request_close_job)
   end
 
   def consume(value) do

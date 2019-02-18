@@ -87,20 +87,6 @@ release :audit_log_consumer do
   set(config_providers: [ConfexConfigProvider])
 end
 
-release :secondary_events_consumer do
-  set(version: current_version(:secondary_events_consumer))
-
-  set(
-    applications: [
-      :runtime_tools,
-      secondary_events_consumer: :permanent,
-      core: :permanent
-    ]
-  )
-
-  set(config_providers: [ConfexConfigProvider])
-end
-
 release :number_generator do
   set(version: current_version(:number_generator))
 

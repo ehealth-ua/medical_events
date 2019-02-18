@@ -11,7 +11,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCancelJob
-  alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.Kafka.Consumer
   alias Core.Patients
 
@@ -125,10 +124,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           context: context
         )
 
-      condition_id = UUID.binary_to_string!(condition._id.binary)
-
       observation = insert(:observation, patient_id: patient_id_hash, context: context)
-      observation_id = UUID.binary_to_string!(observation._id.binary)
 
       signed_data =
         %{
@@ -146,23 +142,58 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
-      expect(KafkaMock, :publish_encounter_package_event, fn %PackageCancelSavePatientJob{} = job ->
-        set_data = job.patient_save_data["$set"]
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one", "set" => patient_set},
+                 %{"collection" => "conditions", "operation" => "update_one", "filter" => condition_filter},
+                 %{"collection" => "observations", "operation" => "update_one", "filter" => observation_filter},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        assert @entered_in_error == set_data["encounters.#{encounter_id}.status"]
-        assert @explanatory_letter == set_data["encounters.#{encounter_id}.explanatory_letter"]
+        patient_set =
+          patient_set
+          |> Base.decode64!()
+          |> BSON.decode()
 
-        assert "eHealth/cancellation_reasons" ==
-                 set_data["encounters.#{encounter_id}.cancellation_reason"]["coding"] |> hd() |> Map.get("system")
+        encounter_status = "encounters.#{encounter_id}.status"
+        encounter_explanatory_letter = "encounters.#{encounter_id}.explanatory_letter"
+        encounter_cancellation_reason = "encounters.#{encounter_id}.cancellation_reason"
+        allergy_intolerance_status = "allergy_intolerances.#{allergy_intolerance_id}.verification_status"
+        risk_assessment_status = "risk_assessments.#{risk_assessment_id}.status"
+        immunization_status = "immunizations.#{immunization_id}.status"
+        device_status = "devices.#{device_id}.status"
+        medication_statements_status = "medication_statements.#{medication_statement_id}.status"
 
-        assert @entered_in_error == set_data["allergy_intolerances.#{allergy_intolerance_id}.verification_status"]
-        assert @entered_in_error == set_data["risk_assessments.#{risk_assessment_id}.status"]
-        assert @entered_in_error == set_data["immunizations.#{immunization_id}.status"]
-        assert @entered_in_error == set_data["devices.#{device_id}.status"]
-        assert @entered_in_error == set_data["medication_statements.#{medication_statement_id}.status"]
+        assert %{
+                 "$set" => %{
+                   ^encounter_status => @entered_in_error,
+                   ^encounter_explanatory_letter => @explanatory_letter,
+                   ^encounter_cancellation_reason => %{
+                     "coding" => [%{"system" => "eHealth/cancellation_reasons"}]
+                   },
+                   ^allergy_intolerance_status => @entered_in_error,
+                   ^risk_assessment_status => @entered_in_error,
+                   ^immunization_status => @entered_in_error,
+                   ^device_status => @entered_in_error,
+                   ^medication_statements_status => @entered_in_error
+                 }
+               } = patient_set
 
-        assert [condition_id] == job.conditions_ids
-        assert [observation_id] == job.observations_ids
+        assert %{"_id" => condition._id} == condition_filter |> Base.decode64!() |> BSON.decode()
+        assert %{"_id" => observation._id} == observation_filter |> Base.decode64!() |> BSON.decode()
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => %{}
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -176,13 +207,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: client_id,
                  signed_data: signed_data
                })
-
-      assert {:ok,
-              %Core.Job{
-                response: "",
-                status: @status_pending,
-                status_code: 200
-              }} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
@@ -244,6 +268,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{"error" => ~s(At least one entity should have status "entered_in_error")},
         409
       )
@@ -257,8 +282,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: client_id,
                  signed_data: signed_data
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "faild when entity has alraady entered_in_error status", %{test_data: {episode, encounter, _}} do
@@ -310,6 +333,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{"error" => "Invalid transition for encounter - already entered_in_error"},
         409
       )
@@ -323,8 +347,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: client_id,
                  signed_data: signed_data
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
@@ -393,23 +415,24 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.managing_organization.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.managing_organization.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Managing_organization does not correspond to user's legal_entity",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Managing_organization does not correspond to user's legal_entity",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -423,8 +446,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: UUID.uuid4(),
                  signed_data: signed_data
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on signed content", %{test_data: {episode, encounter, context}} do
@@ -480,6 +501,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
           "error" =>
             "Submitted signed content does not correspond to previously created content: immunizations.0.lot_number"
@@ -496,8 +518,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: client_id,
                  signed_data: signed_data
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on validate diagnoses" do
@@ -572,6 +592,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{"error" => "The condition can not be canceled while encounter is not canceled"},
         409
       )
@@ -654,12 +675,40 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         |> Jason.encode!()
         |> Base.encode64()
 
-      expect(KafkaMock, :publish_encounter_package_event, fn %{patient_save_data: %{"$set" => set_data}} ->
-        assert false == set_data["episodes.#{episode_id}.diagnoses_history.1.is_active"]
-        assert Mongo.string_to_uuid(user_id) == set_data["updated_by"]
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one", "set" => patient_set},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        refute set_data["episodes.#{episode_id}.diagnoses_history.0.is_active"]
-        refute set_data["episodes.#{episode_id}.diagnoses_history.2.is_active"]
+        patient_set =
+          patient_set
+          |> Base.decode64!()
+          |> BSON.decode()
+
+        diagnoses_active2 = "episodes.#{episode_id}.diagnoses_history.1.is_active"
+        user_id = Mongo.string_to_uuid(user_id)
+
+        assert %{
+                 "$set" => %{
+                   ^diagnoses_active2 => false,
+                   "updated_by" => ^user_id
+                 }
+               } = patient_set
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => %{}
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -673,8 +722,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: client_id,
                  signed_data: signed_data
                })
-
-      assert {:ok, %Core.Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode not found" do
@@ -717,6 +764,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         "Encounter's episode not found",
         404
       )
@@ -730,8 +778,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  client_id: UUID.uuid4(),
                  signed_data: signed_content
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 

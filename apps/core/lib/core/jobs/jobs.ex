@@ -3,13 +3,11 @@ defmodule Core.Jobs do
 
   alias BSON.ObjectId
   alias Core.Job
-  alias Core.Jobs.JobUpdateStatusJob
   alias Core.Mongo
   alias Core.Mongo.Transaction
   require Logger
 
   @collection Job.metadata().collection
-  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_update_status(id, request_id, response, 200) do
     do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
@@ -65,22 +63,8 @@ defmodule Core.Jobs do
 
   defp cut_params(error), do: error
 
-  defp do_produce_update_status(id, request_id, response, status, status_code) do
-    event = %JobUpdateStatusJob{
-      request_id: request_id,
-      _id: id,
-      response: response,
-      status: status,
-      status_code: status_code
-    }
-
-    with :ok <- @kafka_producer.publish_job_update_status_event(event) do
-      :ok
-    else
-      error ->
-        Logger.error("Failed to publish kafka event: #{inspect(error)}")
-        update_status(event)
-    end
+  defp do_produce_update_status(id, _request_id, response, status, status_code) do
+    update(id, status, response, status_code)
   end
 
   def get_by_id(id) when is_binary(id) do
@@ -104,6 +88,17 @@ defmodule Core.Jobs do
     %Transaction{}
     |> Transaction.add_operation("jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
     |> Transaction.flush()
+  end
+
+  def update(%Transaction{} = transaction, id, status, response, status_code) when is_binary(id) do
+    set_data = %{
+      "status" => status,
+      "status_code" => status_code,
+      "updated_at" => DateTime.utc_now(),
+      "response" => response
+    }
+
+    Transaction.add_operation(transaction, "jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
   end
 
   def create(module, data) do
@@ -134,17 +129,6 @@ defmodule Core.Jobs do
         with {:ok, _} <- Mongo.insert_one(job) do
           {:ok, job, struct(module, data)}
         end
-    end
-  end
-
-  def update_status(%JobUpdateStatusJob{_id: id} = event) do
-    case get_by_id(id) do
-      {:ok, _} ->
-        update(id, event.status, event.response, event.status_code)
-
-      _ ->
-        Logger.warn(fn -> "Can't get job by id #{id}" end)
-        :ok
     end
   end
 

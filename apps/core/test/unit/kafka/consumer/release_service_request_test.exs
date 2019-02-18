@@ -3,14 +3,10 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
 
   use Core.ModelCase
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Kafka.Consumer
-  alias Core.Mongo
   alias Core.Patients
   import Mox
-
-  @status_pending Job.status(:pending)
 
   setup :verify_on_exit!
 
@@ -31,18 +27,37 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect_job_update(
-        job._id,
-        %{
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "service_requests", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        response = %{
           "links" => [
             %{
               "entity" => "service_request",
               "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
             }
           ]
-        },
-        200
-      )
+        }
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       assert :ok =
                Consumer.consume(%ServiceRequestReleaseJob{
@@ -53,11 +68,6 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
                  client_id: client_id,
                  service_request_id: UUID.binary_to_string!(id)
                })
-
-      assert %{"_id" => ^service_request_id, "used_by" => nil} =
-               Mongo.find_one("service_requests", %{_id: service_request_id})
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 
@@ -92,39 +102,37 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
     insert(:patient, _id: patient_id_hash)
     user_id = UUID.uuid4()
 
-    expect(KafkaMock, :publish_job_update_status_event, fn event ->
-      id = to_string(job._id)
+    expect(WorkerMock, :run, fn _, _, :transaction, args ->
+      assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
+               Jason.decode!(args)
 
-      case event do
-        %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 422} ->
-          assert %{
-                   invalid: [
+      assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+      set_bson = set |> Base.decode64!() |> BSON.decode()
+      status = Job.status(:failed)
+
+      assert %{
+               "$set" => %{
+                 "status" => ^status,
+                 "status_code" => 422,
+                 "response" => %{
+                   "invalid" => [
                      %{
-                       entry: "$.expiration_date",
-                       entry_type: "json_data_property",
-                       rules: [
+                       "entry" => "$.expiration_date",
+                       "entry_type" => "json_data_property",
+                       "rules" => [
                          %{
-                           params: [],
-                           rule: :invalid
+                           "params" => [],
+                           "rule" => "invalid"
                          }
                        ]
                      }
                    ]
-                 } = event.response
+                 }
+               }
+             } = set_bson
 
-          assert event
-                 |> Map.from_struct()
-                 |> get_in([:response, :invalid])
-                 |> hd()
-                 |> Map.get(:rules)
-                 |> hd()
-                 |> Map.get(:description) =~ "must be a datetime greater than or equal"
-
-          :ok
-
-        _ ->
-          raise ExUnit.AssertionError
-      end
+      :ok
     end)
 
     assert :ok =
@@ -136,11 +144,5 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
                client_id: client_id,
                service_request_id: UUID.binary_to_string!(id)
              })
-
-    %{"_id" => ^service_request_id, "used_by" => used_by} =
-      Mongo.find_one("service_requests", %{_id: service_request_id})
-
-    assert used_by
-    assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
   end
 end

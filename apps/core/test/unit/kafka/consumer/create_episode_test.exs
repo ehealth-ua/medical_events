@@ -3,19 +3,14 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
   use Core.ModelCase
 
-  import Mox
-  import Core.Expectations.IlExpectations
-
   alias Core.Episode
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Kafka.Consumer
-  alias Core.Mongo
-  alias Core.Patient
   alias Core.Patients
 
-  @status_pending Job.status(:pending)
+  import Mox
+  import Core.Expectations.IlExpectations
 
   setup :verify_on_exit!
 
@@ -33,7 +28,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       expect_doctor(client_id)
-      expect_job_update(job._id, "Episode with such id already exists", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode with such id already exists", 422)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -69,8 +64,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                    }
                  }
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "episode was created" do
@@ -98,18 +91,37 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
 
-      expect_job_update(
-        job._id,
-        %{
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        response = %{
           "links" => [
             %{
               "entity" => "episode",
               "href" => "/api/patients/#{patient_id}/episodes/#{episode_id}"
             }
           ]
-        },
-        200
-      )
+        }
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       service_request = insert(:service_request, used_by: build(:reference))
 
@@ -146,16 +158,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                    }
                  ]
                })
-
-      assert %{"episodes" => episodes} =
-               Mongo.find_one(
-                 Patient.metadata().collection,
-                 %{"_id" => Patients.get_pk_hash(patient_id)},
-                 projection: [episodes: true]
-               )
-
-      assert Map.has_key?(episodes, episode_id)
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on invalid referral_request's expiration_date" do
@@ -195,23 +197,24 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.referral_requests.[1].identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.referral_requests.[1].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Service request expiration date must be a datetime greater than or equal",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Service request expiration date must be a datetime greater than or equal",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -264,16 +267,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                    }
                  ]
                })
-
-      assert %{"episodes" => episodes} =
-               Mongo.find_one(
-                 Patient.metadata().collection,
-                 %{"_id" => Patients.get_pk_hash(patient_id)},
-                 projection: [episodes: true]
-               )
-
-      refute Map.has_key?(episodes, episode_id)
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 end

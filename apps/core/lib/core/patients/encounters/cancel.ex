@@ -10,13 +10,12 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
+  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.PackageCancelJob
-  alias Core.Jobs.PackageCancelSaveConditionsJob
-  alias Core.Jobs.PackageCancelSaveObservationsJob
-  alias Core.Jobs.PackageCancelSavePatientJob
   alias Core.MedicationStatement
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Observation
   alias Core.Observations
   alias Core.Patient
@@ -35,7 +34,6 @@ defmodule Core.Patients.Encounters.Cancel do
   require Logger
 
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
-  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   @patients_collection Patient.metadata().collection
   @observations_collection Observation.metadata().collection
@@ -96,98 +94,43 @@ defmodule Core.Patients.Encounters.Cancel do
              package_data,
              update_data
            ) do
-      event = %PackageCancelSavePatientJob{
-        request_id: job.request_id,
-        _id: job._id,
-        patient_id: job.patient_id,
-        patient_id_hash: job.patient_id_hash,
-        patient_save_data: %{
-          "$set" => set
-        },
-        conditions_ids: conditions_ids,
-        observations_ids: observations_ids,
-        user_id: user_id
-      }
+      result =
+        %Transaction{}
+        |> Transaction.add_operation(@patients_collection, :update, %{"_id" => job.patient_id_hash}, %{"$set" => set})
+        |> update_conditions(conditions_ids, user_id)
+        |> update_observations(observations_ids, user_id)
+        |> Jobs.update(job._id, Job.status(:processed), %{}, 200)
+        |> Transaction.flush()
 
-      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
-        :ok
+      case result do
+        :ok -> :ok
+        {:error, reason} -> {:error, reason, 500}
       end
     end
   end
 
-  def consume_save_patient(
-        %PackageCancelSavePatientJob{
-          patient_id_hash: patient_id_hash,
-          patient_save_data: patient_save_data
-        } = job
-      ) do
-    with {:ok, %{matched_count: 1, modified_count: 1}} <-
-           Mongo.update_one(@patients_collection, %{"_id" => patient_id_hash}, patient_save_data) do
-      event = %PackageCancelSaveConditionsJob{
-        request_id: job.request_id,
-        _id: job._id,
-        patient_id: job.patient_id,
-        conditions_ids: job.conditions_ids,
-        observations_ids: job.observations_ids,
-        user_id: job.user_id
-      }
-
-      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
-        :ok
-      end
-    end
+  defp update_conditions(%Transaction{} = transaction, ids, user_id) do
+    Enum.reduce(ids, transaction, fn id, acc ->
+      Transaction.add_operation(acc, @conditions_collection, :update, %{"_id" => Mongo.string_to_uuid(id)}, %{
+        "$set" => %{
+          "verification_status" => @entered_in_error,
+          "updated_by" => Mongo.string_to_uuid(user_id),
+          "updated_at" => DateTime.utc_now()
+        }
+      })
+    end)
   end
 
-  def consume_save_conditions(%PackageCancelSaveConditionsJob{conditions_ids: conditions_ids} = job) do
-    with :ok <- update_conditions(Enum.map(conditions_ids, &Mongo.string_to_uuid/1), job.user_id) do
-      event = %PackageCancelSaveObservationsJob{
-        request_id: job.request_id,
-        _id: job._id,
-        patient_id: job.patient_id,
-        observations_ids: job.observations_ids,
-        user_id: job.user_id
-      }
-
-      with :ok <- @kafka_producer.publish_encounter_package_event(event) do
-        :ok
-      end
-    end
-  end
-
-  defp update_conditions([], _), do: :ok
-
-  defp update_conditions(ids, user_id) do
-    with {:ok, %{}} <-
-           Mongo.update_many(@conditions_collection, %{"_id" => %{"$in" => ids}}, %{
-             "$set" => %{
-               "verification_status" => @entered_in_error,
-               "updated_by" => Mongo.string_to_uuid(user_id),
-               "updated_at" => DateTime.utc_now()
-             }
-           }) do
-      :ok
-    end
-  end
-
-  def consume_save_observations(%PackageCancelSaveObservationsJob{observations_ids: observations_ids} = job) do
-    with :ok <- update_observations(Enum.map(observations_ids, &Mongo.string_to_uuid/1), job.user_id) do
-      Jobs.produce_update_status(job._id, job.request_id, %{}, 200)
-    end
-  end
-
-  defp update_observations([], _), do: :ok
-
-  defp update_observations(ids, user_id) do
-    with {:ok, %{}} <-
-           Mongo.update_many(@observations_collection, %{"_id" => %{"$in" => ids}}, %{
-             "$set" => %{
-               "status" => @entered_in_error,
-               "updated_by" => Mongo.string_to_uuid(user_id),
-               "updated_at" => DateTime.utc_now()
-             }
-           }) do
-      :ok
-    end
+  defp update_observations(%Transaction{} = transaction, ids, user_id) do
+    Enum.reduce(ids, transaction, fn id, acc ->
+      Transaction.add_operation(acc, @observations_collection, :update, %{"_id" => Mongo.string_to_uuid(id)}, %{
+        "$set" => %{
+          "status" => @entered_in_error,
+          "updated_by" => Mongo.string_to_uuid(user_id),
+          "updated_at" => DateTime.utc_now()
+        }
+      })
+    end)
   end
 
   defp save_signed_content(patient_id, encounter_id, signed_data) do

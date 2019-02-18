@@ -4,9 +4,7 @@ defmodule Core.JobsTest do
   use Core.ModelCase
   alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.ApprovalCreateJob
   alias Core.Jobs.EpisodeCreateJob
-  alias Core.Jobs.JobUpdateStatusJob
   import Mox
 
   describe "create job" do
@@ -116,57 +114,6 @@ defmodule Core.JobsTest do
       end)
 
       assert :ok = Jobs.update(job_id, Job.status(:processed), response, 200)
-    end
-
-    test "success update status job" do
-      data = %{
-        "status" => Job.status(:processed),
-        "response" => %{
-          "links" => [
-            %{
-              "entity" => "approval",
-              "data" => %{}
-            }
-          ]
-        },
-        "status_code" => 200,
-        "timestamp" => DateTime.utc_now()
-      }
-
-      assert {:ok, job, _} = Jobs.create(ApprovalCreateJob, data)
-
-      job_id = to_string(job._id)
-
-      event = %JobUpdateStatusJob{
-        request_id: nil,
-        _id: job_id,
-        response: data["response"],
-        status: data["status"],
-        status_code: data["status_code"]
-      }
-
-      expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
-                 Jason.decode!(args)
-
-        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
-
-        status = Job.status(:processed)
-        set_bson = set |> Base.decode64!() |> BSON.decode()
-        response = data["response"]
-
-        assert %{
-                 "$set" => %{
-                   "status" => ^status,
-                   "status_code" => 200,
-                   "response" => ^response
-                 }
-               } = set_bson
-
-        :ok
-      end)
-
-      assert :ok = Jobs.update_status(event)
     end
   end
 end
