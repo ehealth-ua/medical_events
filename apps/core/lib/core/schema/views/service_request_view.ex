@@ -33,7 +33,7 @@ defmodule Core.ServiceRequestView do
       supporting_info: ReferenceView.render(service_request.supporting_info),
       permitted_episodes: ReferenceView.render(service_request.permitted_episodes),
       used_by: ReferenceView.render(service_request.used_by),
-      patient:
+      subject:
         ReferenceView.render(
           Reference.create(%{
             "identifier" => %{

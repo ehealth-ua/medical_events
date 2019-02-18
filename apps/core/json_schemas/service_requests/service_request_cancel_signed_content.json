@@ -728,7 +728,7 @@
     "used_by": {
       "$ref": "#/definitions/reference"
     },
-    "patient": {
+    "subject": {
       "$ref": "#/definitions/reference"
     },
     "inserted_at": {
@@ -764,7 +764,7 @@
     "requisition",
     "status_history",
     "used_by",
-    "patient"
+    "subject"
   ],
   "additionalProperties": false
 }
