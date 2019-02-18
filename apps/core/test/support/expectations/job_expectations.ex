@@ -1,20 +1,32 @@
 defmodule Core.Expectations.JobExpectations do
   @moduledoc false
 
+  alias Core.Job
   import Mox
+  import ExUnit.Assertions
 
   def expect_job_update(id, response, code) do
-    id = to_string(id)
+    expect_job_update(id, Job.status(:processed), response, code)
+  end
 
-    expect(KafkaMock, :publish_job_update_status_event, fn event ->
-      case event do
-        %Core.Jobs.JobUpdateStatusJob{_id: ^id, response: ^response, status_code: ^code} ->
-          :ok
+  def expect_job_update(id, status, response, code) do
+    expect(WorkerMock, :run, fn _, _, :transaction, args ->
+      assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
+               Jason.decode!(args)
 
-        _ ->
-          IO.inspect(event)
-          raise ExUnit.AssertionError
-      end
+      assert %{"_id" => id} == filter |> Base.decode64!() |> BSON.decode()
+
+      set_bson = set |> Base.decode64!() |> BSON.decode()
+
+      assert %{
+               "$set" => %{
+                 "status" => ^status,
+                 "status_code" => ^code,
+                 "response" => ^response
+               }
+             } = set_bson
+
+      :ok
     end)
   end
 end

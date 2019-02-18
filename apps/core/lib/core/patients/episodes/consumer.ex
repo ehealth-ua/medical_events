@@ -5,6 +5,7 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.DatePeriod
   alias Core.Encounter
   alias Core.Episode
+  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCancelJob
   alias Core.Jobs.EpisodeCloseJob
@@ -12,6 +13,7 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Patient
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
@@ -26,7 +28,6 @@ defmodule Core.Patients.Episodes.Consumer do
 
   def consume_create_episode(
         %EpisodeCreateJob{
-          patient_id: patient_id,
           patient_id_hash: patient_id_hash,
           client_id: client_id
         } = job
@@ -92,22 +93,7 @@ defmodule Core.Patients.Episodes.Consumer do
               |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
               |> Mongo.convert_to_uuid("updated_by")
 
-            {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
-
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              %{
-                "links" => [
-                  %{
-                    "entity" => "episode",
-                    "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                  }
-                ]
-              },
-              200
-            )
+            save(job, episode.id, %{"$set" => set})
         end
 
       errors ->
@@ -167,22 +153,31 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.convert_to_uuid("updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.referral_requests", ~w(identifier value)a)
 
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{"$set" => set})
+          result =
+            %Transaction{}
+            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{"$set" => set})
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "episode",
+                    "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Transaction.flush()
 
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            %{
-              "links" => [
-                %{
-                  "entity" => "episode",
-                  "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                }
-              ]
-            },
-            200
-          )
+          case result do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+          end
 
         errors ->
           Jobs.produce_update_status(
@@ -254,12 +249,6 @@ defmodule Core.Patients.Episodes.Consumer do
 
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
-          {:ok, %{matched_count: 1, modified_count: 1}} =
-            Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
-              "$set" => set,
-              "$push" => push
-            })
-
           Enum.each(episode.referral_requests || [], fn referral_request ->
             with {:ok, _, close_service_request} <-
                    Jobs.create(
@@ -278,19 +267,34 @@ defmodule Core.Patients.Episodes.Consumer do
             end
           end)
 
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            %{
-              "links" => [
-                %{
-                  "entity" => "episode",
-                  "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                }
-              ]
-            },
-            200
-          )
+          result =
+            %Transaction{}
+            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
+              "$set" => set,
+              "$push" => push
+            })
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "episode",
+                    "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Transaction.flush()
+
+          case result do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+          end
 
         errors ->
           Jobs.produce_update_status(
@@ -376,25 +380,34 @@ defmodule Core.Patients.Episodes.Consumer do
 
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
-            {:ok, %{matched_count: 1, modified_count: 1}} =
-              Mongo.update_one(@collection, %{"_id" => patient_id_hash}, %{
+            result =
+              %Transaction{}
+              |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
                 "$set" => set,
                 "$push" => push
               })
+              |> Jobs.update(
+                job._id,
+                Job.status(:processed),
+                %{
+                  "links" => [
+                    %{
+                      "entity" => "episode",
+                      "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
+                    }
+                  ]
+                },
+                200
+              )
+              |> Transaction.flush()
 
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              %{
-                "links" => [
-                  %{
-                    "entity" => "episode",
-                    "href" => "/api/patients/#{patient_id}/episodes/#{episode.id}"
-                  }
-                ]
-              },
-              200
-            )
+            case result do
+              :ok ->
+                :ok
+
+              {:error, reason} ->
+                Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+            end
           else
             Jobs.produce_update_status(
               job._id,
@@ -418,6 +431,34 @@ defmodule Core.Patients.Episodes.Consumer do
 
       nil ->
         Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
+    end
+  end
+
+  defp save(job, episode_id, set) do
+    result =
+      %Transaction{}
+      |> Transaction.add_operation(@collection, :update, %{"_id" => job.patient_id_hash}, set)
+      |> Jobs.update(
+        job._id,
+        Job.status(:processed),
+        %{
+          "links" => [
+            %{
+              "entity" => "episode",
+              "href" => "/api/patients/#{job.patient_id}/episodes/#{episode_id}"
+            }
+          ]
+        },
+        200
+      )
+      |> Transaction.flush()
+
+    case result do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Jobs.produce_update_status(job._id, job.request_id, reason, 500)
     end
   end
 
@@ -464,6 +505,8 @@ defmodule Core.Patients.Episodes.Consumer do
         episode
     end
   end
+
+  defp get_existing_referral_request_ids(episode_referral_requests, nil), do: episode_referral_requests
 
   defp get_existing_referral_request_ids(episode_referral_requests, request_referral_requests) do
     episode_referral_requests_ids =

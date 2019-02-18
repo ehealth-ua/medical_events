@@ -9,14 +9,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
   alias Core.Immunization
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
   alias Core.Kafka.Consumer
   alias Core.Mongo
   alias Core.Observation
   alias Core.Patients
 
-  @status_pending Job.status(:pending)
   @status_valid Observation.status(:valid)
 
   describe "consume create package event" do
@@ -28,23 +26,24 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "type mismatch. Expected Object but got String",
-                  params: ["object"],
-                  rule: :cast
+                  "description" => "type mismatch. Expected Object but got String",
+                  "params" => ["object"],
+                  "rule" => "cast"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -57,8 +56,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  user_id: user_id,
                  client_id: UUID.uuid4()
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "empty map" do
@@ -69,23 +66,24 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.encounter",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.encounter",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "required property encounter was not present",
-                  params: [],
-                  rule: :required
+                  "description" => "required property encounter was not present",
+                  "params" => [],
+                  "rule" => "required"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -98,8 +96,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  user_id: user_id,
                  client_id: UUID.uuid4()
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "visit not found" do
@@ -200,23 +196,24 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.encounter.visit.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.encounter.visit.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Visit with such ID is not found",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Visit with such ID is not found",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -230,8 +227,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "success create package" do
@@ -301,6 +296,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       observation_id = UUID.uuid4()
       observation_id2 = UUID.uuid4()
       employee_id = UUID.uuid4()
+      allergy_intolerance_id = UUID.uuid4()
+      risk_assessment_id = UUID.uuid4()
+      device_id = UUID.uuid4()
+      medication_statement_id = UUID.uuid4()
       service_request = insert(:service_request, used_by: build(:reference))
 
       start_datetime =
@@ -690,7 +689,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ],
         "allergy_intolerances" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => allergy_intolerance_id,
             "context" => %{
               "identifier" => %{
                 "type" => %{
@@ -726,7 +725,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ],
         "risk_assessments" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => risk_assessment_id,
             "status" => "preliminary",
             "method" => %{
               "coding" => [
@@ -848,7 +847,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ],
         "devices" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => device_id,
             "status" => "inactive",
             "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
             "usage_period" => %{
@@ -901,7 +900,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ],
         "medication_statements" => [
           %{
-            "id" => UUID.uuid4(),
+            "id" => medication_statement_id,
             "based_on" => %{
               "identifier" => %{
                 "type" => %{
@@ -959,21 +958,92 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         ]
       }
 
-      expect(KafkaMock, :publish_encounter_package_event, fn %{patient_save_data: %{"$set" => set_data}} ->
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "patients", "operation" => "update_one", "set" => patient_data},
+                 %{"collection" => "conditions", "operation" => "insert"},
+                 %{"collection" => "observations", "operation" => "insert"},
+                 %{"collection" => "observations", "operation" => "insert"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        patient_data = patient_data |> Base.decode64!() |> BSON.decode()
+
         assert observation_id ==
-                 set_data["immunizations.#{immunization_id}.reactions"]
+                 patient_data["$set"]["immunizations.#{immunization_id}.reactions"]
                  |> hd()
-                 |> get_in(~w(detail identifier value)a)
+                 |> get_in(~w(detail identifier value))
                  |> to_string()
 
         assert observation_id2 ==
-                 set_data["immunizations.#{db_immunization_id}.reactions"]
+                 patient_data["$set"]["immunizations.#{db_immunization_id}.reactions"]
                  |> Enum.at(1)
-                 |> get_in(~w(detail identifier value)a)
+                 |> get_in(~w(detail identifier value))
                  |> to_string()
 
-        assert 2 == length(set_data["immunizations.#{db_immunization_id}.reactions"])
-        assert set_data["immunizations.#{immunization_id}.reactions"]
+        assert 2 == length(patient_data["$set"]["immunizations.#{db_immunization_id}.reactions"])
+        assert patient_data["$set"]["immunizations.#{immunization_id}.reactions"]
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+        status = Job.status(:processed)
+
+        response = %{
+          "links" => [
+            %{
+              "entity" => "encounter",
+              "href" => "/api/patients/#{patient_id}/encounters/#{encounter_id}"
+            },
+            %{
+              "entity" => "immunization",
+              "href" => "/api/patients/#{patient_id}/immunizations/#{immunization_id}"
+            },
+            %{
+              "entity" => "immunization",
+              "href" => "/api/patients/#{patient_id}/immunizations/#{immunization_id2}"
+            },
+            %{
+              "entity" => "immunization",
+              "href" => "/api/patients/#{patient_id}/immunizations/#{db_immunization_id}"
+            },
+            %{
+              "entity" => "allergy_intolerance",
+              "href" => "/api/patients/#{patient_id}/allergy_intolerances/#{allergy_intolerance_id}"
+            },
+            %{
+              "entity" => "risk_assessment",
+              "href" => "/api/patients/#{patient_id}/risk_assessments/#{risk_assessment_id}"
+            },
+            %{
+              "entity" => "device",
+              "href" => "/api/patients/#{patient_id}/devices/#{device_id}"
+            },
+            %{
+              "entity" => "medication_statement",
+              "href" => "/api/patients/#{patient_id}/medication_statements/#{medication_statement_id}"
+            },
+            %{
+              "entity" => "condition",
+              "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
+            },
+            %{
+              "entity" => "observation",
+              "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
+            },
+            %{
+              "entity" => "observation",
+              "href" => "/api/patients/#{patient_id}/observations/#{observation_id2}"
+            }
+          ]
+        }
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -994,8 +1064,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Core.Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "failed when encounter reference episode doesnt match episode managing organization" do
@@ -1374,23 +1442,24 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.encounter.episode.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.encounter.episode.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Managing_organization does not correspond to user's legal_entity",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Managing_organization does not correspond to user's legal_entity",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )
@@ -1411,8 +1480,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "fail on invalid drfo" do
@@ -1508,7 +1575,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         }
       }
 
-      expect_job_update(job._id, "Invalid drfo", 409)
+      expect_job_update(job._id, Job.status(:failed), "Invalid drfo", 409)
 
       assert :ok =
                Consumer.consume(%PackageCreateJob{
@@ -1526,8 +1593,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 

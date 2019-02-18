@@ -2,120 +2,326 @@ defmodule Core.Patients.Package do
   @moduledoc false
 
   alias Core.Condition
+  alias Core.Conditions
+  alias Core.DiagnosesHistory
+  alias Core.Job
   alias Core.Jobs
-  alias Core.Jobs.PackageSaveConditionsJob
-  alias Core.Jobs.PackageSaveObservationsJob
-  alias Core.Jobs.PackageSavePatientJob
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Observation
+  alias Core.Observations
+  alias Core.Patients.AllergyIntolerances
+  alias Core.Patients.Devices
+  alias Core.Patients.Immunizations
+  alias Core.Patients.MedicationStatements
+  alias Core.Patients.RiskAssessments
   require Logger
 
   @collection "patients"
-  @kafka_producer Application.get_env(:core, :kafka)[:producer]
+  @observations_collection Observation.metadata().collection
+  @conditions_collection Condition.metadata().collection
 
-  def consume_save_patient(
-        %PackageSavePatientJob{
-          patient_id: patient_id,
-          patient_id_hash: patient_id_hash,
-          encounter: encounter
-        } = job
-      ) do
-    {:ok, %{matched_count: 1, modified_count: 1}} =
-      Mongo.update_one(@collection, %{"_id" => patient_id_hash}, job.patient_save_data)
+  def save(job, data) do
+    %{
+      "visit" => visit,
+      "encounter" => encounter,
+      "immunizations" => immunizations,
+      "allergy_intolerances" => allergy_intolerances,
+      "risk_assessments" => risk_assessments,
+      "devices" => devices,
+      "medication_statements" => medication_statements,
+      "observations" => observations,
+      "conditions" => conditions
+    } = data
+
+    patient_id = job.patient_id
+    patient_id_hash = job.patient_id_hash
+
+    now = DateTime.utc_now()
+
+    set =
+      %{"updated_by" => job.user_id, "updated_at" => now}
+      |> Mongo.add_to_set(encounter, "encounters.#{encounter.id}")
+      |> add_visit_to_set(visit)
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.id")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.inserted_by")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.updated_by")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.division.identifier.value")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.episode.identifier.value")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.performer.identifier.value")
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.visit.identifier.value")
+      |> Mongo.convert_to_uuid(
+        "encounters.#{encounter.id}.diagnoses",
+        ~w(condition identifier value)a
+      )
+      |> Mongo.convert_to_uuid(
+        "encounters.#{encounter.id}.incoming_referrals",
+        ~w(identifier value)a
+      )
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.service_provider.identifier.value")
+      |> Mongo.convert_to_uuid("updated_by")
+
+    diagnoses_history =
+      DiagnosesHistory.create(%{
+        "date" => now,
+        "evidence" => %{
+          "identifier" => %{
+            "type" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/resources",
+                  "code" => "encounter"
+                }
+              ]
+            },
+            "value" => Mongo.string_to_uuid(encounter.id)
+          }
+        },
+        "is_active" => true
+      })
+
+    diagnoses_history = %{
+      diagnoses_history
+      | diagnoses:
+          Enum.map(encounter.diagnoses, fn diagnosis ->
+            condition = diagnosis.condition
+
+            %{
+              diagnosis
+              | condition: %{
+                  condition
+                  | identifier: %{
+                      condition.identifier
+                      | value: Mongo.string_to_uuid(condition.identifier.value)
+                    }
+                }
+            }
+          end)
+    }
+
+    set =
+      Mongo.add_to_set(
+        set,
+        diagnoses_history.diagnoses,
+        "episodes.#{encounter.episode.identifier.value}.current_diagnoses"
+      )
+
+    push =
+      Mongo.add_to_push(
+        %{},
+        diagnoses_history,
+        "episodes.#{encounter.episode.identifier.value}.diagnoses_history"
+      )
+
+    set = Enum.reduce(immunizations, set, &add_immunization_to_set/2)
+
+    set =
+      Enum.reduce(allergy_intolerances, set, fn allergy_intolerance, acc ->
+        allergy_intolerance = AllergyIntolerances.fill_up_allergy_intolerance_asserter(allergy_intolerance)
+
+        acc
+        |> Mongo.add_to_set(
+          allergy_intolerance,
+          "allergy_intolerances.#{allergy_intolerance.id}"
+        )
+        |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.id")
+        |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.inserted_by")
+        |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.updated_by")
+        |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.context.identifier.value")
+        |> Mongo.convert_to_uuid("allergy_intolerances.#{allergy_intolerance.id}.source.value.identifier.value")
+      end)
+
+    set =
+      Enum.reduce(risk_assessments, set, fn risk_assessment, acc ->
+        risk_assessment = RiskAssessments.fill_up_risk_assessment_performer(risk_assessment)
+
+        acc
+        |> Mongo.add_to_set(
+          risk_assessment,
+          "risk_assessments.#{risk_assessment.id}"
+        )
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.id")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.inserted_by")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.updated_by")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.context.identifier.value")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.performer.identifier.value")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.basis.value")
+        |> Mongo.convert_to_uuid("risk_assessments.#{risk_assessment.id}.reason.reference.identifier.value")
+      end)
+
+    set =
+      Enum.reduce(devices, set, fn device, acc ->
+        device = Devices.fill_up_device_asserter(device)
+
+        acc
+        |> Mongo.add_to_set(
+          device,
+          "devices.#{device.id}"
+        )
+        |> Mongo.convert_to_uuid("devices.#{device.id}.id")
+        |> Mongo.convert_to_uuid("devices.#{device.id}.inserted_by")
+        |> Mongo.convert_to_uuid("devices.#{device.id}.updated_by")
+        |> Mongo.convert_to_uuid("devices.#{device.id}.context.identifier.value")
+        |> Mongo.convert_to_uuid("devices.#{device.id}.source.value.identifier.value")
+      end)
+
+    set =
+      Enum.reduce(medication_statements, set, fn medication_statement, acc ->
+        medication_statement = MedicationStatements.fill_up_medication_statement_asserter(medication_statement)
+
+        acc
+        |> Mongo.add_to_set(
+          medication_statement,
+          "medication_statements.#{medication_statement.id}"
+        )
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.id")
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.inserted_by")
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.updated_by")
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.context.identifier.value")
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.source.value.identifier.value")
+        |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.based_on.identifier.value")
+      end)
+
+    links = [
+      %{
+        "entity" => "encounter",
+        "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"
+      }
+    ]
 
     links =
-      job.links ++
-        [
-          %{
-            "entity" => "encounter",
-            "href" => "/api/patients/#{patient_id}/encounters/#{encounter.id}"
-          }
-        ]
+      Enum.reduce(immunizations, links, fn immunization, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "immunization",
+              "href" => "/api/patients/#{patient_id}/immunizations/#{immunization.id}"
+            }
+          ]
+      end)
 
-    event = %PackageSaveConditionsJob{
-      request_id: job.request_id,
-      _id: job._id,
-      patient_id: patient_id,
-      patient_id_hash: patient_id_hash,
-      links: links,
-      encounter: encounter,
-      conditions: job.conditions,
-      observations: job.observations
-    }
+    links =
+      Enum.reduce(allergy_intolerances, links, fn allergy_intolerance, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "allergy_intolerance",
+              "href" => "/api/patients/#{patient_id}/allergy_intolerances/#{allergy_intolerance.id}"
+            }
+          ]
+      end)
 
-    with :ok <- @kafka_producer.publish_encounter_package_event(event) do
-      :ok
-    end
+    links =
+      Enum.reduce(risk_assessments, links, fn risk_assessment, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "risk_assessment",
+              "href" => "/api/patients/#{patient_id}/risk_assessments/#{risk_assessment.id}"
+            }
+          ]
+      end)
+
+    links =
+      Enum.reduce(devices, links, fn device, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "device",
+              "href" => "/api/patients/#{patient_id}/devices/#{device.id}"
+            }
+          ]
+      end)
+
+    links =
+      Enum.reduce(medication_statements, links, fn medication_statement, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "medication_statement",
+              "href" => "/api/patients/#{patient_id}/medication_statements/#{medication_statement.id}"
+            }
+          ]
+      end)
+
+    conditions = Enum.map(conditions, &Conditions.create/1)
+    observations = Enum.map(observations, &Observations.create/1)
+
+    links =
+      Enum.reduce(conditions, links, fn condition, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "condition",
+              "href" => "/api/patients/#{patient_id}/conditions/#{condition._id}"
+            }
+          ]
+      end)
+
+    links =
+      Enum.reduce(observations, links, fn observation, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "observation",
+              "href" => "/api/patients/#{patient_id}/observations/#{observation._id}"
+            }
+          ]
+      end)
+
+    %Transaction{}
+    |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
+      "$set" => set,
+      "$push" => push
+    })
+    |> insert_conditions(conditions)
+    |> insert_observations(observations)
+    |> Jobs.update(job._id, Job.status(:processed), %{"links" => links}, 200)
+    |> Transaction.flush()
   end
 
-  def consume_save_conditions(
-        %PackageSaveConditionsJob{
-          patient_id: patient_id,
-          patient_id_hash: patient_id_hash,
-          encounter: encounter
-        } = job
-      ) do
-    links = insert_conditions(job.links, job.conditions, patient_id)
-
-    event = %PackageSaveObservationsJob{
-      request_id: job.request_id,
-      _id: job._id,
-      patient_id: patient_id,
-      patient_id_hash: patient_id_hash,
-      links: links,
-      encounter: encounter,
-      observations: job.observations
-    }
-
-    with :ok <- @kafka_producer.publish_encounter_package_event(event) do
-      :ok
-    end
+  def insert_conditions(transaction, conditions) do
+    Enum.reduce(conditions || [], transaction, fn condition, acc ->
+      Transaction.add_operation(acc, @conditions_collection, :insert, Mongo.prepare_doc(condition))
+    end)
   end
 
-  def consume_save_observations(%PackageSaveObservationsJob{patient_id: patient_id} = job) do
-    links = insert_observations(job.links, job.observations, patient_id)
-    Jobs.produce_update_status(job._id, job.request_id, %{"links" => links}, 200)
+  def insert_observations(transaction, observations) do
+    Enum.reduce(observations || [], transaction, fn observation, acc ->
+      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation))
+    end)
   end
 
-  defp insert_conditions(links, [], _), do: links
-
-  defp insert_conditions(links, conditions, patient_id) do
-    case Mongo.insert_many(Condition.metadata().collection, conditions, []) do
-      {:ok, %{inserted_ids: condition_ids}} ->
-        Enum.reduce(condition_ids, links, fn {_, condition_id}, acc ->
-          acc ++
-            [
-              %{
-                "entity" => "condition",
-                "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
-              }
-            ]
-        end)
-
-      {:error, error} ->
-        Logger.warn("Failed to insert conditions: #{error.message}")
-        links
-    end
+  defp add_immunization_to_set(%{id: %BSON.Binary{}} = immunization, set) do
+    set
+    |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
   end
 
-  defp insert_observations(links, [], _), do: links
+  defp add_immunization_to_set(immunization, set) do
+    immunization = Immunizations.fill_up_immunization_performer(immunization)
 
-  defp insert_observations(links, observations, patient_id) do
-    case Mongo.insert_many(Observation.metadata().collection, observations, []) do
-      {:ok, %{inserted_ids: observation_ids}} ->
-        Enum.reduce(observation_ids, links, fn {_, observation_id}, acc ->
-          acc ++
-            [
-              %{
-                "entity" => "observation",
-                "href" => "/api/patients/#{patient_id}/observations/#{observation_id}"
-              }
-            ]
-        end)
+    set
+    |> Mongo.add_to_set(immunization, "immunizations.#{immunization.id}")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.id")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.inserted_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.updated_by")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.context.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.legal_entity.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.source.value.identifier.value")
+    |> Mongo.convert_to_uuid("immunizations.#{immunization.id}.reactions", ~w(detail identifier value)a)
+  end
 
-      {:error, error} ->
-        Logger.warn("Failed to insert observations: #{error.message}")
-        links
-    end
+  defp add_visit_to_set(set, nil), do: set
+
+  defp add_visit_to_set(set, visit) do
+    visit_id = visit.id
+
+    set
+    |> Mongo.add_to_set(visit, "visits.#{visit_id}")
+    |> Mongo.convert_to_uuid("visits.#{visit_id}.id")
+    |> Mongo.convert_to_uuid("visits.#{visit_id}.inserted_by")
+    |> Mongo.convert_to_uuid("visits.#{visit_id}.updated_by")
   end
 end

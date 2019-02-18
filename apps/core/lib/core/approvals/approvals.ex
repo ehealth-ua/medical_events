@@ -4,10 +4,12 @@ defmodule Core.Approvals do
   alias Core.Approval
   alias Core.Approvals.Renderer, as: ApprovalsRenderer
   alias Core.Approvals.Validations, as: ApprovalsValidations
+  alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
   alias Core.Jobs.ApprovalResendJob
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Patients
   alias Core.Patients.Validators
   alias Core.Reference
@@ -151,14 +153,24 @@ defmodule Core.Approvals do
                 |> Mongo.convert_to_uuid("granted_to", ~w(identifier value)a)
                 |> Mongo.convert_to_uuid("reason", ~w(identifier value)a)
 
-              {:ok, %{inserted_id: _}} = Mongo.insert_one(@collection, doc, [])
+              result =
+                %Transaction{}
+                |> Transaction.add_operation(@collection, :insert, doc)
+                |> Jobs.update(
+                  job._id,
+                  Job.status(:processed),
+                  %{"response_data" => ApprovalsRenderer.render(approval)},
+                  200
+                )
+                |> Transaction.flush()
 
-              Jobs.produce_update_status(
-                job._id,
-                job.request_id,
-                %{"response_data" => ApprovalsRenderer.render(approval)},
-                200
-              )
+              case result do
+                :ok ->
+                  :ok
+
+                {:error, reason} ->
+                  Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              end
             else
               error ->
                 Logger.error("Failed to initialize otp verification: #{inspect(error)}")

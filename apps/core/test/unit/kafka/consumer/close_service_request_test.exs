@@ -3,15 +3,11 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
 
   use Core.ModelCase
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.ServiceRequest
-  alias Core.ServiceRequests
   import Mox
-
-  @status_pending Job.status(:pending)
 
   setup :verify_on_exit!
 
@@ -30,18 +26,37 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect_job_update(
-        job._id,
-        %{
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "service_requests", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
+
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        response = %{
           "links" => [
             %{
               "entity" => "service_request",
               "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
             }
           ]
-        },
-        200
-      )
+        }
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
+
+        :ok
+      end)
 
       assert service_request.status == ServiceRequest.status(:active)
 
@@ -54,10 +69,6 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
                  client_id: client_id,
                  id: id
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, service_request} = ServiceRequests.get_by_id(id)
-      assert service_request.status == ServiceRequest.status(:completed)
     end
 
     test "can't close service_request with invalid status" do
@@ -74,7 +85,7 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect_job_update(job._id, "Service request with status cancelled can't be closed", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request with status cancelled can't be closed", 409)
 
       assert service_request.status == ServiceRequest.status(:cancelled)
 
@@ -87,10 +98,6 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
                  client_id: client_id,
                  id: id
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
-      assert {:ok, service_request} = ServiceRequests.get_by_id(id)
-      assert service_request.status == ServiceRequest.status(:cancelled)
     end
   end
 end

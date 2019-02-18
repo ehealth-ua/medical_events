@@ -3,15 +3,16 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
   use Core.ModelCase
 
-  import Mox
-  import Core.Expectations.IlExpectations
-  import Core.Expectations.OTPVerificationExpectations
-
   alias Core.Approval
+  alias Core.Job
   alias Core.Jobs.ApprovalCreateJob
   alias Core.Kafka.Consumer
   alias Core.Patients
   alias Core.ServiceRequest
+
+  import Mox
+  import Core.Expectations.IlExpectations
+  import Core.Expectations.OTPVerificationExpectations
 
   @approval_create_response_fields ~w(
     access_level
@@ -21,7 +22,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     id
     reason
     status
-  )a
+  )
 
   setup :verify_on_exit!
 
@@ -55,28 +56,46 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       job = insert(:job)
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "approvals", "operation" => "insert"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        data = event.response["response_data"]
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson =
+          set
+          |> Base.decode64!()
+          |> BSON.decode()
+
+        response_data = set_bson["$set"]["response"]["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
-          assert Map.has_key?(data, field)
+          assert Map.has_key?(response_data, field)
         end)
 
         granted_resources_ids =
-          data
-          |> Map.get(:granted_resources)
-          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          response_data["granted_resources"]
+          |> Enum.map(&get_in(&1, ~w(identifier value)))
           |> Enum.map(&to_string/1)
 
         Enum.each([episode_1.id, episode_2.id], fn episode_id ->
           assert to_string(episode_id) in granted_resources_ids
         end)
 
-        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
-        refute get_in(data, ~w(reason identifier value)a)
+        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
+        refute get_in(response_data, ~w(reason identifier value))
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => response
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -146,28 +165,46 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       job = insert(:job)
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "approvals", "operation" => "insert"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        data = event.response["response_data"]
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson =
+          set
+          |> Base.decode64!()
+          |> BSON.decode()
+
+        response_data = set_bson["$set"]["response"]["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
-          assert Map.has_key?(data, field)
+          assert Map.has_key?(response_data, field)
         end)
 
         granted_resources_ids =
-          data
-          |> Map.get(:granted_resources)
-          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          response_data["granted_resources"]
+          |> Enum.map(&get_in(&1, ~w(identifier value)))
           |> Enum.map(&to_string/1)
 
         Enum.each([episode_1.id, episode_2.id], fn episode_id ->
           assert to_string(episode_id) in granted_resources_ids
         end)
 
-        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
-        assert get_in(data, ~w(reason identifier value)a) == service_request_id
+        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
+        assert get_in(response_data, ~w(reason identifier value)) == service_request_id
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => response
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -224,28 +261,46 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       job = insert(:job)
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-        assert %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 200} = event
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "approvals", "operation" => "insert"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        data = event.response["response_data"]
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson =
+          set
+          |> Base.decode64!()
+          |> BSON.decode()
+
+        response_data = set_bson["$set"]["response"]["response_data"]
 
         Enum.each(@approval_create_response_fields, fn field ->
-          assert Map.has_key?(data, field)
+          assert Map.has_key?(response_data, field)
         end)
 
         granted_resources_ids =
-          data
-          |> Map.get(:granted_resources)
-          |> Enum.map(&get_in(&1, ~w(identifier value)a))
+          response_data["granted_resources"]
+          |> Enum.map(&get_in(&1, ~w(identifier value)))
           |> Enum.map(&to_string/1)
 
         Enum.each([episode_1.id, episode_2.id], fn episode_id ->
           assert to_string(episode_id) in granted_resources_ids
         end)
 
-        assert get_in(data, ~w(granted_to identifier value)a) == employee_id
-        refute get_in(data, ~w(reason identifier value)a)
+        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
+        refute get_in(response_data, ~w(reason identifier value))
+
+        status = Job.status(:processed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => response
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -317,7 +372,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)
-      expect_job_update(job._id, "Service request should be active", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request should be active", 409)
 
       assert :ok =
                Consumer.consume(%ApprovalCreateJob{
@@ -390,17 +445,25 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       job = insert(:job)
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        case event do
-          %Core.Jobs.JobUpdateStatusJob{_id: ^id, status_code: 409} ->
-            assert event.response =~ "Service request expiration date must be a datetime greater than or equal"
-            :ok
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 
-          _ ->
-            raise ExUnit.AssertionError
-        end
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+        status = Job.status(:failed)
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 409,
+                   "response" => "Service request expiration date must be a datetime greater than or equal" <> _
+                 }
+               } = set_bson
+
+        :ok
       end)
 
       assert :ok =
@@ -441,7 +504,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)
-      expect_job_update(job._id, "Service request does not contain episode references", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request does not contain episode references", 409)
 
       assert :ok =
                Consumer.consume(%ApprovalCreateJob{
@@ -478,7 +541,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       insert(:patient, _id: patient_id_hash)
 
       job = insert(:job)
-      expect_job_update(job._id, "Service request is not found", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request is not found", 409)
 
       assert :ok =
                Consumer.consume(%ApprovalCreateJob{
@@ -527,34 +590,35 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       expect_job_update(
         job._id,
+        Job.status(:failed),
         %{
-          invalid: [
+          "invalid" => [
             %{
-              entry: "$.granted_resources.[1].identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.granted_resources.[1].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Episode with such ID is not found",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Episode with such ID is not found",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             },
             %{
-              entry: "$.granted_to.identifier.value",
-              entry_type: "json_data_property",
-              rules: [
+              "entry" => "$.granted_to.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
                 %{
-                  description: "Employee does not related to user",
-                  params: [],
-                  rule: :invalid
+                  "description" => "Employee does not related to user",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }
           ],
-          message:
+          "message" =>
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          type: :validation_failed
+          "type" => "validation_failed"
         },
         422
       )

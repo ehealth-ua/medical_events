@@ -5,8 +5,6 @@ defmodule Core.Kafka.Producer do
   require Logger
 
   @medical_events_topic "medical_events"
-  @secondary_events_topic "secondary_events"
-  @job_update_events_topic "job_update_events"
   @mongo_events_topic "mongo_events"
 
   @behaviour Core.Behaviours.KafkaProducerBehaviour
@@ -18,25 +16,11 @@ defmodule Core.Kafka.Producer do
     Kaffe.Producer.produce_sync(@medical_events_topic, partition, key, :erlang.term_to_binary(request))
   end
 
-  def publish_encounter_package_event(event) do
-    partition = get_partition(event.patient_id, @secondary_events_topic)
-    key = get_key(event.patient_id)
-    Logger.info("Publishing kafka event to topic: #{@secondary_events_topic}, partition: #{partition}, key: #{key}")
-    Kaffe.Producer.produce_sync(@secondary_events_topic, partition, key, :erlang.term_to_binary(event))
-  end
-
   def publish_mongo_event(%Event{} = event) do
     partition = get_partition(event.actor_id, @mongo_events_topic)
     key = get_key(event.actor_id)
     Logger.info("Publishing kafka event to topic: #{@mongo_events_topic}, partition: #{partition}, key: #{key}")
     Kaffe.Producer.produce_sync(@mongo_events_topic, partition, key, :erlang.term_to_binary(event))
-  end
-
-  def publish_job_update_status_event(event) do
-    partition = Enum.random(0..(Confex.fetch_env!(:core, :kafka)[:partitions][@job_update_events_topic] - 1))
-    key = UUID.uuid4()
-    Logger.info("Publishing kafka event to topic: #{@job_update_events_topic}, partition: #{partition}, key: #{key}")
-    Kaffe.Producer.produce_sync(@job_update_events_topic, partition, key, :erlang.term_to_binary(event))
   end
 
   defp get_key(%BSON.Binary{binary: id}) do

@@ -4,7 +4,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
   use Core.ModelCase
   alias Core.DateView
   alias Core.Job
-  alias Core.Jobs
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Kafka.Consumer
   alias Core.Patients
@@ -13,8 +12,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
   import Core.Expectations.DigitalSignatureExpectation
   import Core.Expectations.OTPVerificationExpectations
   import Mox
-
-  @status_pending Job.status(:pending)
 
   setup :verify_on_exit!
 
@@ -25,31 +22,29 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   invalid: [
-                     %{
-                       entry: "$",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "type mismatch. Expected Object but got String",
-                           params: ["object"],
-                           rule: :cast
-                         }
-                       ]
-                     }
-                   ]
-                 },
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "type mismatch. Expected Object but got String",
+                  "params" => ["object"],
+                  "rule" => "cast"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestRecallJob{
@@ -66,218 +61,218 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
+      response = %{
+        "invalid" => [
+          %{
+            "entry" => "$.id",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property id was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.status",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property status was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.intent",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property intent was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.category",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property category was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.code",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property code was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.context",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property context was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.authored_on",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property authored_on was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.requester",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property requester was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.status_reason",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property status_reason was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.expiration_date",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property expiration_date was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.note",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property note was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.patient_instruction",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property patient_instruction was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.permitted_episodes",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property permitted_episodes was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.reason_reference",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property reason_reference was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.requisition",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property requisition was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.status_history",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property status_history was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.used_by",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property used_by was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.patient",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property patient was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          }
+        ],
+        "message" =>
+          "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+        "type" => "validation_failed"
+      }
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   invalid: [
-                     %{
-                       entry: "$.id",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property id was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.status",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property status was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.intent",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property intent was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.category",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property category was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.code",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property code was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.context",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property context was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.authored_on",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property authored_on was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.requester",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property requester was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.status_reason",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property status_reason was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.expiration_date",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property expiration_date was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.note",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property note was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.patient_instruction",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property patient_instruction was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.permitted_episodes",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property permitted_episodes was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.reason_reference",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property reason_reference was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.requisition",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property requisition was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.status_history",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property status_history was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.used_by",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property used_by was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     },
-                     %{
-                       entry: "$.patient",
-                       entry_type: "json_data_property",
-                       rules: [
-                         %{
-                           description: "required property patient was not present",
-                           params: [],
-                           rule: :required
-                         }
-                       ]
-                     }
-                   ]
-                 },
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        response,
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestRecallJob{
@@ -335,17 +330,12 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: "Signed content doesn't match with previously created service request",
-                 status_code: 422
-               } = event
-
-        :ok
-      end)
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        "Signed content doesn't match with previously created service request",
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestRecallJob{
@@ -356,8 +346,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
 
     test "success recall service_request" do
@@ -420,22 +408,34 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 
-      expect(KafkaMock, :publish_job_update_status_event, fn event ->
-        id = to_string(job._id)
-        url = "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [
+                 %{"collection" => "service_requests", "operation" => "update_one"},
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ] = Jason.decode!(args)
 
-        assert %Core.Jobs.JobUpdateStatusJob{
-                 _id: ^id,
-                 response: %{
-                   "links" => [
-                     %{
-                       "entity" => "service_request",
-                       "href" => ^url
-                     }
-                   ]
-                 },
-                 status_code: 200
-               } = event
+        assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
+
+        set_bson = set |> Base.decode64!() |> BSON.decode()
+
+        status = Job.status(:processed)
+
+        response = %{
+          "links" => [
+            %{
+              "entity" => "service_request",
+              "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
+            }
+          ]
+        }
+
+        assert %{
+                 "$set" => %{
+                   "status" => ^status,
+                   "status_code" => 200,
+                   "response" => ^response
+                 }
+               } = set_bson
 
         :ok
       end)
@@ -449,8 +449,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
                  client_id: client_id,
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
-
-      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
     end
   end
 
