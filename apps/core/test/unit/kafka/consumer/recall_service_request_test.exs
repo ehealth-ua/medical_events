@@ -251,11 +251,11 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
             ]
           },
           %{
-            "entry" => "$.patient",
+            "entry" => "$.subject",
             "entry_type" => "json_data_property",
             "rules" => [
               %{
-                "description" => "required property patient was not present",
+                "description" => "required property subject was not present",
                 "params" => [],
                 "rule" => "required"
               }
@@ -318,7 +318,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
           "status_history" => ReferenceView.render(service_request.status_history),
           "used_by" => ReferenceView.render(service_request.used_by),
           "supporting_info" => ReferenceView.render(service_request.supporting_info),
-          "patient" =>
+          "subject" =>
             ReferenceView.render(
               Reference.create(%{
                 "identifier" => %{
@@ -393,7 +393,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
           "status_history" => ReferenceView.render(service_request.status_history),
           "used_by" => ReferenceView.render(service_request.used_by),
           "supporting_info" => ReferenceView.render(service_request.supporting_info),
-          "patient" =>
+          "subject" =>
             ReferenceView.render(
               Reference.create(%{
                 "identifier" => %{
