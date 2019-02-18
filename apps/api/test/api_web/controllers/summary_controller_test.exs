@@ -2,12 +2,146 @@ defmodule Api.Web.SummaryControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+  use Core.Schema
 
   import Core.Expectations.CasherExpectation
   import Mox
 
   alias Core.Observations.Value
   alias Core.Patients
+
+  describe "list episodes" do
+    test "successful search", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_episodes, patient_id))
+        |> json_response(200)
+
+      Enum.each(resp["data"], fn episode ->
+        assert_json_schema(episode, "episodes/episode_summary.json")
+      end)
+
+      assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "invalid search parameters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      search_params = %{"code" => "123", "service_request_id" => UUID.uuid4()}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_episodes, patient_id), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.code",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.service_request_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
+    test "successful search with search parameters: period", %{conn: conn} do
+      expect(IlMock, :get_dictionaries, fn _, _ ->
+        {:ok, %{"data" => %{}}}
+      end)
+
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      week_ago = create_datetime(Date.add(Date.utc_today(), -7))
+      next_week = create_datetime(Date.add(Date.utc_today(), 7))
+      tomorrow = create_datetime(Date.add(Date.utc_today(), +1))
+      yesterday = create_datetime(Date.add(Date.utc_today(), -1))
+      today = create_datetime(Date.utc_today())
+
+      tomorrow_inactive_episode = build(:episode, period: build(:period, start: tomorrow, end: tomorrow))
+      tomorrow_active_episode = build(:episode, period: build(:period, start: tomorrow, end: next_week))
+
+      today_inactive_episode = build(:episode, period: build(:period, start: today, end: tomorrow))
+      today_active_episode = build(:episode, period: build(:period, start: today, end: next_week))
+
+      week_ago_inactive_episode = build(:episode, period: build(:period, start: week_ago, end: yesterday))
+      week_ago_today_episode = build(:episode, period: build(:period, start: week_ago, end: today))
+      week_ago_next_week_episode = build(:episode, period: build(:period, start: week_ago, end: next_week))
+
+      week_ago_noend_episode = build(:episode, period: build(:period, start: week_ago, end: nil))
+      today_noend_episode = build(:episode, period: build(:period, start: today, end: nil))
+      tomorrow_noend_episode = build(:episode, period: build(:period, start: tomorrow, end: nil))
+      next_week_noend_episode = build(:episode, period: build(:period, start: next_week, end: nil))
+
+      builded_episodes = [
+        tomorrow_inactive_episode,
+        tomorrow_active_episode,
+        today_inactive_episode,
+        today_active_episode,
+        week_ago_inactive_episode,
+        week_ago_today_episode,
+        week_ago_next_week_episode,
+        week_ago_noend_episode,
+        today_noend_episode,
+        tomorrow_noend_episode,
+        next_week_noend_episode
+      ]
+
+      episodes =
+        Enum.reduce(builded_episodes, %{}, fn episode, episodes ->
+          Map.put(episodes, UUID.binary_to_string!(episode.id.binary), episode)
+        end)
+
+      episode_id = fn episode ->
+        UUID.binary_to_string!(episode.id.binary)
+      end
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, episodes: episodes, _id: patient_id_hash)
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_episodes, patient_id), %{
+          "period_from" => yesterday |> DateTime.to_date() |> Date.to_string(),
+          "period_to" => today |> DateTime.to_date() |> Date.to_string()
+        })
+        |> json_response(200)
+
+      ids =
+        Enum.reduce(resp["data"], [], fn episode, ids ->
+          assert_json_schema(episode, "episodes/episode_summary.json")
+          [episode["id"] | ids]
+        end)
+
+      assert_matching_ids(ids, [
+        episode_id.(today_inactive_episode),
+        episode_id.(today_active_episode),
+        episode_id.(week_ago_inactive_episode),
+        episode_id.(week_ago_today_episode),
+        episode_id.(week_ago_next_week_episode),
+        episode_id.(week_ago_noend_episode),
+        episode_id.(today_noend_episode)
+      ])
+    end
+  end
 
   describe "list immunizations" do
     test "successful search", %{conn: conn} do
@@ -1149,5 +1283,9 @@ defmodule Api.Web.SummaryControllerTest do
   defp get_datetime(day_shift) do
     date = Date.utc_today() |> Date.add(day_shift) |> Date.to_erl()
     {date, {0, 0, 0}} |> NaiveDateTime.from_erl!() |> DateTime.from_naive!("Etc/UTC")
+  end
+
+  defp assert_matching_ids(received_ids, db_ids) do
+    assert MapSet.new(received_ids) == MapSet.new(db_ids)
   end
 end
