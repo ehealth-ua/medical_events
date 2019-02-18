@@ -399,7 +399,7 @@ defmodule Core.ServiceRequests.Consumer do
                 {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
                   @otp_verification_api.send_sms(
                     phone_number,
-                    EEx.eval_string(config()[:recall_sms], assigns: [number: phone_number]),
+                    EEx.eval_string(config()[:recall_sms], assigns: [number: service_request.requisition]),
                     "text",
                     []
                   )
@@ -545,7 +545,7 @@ defmodule Core.ServiceRequests.Consumer do
                 {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
                   @otp_verification_api.send_sms(
                     phone_number,
-                    EEx.eval_string(config()[:cancel_sms], assigns: [number: phone_number]),
+                    EEx.eval_string(config()[:cancel_sms], assigns: [number: service_request.requisition]),
                     "text",
                     []
                   )
