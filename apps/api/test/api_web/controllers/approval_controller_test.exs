@@ -379,7 +379,7 @@ defmodule Api.Web.ApprovalControllerTest do
   describe "resend approval" do
     test "patient not found", %{conn: conn} do
       assert conn
-             |> post(approval_path(conn, :resend, UUID.uuid4(), UUID.uuid4()))
+             |> patch(approval_path(conn, :resend, UUID.uuid4(), UUID.uuid4()))
              |> json_response(404)
     end
 
@@ -391,7 +391,7 @@ defmodule Api.Web.ApprovalControllerTest do
       insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
 
       assert conn
-             |> post(approval_path(conn, :resend, patient_id, UUID.uuid4()))
+             |> patch(approval_path(conn, :resend, patient_id, UUID.uuid4()))
              |> json_response(409)
     end
 
@@ -403,7 +403,7 @@ defmodule Api.Web.ApprovalControllerTest do
       insert(:patient, _id: patient_id_hash)
 
       assert conn
-             |> post(approval_path(conn, :resend, patient_id, UUID.uuid4()))
+             |> patch(approval_path(conn, :resend, patient_id, UUID.uuid4()))
              |> json_response(404)
     end
 
@@ -420,7 +420,7 @@ defmodule Api.Web.ApprovalControllerTest do
 
       assert resp =
                conn
-               |> post(approval_path(conn, :resend, patient_id, id))
+               |> patch(approval_path(conn, :resend, patient_id, id))
                |> json_response(202)
 
       assert %{

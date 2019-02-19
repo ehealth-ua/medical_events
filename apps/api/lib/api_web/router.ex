@@ -99,7 +99,7 @@ defmodule ApiWeb.Router do
     scope "/patients/:patient_id/approvals" do
       post("/", ApprovalController, :create)
       patch("/:id", ApprovalController, :verify)
-      post("/:id/actions/resend", ApprovalController, :resend)
+      patch("/:id/actions/resend", ApprovalController, :resend)
     end
 
     get("/jobs/:id", JobController, :show)
