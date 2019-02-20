@@ -377,15 +377,6 @@ defmodule Api.Web.EpisodeControllerTest do
       |> assert_json_schema("episodes/episode_show.json")
     end
 
-    test "get episode invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
-
-      conn
-      |> get(episode_path(conn, :show, "invalid-uuid", UUID.uuid4()))
-      |> json_response(403)
-    end
-
     test "get episode invalid episode uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 

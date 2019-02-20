@@ -31,9 +31,6 @@ defmodule ApiWeb.Router do
       get("/patients/:patient_id/conditions", ConditionController, :index)
       get("/patients/:patient_id/conditions/:id", ConditionController, :show)
 
-      get("/patients/:patient_id/episodes", EpisodeController, :index)
-      get("/patients/:patient_id/episodes/:id", EpisodeController, :show)
-
       get("/patients/:patient_id/observations", ObservationController, :index)
       get("/patients/:patient_id/observations/:id", ObservationController, :show)
 
@@ -55,6 +52,9 @@ defmodule ApiWeb.Router do
       get("/patients/:patient_id/medication_statements", MedicationStatementController, :index)
       get("/patients/:patient_id/medication_statements/:id", MedicationStatementController, :show)
     end
+
+    get("/patients/:patient_id/episodes", EpisodeController, :index)
+    get("/patients/:patient_id/episodes/:id", EpisodeController, :show)
 
     scope "/patients/:patient_id/episodes/:episode_id", as: :episode_context do
       get("/encounters", EncounterController, :index)
