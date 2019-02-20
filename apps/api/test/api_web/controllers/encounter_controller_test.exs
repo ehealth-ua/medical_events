@@ -179,7 +179,7 @@ defmodule Api.Web.EncounterControllerTest do
              |> get(
                episode_context_encounter_path(
                  conn,
-                 :show,
+                 :show_by_episode,
                  patient_id,
                  to_string(encounter_1.episode.identifier.value),
                  to_string(encounter_1.id)
@@ -188,6 +188,39 @@ defmodule Api.Web.EncounterControllerTest do
              |> json_response(200)
              |> Map.get("data")
              |> assert_json_schema("encounters/encounter_show.json")
+    end
+
+    test "encounter not found in episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      encounter_1 = build(:encounter)
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        encounters: %{
+          to_string(encounter_1.id) => encounter_1,
+          to_string(encounter_2.id) => encounter_2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      assert conn
+             |> get(
+               episode_context_encounter_path(
+                 conn,
+                 :show_by_episode,
+                 patient_id,
+                 to_string(encounter_2.episode.identifier.value),
+                 to_string(encounter_1.id)
+               )
+             )
+             |> json_response(404)
     end
   end
 

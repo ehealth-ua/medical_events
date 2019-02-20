@@ -26,6 +26,26 @@ defmodule Core.Conditions do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    if episode_id != nil and encounter_ids == [] do
+      nil
+    else
+      pipeline =
+        %{"$match" => %{"patient_id" => patient_id_hash, "_id" => Mongo.string_to_uuid(id)}}
+        |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
+        |> List.wrap()
+
+      with [condition] <- @condition_collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+        {:ok, Condition.create(condition)}
+      else
+        _ ->
+          nil
+      end
+    end
+  end
+
   def get_summary(patient_id_hash, id) do
     @condition_collection
     |> Mongo.find_one(%{

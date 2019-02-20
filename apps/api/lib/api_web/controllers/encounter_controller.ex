@@ -22,6 +22,14 @@ defmodule Api.Web.EncounterController do
     end
   end
 
+  def show_by_episode(conn, params) do
+    %{"patient_id_hash" => patient_id_hash, "id" => encounter_id, "episode_id" => episode_id} = params
+
+    with {:ok, encounter} <- Encounters.get_by_id_episode_id(patient_id_hash, encounter_id, episode_id) do
+      render(conn, "show.json", encounter: encounter)
+    end
+  end
+
   def create(conn, params) do
     with {:ok, job} <- Patients.produce_create_package(params, conn.private[:user_id], conn.private[:client_id]) do
       conn

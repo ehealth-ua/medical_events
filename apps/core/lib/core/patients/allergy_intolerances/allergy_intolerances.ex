@@ -28,6 +28,36 @@ defmodule Core.Patients.AllergyIntolerances do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"allergy_intolerances" => %{"$objectToArray" => "$allergy_intolerances"}}},
+      %{"$unwind" => "$allergy_intolerances"},
+      %{
+        "$match" => %{
+          "allergy_intolerances.k" => id,
+          "allergy_intolerances.v.context.identifier.value" => %{"$in" => encounter_ids}
+        }
+      },
+      %{
+        "$project" => %{"allergy_intolerance" => "$allergy_intolerances.v"}
+      }
+    ]
+
+    with [%{"allergy_intolerance" => allergy_intolerance}] <- @collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, AllergyIntolerance.create(allergy_intolerance)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :allergy_intolerance_request) do
     with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =

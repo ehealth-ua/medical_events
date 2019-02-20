@@ -84,7 +84,7 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         |> get(
           episode_context_allergy_intolerance_path(
             conn,
-            :show,
+            :show_by_episode,
             patient_id,
             to_string(episode1.id),
             to_string(allergy_intolerance1.id)
@@ -98,6 +98,54 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
 
       assert get_in(resp, ~w(data id)) == to_string(allergy_intolerance1.id)
       refute get_in(resp, ~w(data id)) == to_string(allergy_intolerance2.id)
+    end
+
+    test "not found by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      allergy_intolerance1 = build(:allergy_intolerance, context: context)
+      allergy_intolerance2 = build(:allergy_intolerance)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        allergy_intolerances: %{
+          to_string(allergy_intolerance1.id) => allergy_intolerance1,
+          to_string(allergy_intolerance2.id) => allergy_intolerance2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      assert conn
+             |> get(
+               episode_context_allergy_intolerance_path(
+                 conn,
+                 :show_by_episode,
+                 patient_id,
+                 to_string(episode2.id),
+                 to_string(allergy_intolerance1.id)
+               )
+             )
+             |> json_response(404)
     end
 
     test "invalid patient uuid", %{conn: conn} do
