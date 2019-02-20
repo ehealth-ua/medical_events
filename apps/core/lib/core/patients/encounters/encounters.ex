@@ -22,6 +22,34 @@ defmodule Core.Patients.Encounters do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"encounters" => %{"$objectToArray" => "$encounters"}}},
+      %{"$unwind" => "$encounters"},
+      %{
+        "$match" => %{
+          "encounters.k" => id,
+          "encounters.v.episode.identifier.value" => Mongo.string_to_uuid(episode_id)
+        }
+      },
+      %{
+        "$project" => %{"encounter" => "$encounters.v"}
+      }
+    ]
+
+    with [%{"encounter" => encounter}] <- @patient_collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, Encounter.create(encounter)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   @spec get_status_by_id(binary(), binary()) :: nil | {:ok, binary()}
   def get_status_by_id(patient_id_hash, id) do
     with %{"encounters" => %{^id => %{"status" => status}}} <-

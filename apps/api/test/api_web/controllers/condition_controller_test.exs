@@ -379,19 +379,73 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      insert(:patient, _id: patient_id_hash)
       episode = build(:episode)
-      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
 
-      context = build_encounter_context(encounter1.id)
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        encounters: %{
+          to_string(encounter.id) => encounter
+        },
+        episodes: %{
+          to_string(episode.id) => episode
+        }
+      )
+
+      context = build_encounter_context(encounter.id)
       condition = insert(:condition, patient_id: patient_id_hash, context: context, asserted_date: nil)
 
       expect_get_person_data(patient_id)
 
       conn
-      |> get(episode_context_condition_path(conn, :show, patient_id, to_string(episode.id), to_string(condition._id)))
+      |> get(
+        episode_context_condition_path(
+          conn,
+          :show_by_episode,
+          patient_id,
+          to_string(episode.id),
+          to_string(condition._id)
+        )
+      )
       |> json_response(200)
       |> assert_json_schema("conditions/condition_show.json")
+    end
+
+    test "not found by episode context", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode = build(:episode)
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        encounters: %{
+          to_string(encounter.id) => encounter
+        },
+        episodes: %{
+          to_string(episode.id) => episode
+        }
+      )
+
+      context = build_encounter_context(encounter.id)
+      condition = insert(:condition, patient_id: patient_id_hash, context: context, asserted_date: nil)
+
+      expect_get_person_data(patient_id)
+
+      assert conn
+             |> get(
+               episode_context_condition_path(
+                 conn,
+                 :show_by_episode,
+                 patient_id,
+                 UUID.uuid4(),
+                 to_string(condition._id)
+               )
+             )
+             |> json_response(404)
     end
   end
 

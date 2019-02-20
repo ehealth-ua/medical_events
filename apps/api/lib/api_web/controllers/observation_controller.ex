@@ -20,4 +20,12 @@ defmodule Api.Web.ObservationController do
       render(conn, "show.json", observation: observation)
     end
   end
+
+  def show_by_episode(conn, params) do
+    %{"patient_id_hash" => patient_id_hash, "id" => observation_id, "episode_id" => episode_id} = params
+
+    with {:ok, observation} <- Observations.get_by_id_episode_id(patient_id_hash, observation_id, episode_id) do
+      render(conn, "show.json", observation: observation)
+    end
+  end
 end

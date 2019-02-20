@@ -28,6 +28,36 @@ defmodule Core.Patients.Immunizations do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"immunizations" => %{"$objectToArray" => "$immunizations"}}},
+      %{"$unwind" => "$immunizations"},
+      %{
+        "$match" => %{
+          "immunizations.k" => id,
+          "immunizations.v.context.identifier.value" => %{"$in" => encounter_ids}
+        }
+      },
+      %{
+        "$project" => %{"immunization" => "$immunizations.v"}
+      }
+    ]
+
+    with [%{"immunization" => immunization}] <- @collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, Immunization.create(immunization)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def get_by_ids(_patient_id_hash, []), do: {:ok, []}
 
   def get_by_ids(patient_id_hash, ids) do
