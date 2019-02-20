@@ -280,7 +280,10 @@ defmodule Core.Approvals do
         {:error, "Service request should be active", 409}
 
       {:expiration_date, now} ->
-        {:error, "Service request expiration date must be a datetime greater than or equal #{now}", 409}
+        Error.dump(%Core.ValidationError{
+          description: "Service request expiration date must be a datetime greater than or equal #{now}",
+          path: "$.service_request"
+        })
 
       nil ->
         {:error, "Service request is not found", 409}

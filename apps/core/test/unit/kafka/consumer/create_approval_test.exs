@@ -458,8 +458,23 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         assert %{
                  "$set" => %{
                    "status" => ^status,
-                   "status_code" => 409,
-                   "response" => "Service request expiration date must be a datetime greater than or equal" <> _
+                   "status_code" => 422,
+                   "response" => %{
+                     "invalid" => [
+                       %{
+                         "entry" => "$.service_request",
+                         "entry_type" => "json_data_property",
+                         "rules" => [
+                           %{
+                             "description" =>
+                               "Service request expiration date must be a datetime greater than or equal" <> _,
+                             "params" => [],
+                             "rule" => "invalid"
+                           }
+                         ]
+                       }
+                     ]
+                   }
                  }
                } = set_bson
 
