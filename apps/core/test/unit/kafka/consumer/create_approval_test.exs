@@ -22,6 +22,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     id
     reason
     status
+    authentication_method_current
   )
 
   setup :verify_on_exit!

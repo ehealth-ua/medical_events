@@ -16,7 +16,8 @@ defmodule Core.Approvals.Renderer do
       id: UUIDView.render(approval._id),
       granted_resources: ReferenceView.render(approval.granted_resources),
       granted_to: ReferenceView.render(approval.granted_to),
-      reason: if(approval.reason, do: ReferenceView.render(approval.reason), else: approval.reason)
+      reason: ReferenceView.render(approval.reason),
+      authentication_method_current: approval.urgent
     }
 
     approval
