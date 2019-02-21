@@ -34,7 +34,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
       job = insert(:job)
 
-      expect_job_update(job._id, "", 200)
+      expect_job_update(job._id, %{"response_data" => ""}, 200)
 
       assert :ok =
                Consumer.consume(%ApprovalResendJob{
@@ -65,7 +65,7 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
     job = insert(:job)
 
-    expect_job_update(job._id, "", 200)
+    expect_job_update(job._id, %{"response_data" => ""}, 200)
 
     assert :ok =
              Consumer.consume(%ApprovalResendJob{

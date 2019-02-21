@@ -204,7 +204,7 @@ defmodule Core.Approvals do
     with {:ok, %Approval{status: @status_new}} <- get_by_id(id),
          {:ok, auth_method} <- get_person_auth_method(patient_id),
          :ok <- initialize_otp_verification(auth_method) do
-      Jobs.produce_update_status(job._id, job.request_id, "", 200)
+      Jobs.produce_update_status(job._id, job.request_id, %{"response_data" => ""}, 200)
     else
       nil ->
         Jobs.produce_update_status(job._id, job.request_id, "Approval with id '#{id}' is not found", 404)
