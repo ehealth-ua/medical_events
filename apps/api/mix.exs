@@ -46,8 +46,7 @@ defmodule Api.Mixfile do
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
-      {:scrivener, "~> 2.5"},
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false}
+      {:scrivener, "~> 2.5"}
     ]
   end
 
