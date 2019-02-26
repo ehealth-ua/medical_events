@@ -253,10 +253,11 @@ defmodule Core.Approvals do
     end
   end
 
-  def get_by_patient_id_granted_to_episode_id(patient_id, employee_ids, episode_id) do
+  def get_by_patient_id_granted_to_episode_id_status(patient_id, employee_ids, episode_id, status) do
     @collection
     |> Mongo.find(%{
       "patient_id" => Patients.get_pk_hash(patient_id),
+      "status" => status,
       "granted_to.identifier.value" => %{"$in" => Enum.map(employee_ids, &Mongo.string_to_uuid/1)},
       "granted_resources" => %{
         "$elemMatch" => %{

@@ -6,6 +6,7 @@ defmodule Api.Rpc.RpcTest do
   import Mox
 
   alias Api.Rpc
+  alias Core.Approval
   alias Core.Patients
 
   test "get encounter status by id" do
@@ -282,7 +283,7 @@ defmodule Api.Rpc.RpcTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      approval = insert(:approval, patient_id: patient_id_hash)
+      approval = insert(:approval, patient_id: patient_id_hash, status: Approval.status(:active))
       insert(:approval, patient_id: patient_id_hash)
       [%{identifier: %{value: episode_id}}] = approval.granted_resources
       approval_id = to_string(approval._id)
