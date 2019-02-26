@@ -655,7 +655,7 @@ spec:
         }
       }
       environment {
-        APPS='[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"},{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"event-consumer","label":"event-consumer"},{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"},{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"},{"app":"secondary_events_consumer","chart":"medical-events-api","namespace":"me","deployment":"secondary-events-consumer","label":"secondary-events-consumer"},{"app":"number_generator","chart":"medical-events-api","namespace":"me","deployment":"number-generator","label":"number-generator"}]'
+        APPS='[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"},{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"event-consumer","label":"event-consumer"},{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"},{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"},{"app":"number_generator","chart":"medical-events-api","namespace":"me","deployment":"number-generator","label":"number-generator"}]'
       }
       agent {
         kubernetes {
