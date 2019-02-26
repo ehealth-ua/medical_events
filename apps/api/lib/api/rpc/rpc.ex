@@ -5,6 +5,7 @@ defmodule Api.Rpc do
 
   alias Api.Web.ApprovalView
   alias Api.Web.EpisodeView
+  alias Core.Approval
   alias Core.Approvals
   alias Core.Conditions
   alias Core.Observations
@@ -13,6 +14,8 @@ defmodule Api.Rpc do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
+
+  @status_active Approval.status(:active)
 
   @type approval() :: %{
           access_level: binary(),
@@ -1267,10 +1270,11 @@ defmodule Api.Rpc do
   @spec approvals_by_episode(
           patient_id :: binary(),
           employee_ids :: list(binary),
-          episode_id :: binary()
+          episode_id :: binary(),
+          status :: binary()
         ) :: list(approval)
-  def approvals_by_episode(patient_id, employee_ids, episode_id) do
-    approvals = Approvals.get_by_patient_id_granted_to_episode_id(patient_id, employee_ids, episode_id)
+  def approvals_by_episode(patient_id, employee_ids, episode_id, status \\ @status_active) do
+    approvals = Approvals.get_by_patient_id_granted_to_episode_id_status(patient_id, employee_ids, episode_id, status)
     ApprovalView.render("index.json", %{approvals: approvals})
   end
 end
