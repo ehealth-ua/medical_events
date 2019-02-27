@@ -148,11 +148,10 @@ defmodule Api.Web.ImmunizationControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(immunization_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(403)
+      |> json_response(404)
     end
 
     test "invalid immunization uuid", %{conn: conn} do
@@ -723,11 +722,11 @@ defmodule Api.Web.ImmunizationControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
-      conn
-      |> get(immunization_path(conn, :index, UUID.uuid4()))
-      |> json_response(403)
+      assert %{"data" => []} =
+               conn
+               |> get(immunization_path(conn, :index, UUID.uuid4()))
+               |> json_response(200)
     end
 
     test "get patient when no immunizations", %{conn: conn} do
