@@ -97,8 +97,8 @@ defmodule Core.Kafka.Consumer do
           apply(module, fun, [kafka_job])
         rescue
           error ->
-            Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
+            :ok = Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
         end
 
         :ets.delete(:message_cache)
