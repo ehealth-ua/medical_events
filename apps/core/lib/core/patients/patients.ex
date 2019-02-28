@@ -728,7 +728,11 @@ defmodule Core.Patients do
 
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
-      if Mongo.find_one(Condition.metadata().collection, %{"_id" => condition._id}, projection: %{"_id" => true}) do
+      if Mongo.find_one(
+           Condition.metadata().collection,
+           %{"_id" => Mongo.string_to_uuid(condition._id)},
+           projection: %{"_id" => true}
+         ) do
         {:halt, {:error, "Condition with id '#{condition._id}' already exists", 409}}
       else
         {:cont, acc}
