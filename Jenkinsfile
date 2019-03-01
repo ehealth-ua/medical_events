@@ -3,6 +3,7 @@ pipeline {
     environment {
       PROJECT_NAME = 'medical-events'
       INSTANCE_TYPE = 'n1-highcpu-16'
+      RD = "b${UUID.randomUUID().toString()}"
 }  
   stages {
     stage('Prepare instance') {
@@ -16,7 +17,11 @@ pipeline {
       steps {
         container(name: 'gcloud', shell: '/bin/sh') {
           withCredentials([file(credentialsId: 'e7e3e6df-8ef5-4738-a4d5-f56bb02a8bb2', variable: 'KEYFILE')]) {
+            echo "pn: ${PROJECT_NAME}"
             sh 'apk update && apk add curl bash'
+            sh 'echo "list variables"'
+            sh 'env'
+            sh 'pwd'
             sh 'gcloud auth activate-service-account jenkins-pool@ehealth-162117.iam.gserviceaccount.com --key-file=${KEYFILE} --project=ehealth-162117'
             sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/create_instance.sh -o create_instance.sh; bash ./create_instance.sh'
           }
@@ -58,7 +63,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: elixir
@@ -88,7 +93,7 @@ spec:
           fieldPath: status.podIP      
     tty: true                   
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
 """
             }
           }
@@ -143,7 +148,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -188,7 +193,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
   volumes:
   - name: docker-graph-storage 
     emptyDir: {}  
@@ -248,7 +253,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -293,7 +298,7 @@ spec:
     - name: docker-graph-storage 
       mountPath: /var/lib/docker            
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
   volumes:
   - name: volume
     hostPath:
@@ -352,7 +357,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -397,7 +402,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
   volumes:
   - name: volume
     hostPath:
@@ -456,7 +461,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -501,7 +506,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
   volumes:
   - name: volume
     hostPath:
@@ -560,7 +565,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -605,7 +610,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
   volumes:
   - name: volume
     hostPath:
@@ -634,9 +639,6 @@ spec:
               sh 'mix local.rebar --force'
               sh 'mix local.hex --force'
               sh 'mix deps.get'
-              // sh 'sed -i "s|REDIS_URI=redis://travis:6379|REDIS_URI=redis://redis-master.redis.svc.cluster.local:6379|g" .env'
-              // sh 'sed -i "s|MONGO_DB_URL=mongodb://travis:27017/taskafka|MONGO_DB_URL=mongodb://me-db-mongodb-replicaset.me-db.svc.cluster.local:27017/taskafka?replicaSet=rs0&readPreference=primary|g" .env'
-              // sh 'sed -i "s/KAFKA_BROKERS=travis/KAFKA_BROKERS=$POD_IP/g" .env'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/start-container.sh -o start-container.sh; bash ./start-container.sh'
               withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                 sh 'echo " ---- step: Push docker image ---- ";'
@@ -671,7 +673,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${BUILD_TAG}"
+    value: "${RD}"
     effect: "NoSchedule"
   containers:
   - name: kubectl
@@ -680,7 +682,7 @@ spec:
     - cat
     tty: true
   nodeSelector:
-    node: ${BUILD_TAG}
+    node: ${RD}
 """
         }
       }
@@ -705,12 +707,12 @@ spec:
       slackSend (color: 'warning', message: "ABORTED: Job - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>) canceled in ${currentBuild.durationString}")
     }
     always {
-      node('delete-instance') {
-        // checkout scm        
+      node('delete-instance') {    
         container(name: 'gcloud', shell: '/bin/sh') {
           withCredentials([file(credentialsId: 'e7e3e6df-8ef5-4738-a4d5-f56bb02a8bb2', variable: 'KEYFILE')]) {
-            checkout scm
             sh 'apk update && apk add curl bash git'
+            sh 'echo "list variables"'
+            sh 'env'
             sh 'gcloud auth activate-service-account jenkins-pool@ehealth-162117.iam.gserviceaccount.com --key-file=${KEYFILE} --project=ehealth-162117'
             sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/delete_instance.sh -o delete_instance.sh; bash ./delete_instance.sh'
           }
@@ -720,4 +722,3 @@ spec:
     }
   }
 }
-
