@@ -11,5 +11,3 @@ config :kaffe,
     endpoints: {:system, :string, "KAFKA_BROKERS"},
     topics: ["medical_events", "mongo_events"]
   ]
-
-config :kafka_ex, brokers: {:system, :string, "KAFKA_BROKERS"}

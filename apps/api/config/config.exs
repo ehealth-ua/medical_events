@@ -18,7 +18,7 @@ config :api, ApiWeb.Endpoint,
     view: EView.Views.PhoenixError,
     accepts: ~w(json)
   ],
-  pubsub: [name: Api.PubSub, adapter: Phoenix.PubSub.PG2]
+  instrumenters: [LoggerJSON.Phoenix.Instruments]
 
 config :phoenix, :format_encoders, json: Jason
 

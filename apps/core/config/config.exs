@@ -24,7 +24,7 @@ config :core,
   rpc_worker: Core.Rpc.Worker
 
 config :logger_json, :backend,
-  formatter: Core.Logger.Formatter,
+  formatter: EhealthLogger.Formatter,
   metadata: :all
 
 config :logger,
@@ -136,14 +136,6 @@ config :core, Core.ServiceRequests.Consumer,
   cancel_sms: {:system, :string, "CANCEL_SMS", "Ваше направлення під номером <%= @number %> було відмінено"},
   recall_sms: {:system, :string, "RECALL_SMS", "Ваше направлення під номером <%= @number %> було відкликано"},
   service_request_expiration_days: {:system, :integer, "SERVICE_REQUEST_EXPIRATION_DAYS", 7}
-
-config :kafka_ex,
-  brokers: "localhost:9092",
-  disable_default_worker: false,
-  sync_timeout: 3000,
-  max_restarts: 10,
-  max_seconds: 60,
-  kafka_version: "1.1.0"
 
 config :core, :encounter_package,
   encounter_max_days_passed: {:system, :integer, "ENCOUNTER_MAX_DAYS_PASSED", 7},
