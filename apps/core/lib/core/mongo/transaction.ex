@@ -34,7 +34,7 @@ defmodule Core.Mongo.Transaction do
   end
 
   def flush(%__MODULE__{} = transaction) do
-    @worker.run("me_transactions", Core, :transaction, Jason.encode!(transaction.operations))
+    :ok = @worker.run("me_transactions", Core, :transaction, Jason.encode!(transaction.operations))
   end
 
   defp do_bson_encode(value, acc) when is_binary(value), do: acc <> value
