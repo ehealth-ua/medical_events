@@ -4,6 +4,7 @@ pipeline {
       PROJECT_NAME = 'medical-events'
       INSTANCE_TYPE = 'n1-highcpu-16'
       RD = "b${UUID.randomUUID().toString()}"
+      RD_CROP="b${RD.take(14)}"   
 }  
   stages {
     stage('Prepare instance') {
@@ -63,7 +64,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: elixir
@@ -93,7 +94,7 @@ spec:
           fieldPath: status.podIP      
     tty: true                   
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
 """
             }
           }
@@ -148,7 +149,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -193,7 +194,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
   volumes:
   - name: docker-graph-storage 
     emptyDir: {}  
@@ -253,7 +254,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -298,7 +299,7 @@ spec:
     - name: docker-graph-storage 
       mountPath: /var/lib/docker            
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
   volumes:
   - name: volume
     hostPath:
@@ -357,7 +358,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -402,7 +403,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
   volumes:
   - name: volume
     hostPath:
@@ -461,7 +462,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -506,7 +507,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
   volumes:
   - name: volume
     hostPath:
@@ -565,7 +566,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: docker
@@ -610,7 +611,7 @@ spec:
     - containerPort: 6379 
     tty: true
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
   volumes:
   - name: volume
     hostPath:
@@ -673,7 +674,7 @@ spec:
   tolerations:
   - key: "ci"
     operator: "Equal"
-    value: "${RD}"
+    value: "$PROJECT_NAME-$BUILD_ID-$RD_CROP"
     effect: "NoSchedule"
   containers:
   - name: kubectl
@@ -682,7 +683,7 @@ spec:
     - cat
     tty: true
   nodeSelector:
-    node: ${RD}
+    node: $PROJECT_NAME-$BUILD_ID-$RD_CROP
 """
         }
       }
