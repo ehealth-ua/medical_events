@@ -22,6 +22,7 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.ServiceRequestView
   alias Core.StatusHistory
   alias Core.Validators.JsonSchema
+  alias Core.Validators.OneOf
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias EView.Views.ValidationError
@@ -36,6 +37,8 @@ defmodule Core.ServiceRequests.Consumer do
   @active ServiceRequest.status(:active)
   @completed ServiceRequest.status(:completed)
 
+  @one_of_request_params %{"$" => %{"params" => ["occurrence_date_time", "occurrence_period"], "required" => false}}
+
   def consume_create_service_request(
         %ServiceRequestCreateJob{
           patient_id: patient_id,
@@ -46,7 +49,8 @@ defmodule Core.ServiceRequests.Consumer do
       ) do
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
-         :ok <- JsonSchema.validate(:service_request_create_signed_content, content) do
+         :ok <- JsonSchema.validate(:service_request_create_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       expiration_days = config()[:service_request_expiration_days]
       expiration_erl_date = now |> DateTime.to_date() |> Date.add(expiration_days) |> Date.to_erl()
@@ -341,7 +345,8 @@ defmodule Core.ServiceRequests.Consumer do
       ) do
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
-         :ok <- JsonSchema.validate(:service_request_recall_signed_content, content) do
+         :ok <- JsonSchema.validate(:service_request_recall_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       service_request_id = content["id"]
 
@@ -488,7 +493,8 @@ defmodule Core.ServiceRequests.Consumer do
       ) do
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
-         :ok <- JsonSchema.validate(:service_request_cancel_signed_content, content) do
+         :ok <- JsonSchema.validate(:service_request_cancel_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
 
       with {:ok, service_request} <- ServiceRequests.get_by_id(content["id"]),

@@ -2,6 +2,7 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
   @moduledoc false
 
   use Core.ModelCase
+
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
@@ -9,7 +10,9 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
   alias Core.Patients
   alias Core.Reference
   alias Core.ReferenceView
+
   import Core.Expectations.DigitalSignatureExpectation
+  import Core.Expectations.JobExpectations
   import Core.Expectations.OTPVerificationExpectations
   import Mox
 
@@ -431,6 +434,116 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
 
         :ok
       end)
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestCancelJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
+    end
+
+    test "invalid cancel service_request params" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      service_request = insert(:service_request, subject: patient_id_hash)
+      %BSON.Binary{binary: id} = service_request._id
+      service_request_id = UUID.binary_to_string!(id)
+      insert(:patient, _id: patient_id_hash)
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      signed_content =
+        %{
+          "id" => service_request_id,
+          "status" => service_request.status,
+          "intent" => service_request.intent,
+          "category" => ReferenceView.render(service_request.category),
+          "code" => ReferenceView.render(service_request.code),
+          "context" => ReferenceView.render(service_request.context),
+          "authored_on" => service_request.authored_on,
+          "requester" => ReferenceView.render(service_request.requester),
+          "performer_type" => ReferenceView.render(service_request.performer_type),
+          "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "1"}]},
+          "note" => service_request.note,
+          "expiration_date" => service_request.expiration_date,
+          "patient_instruction" => service_request.patient_instruction,
+          "permitted_episodes" => service_request.permitted_episodes,
+          "reason_reference" => service_request.reason_reference,
+          "requisition" => service_request.requisition,
+          "status_history" => ReferenceView.render(service_request.status_history),
+          "used_by" => ReferenceView.render(service_request.used_by),
+          "supporting_info" => ReferenceView.render(service_request.supporting_info),
+          "subject" =>
+            ReferenceView.render(
+              Reference.create(%{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"system" => "eHealth/resources", "code" => "patient"}], "text" => ""},
+                  "value" => patient_id
+                }
+              })
+            ),
+          "priority" => nil,
+          "occurrence_date_time" => DateTime.to_iso8601(DateTime.utc_now()),
+          "occurrence_period" => %{
+            "start" => start_datetime,
+            "end" => end_datetime
+          }
+        }
+        |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.occurrence_date_time",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.occurrence_date_time", "$.occurrence_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.occurrence_period",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.occurrence_date_time", "$.occurrence_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestCancelJob{

@@ -124,18 +124,7 @@ defmodule Api.Web.ApprovalControllerTest do
       assert %{
                "invalid" => [
                  %{
-                   "entry" => "$.resources",
-                   "entry_type" => "json_data_property",
-                   "rules" => [
-                     %{
-                       "description" => "At least one of the parameters must be present",
-                       "params" => ["$.resources", "$.service_request"],
-                       "rule" => "oneOf"
-                     }
-                   ]
-                 },
-                 %{
-                   "entry" => "$.service_request",
+                   "entry" => "$",
                    "entry_type" => "json_data_property",
                    "rules" => [
                      %{

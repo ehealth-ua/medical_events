@@ -1602,6 +1602,1029 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
     end
+
+    test "invalid create package request params" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
+      client_id = UUID.uuid4()
+      encounter_id = UUID.uuid4()
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode =
+        build(
+          :episode,
+          managing_organization:
+            build(
+              :reference,
+              identifier:
+                build(
+                  :identifier,
+                  type: build(:codeable_concept, coding: [build(:coding)]),
+                  value: Mongo.string_to_uuid(client_id)
+                )
+            )
+        )
+
+      db_immunization_id = UUID.uuid4()
+      immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id), reactions: [build(:reaction)])
+
+      patient =
+        insert(
+          :patient,
+          _id: patient_id_hash,
+          episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+          immunizations: %{db_immunization_id => immunization}
+        )
+
+      db_observation = insert(:observation, patient_id: patient_id_hash)
+      condition_id = UUID.uuid4()
+      immunization_id = UUID.uuid4()
+      immunization_id2 = UUID.uuid4()
+      job = insert(:job)
+      user_id = prepare_signature_expectations()
+      visit_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+      observation_id = UUID.uuid4()
+      observation_id2 = UUID.uuid4()
+      employee_id = UUID.uuid4()
+      allergy_intolerance_id = UUID.uuid4()
+      risk_assessment_id = UUID.uuid4()
+      device_id = UUID.uuid4()
+      medication_statement_id = UUID.uuid4()
+      service_request = insert(:service_request, used_by: build(:reference))
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "status" => "finished",
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "PHC", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
+                  "value" => condition_id
+                }
+              },
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
+          "division" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "division", "system" => "eHealth/resources"}]},
+              "value" => UUID.uuid4()
+            }
+          },
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => employee_id
+            }
+          },
+          "prescriptions" => "Дієта №1",
+          "incoming_referrals" => [
+            %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                "value" => to_string(service_request._id)
+              }
+            }
+          ]
+        },
+        "conditions" => [
+          %{
+            "id" => condition_id,
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "code" => %{"coding" => [%{"code" => "R80", "system" => "eHealth/ICPC2/condition_codes"}]},
+            "clinical_status" => "test",
+            "verification_status" => "test",
+            "onset_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "severity" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_severities"}]},
+            "body_sites" => [%{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]}],
+            "stage" => %{
+              "summary" => %{"coding" => [%{"code" => "1", "system" => "eHealth/condition_stages"}]}
+            },
+            "evidences" => [
+              %{
+                "codes" => [%{"coding" => [%{"code" => "A02", "system" => "eHealth/ICPC2/reasons"}]}],
+                "details" => [
+                  %{
+                    "identifier" => %{
+                      "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
+                      "value" => observation_id
+                    }
+                  },
+                  %{
+                    "identifier" => %{
+                      "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
+                      "value" => UUID.binary_to_string!(db_observation._id.binary)
+                    }
+                  }
+                ]
+              }
+            ],
+            "primary_source" => true,
+            "asserter" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                "value" => employee_id
+              }
+            },
+            "report_origin" => %{
+              "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+            }
+          }
+        ],
+        "observations" => [
+          %{
+            "id" => observation_id,
+            "status" => @status_valid,
+            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "categories" => [
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
+            ],
+            "code" => %{
+              "coding" => [
+                %{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"},
+                %{"code" => "B70", "system" => "eHealth/LOINC/observation_codes"}
+              ]
+            },
+            "effective_period" => %{
+              "start" => start_datetime,
+              "end" => end_datetime
+            },
+            "primary_source" => true,
+            "interpretation" => %{
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
+            },
+            "body_site" => %{
+              "coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]
+            },
+            "method" => %{
+              "coding" => [%{"code" => "1", "system" => "eHealth/observation_methods"}]
+            },
+            "reference_ranges" => [
+              %{
+                "type" => %{"coding" => [%{"code" => "category", "system" => "eHealth/reference_range_types"}]},
+                "applies_to" => [
+                  %{
+                    "coding" => [%{"code" => "category", "system" => "eHealth/reference_range_applications"}]
+                  }
+                ]
+              }
+            ],
+            "components" => [
+              %{
+                "code" => %{
+                  "coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]
+                },
+                "value_period" => %{
+                  "start" => start_datetime,
+                  "end" => end_datetime
+                },
+                "value_string" => "test",
+                "value_boolean" => true,
+                "interpretation" => %{
+                  "coding" => [%{"code" => "1", "system" => "eHealth/observation_interpretations"}]
+                },
+                "reference_ranges" => [
+                  %{
+                    "applies_to" => [
+                      %{
+                        "coding" => [%{"code" => "category", "system" => "eHealth/reference_range_applications"}]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "reaction_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "immunization"
+                    }
+                  ]
+                },
+                "value" => immunization_id
+              }
+            }
+          },
+          %{
+            "id" => observation_id2,
+            "status" => @status_valid,
+            "issued" => DateTime.to_iso8601(DateTime.utc_now()),
+            "context" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+                "value" => encounter_id
+              }
+            },
+            "categories" => [
+              %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
+            ],
+            "code" => %{"coding" => [%{"code" => "8310-5", "system" => "eHealth/LOINC/observation_codes"}]},
+            "effective_period" => %{
+              "start" => start_datetime,
+              "end" => end_datetime
+            },
+            "effective_date_time" => DateTime.to_iso8601(DateTime.utc_now()),
+            "primary_source" => false,
+            "report_origin" => %{
+              "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+            },
+            "reaction_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "immunization"
+                    }
+                  ]
+                },
+                "value" => db_immunization_id
+              }
+            },
+            "value_time" => "12:00:00"
+          }
+        ],
+        "immunizations" => [
+          %{
+            "id" => immunization_id,
+            "status" => Immunization.status(:completed),
+            "not_given" => false,
+            "vaccine_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/vaccine_codes",
+                  "code" => "FLUVAX"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "report_origin" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]},
+            "primary_source" => false,
+            "date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "site" => %{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]},
+            "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
+            "dose_quantity" => %{
+              "value" => 18,
+              "unit" => "mg",
+              "system" => "eHealth/ucum/units"
+            },
+            "explanation" => %{
+              "reasons" => [
+                %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/reason_explanations",
+                      "code" => "429060002"
+                    }
+                  ]
+                }
+              ]
+            },
+            "vaccination_protocols" => [
+              %{
+                "dose_sequence" => 1,
+                "description" => "Vaccination Protocol Sequence 1",
+                "authority" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_authorities",
+                      "code" => "1857005"
+                    }
+                  ]
+                },
+                "series" => "Vaccination Series 1",
+                "series_doses" => 2,
+                "target_diseases" => [
+                  %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/vaccination_target_diseases",
+                        "code" => "1857005"
+                      }
+                    ]
+                  }
+                ],
+                "dose_status" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_dose_statuses",
+                      "code" => "1"
+                    }
+                  ]
+                },
+                "dose_status_reason" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/vaccination_dose_statuse_reasons",
+                      "code" => "coldchbrk"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          %{
+            "id" => immunization_id2,
+            "status" => Immunization.status(:completed),
+            "not_given" => false,
+            "vaccine_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/vaccine_codes",
+                  "code" => "FLUVAX"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "site" => %{"coding" => [%{"code" => "1", "system" => "eHealth/body_sites"}]},
+            "route" => %{"coding" => [%{"code" => "IM", "system" => "eHealth/vaccination_routes"}]},
+            "dose_quantity" => %{
+              "value" => 18,
+              "unit" => "mg",
+              "system" => "eHealth/ucum/units"
+            },
+            "explanation" => %{
+              "reasons" => [
+                %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/reason_explanations",
+                      "code" => "429060002"
+                    }
+                  ]
+                }
+              ],
+              "reasons_not_given" => [
+                %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/reason_not_given_explanations",
+                      "code" => "429060002"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "allergy_intolerances" => [
+          %{
+            "id" => allergy_intolerance_id,
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/allergy_intolerance_codes",
+                  "code" => "227493005"
+                }
+              ]
+            },
+            "primary_source" => false,
+            "clinical_status" => "active",
+            "verification_status" => "confirmed",
+            "type" => "allergy",
+            "category" => "food",
+            "criticality" => "low",
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "last_occurrence" => DateTime.to_iso8601(DateTime.utc_now()),
+            "onset_date_time" => DateTime.to_iso8601(DateTime.utc_now())
+          }
+        ],
+        "risk_assessments" => [
+          %{
+            "id" => risk_assessment_id,
+            "status" => "preliminary",
+            "method" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/risk_assessment_methods",
+                  "code" => "default_code"
+                }
+              ]
+            },
+            "code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/risk_assessment_codes",
+                  "code" => "default_risk_assessment_code"
+                }
+              ]
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "performer" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "reason_references" => [
+              %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "observation"
+                      }
+                    ]
+                  },
+                  "value" => UUID.binary_to_string!(db_observation._id.binary)
+                }
+              }
+            ],
+            "basis" => %{
+              "references" => [
+                %{
+                  "identifier" => %{
+                    "type" => %{
+                      "coding" => [
+                        %{
+                          "system" => "eHealth/resources",
+                          "code" => "observation"
+                        }
+                      ]
+                    },
+                    "value" => UUID.binary_to_string!(db_observation._id.binary)
+                  }
+                },
+                %{
+                  "identifier" => %{
+                    "type" => %{
+                      "coding" => [
+                        %{
+                          "system" => "eHealth/resources",
+                          "code" => "condition"
+                        }
+                      ]
+                    },
+                    "value" => condition_id
+                  }
+                }
+              ],
+              "text" => "basis"
+            },
+            "predictions" => [
+              %{
+                "outcome" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/risk_assessment_outcomes",
+                      "code" => "default_outcome"
+                    }
+                  ]
+                },
+                "qualitative_risk" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/risk_assessment_qualitative_risks",
+                      "code" => "default_qualitative_risk"
+                    }
+                  ]
+                },
+                "when_period" => %{
+                  "start" => start_datetime,
+                  "end" => end_datetime
+                },
+                "when_range" => %{
+                  "high" => %{
+                    "code" => "mg",
+                    "comparator" => "<",
+                    "system" => "eHealth/ucum/units",
+                    "unit" => "hours",
+                    "value" => 9
+                  },
+                  "low" => %{
+                    "code" => "mg",
+                    "comparator" => ">",
+                    "system" => "eHealth/ucum/units",
+                    "unit" => "hours",
+                    "value" => 13
+                  }
+                },
+                "rationale" => "some text"
+              }
+            ],
+            "mitigation" => "some text",
+            "comment" => "some text"
+          }
+        ],
+        "devices" => [
+          %{
+            "id" => device_id,
+            "status" => "inactive",
+            "asserted_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "usage_period" => %{
+              "start" => start_datetime,
+              "end" => end_datetime
+            },
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "type" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/device_types",
+                  "code" => "Spine_board"
+                }
+              ]
+            },
+            "lot_number" => "RZ12345678",
+            "manufacturer" => "GlobalMed, Inc",
+            "manufacture_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "expiration_date" => DateTime.to_iso8601(DateTime.utc_now()),
+            "model" => "NSPX30",
+            "version" => "v1.0.1",
+            "note" => "Імплант був вилучений по причині заміни на новий"
+          }
+        ],
+        "medication_statements" => [
+          %{
+            "id" => medication_statement_id,
+            "based_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "medication_request"
+                    }
+                  ]
+                },
+                "value" => UUID.uuid4()
+              }
+            },
+            "asserted_date" => "2018-08-02T10:45:00.000Z",
+            "status" => "active",
+            "context" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "asserter" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "report_origin" => %{
+              "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+            },
+            "effective_period" => "Вживає з 2017-го року регулярно",
+            "medication_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/medication_statement_medications",
+                  "code" => "Spine_board"
+                }
+              ]
+            },
+            "note" => "Some text",
+            "dosage" => "5 ml/day"
+          }
+        ]
+      }
+
+      # expected error results:
+      #   conditions:
+      #     "report_origin", "asserter": all OneOf parameters are sent
+      #   observations:
+      #     "report_origin", "performer": none of OneOf parameters are sent
+      #     "effective_date_time", "effective_period": all OneOf parameters are sent
+      #     "value_quantity", "value_codeable_concept", "value_sampled_data", "value_string", "value_boolean",
+      #         "value_range", "value_ratio", "value_time", "value_date_time", "value_period": none of OneOf parameters are sent
+      #     components:
+      #       "value_quantity", "value_codeable_concept", "value_sampled_data", "value_string", "value_boolean",
+      #           "value_range", "value_ratio", "value_time", "value_date_time", "value_period": more than one OneOf parameters are sent
+      #   immunizations:
+      #     "report_origin", "performer": none of OneOf parameters are sent
+      #     explanation:
+      #       "reasons", "reasons_not_given": all OneOf parameters are sent
+      #   allergy_intolerances:
+      #     "report_origin", "asserter": none of OneOf parameters are sent
+      #   risk_assessments:
+      #     predictions:
+      #       "probability_range", "probability_decimal": none of OneOf parameters are sent (optional)
+      #       "when_range", "when_period": all OneOf parameters are sent (optional)
+      #   devices:
+      #     "report_origin", "asserter": none of OneOf parameters are sent
+      #   medication_statements:
+      #     "report_origin", "asserter": all OneOf parameters are sent
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.allergy_intolerances[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.allergy_intolerances[0].report_origin", "$.allergy_intolerances[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.conditions[0].asserter",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.conditions[0].report_origin", "$.conditions[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.conditions[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.conditions[0].report_origin", "$.conditions[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.devices[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.devices[0].report_origin", "$.devices[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.immunizations[1]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.immunizations[1].report_origin", "$.immunizations[1].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.immunizations[1].explanation.reasons",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.immunizations[1].explanation.reasons",
+                    "$.immunizations[1].explanation.reasons_not_given"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.immunizations[1].explanation.reasons_not_given",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.immunizations[1].explanation.reasons",
+                    "$.immunizations[1].explanation.reasons_not_given"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.medication_statements[0].asserter",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.medication_statements[0].report_origin", "$.medication_statements[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.medication_statements[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.medication_statements[0].report_origin", "$.medication_statements[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.observations[0].report_origin", "$.observations[0].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].value_quantity",
+                    "$.observations[0].value_codeable_concept",
+                    "$.observations[0].value_sampled_data",
+                    "$.observations[0].value_string",
+                    "$.observations[0].value_boolean",
+                    "$.observations[0].value_range",
+                    "$.observations[0].value_ratio",
+                    "$.observations[0].value_time",
+                    "$.observations[0].value_date_time",
+                    "$.observations[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[1].effective_date_time",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.observations[1].effective_date_time", "$.observations[1].effective_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[1].effective_period",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.observations[1].effective_date_time", "$.observations[1].effective_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].components[0].value_boolean",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].components[0].value_quantity",
+                    "$.observations[0].components[0].value_codeable_concept",
+                    "$.observations[0].components[0].value_sampled_data",
+                    "$.observations[0].components[0].value_string",
+                    "$.observations[0].components[0].value_boolean",
+                    "$.observations[0].components[0].value_range",
+                    "$.observations[0].components[0].value_ratio",
+                    "$.observations[0].components[0].value_time",
+                    "$.observations[0].components[0].value_date_time",
+                    "$.observations[0].components[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].components[0].value_period",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].components[0].value_quantity",
+                    "$.observations[0].components[0].value_codeable_concept",
+                    "$.observations[0].components[0].value_sampled_data",
+                    "$.observations[0].components[0].value_string",
+                    "$.observations[0].components[0].value_boolean",
+                    "$.observations[0].components[0].value_range",
+                    "$.observations[0].components[0].value_ratio",
+                    "$.observations[0].components[0].value_time",
+                    "$.observations[0].components[0].value_date_time",
+                    "$.observations[0].components[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].components[0].value_string",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].components[0].value_quantity",
+                    "$.observations[0].components[0].value_codeable_concept",
+                    "$.observations[0].components[0].value_sampled_data",
+                    "$.observations[0].components[0].value_string",
+                    "$.observations[0].components[0].value_boolean",
+                    "$.observations[0].components[0].value_range",
+                    "$.observations[0].components[0].value_ratio",
+                    "$.observations[0].components[0].value_time",
+                    "$.observations[0].components[0].value_date_time",
+                    "$.observations[0].components[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.risk_assessments[0].predictions[0].when_period",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.risk_assessments[0].predictions[0].when_range",
+                    "$.risk_assessments[0].predictions[0].when_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.risk_assessments[0].predictions[0].when_range",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.risk_assessments[0].predictions[0].when_range",
+                    "$.risk_assessments[0].predictions[0].when_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      assert :ok =
+               Consumer.consume(%PackageCreateJob{
+                 _id: to_string(job._id),
+                 visit: %{
+                   "id" => visit_id,
+                   "period" => %{
+                     "start" => start_datetime,
+                     "end" => end_datetime
+                   }
+                 },
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
   end
 
   defp prepare_signature_expectations do

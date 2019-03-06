@@ -2409,7 +2409,7 @@
                 "additionalProperties": false
               }
             },
-            "reason_not_given": {
+            "reasons_not_given": {
               "type": "array",
               "minItems": 1,
               "items": {

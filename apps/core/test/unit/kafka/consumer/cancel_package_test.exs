@@ -209,6 +209,467 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                })
     end
 
+    test "invalid cancel package request params", %{test_data: {episode, encounter, context}} do
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
+
+      client_id = UUID.uuid4()
+      managing_organization = episode.managing_organization
+      identifier = managing_organization.identifier
+
+      episode = %{
+        episode
+        | managing_organization: %{
+            managing_organization
+            | identifier: %{identifier | value: Mongo.string_to_uuid(client_id)}
+          }
+      }
+
+      user_id = prepare_signature_expectations(false)
+
+      job = insert(:job)
+      encounter_id = UUID.binary_to_string!(encounter.id.binary)
+      immunization = build(:immunization, context: context)
+      immunization_id = UUID.binary_to_string!(immunization.id.binary)
+
+      allergy_intolerance = build(:allergy_intolerance, context: context)
+      allergy_intolerance_id = UUID.binary_to_string!(allergy_intolerance.id.binary)
+      allergy_intolerance2 = build(:allergy_intolerance, context: context)
+      allergy_intolerance2_id = UUID.binary_to_string!(allergy_intolerance2.id.binary)
+
+      risk_assessment = build(:risk_assessment, context: context)
+      risk_assessment_id = UUID.binary_to_string!(risk_assessment.id.binary)
+
+      device = build(:device, context: context)
+      device_id = UUID.binary_to_string!(device.id.binary)
+
+      medication_statement = build(:medication_statement, context: context)
+      medication_statement_id = UUID.binary_to_string!(medication_statement.id.binary)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
+        encounters: %{encounter_id => encounter},
+        immunizations: %{immunization_id => immunization},
+        allergy_intolerances: %{
+          allergy_intolerance_id => allergy_intolerance,
+          allergy_intolerance2_id => allergy_intolerance2
+        },
+        risk_assessments: %{
+          risk_assessment_id => risk_assessment
+        },
+        devices: %{
+          device_id => device
+        },
+        medication_statements: %{
+          medication_statement_id => medication_statement
+        }
+      )
+
+      condition =
+        insert(
+          :condition,
+          patient_id: patient_id_hash,
+          context: context
+        )
+
+      observation = insert(:observation, patient_id: patient_id_hash, context: context)
+
+      signed_data =
+        %{
+          "encounter" => render(:encounter, %{encounter | status: @entered_in_error}),
+          "conditions" =>
+            :conditions
+            |> render([%{condition | verification_status: @entered_in_error}])
+            |> Enum.map(&Map.drop(&1, ~w(asserter report_origin)a)),
+          "observations" =>
+            :observations
+            |> render([%{observation | status: @entered_in_error}])
+            |> Enum.map(&Map.drop(&1, ~w(effective_date_time effective_period)a))
+            |> Enum.map(
+              &Map.merge(&1, %{
+                "report_origin" => %{
+                  "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+                },
+                "value_string" => "test",
+                "value_boolean" => true
+              })
+            )
+            |> Enum.map(fn item ->
+              components =
+                item
+                |> Map.get(:components, [])
+                |> Enum.map(&Map.drop(&1, ~w(
+                  value_quantity
+                  value_codeable_concept
+                  value_sampled_data
+                  value_string
+                  value_boolean
+                  value_range
+                  value_ratio
+                  value_time
+                  value_date_time
+                  value_period
+                )a))
+
+              Map.put(item, :components, components)
+            end),
+          "immunizations" =>
+            :immunizations
+            |> render([%{immunization | status: @entered_in_error}])
+            |> Enum.map(
+              &Map.merge(&1, %{
+                "report_origin" => %{
+                  "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+                }
+              })
+            )
+            |> Enum.map(fn item ->
+              explanation =
+                item
+                |> Map.get(:explanation, %{})
+                |> Map.drop(~w(reasons reasons_not_given)a)
+
+              Map.put(item, :explanation, explanation)
+            end),
+          "allergy_intolerances" =>
+            :allergy_intolerances
+            |> render([%{allergy_intolerance | verification_status: @entered_in_error}])
+            |> Enum.map(
+              &Map.merge(&1, %{
+                "report_origin" => %{
+                  "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+                }
+              })
+            ),
+          "risk_assessments" =>
+            :risk_assessments
+            |> render([%{risk_assessment | status: @entered_in_error}])
+            |> Enum.map(fn item ->
+              predictions =
+                item
+                |> Map.get(:predictions)
+                |> Enum.map(fn subitem ->
+                  subitem
+                  |> Map.drop(~w(when_range, when_period)a)
+                  |> Map.merge(%{
+                    probability_range: %{
+                      "high" => %{
+                        "code" => "mg",
+                        "comparator" => "<",
+                        "system" => "eHealth/ucum/units",
+                        "unit" => "years",
+                        "value" => 45
+                      },
+                      "low" => %{
+                        "code" => "mg",
+                        "comparator" => ">",
+                        "system" => "eHealth/ucum/units",
+                        "unit" => "years",
+                        "value" => 16
+                      }
+                    }
+                  })
+                end)
+
+              Map.put(item, :predictions, predictions)
+            end),
+          "devices" =>
+            :devices
+            |> render([%{device | status: @entered_in_error}])
+            |> Enum.map(
+              &Map.merge(&1, %{
+                "report_origin" => %{
+                  "coding" => [%{"code" => "employee", "system" => "eHealth/report_origins"}]
+                }
+              })
+            ),
+          "medication_statements" =>
+            :medication_statements
+            |> render([%{medication_statement | status: @entered_in_error}])
+            |> Enum.map(&Map.drop(&1, ~w(asserter report_origin)a))
+        }
+        |> Jason.encode!()
+        |> Base.encode64()
+
+      # expected error results:
+      #   conditions: none OneOf parameters are sent
+      #   observations:
+      #     "report_origin", "performer": all OneOf parameters are sent
+      #     "effective_date_time", "effective_period": none of OneOf parameters are sent (optional)
+      #     "value_quantity", "value_codeable_concept", "value_sampled_data", "value_string", "value_boolean",
+      #         "value_range", "value_ratio", "value_time", "value_date_time", "value_period": more than one OneOf parameters are sent
+      #     components:
+      #       "value_quantity", "value_codeable_concept", "value_sampled_data", "value_string", "value_boolean",
+      #           "value_range", "value_ratio", "value_time", "value_date_time", "value_period": none of OneOf parameters are sent
+      #   immunizations:
+      #     "report_origin", "performer": all OneOf parameters are sent
+      #     explanation:
+      #       "reasons", "reasons_not_given": none of OneOf parameters are sent (optional)
+      #   allergy_intolerances:
+      #     "report_origin", "asserter": all OneOf parameters are sent
+      #   risk_assessments:
+      #     predictions:
+      #       "probability_range", "probability_decimal": all OneOf parameters are sent (optional)
+      #       "when_range", "when_period": none of OneOf parameters are sent (optional)
+      #   devices:
+      #     "report_origin", "asserter": all OneOf parameters are sent
+      #   medication_statements:
+      #     "report_origin", "asserter": none of OneOf parameters are sent
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.allergy_intolerances[0].asserter",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.allergy_intolerances[0].report_origin", "$.allergy_intolerances[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.allergy_intolerances[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.allergy_intolerances[0].report_origin", "$.allergy_intolerances[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.conditions[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.conditions[0].report_origin", "$.conditions[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.devices[0].asserter",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.devices[0].report_origin", "$.devices[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.devices[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.devices[0].report_origin", "$.devices[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.immunizations[0].performer",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.immunizations[0].report_origin", "$.immunizations[0].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.immunizations[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.immunizations[0].report_origin", "$.immunizations[0].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.medication_statements[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => ["$.medication_statements[0].report_origin", "$.medication_statements[0].asserter"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].performer",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.observations[0].report_origin", "$.observations[0].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].report_origin",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.observations[0].report_origin", "$.observations[0].performer"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].value_boolean",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].value_quantity",
+                    "$.observations[0].value_codeable_concept",
+                    "$.observations[0].value_sampled_data",
+                    "$.observations[0].value_string",
+                    "$.observations[0].value_boolean",
+                    "$.observations[0].value_range",
+                    "$.observations[0].value_ratio",
+                    "$.observations[0].value_time",
+                    "$.observations[0].value_date_time",
+                    "$.observations[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].value_string",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].value_quantity",
+                    "$.observations[0].value_codeable_concept",
+                    "$.observations[0].value_sampled_data",
+                    "$.observations[0].value_string",
+                    "$.observations[0].value_boolean",
+                    "$.observations[0].value_range",
+                    "$.observations[0].value_ratio",
+                    "$.observations[0].value_time",
+                    "$.observations[0].value_date_time",
+                    "$.observations[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].components[0]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].components[0].value_quantity",
+                    "$.observations[0].components[0].value_codeable_concept",
+                    "$.observations[0].components[0].value_sampled_data",
+                    "$.observations[0].components[0].value_string",
+                    "$.observations[0].components[0].value_boolean",
+                    "$.observations[0].components[0].value_range",
+                    "$.observations[0].components[0].value_ratio",
+                    "$.observations[0].components[0].value_time",
+                    "$.observations[0].components[0].value_date_time",
+                    "$.observations[0].components[0].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.observations[0].components[1]",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "At least one of the parameters must be present",
+                  "params" => [
+                    "$.observations[0].components[1].value_quantity",
+                    "$.observations[0].components[1].value_codeable_concept",
+                    "$.observations[0].components[1].value_sampled_data",
+                    "$.observations[0].components[1].value_string",
+                    "$.observations[0].components[1].value_boolean",
+                    "$.observations[0].components[1].value_range",
+                    "$.observations[0].components[1].value_ratio",
+                    "$.observations[0].components[1].value_time",
+                    "$.observations[0].components[1].value_date_time",
+                    "$.observations[0].components[1].value_period"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.risk_assessments[0].predictions[0].probability_decimal",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.risk_assessments[0].predictions[0].probability_range",
+                    "$.risk_assessments[0].predictions[0].probability_decimal"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.risk_assessments[0].predictions[0].probability_range",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => [
+                    "$.risk_assessments[0].predictions[0].probability_range",
+                    "$.risk_assessments[0].predictions[0].probability_decimal"
+                  ],
+                  "rule" => "oneOf"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      assert :ok =
+               Consumer.consume(%PackageCancelJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: signed_data
+               })
+    end
+
     test "failed when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -781,11 +1242,21 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
   end
 
-  defp prepare_signature_expectations do
+  defp prepare_signature_expectations(expect_employee_users \\ true)
+
+  defp prepare_signature_expectations(true) do
     user_id = UUID.uuid4()
     drfo = "1111111111"
     expect_signature(drfo)
     expect_employee_users(drfo, user_id)
+
+    user_id
+  end
+
+  defp prepare_signature_expectations(false) do
+    user_id = UUID.uuid4()
+    drfo = "1111111111"
+    expect_signature(drfo)
 
     user_id
   end

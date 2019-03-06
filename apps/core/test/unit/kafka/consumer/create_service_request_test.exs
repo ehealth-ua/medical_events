@@ -10,6 +10,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
   alias Core.ServiceRequest
 
   import Core.Expectations.DigitalSignatureExpectation
+  import Core.Expectations.JobExpectations
   import Mox
 
   setup :verify_on_exit!
@@ -354,6 +355,123 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         },
         422
       )
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestCreateJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
+
+    test "invalid create service_request params" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      employee_id = UUID.uuid4()
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      patient = insert(:patient, _id: patient_id_hash)
+      encounter_id = patient.encounters |> Map.keys() |> hd()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+
+      authored_on = DateTime.to_iso8601(DateTime.utc_now())
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.occurrence_date_time",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.occurrence_date_time", "$.occurrence_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.occurrence_period",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Only one of the parameters must be present",
+                  "params" => ["$.occurrence_date_time", "$.occurrence_period"],
+                  "rule" => "oneOf"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      signed_content = %{
+        "status" => ServiceRequest.status(:active),
+        "intent" => ServiceRequest.intent(:order),
+        "category" => %{
+          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+        },
+        "code" => %{"coding" => [%{"code" => "128004", "system" => "eHealth/SNOMED/procedure_codes"}]},
+        "context" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+            "value" => encounter_id
+          }
+        },
+        "authored_on" => authored_on,
+        "requester" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+            "value" => employee_id
+          }
+        },
+        "performer_type" => %{
+          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
+        },
+        "supporting_info" => [
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          }
+        ],
+        "permitted_episodes" => [
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          }
+        ],
+        "occurrence_date_time" => DateTime.to_iso8601(DateTime.utc_now()),
+        "occurrence_period" => %{
+          "start" => start_datetime,
+          "end" => end_datetime
+        }
+      }
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{

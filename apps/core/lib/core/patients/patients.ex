@@ -27,6 +27,7 @@ defmodule Core.Patients do
   alias Core.Patients.Validators
   alias Core.RiskAssessment
   alias Core.Validators.JsonSchema
+  alias Core.Validators.OneOf
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
@@ -50,6 +51,53 @@ defmodule Core.Patients do
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
+
+  @one_of_request_params %{
+    "$.conditions" => %{"params" => ["report_origin", "asserter"], "required" => true},
+    "$.observations" => [
+      %{"params" => ["report_origin", "performer"], "required" => true},
+      %{"params" => ["effective_date_time", "effective_period"], "required" => false},
+      %{
+        "params" => [
+          "value_quantity",
+          "value_codeable_concept",
+          "value_sampled_data",
+          "value_string",
+          "value_boolean",
+          "value_range",
+          "value_ratio",
+          "value_time",
+          "value_date_time",
+          "value_period"
+        ],
+        "required" => true
+      }
+    ],
+    "$.observations.components" => %{
+      "params" => [
+        "value_quantity",
+        "value_codeable_concept",
+        "value_sampled_data",
+        "value_string",
+        "value_boolean",
+        "value_range",
+        "value_ratio",
+        "value_time",
+        "value_date_time",
+        "value_period"
+      ],
+      "required" => true
+    },
+    "$.immunizations" => %{"params" => ["report_origin", "performer"], "required" => true},
+    "$.immunizations.explanation" => %{"params" => ["reasons", "reasons_not_given"], "required" => false},
+    "$.allergy_intolerances" => %{"params" => ["report_origin", "asserter"], "required" => true},
+    "$.risk_assessments.predictions" => [
+      %{"params" => ["probability_range", "probability_decimal"], "required" => false},
+      %{"params" => ["when_range", "when_period"], "required" => false}
+    ],
+    "$.devices" => %{"params" => ["report_origin", "asserter"], "required" => true},
+    "$.medication_statements" => %{"params" => ["report_origin", "asserter"], "required" => true}
+  }
 
   def get_pk_hash(nil), do: nil
 
@@ -95,6 +143,7 @@ defmodule Core.Patients do
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          encounter_id <- content["encounter"]["id"],
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
@@ -135,6 +184,7 @@ defmodule Core.Patients do
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
          :ok <- JsonSchema.validate(:package_create_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id) do
       with {:ok, visit} <- create_visit(job),
