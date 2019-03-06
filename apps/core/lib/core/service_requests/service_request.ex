@@ -16,6 +16,8 @@ defmodule Core.ServiceRequest do
   @intent_order "order"
   @intent_plan "plan"
 
+  @counselling "409063005"
+
   def status(:active), do: @status_active
   def status(:completed), do: @status_completed
   def status(:entered_in_error), do: @status_entered_in_error
@@ -23,6 +25,8 @@ defmodule Core.ServiceRequest do
 
   def intent(:order), do: @intent_order
   def intent(:plan), do: @intent_plan
+
+  def category(:counselling), do: @counselling
 
   @primary_key :_id
   schema :service_requests do
@@ -52,7 +56,8 @@ defmodule Core.ServiceRequest do
     field(:patient_instruction)
     field(:expiration_date)
     field(:permitted_episodes, reference: [path: "permitted_episodes"])
-    field(:used_by, reference: [path: "used_by"])
+    field(:used_by_employee, reference: [path: "used_by_employee"])
+    field(:used_by_legal_entity, reference: [path: "used_by_legal_entity"])
     field(:assignee, reference: [path: "assignee"])
     field(:signed_content_links)
     field(:requisition, presence: true)
@@ -81,11 +86,17 @@ defmodule Core.ServiceRequest do
         {"context", v} ->
           {:context, Reference.create(v)}
 
-        {"used_by", nil} ->
-          {:used_by, nil}
+        {"used_by_employee", nil} ->
+          {:used_by_employee, nil}
 
-        {"used_by", v} ->
-          {:used_by, Reference.create(v)}
+        {"used_by_employee", v} ->
+          {:used_by_employee, Reference.create(v)}
+
+        {"used_by_legal_entity", nil} ->
+          {:used_by_legal_entity, nil}
+
+        {"used_by_legal_entity", v} ->
+          {:used_by_legal_entity, Reference.create(v)}
 
         {"performer_type", v} ->
           {:performer_type, CodeableConcept.create(v)}

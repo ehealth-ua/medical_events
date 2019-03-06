@@ -300,7 +300,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       risk_assessment_id = UUID.uuid4()
       device_id = UUID.uuid4()
       medication_statement_id = UUID.uuid4()
-      service_request = insert(:service_request, used_by: build(:reference))
+
+      service_request =
+        insert(:service_request,
+          used_by_employee: build(:reference),
+          used_by_legal_entity:
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id)))
+        )
 
       start_datetime =
         DateTime.utc_now()
@@ -1652,7 +1658,13 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       risk_assessment_id = UUID.uuid4()
       device_id = UUID.uuid4()
       medication_statement_id = UUID.uuid4()
-      service_request = insert(:service_request, used_by: build(:reference))
+
+      service_request =
+        insert(:service_request,
+          used_by_employee: build(:reference),
+          used_by_legal_entity:
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id)))
+        )
 
       start_datetime =
         DateTime.utc_now()
@@ -2597,6 +2609,321 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                     "$.risk_assessments[0].predictions[0].when_period"
                   ],
                   "rule" => "oneOf"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      assert :ok =
+               Consumer.consume(%PackageCreateJob{
+                 _id: to_string(job._id),
+                 visit: %{
+                   "id" => visit_id,
+                   "period" => %{
+                     "start" => start_datetime,
+                     "end" => end_datetime
+                   }
+                 },
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
+
+    test "fail on invalid incoming_referral's used_by_legal_entity" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      expect_doctor(client_id, 2)
+
+      expect(IlMock, :get_division, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "ACTIVE",
+             "legal_entity_id" => client_id
+           }
+         }}
+      end)
+
+      encounter_id = UUID.uuid4()
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode =
+        build(
+          :episode,
+          managing_organization:
+            build(
+              :reference,
+              identifier:
+                build(
+                  :identifier,
+                  type: build(:codeable_concept, coding: [build(:coding)]),
+                  value: Mongo.string_to_uuid(client_id)
+                )
+            )
+        )
+
+      patient =
+        insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+
+      condition_id = UUID.uuid4()
+      insert(:condition, patient_id: patient_id_hash, _id: Mongo.string_to_uuid(condition_id))
+
+      job = insert(:job)
+
+      user_id = prepare_signature_expectations()
+
+      visit_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+      employee_id = UUID.uuid4()
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      service_request =
+        insert(:service_request, used_by_employee: build(:reference), used_by_legal_entity: build(:reference))
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "status" => "finished",
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
+                  "value" => condition_id
+                }
+              },
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => employee_id
+            }
+          },
+          "prescriptions" => "Дієта №1",
+          "incoming_referrals" => [
+            %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                "value" => to_string(service_request._id)
+              }
+            }
+          ]
+        }
+      }
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.encounter.incoming_referrals.[0].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Service request is used by another legal_entity",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      assert :ok =
+               Consumer.consume(%PackageCreateJob{
+                 _id: to_string(job._id),
+                 visit: %{
+                   "id" => visit_id,
+                   "period" => %{
+                     "start" => start_datetime,
+                     "end" => end_datetime
+                   }
+                 },
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
+
+    test "fail on invalid incoming_referral's category" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      expect_doctor(client_id, 2)
+
+      expect(IlMock, :get_division, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "ACTIVE",
+             "legal_entity_id" => client_id
+           }
+         }}
+      end)
+
+      encounter_id = UUID.uuid4()
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      episode =
+        build(
+          :episode,
+          managing_organization:
+            build(
+              :reference,
+              identifier:
+                build(
+                  :identifier,
+                  type: build(:codeable_concept, coding: [build(:coding)]),
+                  value: Mongo.string_to_uuid(client_id)
+                )
+            )
+        )
+
+      patient =
+        insert(:patient, _id: patient_id_hash, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode})
+
+      condition_id = UUID.uuid4()
+      insert(:condition, patient_id: patient_id_hash, _id: Mongo.string_to_uuid(condition_id))
+
+      job = insert(:job)
+
+      user_id = prepare_signature_expectations()
+
+      visit_id = UUID.uuid4()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+      employee_id = UUID.uuid4()
+
+      start_datetime =
+        DateTime.utc_now()
+        |> DateTime.to_unix()
+        |> Kernel.-(100_000)
+        |> DateTime.from_unix!()
+        |> DateTime.to_iso8601()
+
+      end_datetime = DateTime.to_iso8601(DateTime.utc_now())
+
+      service_request =
+        insert(:service_request,
+          used_by_employee: build(:reference),
+          used_by_legal_entity:
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id))),
+          category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "108252007")
+        )
+
+      signed_content = %{
+        "encounter" => %{
+          "id" => encounter_id,
+          "status" => "finished",
+          "date" => DateTime.to_iso8601(DateTime.utc_now()),
+          "visit" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "visit", "system" => "eHealth/resources"}]},
+              "value" => visit_id
+            }
+          },
+          "episode" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          "class" => %{"code" => "AMB", "system" => "eHealth/encounter_classes"},
+          "type" => %{"coding" => [%{"code" => "AMB", "system" => "eHealth/encounter_types"}]},
+          "reasons" => [
+            %{"coding" => [%{"code" => "reason", "system" => "eHealth/ICPC2/reasons"}]}
+          ],
+          "diagnoses" => [
+            %{
+              "condition" => %{
+                "identifier" => %{
+                  "type" => %{"coding" => [%{"code" => "condition", "system" => "eHealth/resources"}]},
+                  "value" => condition_id
+                }
+              },
+              "role" => %{"coding" => [%{"code" => "primary", "system" => "eHealth/diagnosis_roles"}]}
+            }
+          ],
+          "actions" => [%{"coding" => [%{"code" => "action", "system" => "eHealth/ICPC2/actions"}]}],
+          "performer" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+              "value" => employee_id
+            }
+          },
+          "prescriptions" => "Дієта №1",
+          "incoming_referrals" => [
+            %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+                "value" => to_string(service_request._id)
+              }
+            }
+          ]
+        }
+      }
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.encounter.incoming_referrals.[0].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Incorect service request type",
+                  "params" => [],
+                  "rule" => "invalid"
                 }
               ]
             }

@@ -284,7 +284,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
   end
 
   describe "use service request" do
-    test "used_by is not set", %{conn: conn} do
+    test "used_by_legal_entity is not set", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       conn = patch(conn, service_request_path(conn, :use, UUID.uuid4()))
@@ -292,11 +292,11 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
       assert [
                %{
-                 "entry" => "$.used_by",
+                 "entry" => "$.used_by_legal_entity",
                  "entry_type" => "json_data_property",
                  "rules" => [
                    %{
-                     "description" => "required property used_by was not present",
+                     "description" => "required property used_by_legal_entity was not present",
                      "params" => [],
                      "rule" => "required"
                    }
@@ -314,7 +314,8 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
       conn =
         patch(conn, service_request_path(conn, :use, UUID.binary_to_string!(id)), %{
-          "used_by" => %{"identifier" => %{"value" => ""}}
+          "used_by_employee" => %{"identifier" => %{"value" => ""}},
+          "used_by_legal_entity" => %{"identifier" => %{"value" => ""}}
         })
 
       assert response = json_response(conn, 202)

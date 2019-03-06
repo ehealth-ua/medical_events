@@ -242,11 +242,22 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
             ]
           },
           %{
-            "entry" => "$.used_by",
+            "entry" => "$.used_by_employee",
             "entry_type" => "json_data_property",
             "rules" => [
               %{
-                "description" => "required property used_by was not present",
+                "description" => "required property used_by_employee was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.used_by_legal_entity",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property used_by_legal_entity was not present",
                 "params" => [],
                 "rule" => "required"
               }
@@ -313,7 +324,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "reason_reference" => service_request.reason_reference,
           "requisition" => service_request.requisition,
           "status_history" => ReferenceView.render(service_request.status_history),
-          "used_by" => ReferenceView.render(service_request.used_by),
+          "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
+          "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),
           "supporting_info" => ReferenceView.render(service_request.supporting_info),
           "subject" =>
             ReferenceView.render(
@@ -388,7 +400,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "reason_reference" => service_request.reason_reference,
           "requisition" => service_request.requisition,
           "status_history" => ReferenceView.render(service_request.status_history),
-          "used_by" => ReferenceView.render(service_request.used_by),
+          "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
+          "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),
           "supporting_info" => ReferenceView.render(service_request.supporting_info),
           "subject" =>
             ReferenceView.render(
@@ -490,7 +503,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "reason_reference" => service_request.reason_reference,
           "requisition" => service_request.requisition,
           "status_history" => ReferenceView.render(service_request.status_history),
-          "used_by" => ReferenceView.render(service_request.used_by),
+          "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
+          "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),
           "supporting_info" => ReferenceView.render(service_request.supporting_info),
           "subject" =>
             ReferenceView.render(

@@ -21,11 +21,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
 
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
-      employee_id = UUID.uuid4()
-
-      expect(WorkerMock, :run, fn _, _, :employee_by_id, _ ->
-        %{employee_type: "DOCTOR", status: "APPROVED", legal_entity_id: client_id}
-      end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -72,10 +67,10 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                  user_id: user_id,
                  client_id: client_id,
                  service_request_id: UUID.binary_to_string!(id),
-                 used_by: %{
+                 used_by_legal_entity: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
-                     "value" => employee_id
+                     "value" => client_id
                    }
                  }
                })
@@ -107,7 +102,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.used_by.identifier.value",
+              "entry" => "$.used_by_employee.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
@@ -122,7 +117,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
           "type" => "validation_failed"
         },
-        422
+        409
       )
 
       assert :ok =
@@ -133,10 +128,117 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                  user_id: user_id,
                  client_id: client_id,
                  service_request_id: UUID.binary_to_string!(id),
-                 used_by: %{
+                 used_by_employee: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                      "value" => employee_id
+                   }
+                 },
+                 used_by_legal_entity: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => client_id
+                   }
+                 }
+               })
+
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
+    end
+
+    test "fail on invalid used_by_legal_entity" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      job = insert(:job)
+
+      service_request = insert(:service_request)
+      %BSON.Binary{binary: id} = service_request._id
+      legal_entity_id = UUID.uuid4()
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+      user_id = UUID.uuid4()
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.used_by_legal_entity.identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "You can assign service request only to your legal entity",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        409
+      )
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestUseJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 service_request_id: UUID.binary_to_string!(id),
+                 used_by_legal_entity: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => legal_entity_id
+                   }
+                 }
+               })
+
+      assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))
+    end
+
+    test "fail when used_by_legal_entity is already filled" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      job = insert(:job)
+
+      service_request =
+        insert(:service_request,
+          used_by_legal_entity:
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id)))
+        )
+
+      %BSON.Binary{binary: id} = service_request._id
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      insert(:patient, _id: patient_id_hash)
+      user_id = UUID.uuid4()
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        "Service request is already used",
+        409
+      )
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestUseJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 service_request_id: UUID.binary_to_string!(id),
+                 used_by_legal_entity: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => client_id
                    }
                  }
                })
@@ -190,7 +292,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
         assert %{
                  "$set" => %{
                    "status" => ^status,
-                   "status_code" => 422,
+                   "status_code" => 409,
                    "response" => %{
                      "invalid" => [
                        %{
@@ -219,10 +321,16 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                  user_id: user_id,
                  client_id: client_id,
                  service_request_id: UUID.binary_to_string!(id),
-                 used_by: %{
+                 used_by_employee: %{
                    "identifier" => %{
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                      "value" => employee_id
+                   }
+                 },
+                 used_by_legal_entity: %{
+                   "identifier" => %{
+                     "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+                     "value" => client_id
                    }
                  }
                })

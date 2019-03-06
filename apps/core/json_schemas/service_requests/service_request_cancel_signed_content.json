@@ -725,7 +725,10 @@
         }
       }
     },
-    "used_by": {
+    "used_by_employee": {
+      "$ref": "#/definitions/reference"
+    },
+    "used_by_legal_entity": {
       "$ref": "#/definitions/reference"
     },
     "subject": {
@@ -763,7 +766,8 @@
     "reason_reference",
     "requisition",
     "status_history",
-    "used_by",
+    "used_by_employee",
+    "used_by_legal_entity",
     "subject"
   ],
   "additionalProperties": false

@@ -17,7 +17,7 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
       job = insert(:job)
 
       service_request =
-        insert(:service_request, used_by: reference_coding(system: "eHealth/resources", code: "employee"))
+        insert(:service_request, used_by_employee: reference_coding(system: "eHealth/resources", code: "employee"))
 
       service_request_id = service_request._id
 
@@ -89,7 +89,7 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
 
     service_request =
       insert(:service_request,
-        used_by: reference_coding(system: "eHealth/resources", code: "employee"),
+        used_by_employee: reference_coding(system: "eHealth/resources", code: "employee"),
         inserted_at: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * (expiration_days + 1)),
         expiration_date: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * expiration_days)
       )

@@ -129,11 +129,11 @@ defmodule Core.ServiceRequests.Validations do
     %{service_request | permitted_episodes: references}
   end
 
-  def validate_used_by(%ServiceRequest{} = service_request, client_id) do
-    used_by = service_request.used_by
+  def validate_used_by_employee(%ServiceRequest{used_by_employee: nil} = service_request, _), do: service_request
 
+  def validate_used_by_employee(%ServiceRequest{used_by_employee: used_by_employee} = service_request, client_id) do
     identifier =
-      add_validations(used_by.identifier, :value,
+      add_validations(used_by_employee.identifier, :value,
         employee: [
           type: "DOCTOR",
           status: "APPROVED",
@@ -141,12 +141,24 @@ defmodule Core.ServiceRequests.Validations do
           messages: [
             type: "Employee is not an active doctor",
             status: "Employee is not approved",
-            legal_entity_id: "Employee #{used_by.identifier.value} doesn't belong to your legal entity"
+            legal_entity_id: "Employee #{used_by_employee.identifier.value} doesn't belong to your legal entity"
           ]
         ]
       )
 
-    %{service_request | used_by: %{used_by | identifier: identifier}}
+    %{service_request | used_by_employee: %{used_by_employee | identifier: identifier}}
+  end
+
+  def validate_used_by_legal_entity(
+        %ServiceRequest{used_by_legal_entity: used_by_legal_entity} = service_request,
+        client_id
+      ) do
+    identifier =
+      add_validations(used_by_legal_entity.identifier, :value,
+        value: [equals: client_id, message: "You can assign service request only to your legal entity"]
+      )
+
+    %{service_request | used_by_legal_entity: %{used_by_legal_entity | identifier: identifier}}
   end
 
   def validate_expiration_date(%ServiceRequest{} = service_request) do

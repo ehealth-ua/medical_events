@@ -31,7 +31,7 @@ defmodule Core.ServiceRequests.Producer do
   end
 
   def produce_use_service_request(params, user_id, client_id) do
-    with :ok <- JsonSchema.validate(:service_request_use, Map.take(params, ~w(used_by))),
+    with :ok <- JsonSchema.validate(:service_request_use, Map.take(params, ~w(used_by_employee used_by_legal_entity))),
          {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
          {:ok, job, service_request_use_job} <-
            Jobs.create(

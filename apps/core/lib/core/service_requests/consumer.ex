@@ -192,35 +192,44 @@ defmodule Core.ServiceRequests.Consumer do
           user_id: user_id,
           client_id: client_id,
           service_request_id: id,
-          used_by: used_by
+          used_by_employee: used_by_employee,
+          used_by_legal_entity: used_by_legal_entity
         } = job
       ) do
     now = DateTime.utc_now()
 
     with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
-         {true, _} <- {is_nil(service_request.used_by), :used_by} do
+         {true, _} <- {is_nil(service_request.used_by_legal_entity), :already_used} do
       service_request =
-        %{service_request | updated_by: user_id, updated_at: now, used_by: Reference.create(used_by)}
-        |> ServiceRequestsValidations.validate_used_by(client_id)
+        %{
+          service_request
+          | updated_by: user_id,
+            updated_at: now,
+            used_by_employee: create_reference(used_by_employee),
+            used_by_legal_entity: create_reference(used_by_legal_entity)
+        }
+        |> ServiceRequestsValidations.validate_used_by_employee(client_id)
+        |> ServiceRequestsValidations.validate_used_by_legal_entity(client_id)
         |> ServiceRequestsValidations.validate_expiration_date()
 
       case Vex.errors(service_request) do
         [] ->
-          used_by = %{
-            service_request.used_by
-            | identifier: %{
-                service_request.used_by.identifier
-                | value: Mongo.string_to_uuid(service_request.used_by.identifier.value)
-              }
-          }
-
           set =
             Mongo.convert_to_uuid(
               %{
                 "updated_by" => service_request.updated_by,
                 "updated_at" => now,
-                "used_by" => Mongo.prepare_doc(used_by)
+                "used_by_employee" =>
+                  service_request
+                  |> Map.get(:used_by_employee)
+                  |> update_reference_uuid()
+                  |> Mongo.prepare_doc(),
+                "used_by_legal_entity" =>
+                  service_request
+                  |> Map.get(:used_by_legal_entity)
+                  |> update_reference_uuid()
+                  |> Mongo.prepare_doc()
               },
               "updated_by"
             )
@@ -256,7 +265,7 @@ defmodule Core.ServiceRequests.Consumer do
             job._id,
             job.request_id,
             ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            422
+            409
           )
       end
     else
@@ -266,8 +275,8 @@ defmodule Core.ServiceRequests.Consumer do
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
 
-      {_, :used_by} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request already used", 409)
+      {_, :already_used} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request is already used", 409)
     end
   end
 
@@ -282,7 +291,7 @@ defmodule Core.ServiceRequests.Consumer do
 
     with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status} do
-      changes = %{"used_by" => nil}
+      changes = %{"used_by_employee" => nil, "used_by_legal_entity" => nil}
 
       service_request =
         %{service_request | updated_by: user_id, updated_at: now}
@@ -291,7 +300,12 @@ defmodule Core.ServiceRequests.Consumer do
 
       case Vex.errors(service_request) do
         [] ->
-          set = %{"updated_by" => service_request.updated_by, "updated_at" => now, "used_by" => nil}
+          set = %{
+            "updated_by" => service_request.updated_by,
+            "updated_at" => now,
+            "used_by_employee" => nil,
+            "used_by_legal_entity" => nil
+          }
 
           result =
             %Transaction{}
@@ -773,5 +787,20 @@ defmodule Core.ServiceRequests.Consumer do
       error ->
         error
     end
+  end
+
+  defp create_reference(nil), do: nil
+  defp create_reference(value), do: Reference.create(value)
+
+  defp update_reference_uuid(nil), do: nil
+
+  defp update_reference_uuid(value) do
+    %{
+      value
+      | identifier: %{
+          value.identifier
+          | value: Mongo.string_to_uuid(value.identifier.value)
+        }
+    }
   end
 end

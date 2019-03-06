@@ -32,7 +32,8 @@ defmodule Core.ServiceRequestView do
       reason_reference: ReferenceView.render(service_request.reason_reference),
       supporting_info: ReferenceView.render(service_request.supporting_info),
       permitted_episodes: ReferenceView.render(service_request.permitted_episodes),
-      used_by: ReferenceView.render(service_request.used_by),
+      used_by_employee: ReferenceView.render(service_request.used_by_employee),
+      used_by_legal_entity: ReferenceView.render(service_request.used_by_legal_entity),
       subject:
         ReferenceView.render(
           Reference.create(%{

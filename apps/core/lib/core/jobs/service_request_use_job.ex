@@ -10,7 +10,8 @@ defmodule Core.Jobs.ServiceRequestUseJob do
     patient_id
     patient_id_hash
     service_request_id
-    used_by
+    used_by_employee
+    used_by_legal_entity
     user_id
     client_id
   )a

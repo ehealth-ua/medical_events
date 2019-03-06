@@ -123,7 +123,12 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
         :ok
       end)
 
-      service_request = insert(:service_request, used_by: build(:reference))
+      service_request =
+        insert(:service_request,
+          used_by_employee: build(:reference),
+          used_by_legal_entity:
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id)))
+        )
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
