@@ -62,7 +62,6 @@ defmodule Core.Patients.Episodes.Consumer do
       |> EpisodeValidations.validate_period()
       |> EpisodeValidations.validate_managing_organization(client_id)
       |> EpisodeValidations.validate_care_manager(client_id)
-      |> EpisodeValidations.validate_referral_requests(client_id)
 
     episode_id = episode.id
 
@@ -118,21 +117,13 @@ defmodule Core.Patients.Episodes.Consumer do
     status = Episode.status(:active)
 
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
-      changes = Map.take(job.request_params, ~w(name care_manager referral_requests))
-
-      existing_referral_request_ids =
-        get_existing_referral_request_ids(episode.referral_requests, job.request_params["referral_requests"])
+      changes = Map.take(job.request_params, ~w(name care_manager))
 
       episode =
         %{episode | updated_by: job.user_id, updated_at: now}
         |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
         |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
         |> EpisodeValidations.validate_managing_organization(client_id)
-        |> EpisodeValidations.validate_referral_requests(
-          job.request_params["referral_requests"],
-          client_id,
-          existing_referral_request_ids
-        )
 
       case Vex.errors(episode) do
         [] ->
@@ -147,11 +138,9 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
             |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
             |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
-            |> Mongo.add_to_set(episode.referral_requests, "episodes.#{episode.id}.referral_requests")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
             |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
             |> Mongo.convert_to_uuid("updated_by")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.referral_requests", ~w(identifier value)a)
 
           result =
             %Transaction{}
@@ -504,18 +493,5 @@ defmodule Core.Patients.Episodes.Consumer do
         Logger.warn("Failed to fill up legal_entity value for episode")
         episode
     end
-  end
-
-  defp get_existing_referral_request_ids(episode_referral_requests, nil), do: episode_referral_requests
-
-  defp get_existing_referral_request_ids(episode_referral_requests, request_referral_requests) do
-    episode_referral_requests_ids =
-      Enum.map(episode_referral_requests, fn referral_request ->
-        to_string(referral_request.identifier.value)
-      end)
-
-    request_referral_requests
-    |> Enum.map(&get_in(&1, ~w(identifier value)))
-    |> Enum.filter(&Enum.member?(episode_referral_requests_ids, &1))
   end
 end
