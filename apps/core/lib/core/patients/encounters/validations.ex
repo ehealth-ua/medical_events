@@ -168,4 +168,18 @@ defmodule Core.Patients.Encounters.Validations do
 
   defp validate_performer_client(client_id, client_id), do: :ok
   defp validate_performer_client(_, _), do: {:error, "Performer does not belong to current legal entity"}
+
+  def validate_supporting_info(%Encounter{supporting_info: nil} = encounter, _), do: encounter
+
+  def validate_supporting_info(%Encounter{} = encounter, patient_id_hash) do
+    # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
+    supporting_info =
+      Enum.map(encounter.supporting_info, fn info ->
+        identifier = add_validations(info.identifier, :value, observation_reference: [patient_id_hash: patient_id_hash])
+
+        %{info | identifier: identifier}
+      end)
+
+    %{encounter | supporting_info: supporting_info}
+  end
 end

@@ -23,7 +23,8 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
       actions: ReferenceView.render(encounter.actions),
       division: ReferenceView.render(encounter.division),
-      prescriptions: encounter.prescriptions
+      prescriptions: encounter.prescriptions,
+      supporting_info: ReferenceView.render(encounter.supporting_info)
     }
     |> remove_display_values()
   end

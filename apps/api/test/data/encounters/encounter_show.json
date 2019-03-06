@@ -94,7 +94,11 @@
             "null"
           ]
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
     },
     "action": {
       "type": "object",
@@ -222,7 +226,11 @@
               ]
             }
           },
-          "description": "should be filled one of: condition or condition_id"
+          "description": "should be filled one of: condition or condition_id",
+          "required": [
+            "identifier"
+          ],
+          "additionalProperties": false
         },
         "code": {
           "type": "object",
@@ -607,10 +615,157 @@
             "null"
           ]
         }
-      }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
     },
     "prescriptions": {
       "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "explanatory_letter": {
+      "type": "string"
+    },
+    "cancellation_reason": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/cancellation_reasons"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Dictionary: eHealth/cancellation_reasons"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "supporting_info": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "system": {
+                          "type": "string",
+                          "enum": [
+                            "eHealth/resources"
+                          ]
+                        },
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "observation",
+                            "diagnostic_report"
+                          ],
+                          "description": "Symbol in syntax defined by the system"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "system"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "text": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "coding"
+                ],
+                "additionalProperties": false
+              },
+              "value": {
+                "type": "string",
+                "description": "The value that is unique"
+              }
+            },
+            "required": [
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "display_value": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "presentation text"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "inserted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
     }
-  }
+  },
+  "required": [
+    "id",
+    "status",
+    "episode",
+    "visit",
+    "class",
+    "type",
+    "date",
+    "performer",
+    "reasons",
+    "diagnoses",
+    "actions"
+  ],
+  "additionalProperties": false
 }

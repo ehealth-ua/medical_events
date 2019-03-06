@@ -365,6 +365,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => to_string(service_request._id)
               }
             }
+          ],
+          "supporting_info" => [
+            %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "observation", "system" => "eHealth/resources"}]},
+                "value" => UUID.binary_to_string!(db_observation._id.binary)
+              }
+            }
           ]
         },
         "conditions" => [

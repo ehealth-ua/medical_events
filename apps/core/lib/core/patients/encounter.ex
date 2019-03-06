@@ -54,6 +54,7 @@ defmodule Core.Encounter do
     )
 
     field(:prescriptions)
+    field(:supporting_info, reference: [path: "supporting_info"])
 
     timestamps()
     changed_by()
@@ -107,6 +108,12 @@ defmodule Core.Encounter do
 
         {"cancellation_reason", v} ->
           {:cancellation_reason, CodeableConcept.create(v)}
+
+        {"supporting_info", nil} ->
+          {:supporting_info, nil}
+
+        {"supporting_info", v} ->
+          {:supporting_info, Enum.map(v, &Reference.create/1)}
 
         {k, v} ->
           {String.to_atom(k), v}

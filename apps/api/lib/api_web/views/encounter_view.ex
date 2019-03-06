@@ -32,7 +32,8 @@ defmodule Api.Web.EncounterView do
       diagnoses: ReferenceView.render(encounter.diagnoses),
       actions: ReferenceView.render(encounter.actions),
       division: ReferenceView.render(encounter.division),
-      cancellation_reason: ReferenceView.render(encounter.cancellation_reason)
+      cancellation_reason: ReferenceView.render(encounter.cancellation_reason),
+      supporting_info: ReferenceView.render(encounter.supporting_info)
     }
 
     encounter

@@ -562,7 +562,8 @@ defmodule Core.Patients.Encounters.Cancel do
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
       actions: ReferenceView.render(encounter.actions),
-      division: render(encounter.division)
+      division: render(encounter.division),
+      supporting_info: Enum.map(encounter.supporting_info, &render/1)
     }
   end
 
