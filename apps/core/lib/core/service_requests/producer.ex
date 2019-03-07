@@ -5,6 +5,7 @@ defmodule Core.ServiceRequests.Producer do
   alias Core.Jobs.ServiceRequestCancelJob
   alias Core.Jobs.ServiceRequestCompleteJob
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestProcessJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
@@ -107,6 +108,22 @@ defmodule Core.ServiceRequests.Producer do
              |> Map.put("client_id", client_id)
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_complete_job) do
+      {:ok, job}
+    end
+  end
+
+  def produce_process_service_request(params, user_id, client_id) do
+    with {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
+         {:ok, job, service_request_process_job} <-
+           Jobs.create(
+             ServiceRequestProcessJob,
+             params
+             |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
+             |> Map.put("patient_id_hash", patient_id_hash)
+             |> Map.put("user_id", user_id)
+             |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(service_request_process_job) do
       {:ok, job}
     end
   end

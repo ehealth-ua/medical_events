@@ -10,6 +10,7 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Jobs.ServiceRequestCompleteJob
   alias Core.Jobs.ServiceRequestCreateJob
+  alias Core.Jobs.ServiceRequestProcessJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
@@ -770,6 +771,71 @@ defmodule Core.ServiceRequests.Consumer do
               },
               "updated_by"
             )
+
+          result =
+            %Transaction{}
+            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "service_request",
+                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Transaction.flush()
+
+          case result do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+          end
+
+        errors ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
+      end
+    else
+      nil ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+
+      {_, :status} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
+
+      {_, :used_by_another_legal_entity} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request is used by another legal entity", 409)
+    end
+  end
+
+  def consume_process_service_request(
+        %ServiceRequestProcessJob{
+          patient_id: patient_id,
+          user_id: user_id,
+          client_id: client_id,
+          service_request_id: id
+        } = job
+      ) do
+    now = DateTime.utc_now()
+
+    with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
+         {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
+         {true, _} <-
+           {UUID.binary_to_string!(service_request.used_by_legal_entity.identifier.value.binary) == client_id,
+            :used_by_another_legal_entity} do
+      case Vex.errors(service_request) do
+        [] ->
+          set = %{"updated_by" => user_id, "updated_at" => now, "status" => ServiceRequest.status(:in_progress)}
 
           result =
             %Transaction{}

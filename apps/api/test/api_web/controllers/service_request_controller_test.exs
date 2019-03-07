@@ -475,6 +475,32 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
   end
 
+  describe "process service request" do
+    test "success process service request", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      service_request = insert(:service_request)
+      %BSON.Binary{binary: id} = service_request._id
+      conn = patch(conn, service_request_path(conn, :process, UUID.binary_to_string!(id)))
+
+      assert response = json_response(conn, 202)
+
+      assert %{
+               "data" => %{
+                 "id" => _,
+                 "inserted_at" => _,
+                 "status" => "pending",
+                 "updated_at" => _
+               }
+             } = response
+    end
+  end
+
   describe "complete service request" do
     test "completed_with is not set", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
