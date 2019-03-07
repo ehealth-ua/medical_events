@@ -8,6 +8,7 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
   alias Core.Jobs.ServiceRequestCloseJob
+  alias Core.Jobs.ServiceRequestCompleteJob
   alias Core.Jobs.ServiceRequestCreateJob
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
@@ -722,6 +723,97 @@ defmodule Core.ServiceRequests.Consumer do
           "Service request with status #{status} can't be closed",
           409
         )
+    end
+  end
+
+  def consume_complete_service_request(
+        %ServiceRequestCompleteJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          user_id: user_id,
+          client_id: client_id,
+          service_request_id: id,
+          completed_with: completed_with,
+          status_reason: status_reason
+        } = job
+      ) do
+    now = DateTime.utc_now()
+
+    with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
+         {true, _} <- {service_request.status == ServiceRequest.status(:in_progress), :status},
+         {true, _} <-
+           {UUID.binary_to_string!(service_request.used_by_legal_entity.identifier.value.binary) == client_id,
+            :used_by_another_legal_entity} do
+      service_request =
+        ServiceRequestsValidations.validate_completed_with(
+          %{service_request | updated_by: user_id, updated_at: now, completed_with: Reference.create(completed_with)},
+          patient_id_hash
+        )
+
+      case Vex.errors(service_request) do
+        [] ->
+          completed_with = %{
+            service_request.completed_with
+            | identifier: %{
+                service_request.completed_with.identifier
+                | value: Mongo.string_to_uuid(service_request.completed_with.identifier.value)
+              }
+          }
+
+          set =
+            Mongo.convert_to_uuid(
+              %{
+                "updated_by" => service_request.updated_by,
+                "updated_at" => now,
+                "completed_with" => Mongo.prepare_doc(completed_with),
+                "status_reason" => Mongo.prepare_doc(status_reason)
+              },
+              "updated_by"
+            )
+
+          result =
+            %Transaction{}
+            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "service_request",
+                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Transaction.flush()
+
+          case result do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+          end
+
+        errors ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            422
+          )
+      end
+    else
+      nil ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+
+      {_, :status} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
+
+      {_, :used_by_another_legal_entity} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Service request is used by another legal entity", 409)
     end
   end
 

@@ -86,6 +86,7 @@ defmodule ApiWeb.Router do
 
     patch("/service_requests/:service_request_id/actions/use", ServiceRequestController, :use)
     patch("/service_requests/:service_request_id/actions/release", ServiceRequestController, :release)
+    patch("/service_requests/:service_request_id/actions/complete", ServiceRequestController, :complete)
 
     get("/patients/:patient_id/episodes/:episode_id/service_requests", ServiceRequestController, :index)
     get("/service_requests", ServiceRequestController, :search)

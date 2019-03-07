@@ -79,4 +79,14 @@ defmodule Api.Web.ServiceRequestController do
       |> render("create.json", job: job)
     end
   end
+
+  def complete(conn, params) do
+    with {:ok, job} <-
+           Producer.produce_complete_service_request(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
+    end
+  end
 end

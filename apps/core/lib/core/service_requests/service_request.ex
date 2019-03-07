@@ -9,6 +9,7 @@ defmodule Core.ServiceRequest do
   alias Core.StatusHistory
 
   @status_active "active"
+  @status_in_progress "in_progress"
   @status_completed "completed"
   @status_entered_in_error "entered_in_error"
   @status_cancelled "cancelled"
@@ -19,6 +20,7 @@ defmodule Core.ServiceRequest do
   @counselling "409063005"
 
   def status(:active), do: @status_active
+  def status(:in_progress), do: @status_in_progress
   def status(:completed), do: @status_completed
   def status(:entered_in_error), do: @status_entered_in_error
   def status(:cancelled), do: @status_cancelled
@@ -62,6 +64,7 @@ defmodule Core.ServiceRequest do
     field(:signed_content_links)
     field(:requisition, presence: true)
     field(:status_history)
+    field(:completed_with, reference: [path: "completed_with"])
 
     timestamps()
     changed_by()
@@ -139,6 +142,12 @@ defmodule Core.ServiceRequest do
 
         {"status_history", v} ->
           {:status_history, Enum.map(v, &StatusHistory.create/1)}
+
+        {"completed_with", nil} ->
+          {:completed_with, nil}
+
+        {"completed_with", v} ->
+          {:completed_with, Reference.create(v)}
 
         {k, v} ->
           {String.to_atom(k), v}

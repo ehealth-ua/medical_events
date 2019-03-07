@@ -474,4 +474,51 @@ defmodule Api.Web.ServiceRequestControllerTest do
              } = response
     end
   end
+
+  describe "complete service request" do
+    test "completed_with is not set", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      conn = patch(conn, service_request_path(conn, :complete, UUID.uuid4()))
+      assert response = json_response(conn, 422)
+
+      assert [
+               %{
+                 "entry" => "$.completed_with",
+                 "entry_type" => "json_data_property",
+                 "rules" => [
+                   %{
+                     "description" => "required property completed_with was not present",
+                     "params" => [],
+                     "rule" => "required"
+                   }
+                 ]
+               }
+             ] = response["error"]["invalid"]
+    end
+
+    test "success complete service request", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      service_request = insert(:service_request)
+      %BSON.Binary{binary: id} = service_request._id
+
+      conn =
+        patch(conn, service_request_path(conn, :complete, UUID.binary_to_string!(id)), %{
+          "completed_with" => %{"identifier" => %{"value" => ""}}
+        })
+
+      assert response = json_response(conn, 202)
+
+      assert %{
+               "data" => %{
+                 "id" => _,
+                 "inserted_at" => _,
+                 "status" => "pending",
+                 "updated_at" => _
+               }
+             } = response
+    end
+  end
 end

@@ -49,7 +49,8 @@ defmodule Core.ServiceRequestView do
       inserted_at: DateView.render_datetime(service_request.inserted_at),
       updated_at: DateView.render_datetime(service_request.updated_at),
       status_history: StatusHistoryView.render("index.json", %{statuses_history: service_request.status_history}),
-      status_reason: ReferenceView.render(service_request.status_reason)
+      status_reason: ReferenceView.render(service_request.status_reason),
+      completed_with: ReferenceView.render(service_request.completed_with)
     })
     |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
   end

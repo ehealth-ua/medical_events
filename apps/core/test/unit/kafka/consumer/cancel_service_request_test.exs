@@ -412,7 +412,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
                 }
               })
             ),
-          "priority" => nil
+          "priority" => nil,
+          "completed_with" => ReferenceView.render(service_request.completed_with)
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 

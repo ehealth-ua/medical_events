@@ -747,6 +747,9 @@
         "string",
         "null"
       ]
+    },
+    "completed_with": {
+      "$ref": "#/definitions/reference"
     }
   },
   "required": [
