@@ -20,6 +20,7 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.Reference
   alias Core.ServiceRequest
   alias Core.ServiceRequests
+  alias Core.ServiceRequests.EventManager
   alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
   alias Core.ServiceRequestView
   alias Core.StatusHistory
@@ -452,6 +453,7 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
+                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:entered_in_error))
                   :ok
 
                 {:error, reason} ->
@@ -504,7 +506,8 @@ defmodule Core.ServiceRequests.Consumer do
         %ServiceRequestCancelJob{
           patient_id: patient_id,
           user_id: user_id,
-          client_id: client_id
+          client_id: client_id,
+          service_request_id: service_request_id
         } = job
       ) do
     with {:ok, data} <- decode_signed_data(job.signed_data),
@@ -599,6 +602,7 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
+                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:cancelled))
                   :ok
 
                 {:error, reason} ->

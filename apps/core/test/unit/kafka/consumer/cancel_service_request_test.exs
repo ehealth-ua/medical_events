@@ -10,7 +10,7 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
   alias Core.Patients
   alias Core.Reference
   alias Core.ReferenceView
-
+  alias Core.ServiceRequest
   import Core.Expectations.DigitalSignatureExpectation
   import Core.Expectations.JobExpectations
   import Core.Expectations.OTPVerificationExpectations
@@ -381,6 +381,20 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
         _, _, :get_auth_method, _ -> {:ok, %{"type" => "OTP", "phone_number" => "+380639999999"}}
       end)
 
+      status = ServiceRequest.status(:cancelled)
+
+      expect(KafkaMock, :publish_to_event_manager, fn event ->
+        assert %{
+                 event_type: "StatusChangeEvent",
+                 entity_type: "ServiceRequest",
+                 entity_id: ^service_request_id,
+                 changed_by: _actor_id,
+                 properties: %{"status" => %{"new_value" => ^status}}
+               } = event
+
+        :ok
+      end)
+
       signed_content =
         %{
           "id" => service_request_id,
@@ -456,7 +470,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
                  patient_id_hash: patient_id_hash,
                  user_id: user_id,
                  client_id: client_id,
-                 signed_data: Base.encode64(Jason.encode!(signed_content))
+                 signed_data: Base.encode64(Jason.encode!(signed_content)),
+                 service_request_id: service_request_id
                })
 
       assert {:ok, %Job{status: @status_pending}} = Jobs.get_by_id(to_string(job._id))

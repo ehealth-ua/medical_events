@@ -67,13 +67,18 @@ defmodule Core.ServiceRequests.Producer do
 
   def produce_recall_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         service_request_id <- params["service_request_id"],
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:service_request_recall, Map.take(params, ~w(signed_data))),
-         {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(params["service_request_id"]),
+         {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
          {:ok, job, service_request_recall_job} <-
            Jobs.create(
              ServiceRequestRecallJob,
-             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+             Map.merge(params, %{
+               "user_id" => user_id,
+               "client_id" => client_id,
+               "service_request_id" => service_request_id
+             })
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_recall_job) do
       {:ok, job}
@@ -84,11 +89,16 @@ defmodule Core.ServiceRequests.Producer do
     with %{} = patient <- Patients.get_by_id(patient_id_hash),
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:service_request_cancel, Map.take(params, ~w(signed_data))),
-         {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(params["service_request_id"]),
+         service_request_id <- params["service_request_id"],
+         {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
          {:ok, job, service_request_cancel_job} <-
            Jobs.create(
              ServiceRequestCancelJob,
-             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+             Map.merge(params, %{
+               "user_id" => user_id,
+               "client_id" => client_id,
+               "service_request_id" => service_request_id
+             })
            ),
          :ok <- @kafka_producer.publish_medical_event(service_request_cancel_job) do
       {:ok, job}
