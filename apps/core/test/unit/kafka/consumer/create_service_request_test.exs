@@ -367,6 +367,93 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                })
     end
 
+    test "fail on permitted episodes when category is laboratory procedure" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      employee_id = UUID.uuid4()
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      patient = insert(:patient, _id: patient_id_hash)
+      encounter_id = patient.encounters |> Map.keys() |> hd()
+      episode_id = patient.episodes |> Map.keys() |> hd()
+
+      authored_on = DateTime.to_iso8601(DateTime.utc_now())
+
+      expect(WorkerMock, :run, 3, fn
+        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
+        _, _, :tax_id_by_employee_id, _ -> "1111111111"
+        _, _, :number, _ -> {:ok, UUID.uuid4()}
+      end)
+
+      signed_content = %{
+        "status" => ServiceRequest.status(:active),
+        "intent" => ServiceRequest.intent(:order),
+        "category" => %{
+          "coding" => [%{"code" => "108252007", "system" => "eHealth/SNOMED/service_request_categories"}]
+        },
+        "code" => %{"coding" => [%{"code" => "128004", "system" => "eHealth/SNOMED/procedure_codes"}]},
+        "context" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+            "value" => encounter_id
+          }
+        },
+        "authored_on" => authored_on,
+        "requester" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+            "value" => employee_id
+          }
+        },
+        "permitted_episodes" => [
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          }
+        ]
+      }
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.service_request.permitted_episodes",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Permitted episodes are not allowed for laboratory category of service request",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestCreateJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
+
     test "invalid create service_request params" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()

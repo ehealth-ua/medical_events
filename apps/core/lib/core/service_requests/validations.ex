@@ -114,19 +114,42 @@ defmodule Core.ServiceRequests.Validations do
   end
 
   def validate_permitted_episodes(%ServiceRequest{} = service_request, patient_id_hash) do
-    episodes = service_request.permitted_episodes || []
+    permitted_episodes = service_request.permitted_episodes || []
 
-    references =
-      Enum.map(episodes, fn reference ->
-        identifier =
-          add_validations(reference.identifier, :value,
-            episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
-          )
+    category_value =
+      if is_nil(service_request.category) do
+        service_request.category
+      else
+        service_request.category.coding |> List.first() |> Map.get(:code)
+      end
 
-        %{reference | identifier: identifier}
-      end)
+    service_request =
+      if category_value == ServiceRequest.category(:laboratory_procedure) do
+        add_validations(service_request, :permitted_episodes,
+          value: [
+            equals: [],
+            message: "Permitted episodes are not allowed for laboratory category of service request"
+          ]
+        )
+      else
+        service_request
+      end
 
-    %{service_request | permitted_episodes: references}
+    permitted_episodes =
+      if category_value == ServiceRequest.category(:laboratory_procedure) do
+        permitted_episodes
+      else
+        Enum.map(permitted_episodes, fn permitted_episode ->
+          identifier =
+            add_validations(permitted_episode.identifier, :value,
+              episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
+            )
+
+          %{permitted_episode | identifier: identifier}
+        end)
+      end
+
+    %{service_request | permitted_episodes: permitted_episodes}
   end
 
   def validate_used_by_employee(%ServiceRequest{used_by_employee: nil} = service_request, _), do: service_request

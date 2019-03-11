@@ -89,7 +89,7 @@ defmodule Core.Validators.CacheTest do
        },
        %{
          "name" => "eHealth/SNOMED/service_request_categories",
-         "values" => %{"409063005" => "test", "108252007" => "test2"}
+         "values" => %{"409063005" => "test1", "108252007" => "test2"}
        },
        %{
          "name" => "eHealth/SNOMED/procedure_codes",

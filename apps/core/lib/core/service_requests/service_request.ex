@@ -17,6 +17,7 @@ defmodule Core.ServiceRequest do
   @intent_order "order"
   @intent_plan "plan"
 
+  @laboratory_procedure "108252007"
   @counselling "409063005"
 
   def status(:active), do: @status_active
@@ -28,6 +29,7 @@ defmodule Core.ServiceRequest do
   def intent(:order), do: @intent_order
   def intent(:plan), do: @intent_plan
 
+  def category(:laboratory_procedure), do: @laboratory_procedure
   def category(:counselling), do: @counselling
 
   @primary_key :_id

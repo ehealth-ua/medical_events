@@ -3,10 +3,16 @@ defmodule Core.Validators.Value do
 
   use Vex.Validator
 
+  def validate(%BSON.Binary{} = value, options) do
+    value
+    |> to_string()
+    |> validate(options)
+  end
+
   def validate(value, options) do
     equals = Keyword.get(options, :equals)
 
-    if is_nil(equals) or to_string(value) == to_string(equals) do
+    if is_nil(equals) or value == equals do
       :ok
     else
       error(options, "must be a #{equals}")

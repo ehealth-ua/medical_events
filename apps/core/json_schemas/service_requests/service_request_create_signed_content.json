@@ -36,7 +36,8 @@
                 "type": "string",
                 "minLength": 1,
                 "enum": [
-                  "409063005"
+                  "409063005",
+                  "108252007"
                 ],
                 "description": "Symbol in syntax defined by the system"
               }
