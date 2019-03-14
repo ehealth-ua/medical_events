@@ -63,15 +63,17 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration do
 
     push = Mongo.add_to_push(%{}, status_history, "status_history")
 
-    try do
+    result =
       %Transaction{}
       |> Transaction.add_operation(@collection, :update, %{"_id" => id}, %{"$set" => set, "$push" => push})
       |> Transaction.flush()
 
-      {1, 0}
-    rescue
-      e ->
-        Logger.error("Failed to update service request (id: #{id}): #{inspect(e)}")
+    case result do
+      :ok ->
+        {1, 0}
+
+      {:error, reason} ->
+        Logger.error("Failed to update service request (id: #{id}): #{inspect(reason)}")
         {0, 1}
     end
   end

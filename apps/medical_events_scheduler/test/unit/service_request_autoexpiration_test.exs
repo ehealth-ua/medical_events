@@ -15,6 +15,11 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
 
   setup :verify_on_exit!
 
+  setup do
+    Mongo.delete_many!(@collection, %{})
+    :ok
+  end
+
   test "success service requests autoexpiration" do
     stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -40,7 +45,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
       |> Mongo.string_to_uuid()
 
     expect(WorkerMock, :run, fn _, _, :transaction, args ->
-      assert [%{"collection" => "service_requests", "operation" => "update_one", "filter" => filter, "set" => set}] =
+      assert [%{"collection" => @collection, "operation" => "update_one", "filter" => filter, "set" => set}] =
                Jason.decode!(args)
 
       filter_bson = filter |> Base.decode64!() |> BSON.decode()
@@ -103,7 +108,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
     %{_id: id} =
       insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(-1))
 
-    expect(WorkerMock, :run, fn _, _, :transaction, args ->
+    expect(WorkerMock, :run, fn _, _, :transaction, _args ->
       {:error, :badrpc}
     end)
 
@@ -114,10 +119,9 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
     now = DateTime.utc_now()
     expiration_erl_date = now |> DateTime.to_date() |> Date.add(shift_days) |> Date.to_erl()
 
-    expiration_date =
-      {expiration_erl_date, {23, 59, 59}}
-      |> NaiveDateTime.from_erl!()
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_iso8601()
+    {expiration_erl_date, {23, 59, 59}}
+    |> NaiveDateTime.from_erl!()
+    |> DateTime.from_naive!("Etc/UTC")
+    |> DateTime.to_iso8601()
   end
 end

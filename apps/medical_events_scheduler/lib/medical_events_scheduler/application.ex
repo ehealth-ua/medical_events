@@ -2,7 +2,6 @@ defmodule MedicalEventsScheduler.Application do
   @moduledoc false
 
   use Application
-  alias MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration
   alias MedicalEventsScheduler.Worker
 
   def start(_type, _args) do

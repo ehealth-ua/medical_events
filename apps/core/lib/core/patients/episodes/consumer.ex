@@ -24,7 +24,6 @@ defmodule Core.Patients.Episodes.Consumer do
   require Logger
 
   @collection Patient.metadata().collection
-  @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def consume_create_episode(
         %EpisodeCreateJob{
@@ -144,7 +143,9 @@ defmodule Core.Patients.Episodes.Consumer do
 
           result =
             %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{"$set" => set})
+            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
+              "$set" => set
+            })
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -178,7 +179,12 @@ defmodule Core.Patients.Episodes.Consumer do
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Episode in status #{status} can not be updated", 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Episode in status #{status} can not be updated",
+          422
+        )
 
       nil ->
         Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
@@ -238,24 +244,6 @@ defmodule Core.Patients.Episodes.Consumer do
 
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
-          Enum.each(episode.referral_requests || [], fn referral_request ->
-            with {:ok, _, close_service_request} <-
-                   Jobs.create(
-                     ServiceRequestCloseJob,
-                     %{
-                       "request_id" => job.request_id,
-                       "patient_id" => job.patient_id,
-                       "patient_id_hash" => job.patient_id_hash,
-                       "id" => referral_request.identifier.value,
-                       "user_id" => job.user_id,
-                       "client_id" => job.client_id
-                     }
-                   ),
-                 :ok <- @kafka_producer.publish_medical_event(close_service_request) do
-              :ok
-            end
-          end)
-
           result =
             %Transaction{}
             |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
@@ -295,7 +283,12 @@ defmodule Core.Patients.Episodes.Consumer do
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Episode in status #{status} can not be closed", 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Episode in status #{status} can not be closed",
+          422
+        )
 
       nil ->
         Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
@@ -307,9 +300,13 @@ defmodule Core.Patients.Episodes.Consumer do
 
     with {:ok, %Episode{} = episode} <- Episodes.get_by_id(patient_id_hash, id),
          :ok <-
-           validate_status(episode, [Episode.status(:active), Episode.status(:closed)], fn status ->
-             "Episode in status #{status} can not be canceled"
-           end) do
+           validate_status(
+             episode,
+             [Episode.status(:active), Episode.status(:closed)],
+             fn status ->
+               "Episode in status #{status} can not be canceled"
+             end
+           ) do
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -460,7 +457,8 @@ defmodule Core.Patients.Episodes.Consumer do
   end
 
   defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
+    with [{_, employee}] <-
+           :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
       first_name = employee.party.first_name
       second_name = employee.party.second_name
       last_name = employee.party.last_name
@@ -480,7 +478,8 @@ defmodule Core.Patients.Episodes.Consumer do
   end
 
   defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode) do
-    with [{_, legal_entity}] <- :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
+    with [{_, legal_entity}] <-
+           :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
       %{
         episode
         | managing_organization: %{

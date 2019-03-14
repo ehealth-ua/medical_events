@@ -85,9 +85,10 @@ defmodule Core.Jobs do
       "response" => response
     }
 
-    %Transaction{}
-    |> Transaction.add_operation("jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
-    |> Transaction.flush()
+    :ok =
+      %Transaction{}
+      |> Transaction.add_operation("jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
+      |> Transaction.flush()
   end
 
   def update(%Transaction{} = transaction, id, status, response, status_code) when is_binary(id) do

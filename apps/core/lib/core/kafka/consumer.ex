@@ -104,7 +104,7 @@ defmodule Core.Kafka.Consumer do
         :ets.new(:message_cache, [:set, :protected, :named_table])
 
         try do
-          apply(module, fun, [kafka_job])
+          :ok = apply(module, fun, [kafka_job])
         rescue
           error ->
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
