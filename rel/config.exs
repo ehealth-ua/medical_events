@@ -100,3 +100,17 @@ release :number_generator do
 
   set(config_providers: [ConfexConfigProvider])
 end
+
+release :medical_events_scheduler do
+  set(version: current_version(:medical_events_scheduler))
+
+  set(
+    applications: [
+      :runtime_tools,
+      medical_events_scheduler: :permanent,
+      core: :permanent
+    ]
+  )
+
+  set(config_providers: [ConfexConfigProvider])
+end

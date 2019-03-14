@@ -21,7 +21,8 @@ config :core,
       "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"}
     }
   ],
-  rpc_worker: Core.Rpc.Worker
+  rpc_worker: Core.Rpc.Worker,
+  system_user: {:system, "EHEALTH_SYSTEM_USER", "4261eacf-8008-4e62-899f-de1e2f7065f0"}
 
 config :logger_json, :backend,
   formatter: EhealthLogger.Formatter,
