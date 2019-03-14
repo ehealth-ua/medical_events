@@ -122,6 +122,5 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
     {expiration_erl_date, {23, 59, 59}}
     |> NaiveDateTime.from_erl!()
     |> DateTime.from_naive!("Etc/UTC")
-    |> DateTime.to_iso8601()
   end
 end

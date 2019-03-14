@@ -20,7 +20,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration do
       |> Mongo.find(
         %{
           "status" => ServiceRequest.status(:active),
-          "expiration_date" => %{"$lt" => DateTime.to_iso8601(DateTime.utc_now())}
+          "expiration_date" => %{"$lt" => DateTime.utc_now()}
         },
         projection: %{"_id" => true}
       )
