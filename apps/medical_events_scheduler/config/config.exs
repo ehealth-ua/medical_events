@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :medical_events_scheduler, env: Mix.env()
+
 config :medical_events_scheduler, MedicalEventsScheduler.Worker,
   service_request_autoexpiration_schedule: {:system, :string, "SERVICE_REQUEST_AUTOEXPIRATION_SCHEDULE", "0 0,4 * * *"}
 
