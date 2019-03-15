@@ -766,7 +766,6 @@
     "expiration_date",
     "note",
     "patient_instruction",
-    "permitted_episodes",
     "reason_reference",
     "requisition",
     "status_history",

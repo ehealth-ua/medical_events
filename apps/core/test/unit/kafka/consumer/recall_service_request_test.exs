@@ -199,17 +199,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
             ]
           },
           %{
-            "entry" => "$.permitted_episodes",
-            "entry_type" => "json_data_property",
-            "rules" => [
-              %{
-                "description" => "required property permitted_episodes was not present",
-                "params" => [],
-                "rule" => "required"
-              }
-            ]
-          },
-          %{
             "entry" => "$.reason_reference",
             "entry_type" => "json_data_property",
             "rules" => [
