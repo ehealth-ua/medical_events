@@ -26,21 +26,17 @@ defmodule Core.Microservices do
       def request(method, url, body \\ "", headers \\ [], options \\ []) do
         with {:ok, params} <- check_params(options) do
           query_string = if Enum.empty?(params), do: "", else: "?#{URI.encode_query(params)}"
+          endpoint = config()[:endpoint]
+          path = Enum.join([process_url(url), query_string])
 
-          Logger.info(fn ->
-            Jason.encode!(%{
-              "log_type" => "microservice_request",
-              "microservice" => config()[:endpoint],
-              "action" => method,
-              "path" => Enum.join([process_url(url), query_string]),
-              "request_id" => Logger.metadata()[:request_id],
-              "body" => body,
-              "headers" =>
-                Enum.reduce(process_request_headers(headers), %{}, fn {k, v}, map ->
-                  Map.put_new(map, k, v)
-                end)
-            })
-          end)
+          headers =
+            Enum.reduce(process_request_headers(headers), %{}, fn {k, v}, map ->
+              Map.put_new(map, k, v)
+            end)
+
+          Logger.info(
+            "Microservice #{method} request to #{endpoint} on #{path} with body: #{body}, headers: #{headers}"
+          )
 
           check_response(super(method, url, body, headers, options))
         end

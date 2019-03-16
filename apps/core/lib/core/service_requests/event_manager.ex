@@ -3,7 +3,6 @@ defmodule Core.ServiceRequests.EventManager do
   Generate map with event info
   """
 
-  alias Core.ServiceRequest
   @entity_type "ServiceRequest"
   @event_type "StatusChangeEvent"
 

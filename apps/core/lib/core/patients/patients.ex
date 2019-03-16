@@ -5,6 +5,7 @@ defmodule Core.Patients do
 
   alias Core.AllergyIntolerance
   alias Core.Condition
+  alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Device
   alias Core.Encounter
   alias Core.Episode
@@ -15,34 +16,33 @@ defmodule Core.Patients do
   alias Core.MedicationStatement
   alias Core.Mongo
   alias Core.Observation
+  alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
+  alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Devices
+  alias Core.Patients.Devices.Validations, as: DeviceValidations
   alias Core.Patients.Encounters
+  alias Core.Patients.Encounters.Cancel, as: CancelEncounter
+  alias Core.Patients.Encounters.Validations, as: EncounterValidations
+  alias Core.Patients.Encryptor
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
+  alias Core.Patients.Immunizations.Reaction
+  alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.MedicationStatements
+  alias Core.Patients.MedicationStatements.Validations, as: MedicationStatementValidations
   alias Core.Patients.Package
   alias Core.Patients.RiskAssessments
+  alias Core.Patients.RiskAssessments.Validations, as: RiskAssessmentValidations
   alias Core.Patients.Validators
+  alias Core.Patients.Visits.Validations, as: VisitValidations
   alias Core.RiskAssessment
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
   alias Core.Validators.Vex
   alias Core.Visit
-  alias Core.Conditions.Validations, as: ConditionValidations
-  alias Core.Observations.Validations, as: ObservationValidations
-  alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
-  alias Core.Patients.Devices.Validations, as: DeviceValidations
-  alias Core.Patients.Encounters.Cancel, as: CancelEncounter
-  alias Core.Patients.Encounters.Validations, as: EncounterValidations
-  alias Core.Patients.Encryptor
-  alias Core.Patients.Immunizations.Reaction
-  alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
-  alias Core.Patients.MedicationStatements.Validations, as: MedicationStatementValidations
-  alias Core.Patients.RiskAssessments.Validations, as: RiskAssessmentValidations
-  alias Core.Patients.Visits.Validations, as: VisitValidations
   alias EView.Views.ValidationError
 
   require Logger

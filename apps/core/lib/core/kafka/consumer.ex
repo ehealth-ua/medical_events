@@ -91,10 +91,7 @@ defmodule Core.Kafka.Consumer do
   end
 
   def consume(value) do
-    Logger.warn(fn ->
-      "unknown kafka event #{inspect(value)}"
-    end)
-
+    Logger.warn(fn -> "unknown kafka event #{inspect(value)}" end)
     :ok
   end
 

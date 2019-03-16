@@ -11,7 +11,6 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Jobs.EpisodeUpdateJob
-  alias Core.Jobs.ServiceRequestCloseJob
   alias Core.Mongo
   alias Core.Mongo.Transaction
   alias Core.Patient
