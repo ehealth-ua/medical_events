@@ -24,8 +24,6 @@ defmodule Core.Validators.CacheTest do
          "values" => %{"default_risk_assessment_code" => "default_risk_assessment_code"}
        },
        %{"name" => "eHealth/vaccine_codes", "values" => %{"FLUVAX" => "FLUVAX"}},
-       %{"name" => "eHealth/vaccination_dose_statuse_reasons", "values" => %{"coldchbrk" => "coldchbrk"}},
-       %{"name" => "eHealth/vaccination_dose_statuses", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/vaccination_routes", "values" => %{"IM" => "IM"}},
        %{"name" => "eHealth/observation_methods", "values" => %{"1" => "1"}},
        %{"name" => "eHealth/observation_interpretations", "values" => %{"1" => "1"}},

@@ -15,15 +15,6 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
       presence: true,
       dictionary_reference: [path: "target_diseases", referenced_field: "system", field: "code"]
     )
-
-    field(:dose_status,
-      presence: true,
-      dictionary_reference: [path: "dose_status", referenced_field: "system", field: "code"]
-    )
-
-    field(:dose_status_reason,
-      dictionary_reference: [path: "dose_status_reason", referenced_field: "system", field: "code"]
-    )
   end
 
   def create(data) do
@@ -32,12 +23,6 @@ defmodule Core.Patients.Immunizations.VaccinationProtocol do
       Enum.map(data, fn
         {"target_diseases", v} ->
           {:target_diseases, Enum.map(v, &CodeableConcept.create/1)}
-
-        {"dose_status", v} ->
-          {:dose_status, CodeableConcept.create(v)}
-
-        {"dose_status_reason", v} ->
-          {:dose_status_reason, CodeableConcept.create(v)}
 
         {"authority", v} ->
           {:authority, CodeableConcept.create(v)}

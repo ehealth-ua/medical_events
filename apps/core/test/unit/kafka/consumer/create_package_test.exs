@@ -627,23 +627,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                       }
                     ]
                   }
-                ],
-                "dose_status" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuses",
-                      "code" => "1"
-                    }
-                  ]
-                },
-                "dose_status_reason" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuse_reasons",
-                      "code" => "coldchbrk"
-                    }
-                  ]
-                }
+                ]
               }
             ]
           },
@@ -1390,23 +1374,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                       }
                     ]
                   }
-                ],
-                "dose_status" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuses",
-                      "code" => "1"
-                    }
-                  ]
-                },
-                "dose_status_reason" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuse_reasons",
-                      "code" => "coldchbrk"
-                    }
-                  ]
-                }
+                ]
               }
             ]
           }
@@ -1973,23 +1941,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                       }
                     ]
                   }
-                ],
-                "dose_status" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuses",
-                      "code" => "1"
-                    }
-                  ]
-                },
-                "dose_status_reason" => %{
-                  "coding" => [
-                    %{
-                      "system" => "eHealth/vaccination_dose_statuse_reasons",
-                      "code" => "coldchbrk"
-                    }
-                  ]
-                }
+                ]
               }
             ]
           },

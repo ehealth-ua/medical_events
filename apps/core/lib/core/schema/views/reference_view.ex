@@ -85,9 +85,7 @@ defmodule Core.ReferenceView do
     |> Map.take(~w(dose_sequence description series series_doses)a)
     |> Map.merge(%{
       authority: render(vaccination_protocol.authority),
-      target_diseases: render(vaccination_protocol.target_diseases),
-      dose_status: render(vaccination_protocol.dose_status),
-      dose_status_reason: render(vaccination_protocol.dose_status_reason)
+      target_diseases: render(vaccination_protocol.target_diseases)
     })
   end
 
