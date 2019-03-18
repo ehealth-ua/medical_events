@@ -20,7 +20,7 @@ defmodule Core.Microservices do
       def process_request_headers(headers) do
         headers
         |> Keyword.take(~w(request_id x-consumer-metadata x-consumer-id)a)
-        |> Kernel.++([{"Content-Type", "application/json"}])
+        |> Keyword.put(:"Content-Type", "application/json")
       end
 
       def request(method, url, body \\ "", headers \\ [], options \\ []) do
@@ -28,16 +28,7 @@ defmodule Core.Microservices do
           query_string = if Enum.empty?(params), do: "", else: "?#{URI.encode_query(params)}"
           endpoint = config()[:endpoint]
           path = Enum.join([process_url(url), query_string])
-
-          headers =
-            Enum.reduce(process_request_headers(headers), %{}, fn {k, v}, map ->
-              Map.put_new(map, k, v)
-            end)
-
-          Logger.info(
-            "Microservice #{method} request to #{endpoint} on #{path} with body: #{body}, headers: #{inspect(headers)}"
-          )
-
+          Logger.info("Microservice #{method} request to #{endpoint} on #{path} with body: #{body}")
           check_response(super(method, url, body, headers, options))
         end
       end
