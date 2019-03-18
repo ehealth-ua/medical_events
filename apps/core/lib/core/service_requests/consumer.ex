@@ -751,7 +751,13 @@ defmodule Core.ServiceRequests.Consumer do
             :used_by_another_legal_entity} do
       service_request =
         ServiceRequestsValidations.validate_completed_with(
-          %{service_request | updated_by: user_id, updated_at: now, completed_with: Reference.create(completed_with)},
+          %{
+            service_request
+            | updated_by: user_id,
+              updated_at: now,
+              completed_with: Reference.create(completed_with),
+              status: ServiceRequest.status(:completed)
+          },
           patient_id_hash
         )
 
@@ -776,9 +782,22 @@ defmodule Core.ServiceRequests.Consumer do
               "updated_by"
             )
 
+          status_history =
+            StatusHistory.create(%{
+              "status" => ServiceRequest.status(:completed),
+              "status_reason" => Mongo.prepare_doc(status_reason),
+              "inserted_at" => now,
+              "inserted_by" => Mongo.string_to_uuid(user_id)
+            })
+
+          push = Mongo.add_to_push(%{}, status_history, "status_history")
+
           result =
             %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
+              "$set" => set,
+              "$push" => push
+            })
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -841,9 +860,21 @@ defmodule Core.ServiceRequests.Consumer do
         [] ->
           set = %{"updated_by" => user_id, "updated_at" => now, "status" => ServiceRequest.status(:in_progress)}
 
+          status_history =
+            StatusHistory.create(%{
+              "status" => ServiceRequest.status(:in_progress),
+              "inserted_at" => now,
+              "inserted_by" => Mongo.string_to_uuid(user_id)
+            })
+
+          push = Mongo.add_to_push(%{}, status_history, "status_history")
+
           result =
             %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
+              "$set" => set,
+              "$push" => push
+            })
             |> Jobs.update(
               job._id,
               Job.status(:processed),
