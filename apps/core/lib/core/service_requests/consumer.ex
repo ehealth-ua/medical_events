@@ -774,6 +774,7 @@ defmodule Core.ServiceRequests.Consumer do
           set =
             Mongo.convert_to_uuid(
               %{
+                "status" => service_request.status,
                 "updated_by" => service_request.updated_by,
                 "updated_at" => now,
                 "completed_with" => Mongo.prepare_doc(completed_with),
