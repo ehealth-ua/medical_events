@@ -277,6 +277,144 @@ defmodule Api.Rpc.RpcTest do
     end
   end
 
+  describe "episode_by_risk_assessment_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_risk_assessment_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      encounter_id = to_string(encounter_1.id)
+
+      risk_assessment_1 =
+        build(:risk_assessment,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter")
+        )
+
+      risk_assessment_2 = build(:risk_assessment)
+      risk_assessment_id = to_string(risk_assessment_1.id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2},
+        risk_assessments: %{
+          risk_assessment_id => risk_assessment_1,
+          to_string(risk_assessment_2.id) => risk_assessment_2
+        }
+      )
+
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_risk_assessment_id(patient_id, risk_assessment_id)
+    end
+  end
+
+  describe "episode_by_device_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_device_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      encounter_id = to_string(encounter_1.id)
+
+      device_1 =
+        build(:device,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter")
+        )
+
+      device_2 = build(:device)
+      device_id = to_string(device_1.id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2},
+        devices: %{
+          device_id => device_1,
+          to_string(device_2.id) => device_2
+        }
+      )
+
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_device_id(patient_id, device_id)
+    end
+  end
+
+  describe "episode_by_medication_statement_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_medication_statement_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      encounter_id = to_string(encounter_1.id)
+
+      medication_statement_1 =
+        build(:medication_statement,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter")
+        )
+
+      medication_statement_2 = build(:medication_statement)
+      medication_statement_id = to_string(medication_statement_1.id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2},
+        medication_statements: %{
+          medication_statement_id => medication_statement_1,
+          to_string(medication_statement_2.id) => medication_statement_2
+        }
+      )
+
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_medication_statement_id(patient_id, medication_statement_id)
+    end
+  end
+
   describe "approvals_by_episode/3" do
     test "success get approvals by episode" do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)

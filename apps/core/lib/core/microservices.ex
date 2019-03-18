@@ -35,7 +35,7 @@ defmodule Core.Microservices do
             end)
 
           Logger.info(
-            "Microservice #{method} request to #{endpoint} on #{path} with body: #{body}, headers: #{headers}"
+            "Microservice #{method} request to #{endpoint} on #{path} with body: #{body}, headers: #{inspect(headers)}"
           )
 
           check_response(super(method, url, body, headers, options))
