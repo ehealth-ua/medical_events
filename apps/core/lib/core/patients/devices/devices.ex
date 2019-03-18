@@ -28,6 +28,36 @@ defmodule Core.Patients.Devices do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"devices" => %{"$objectToArray" => "$devices"}}},
+      %{"$unwind" => "$devices"},
+      %{
+        "$match" => %{
+          "devices.k" => id,
+          "devices.v.context.identifier.value" => %{"$in" => encounter_ids}
+        }
+      },
+      %{
+        "$project" => %{"device" => "$devices.v"}
+      }
+    ]
+
+    with [%{"device" => device}] <- @collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, Device.create(device)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :device_request) do
     with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =

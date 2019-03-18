@@ -19,4 +19,13 @@ defmodule Api.Web.DeviceController do
       render(conn, "show.json", device: device)
     end
   end
+
+  def show_by_episode(conn, params) do
+    %{"patient_id_hash" => patient_id_hash, "id" => device_id, "episode_id" => episode_id} = params
+
+    with {:ok, device} <-
+           Devices.get_by_id_episode_id(patient_id_hash, device_id, episode_id) do
+      render(conn, "show.json", device: device)
+    end
+  end
 end

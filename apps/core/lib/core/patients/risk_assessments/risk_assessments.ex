@@ -28,6 +28,36 @@ defmodule Core.Patients.RiskAssessments do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"risk_assessments" => %{"$objectToArray" => "$risk_assessments"}}},
+      %{"$unwind" => "$risk_assessments"},
+      %{
+        "$match" => %{
+          "risk_assessments.k" => id,
+          "risk_assessments.v.context.identifier.value" => %{"$in" => encounter_ids}
+        }
+      },
+      %{
+        "$project" => %{"risk_assessment" => "$risk_assessments.v"}
+      }
+    ]
+
+    with [%{"risk_assessment" => risk_assessment}] <- @collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, RiskAssessment.create(risk_assessment)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :risk_assessment_request) do
     with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =

@@ -28,6 +28,37 @@ defmodule Core.Patients.MedicationStatements do
     end
   end
 
+  def get_by_id_episode_id(patient_id_hash, id, episode_id) do
+    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
+
+    pipeline = [
+      %{
+        "$match" => %{
+          "_id" => patient_id_hash
+        }
+      },
+      %{"$project" => %{"medication_statements" => %{"$objectToArray" => "$medication_statements"}}},
+      %{"$unwind" => "$medication_statements"},
+      %{
+        "$match" => %{
+          "medication_statements.k" => id,
+          "medication_statements.v.context.identifier.value" => %{"$in" => encounter_ids}
+        }
+      },
+      %{
+        "$project" => %{"medication_statement" => "$medication_statements.v"}
+      }
+    ]
+
+    with [%{"medication_statement" => medication_statement}] <-
+           @collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+      {:ok, MedicationStatement.create(medication_statement)}
+    else
+      _ ->
+        nil
+    end
+  end
+
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :medication_statement_request) do
     with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
       pipeline =

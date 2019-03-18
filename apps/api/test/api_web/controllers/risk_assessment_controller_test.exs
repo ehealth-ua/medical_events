@@ -42,6 +42,110 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(risk_assessment_2.id.binary)
     end
 
+    test "successful show by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      risk_assessment1 = build(:risk_assessment, context: context)
+      risk_assessment2 = build(:risk_assessment)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        risk_assessments: %{
+          to_string(risk_assessment1.id) => risk_assessment1,
+          to_string(risk_assessment2.id) => risk_assessment2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(
+          episode_context_risk_assessment_path(
+            conn,
+            :show_by_episode,
+            patient_id,
+            to_string(episode1.id),
+            to_string(risk_assessment1.id)
+          )
+        )
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("risk_assessments/risk_assessment_show.json")
+
+      assert get_in(resp, ~w(data id)) == to_string(risk_assessment1.id)
+      refute get_in(resp, ~w(data id)) == to_string(risk_assessment2.id)
+    end
+
+    test "not found by episode context", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      episode1 = build(:episode)
+      episode2 = build(:episode)
+
+      encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode1.id)))
+      encounter2 = build(:encounter)
+
+      context = build_encounter_context(encounter1.id)
+      risk_assessment1 = build(:risk_assessment, context: context)
+      risk_assessment2 = build(:risk_assessment)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          to_string(episode1.id) => episode1,
+          to_string(episode2.id) => episode2
+        },
+        encounters: %{
+          to_string(encounter1.id) => encounter1,
+          to_string(encounter2.id) => encounter2
+        },
+        risk_assessments: %{
+          to_string(risk_assessment1.id) => risk_assessment1,
+          to_string(risk_assessment2.id) => risk_assessment2
+        }
+      )
+
+      expect_get_person_data(patient_id)
+
+      assert conn
+             |> get(
+               episode_context_risk_assessment_path(
+                 conn,
+                 :show_by_episode,
+                 patient_id,
+                 to_string(episode2.id),
+                 to_string(risk_assessment1.id)
+               )
+             )
+             |> json_response(404)
+    end
+
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 

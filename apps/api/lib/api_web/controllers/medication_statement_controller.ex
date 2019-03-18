@@ -19,4 +19,13 @@ defmodule Api.Web.MedicationStatementController do
       render(conn, "show.json", medication_statement: medication_statement)
     end
   end
+
+  def show_by_episode(conn, params) do
+    %{"patient_id_hash" => patient_id_hash, "id" => medication_statement_id, "episode_id" => episode_id} = params
+
+    with {:ok, medication_statement} <-
+           MedicationStatements.get_by_id_episode_id(patient_id_hash, medication_statement_id, episode_id) do
+      render(conn, "show.json", medication_statement: medication_statement)
+    end
+  end
 end

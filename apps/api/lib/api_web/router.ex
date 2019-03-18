@@ -71,6 +71,15 @@ defmodule ApiWeb.Router do
 
       get("/allergy_intolerances", AllergyIntoleranceController, :index)
       get("/allergy_intolerances/:id", AllergyIntoleranceController, :show_by_episode)
+
+      get("/risk_assessments", RiskAssessmentController, :index)
+      get("/risk_assessments/:id", RiskAssessmentController, :show_by_episode)
+
+      get("/devices", DeviceController, :index)
+      get("/devices/:id", DeviceController, :show_by_episode)
+
+      get("/medication_statements", MedicationStatementController, :index)
+      get("/medication_statements/:id", MedicationStatementController, :show_by_episode)
     end
 
     patch("/patients/:patient_id/episodes/:id", EpisodeController, :update)

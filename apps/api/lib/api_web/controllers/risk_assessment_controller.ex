@@ -19,4 +19,13 @@ defmodule Api.Web.RiskAssessmentController do
       render(conn, "show.json", risk_assessment: risk_assessment)
     end
   end
+
+  def show_by_episode(conn, params) do
+    %{"patient_id_hash" => patient_id_hash, "id" => risk_assessment_id, "episode_id" => episode_id} = params
+
+    with {:ok, risk_assessment} <-
+           RiskAssessments.get_by_id_episode_id(patient_id_hash, risk_assessment_id, episode_id) do
+      render(conn, "show.json", risk_assessment: risk_assessment)
+    end
+  end
 end
