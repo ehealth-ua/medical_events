@@ -747,8 +747,7 @@ defmodule Core.ServiceRequests.Consumer do
     with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:in_progress), :status},
          {true, _} <-
-           {UUID.binary_to_string!(service_request.used_by_legal_entity.identifier.value.binary) == client_id,
-            :used_by_another_legal_entity} do
+           {get_reference_value(service_request.used_by_legal_entity) == client_id, :used_by_another_legal_entity} do
       service_request =
         ServiceRequestsValidations.validate_completed_with(
           %{
@@ -855,8 +854,7 @@ defmodule Core.ServiceRequests.Consumer do
     with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
          {true, _} <-
-           {UUID.binary_to_string!(service_request.used_by_legal_entity.identifier.value.binary) == client_id,
-            :used_by_another_legal_entity} do
+           {get_reference_value(service_request.used_by_legal_entity) == client_id, :used_by_another_legal_entity} do
       case Vex.errors(service_request) do
         [] ->
           set = %{"updated_by" => user_id, "updated_at" => now, "status" => ServiceRequest.status(:in_progress)}
@@ -997,4 +995,7 @@ defmodule Core.ServiceRequests.Consumer do
         }
     }
   end
+
+  defp get_reference_value(nil), do: nil
+  defp get_reference_value(value), do: UUID.binary_to_string!(value.identifier.value.binary)
 end
