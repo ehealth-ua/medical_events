@@ -21,6 +21,7 @@ defmodule Core.Patient do
     field(:risk_assessments)
     field(:devices)
     field(:medication_statements)
+    field(:diagnostic_reports)
 
     timestamps()
     changed_by()

@@ -3,9 +3,9 @@ defmodule Core.Observations.Validations do
 
   import Core.Schema, only: [add_validations: 3]
 
+  alias Core.EffectiveAt
   alias Core.Observation
   alias Core.Observations.Component
-  alias Core.Observations.EffectiveAt
   alias Core.Observations.Value
   alias Core.Period
   alias Core.Reference

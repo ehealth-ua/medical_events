@@ -246,6 +246,17 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
          }}
       end)
 
+      expect(IlMock, :get_legal_entity, fn id, _ ->
+        {:ok,
+         %{
+           "data" => %{
+             "id" => id,
+             "status" => "ACTIVE",
+             "public_name" => "LegalEntity 1"
+           }
+         }}
+      end)
+
       encounter_id = UUID.uuid4()
 
       patient_id = UUID.uuid4()
@@ -300,6 +311,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       risk_assessment_id = UUID.uuid4()
       device_id = UUID.uuid4()
       medication_statement_id = UUID.uuid4()
+      diagnostic_report_id = UUID.uuid4()
 
       service_request =
         insert(:service_request,
@@ -952,6 +964,145 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             },
             "note" => "Some text",
             "dosage" => "5 ml/day"
+          }
+        ],
+        "diagnostic_reports" => [
+          %{
+            "id" => diagnostic_report_id,
+            "based_on" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "service_request"
+                    }
+                  ]
+                },
+                "value" => to_string(service_request._id)
+              }
+            },
+            "status" => "final",
+            "category" => [
+              %{
+                "coding" => [
+                  %{
+                    "system" => "eHealth/diagnostic_report_categories",
+                    "code" => "LAB"
+                  }
+                ]
+              },
+              %{
+                "coding" => [
+                  %{
+                    "system" => "eHealth/diagnostic_report_categories",
+                    "code" => "MB"
+                  }
+                ]
+              },
+              %{
+                "coding" => [
+                  %{
+                    "system" => "eHealth/diagnostic_report_categories",
+                    "code" => "MB"
+                  }
+                ]
+              }
+            ],
+            "code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/LOINC/diagnostic_report_codes",
+                  "code" => "10217-8"
+                }
+              ]
+            },
+            "effective_period" => %{
+              "start" => "2018-08-02T10:45:16.000Z",
+              "end" => "2018-08-02T11:00:00.000Z"
+            },
+            "issued" => "2018-10-08T09:46:37.694Z",
+            "conclusion" => "At risk of osteoporotic fracture",
+            "conclusion_code" => %{
+              "coding" => [
+                %{
+                  "system" => "eHealth/SNOMED/clinical_findings",
+                  "code" => "109006"
+                }
+              ]
+            },
+            "recorded_by" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "employee"
+                    }
+                  ]
+                },
+                "value" => employee_id
+              }
+            },
+            "encounter" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => encounter_id
+              }
+            },
+            "primary_source" => true,
+            "managing_organization" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "legal_entity"
+                    }
+                  ]
+                },
+                "value" => client_id
+              }
+            },
+            "performer" => %{
+              "reference" => %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "employee"
+                      }
+                    ]
+                  },
+                  "value" => employee_id
+                }
+              },
+              "text" => ""
+            },
+            "results_interpreter" => %{
+              "reference" => %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "employee"
+                      }
+                    ]
+                  },
+                  "value" => employee_id
+                }
+              },
+              "text" => ""
+            }
           }
         ]
       }

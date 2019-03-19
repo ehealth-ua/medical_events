@@ -146,7 +146,8 @@ config :core, :encounter_package,
   allergy_intolerance_max_days_passed: {:system, :integer, "ALLERGY_INTOLERANCE_MAX_DAYS_PASSED", 150 * 365},
   immunization_max_days_passed: {:system, :integer, "IMMUNIZATION_MAX_DAYS_PASSED", 150 * 365},
   device_max_days_passed: {:system, :integer, "DEVICE_MAX_DAYS_PASSED", 150 * 365},
-  medication_statement_max_days_passed: {:system, :integer, "MEDICATION_STATEMENT_MAX_DAYS_PASSED", 150 * 365}
+  medication_statement_max_days_passed: {:system, :integer, "MEDICATION_STATEMENT_MAX_DAYS_PASSED", 150 * 365},
+  diagnostic_report_max_days_passed: {:system, :integer, "DIAGNOSTIC_REPORT_MAX_DAYS_PASSED", 150 * 365}
 
 config :core, :summary,
   conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},

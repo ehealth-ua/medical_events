@@ -1,4 +1,4 @@
-defmodule Core.Observations.EffectiveAt do
+defmodule Core.EffectiveAt do
   @moduledoc false
 
   use Core.Schema
@@ -18,7 +18,7 @@ defmodule Core.Observations.EffectiveAt do
   end
 end
 
-defimpl Vex.Blank, for: Core.Observations.EffectiveAt do
-  def blank?(%Core.Observations.EffectiveAt{}), do: false
+defimpl Vex.Blank, for: Core.EffectiveAt do
+  def blank?(%Core.EffectiveAt{}), do: false
   def blank?(_), do: true
 end

@@ -12,6 +12,7 @@ defmodule Core.Patients.Package do
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
+  alias Core.Patients.DiagnosticReports
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
@@ -30,6 +31,7 @@ defmodule Core.Patients.Package do
       "risk_assessments" => risk_assessments,
       "devices" => devices,
       "medication_statements" => medication_statements,
+      "diagnostic_reports" => diagnostic_reports,
       "observations" => observations,
       "conditions" => conditions
     } = data
@@ -184,6 +186,34 @@ defmodule Core.Patients.Package do
         |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.context.identifier.value")
         |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.source.value.identifier.value")
         |> Mongo.convert_to_uuid("medication_statements.#{medication_statement.id}.based_on.identifier.value")
+      end)
+
+    set =
+      Enum.reduce(diagnostic_reports, set, fn diagnostic_report, acc ->
+        diagnostic_report =
+          diagnostic_report
+          |> DiagnosticReports.fill_up_diagnostic_report_performer()
+          |> DiagnosticReports.fill_up_diagnostic_report_recorded_by()
+          |> DiagnosticReports.fill_up_diagnostic_report_results_interpreter()
+          |> DiagnosticReports.fill_up_diagnostic_report_managing_organization()
+          |> DiagnosticReports.fill_up_diagnostic_report_origin_episode(patient_id_hash)
+
+        acc
+        |> Mongo.add_to_set(
+          diagnostic_report,
+          "diagnostic_reports.#{diagnostic_report.id}"
+        )
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.id")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.inserted_by")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.updated_by")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.encounter.identifier.value")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.source.value.value.identifier.value")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.based_on.identifier.value")
+        |> Mongo.convert_to_uuid(
+          "diagnostic_reports.#{diagnostic_report.id}.results_interpreter.value.identifier.value"
+        )
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.managing_organization.identifier.value")
+        |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.recorded_by.identifier.value")
       end)
 
     links = [

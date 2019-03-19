@@ -96,6 +96,18 @@ defmodule Core.Validators.CacheTest do
        %{
          "name" => "eHealth/SNOMED/service_request_performer_roles",
          "values" => %{"psychiatrist" => "psychiatrist"}
+       },
+       %{
+         "name" => "eHealth/SNOMED/clinical_findings",
+         "values" => %{"109006" => "109006"}
+       },
+       %{
+         "name" => "eHealth/LOINC/diagnostic_report_codes",
+         "values" => %{"10217-8" => "10217-8"}
+       },
+       %{
+         "name" => "eHealth/diagnostic_report_categories",
+         "values" => %{"LAB" => "LAB", "MB" => "MB"}
        }
      ]}
   end

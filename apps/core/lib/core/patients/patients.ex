@@ -7,6 +7,7 @@ defmodule Core.Patients do
   alias Core.Condition
   alias Core.Conditions.Validations, as: ConditionValidations
   alias Core.Device
+  alias Core.DiagnosticReport
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
@@ -22,6 +23,8 @@ defmodule Core.Patients do
   alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Devices
   alias Core.Patients.Devices.Validations, as: DeviceValidations
+  alias Core.Patients.DiagnosticReports
+  alias Core.Patients.DiagnosticReports.Validations, as: DiagnosticReportValidations
   alias Core.Patients.Encounters
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
@@ -195,7 +198,8 @@ defmodule Core.Patients do
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
            {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content),
            {:ok, devices} <- create_devices(job, content),
-           {:ok, medication_statements} <- create_medication_statements(job, content) do
+           {:ok, medication_statements} <- create_medication_statements(job, content),
+           {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content) do
         encounter =
           encounter
           |> Encounters.fill_up_encounter_performer()
@@ -225,6 +229,7 @@ defmodule Core.Patients do
                 "risk_assessments" => risk_assessments,
                 "devices" => devices,
                 "medication_statements" => medication_statements,
+                "diagnostic_reports" => diagnostic_reports,
                 "observations" => observations,
                 "conditions" => conditions
               }
@@ -777,6 +782,55 @@ defmodule Core.Patients do
 
   defp create_medication_statements(_, _), do: {:ok, []}
 
+  defp create_diagnostic_reports(
+         %PackageCreateJob{
+           patient_id_hash: patient_id_hash,
+           user_id: user_id,
+           client_id: client_id
+         },
+         %{"diagnostic_reports" => _} = content
+       ) do
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
+
+    diagnostic_reports =
+      Enum.map(content["diagnostic_reports"], fn data ->
+        diagnostic_report = DiagnosticReport.create(data)
+
+        %{
+          diagnostic_report
+          | inserted_at: now,
+            updated_at: now,
+            inserted_by: user_id,
+            updated_by: user_id
+        }
+        |> DiagnosticReportValidations.validate_based_on(client_id)
+        |> DiagnosticReportValidations.validate_effective()
+        |> DiagnosticReportValidations.validate_issued()
+        |> DiagnosticReportValidations.validate_recorded_by(client_id)
+        |> DiagnosticReportValidations.validate_encounter(encounter_id)
+        |> DiagnosticReportValidations.validate_source(client_id)
+        |> DiagnosticReportValidations.validate_managing_organization(client_id)
+        |> DiagnosticReportValidations.validate_results_interpreter(client_id)
+      end)
+
+    case Vex.errors(
+           %{diagnostic_reports: diagnostic_reports},
+           diagnostic_reports: [
+             unique_ids: [field: :id],
+             reference: [path: "diagnostic_reports"]
+           ]
+         ) do
+      [] ->
+        validate_diagnostic_reports(patient_id_hash, diagnostic_reports)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  defp create_diagnostic_reports(_, _), do: {:ok, []}
+
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(
@@ -858,6 +912,18 @@ defmodule Core.Patients do
       case MedicationStatements.get_by_id(patient_id_hash, medication_statement.id) do
         {:ok, _} ->
           {:halt, {:error, "Medication statement with id '#{medication_statement.id}' already exists", 409}}
+
+        _ ->
+          {:cont, acc}
+      end
+    end)
+  end
+
+  defp validate_diagnostic_reports(patient_id_hash, diagnostic_reports) do
+    Enum.reduce_while(diagnostic_reports, {:ok, diagnostic_reports}, fn diagnostic_report, acc ->
+      case DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report.id) do
+        {:ok, _} ->
+          {:halt, {:error, "Medication statement with id '#{diagnostic_report.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}

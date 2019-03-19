@@ -11,6 +11,7 @@ defmodule Core.Factories do
   alias Core.Device
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
+  alias Core.EffectiveAt
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
@@ -21,7 +22,6 @@ defmodule Core.Factories do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Observations.Component
-  alias Core.Observations.EffectiveAt
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity

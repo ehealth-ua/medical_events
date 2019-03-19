@@ -4,9 +4,9 @@ defmodule Core.Observation do
   use Core.Schema
 
   alias Core.CodeableConcept
+  alias Core.EffectiveAt
   alias Core.Maybe
   alias Core.Observations.Component
-  alias Core.Observations.EffectiveAt
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Period

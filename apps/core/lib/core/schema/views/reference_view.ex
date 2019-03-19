@@ -6,10 +6,10 @@ defmodule Core.ReferenceView do
   alias Core.DatePeriod
   alias Core.DateView
   alias Core.Diagnosis
+  alias Core.EffectiveAt
   alias Core.Evidence
   alias Core.Identifier
   alias Core.Observations.Component
-  alias Core.Observations.EffectiveAt
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity
