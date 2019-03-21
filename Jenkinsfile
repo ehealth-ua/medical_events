@@ -792,7 +792,7 @@ spec:
       }
       agent {
         kubernetes {
-          label "ehealth-deploy-$BUILD_ID-$NAME"
+          label "me-deploy-$BUILD_ID-$NAME"
           defaultContainer 'jnlp'
           yaml """
 apiVersion: v1
