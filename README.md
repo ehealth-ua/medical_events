@@ -1,6 +1,7 @@
 # MedicalEvents.Umbrella
 
-[![Build Status]()
+[![Build Status](https://ci.asclepius.com.ua/buildStatus/icon?job=medical_events%2Fdevelop)](https://ci.asclepius.com.ua/job/medical_events/job/develop/)
+
 [![Coverage Status]()
 
 
