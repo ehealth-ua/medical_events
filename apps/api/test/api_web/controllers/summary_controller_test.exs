@@ -1276,6 +1276,340 @@ defmodule Api.Web.SummaryControllerTest do
     end
   end
 
+  describe "get diagnostic report" do
+    test "success", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      diagnostic_report = build(:diagnostic_report)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
+      )
+
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(
+        summary_path(conn, :show_diagnostic_report, patient_id, UUID.binary_to_string!(diagnostic_report.id.binary))
+      )
+      |> json_response(200)
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_show.json")
+    end
+
+    test "not found when conclusion_code is not allowed", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      diagnostic_report =
+        build(
+          :diagnostic_report,
+          conclusion_code: codeable_concept_coding(system: "eHealth/SNOMED/clinical_findings", code: "111")
+        )
+
+      insert(:patient,
+        _id: patient_id_hash,
+        diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
+      )
+
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(
+        summary_path(conn, :show_diagnostic_report, patient_id, UUID.binary_to_string!(diagnostic_report.id.binary))
+      )
+      |> json_response(404)
+    end
+
+    test "not found when id is invalid", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      diagnostic_report = build(:diagnostic_report)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
+      )
+
+      expect_get_person_data(patient_id)
+
+      conn
+      |> get(summary_path(conn, :show_diagnostic_report, patient_id, UUID.uuid4()))
+      |> json_response(404)
+    end
+  end
+
+  describe "list diagnostic reports" do
+    test "successful search", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "conclusion_code is not allowed", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      diagnostic_report_1 =
+        build(:diagnostic_report,
+          conclusion_code: codeable_concept_coding(system: "eHealth/SNOMED/clinical_findings", code: "111")
+        )
+
+      diagnostic_report_2 = build(:diagnostic_report)
+
+      diagnostic_reports =
+        [diagnostic_report_1, diagnostic_report_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+          {UUID.binary_to_string!(id), diagnostic_report}
+        end)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+    end
+
+    test "invalid search parameters", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+      search_params = %{"encounter_id" => UUID.uuid4(), "context_episode_id" => UUID.uuid4()}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.context_episode_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.encounter_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
+    test "successful search with search parameters: code", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      code_value = "1"
+
+      code =
+        build(
+          :codeable_concept,
+          coding: [build(:coding, code: code_value, system: "eHealth/LOINC/diagnostic_report_codes")]
+        )
+
+      diagnostic_report_1 = build(:diagnostic_report, code: code)
+      diagnostic_report_2 = build(:diagnostic_report)
+
+      diagnostic_reports =
+        [diagnostic_report_1, diagnostic_report_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+          {UUID.binary_to_string!(id), diagnostic_report}
+        end)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
+      expect_get_person_data(patient_id)
+
+      search_params = %{"code" => code_value}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_2.id.binary)
+    end
+
+    test "successful search with search parameters: origin_episode_id", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      origin_episode_id = UUID.uuid4()
+
+      origin_episode =
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(code: "episode"),
+              value: Mongo.string_to_uuid(origin_episode_id)
+            )
+        )
+
+      diagnostic_report_1 = build(:diagnostic_report, origin_episode: origin_episode)
+      diagnostic_report_2 = build(:diagnostic_report)
+
+      diagnostic_reports =
+        [diagnostic_report_1, diagnostic_report_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+          {UUID.binary_to_string!(id), diagnostic_report}
+        end)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
+      expect_get_person_data(patient_id)
+
+      search_params = %{"origin_episode_id" => origin_episode_id}
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_2.id.binary)
+    end
+
+    test "successful search with search parameters: date", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      issued_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
+      issued_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
+
+      diagnostic_report_1 = build(:diagnostic_report, issued: get_datetime(-30))
+      diagnostic_report_2 = build(:diagnostic_report, issued: get_datetime(-20))
+      diagnostic_report_3 = build(:diagnostic_report, issued: get_datetime(-15))
+      diagnostic_report_4 = build(:diagnostic_report, issued: get_datetime(-10))
+      diagnostic_report_5 = build(:diagnostic_report, issued: get_datetime(-5))
+
+      diagnostic_reports =
+        [
+          diagnostic_report_1,
+          diagnostic_report_2,
+          diagnostic_report_3,
+          diagnostic_report_4,
+          diagnostic_report_5
+        ]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+          {UUID.binary_to_string!(id), diagnostic_report}
+        end)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
+      expect_get_person_data(patient_id, 4)
+
+      call_endpoint = fn search_params ->
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id), search_params)
+        |> json_response(200)
+      end
+
+      # both dates
+      assert %{"page_number" => 1, "total_entries" => 3, "total_pages" => 1} =
+               call_endpoint.(%{
+                 "issued_from" => issued_from,
+                 "issued_to" => issued_to
+               })
+               |> Map.get("paging")
+
+      # date_from only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"issued_from" => issued_from})
+               |> Map.get("paging")
+
+      # date_to only
+      assert %{"page_number" => 1, "total_entries" => 4, "total_pages" => 1} =
+               call_endpoint.(%{"issued_to" => issued_to})
+               |> Map.get("paging")
+
+      # without date search params
+      assert %{"page_number" => 1, "total_entries" => 5, "total_pages" => 1} =
+               call_endpoint.(%{})
+               |> Map.get("paging")
+    end
+
+    test "get patient when diagnostic reports list is null", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: nil)
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_diagnostic_reports, patient_id))
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
+    end
+  end
+
   defp build_condition_code(code) do
     {code, build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICPC2/condition_codes")])}
   end

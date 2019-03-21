@@ -151,7 +151,8 @@ config :core, :encounter_package,
 
 config :core, :summary,
   conditions_whitelist: {:system, :list, "SUMMARY_CONDITIONS_ALLOWED", ["R80"]},
-  observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["8310-5", "8462-4", "8480-6", "80319-7"]}
+  observations_whitelist: {:system, :list, "SUMMARY_OBSERVATIONS_ALLOWED", ["8310-5", "8462-4", "8480-6", "80319-7"]},
+  diagnostic_reports_whitelist: {:system, :list, "SUMMARY_DIAGNOSTIC_REPORTS_ALLOWED", []}
 
 config :core, :approval, expire_in_minutes: {:system, :integer, "APPROVAL_EXPIRATION", 60 * 24}
 

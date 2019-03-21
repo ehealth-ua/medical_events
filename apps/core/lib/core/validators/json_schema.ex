@@ -29,6 +29,8 @@ defmodule Core.Validators.JsonSchema do
   use_schema(:device_summary, "json_schemas/devices/device_summary.json")
   use_schema(:medication_statement_request, "json_schemas/medication_statements/medication_statement_request.json")
   use_schema(:medication_statement_summary, "json_schemas/medication_statements/medication_statement_summary.json")
+  use_schema(:diagnostic_report_request, "json_schemas/diagnostic_reports/diagnostic_report_request.json")
+  use_schema(:diagnostic_report_summary, "json_schemas/diagnostic_reports/diagnostic_report_summary.json")
   use_schema(:immunization_request, "json_schemas/immunizations/immunization_request.json")
   use_schema(:immunization_summary, "json_schemas/immunizations/immunization_summary.json")
   use_schema(:service_request_create, "json_schemas/service_requests/service_request_create.json")

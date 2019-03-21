@@ -48,6 +48,9 @@ defmodule Core.DiagnosticReport do
         {"origin_episode", v} ->
           {:origin_episode, Reference.create(v)}
 
+        {"category", nil} ->
+          {:category, nil}
+
         {"category", v} ->
           {:category, Enum.map(v, &CodeableConcept.create/1)}
 
@@ -81,6 +84,9 @@ defmodule Core.DiagnosticReport do
         {"report_origin", v} ->
           {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
 
+        {"source", %{"type" => "performer", "value" => %{"type" => type, "value" => value}}} ->
+          {:source, %Source{type: "performer", value: Executor.create(type, value)}}
+
         {"source", %{"type" => "performer", "value" => v}} ->
           {:source, %Source{type: "performer", value: Executor.create(v)}}
 
@@ -92,6 +98,9 @@ defmodule Core.DiagnosticReport do
 
         {"results_interpreter", nil} ->
           {:results_interpreter, nil}
+
+        {"results_interpreter", %{"type" => type, "value" => value}} ->
+          {:results_interpreter, Executor.create(type, value)}
 
         {"results_interpreter", v} ->
           {:results_interpreter, Executor.create(v)}

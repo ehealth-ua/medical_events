@@ -154,7 +154,7 @@ defmodule Api.Web.MedicationStatementControllerTest do
 
       conn
       |> get(medication_statement_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(403)
+      |> json_response(404)
     end
 
     test "invalid medication statement uuid", %{conn: conn} do
@@ -691,7 +691,7 @@ defmodule Api.Web.MedicationStatementControllerTest do
 
       conn
       |> get(medication_statement_path(conn, :index, UUID.uuid4()))
-      |> json_response(403)
+      |> json_response(200)
     end
 
     test "get patient when no medication_statements", %{conn: conn} do

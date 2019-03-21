@@ -152,7 +152,7 @@ defmodule Api.Web.DeviceControllerTest do
 
       conn
       |> get(device_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(403)
+      |> json_response(404)
     end
 
     test "invalid device uuid", %{conn: conn} do
@@ -677,7 +677,7 @@ defmodule Api.Web.DeviceControllerTest do
 
       conn
       |> get(device_path(conn, :index, UUID.uuid4()))
-      |> json_response(403)
+      |> json_response(200)
     end
 
     test "get patient when no devices", %{conn: conn} do

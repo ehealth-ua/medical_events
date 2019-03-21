@@ -191,7 +191,7 @@
                     },
                     "text": {
                       "type": "string",
-                      "maxLenght": 2000
+                      "maxLength": 2000
                     }
                   },
                   "description": "Description of identifier",
@@ -258,7 +258,7 @@
                     },
                     "text": {
                       "type": "string",
-                      "maxLenght": 2000
+                      "maxLength": 2000
                     }
                   },
                   "description": "Description of identifier",
@@ -285,7 +285,7 @@
         },
         "effective_period": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "medication_code": {
           "type": "object",
@@ -312,18 +312,18 @@
             },
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             }
           },
           "additionalProperties": false
         },
         "note": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "dosage": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "report_origin": {
           "$ref": "#/definitions/report_origin"

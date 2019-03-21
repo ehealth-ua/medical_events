@@ -923,7 +923,7 @@ defmodule Core.Patients do
     Enum.reduce_while(diagnostic_reports, {:ok, diagnostic_reports}, fn diagnostic_report, acc ->
       case DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report.id) do
         {:ok, _} ->
-          {:halt, {:error, "Medication statement with id '#{diagnostic_report.id}' already exists", 409}}
+          {:halt, {:error, "Diagnostic report with id '#{diagnostic_report.id}' already exists", 409}}
 
         _ ->
           {:cont, acc}

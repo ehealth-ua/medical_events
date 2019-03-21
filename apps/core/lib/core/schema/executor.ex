@@ -16,6 +16,14 @@ defmodule Core.Executor do
   def create(%{"text" => value}) do
     %__MODULE__{type: "string", value: value}
   end
+
+  def create("reference" = type, value) do
+    %__MODULE__{type: type, value: Reference.create(value)}
+  end
+
+  def create("string" = type, value) do
+    %__MODULE__{type: type, value: value}
+  end
 end
 
 defimpl Vex.Blank, for: Core.Executor do

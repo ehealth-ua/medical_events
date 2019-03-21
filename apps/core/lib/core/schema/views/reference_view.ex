@@ -8,6 +8,7 @@ defmodule Core.ReferenceView do
   alias Core.Diagnosis
   alias Core.EffectiveAt
   alias Core.Evidence
+  alias Core.Executor
   alias Core.Identifier
   alias Core.Observations.Component
   alias Core.Observations.ReferenceRange
@@ -168,6 +169,14 @@ defmodule Core.ReferenceView do
     status_history
     |> Map.take(~w(status inserted_at)a)
     |> Map.merge(%{status_reason: render(status_history.status_reason)})
+  end
+
+  def render(%Executor{type: "reference", value: value}) do
+    %{"reference" => render(value)}
+  end
+
+  def render(%Executor{type: "string", value: value}) do
+    %{"text" => value}
   end
 
   def render(nil), do: nil

@@ -28,11 +28,8 @@ defmodule ApiWeb.Router do
     scope "/" do
       pipe_through(:authorize_party)
 
-      get("/patients/:patient_id/devices", DeviceController, :index)
-      get("/patients/:patient_id/devices/:id", DeviceController, :show)
-
-      get("/patients/:patient_id/medication_statements", MedicationStatementController, :index)
-      get("/patients/:patient_id/medication_statements/:id", MedicationStatementController, :show)
+      get("/patients/:patient_id/diagnostic_reports", DiagnosticReportController, :index)
+      get("/patients/:patient_id/diagnostic_reports/:id", DiagnosticReportController, :show)
     end
 
     get("/patients/:patient_id/conditions", ConditionController, :index)
@@ -52,6 +49,12 @@ defmodule ApiWeb.Router do
 
     get("/patients/:patient_id/risk_assessments", RiskAssessmentController, :index)
     get("/patients/:patient_id/risk_assessments/:id", RiskAssessmentController, :show)
+
+    get("/patients/:patient_id/devices", DeviceController, :index)
+    get("/patients/:patient_id/devices/:id", DeviceController, :show)
+
+    get("/patients/:patient_id/medication_statements", MedicationStatementController, :index)
+    get("/patients/:patient_id/medication_statements/:id", MedicationStatementController, :show)
 
     get("/patients/:patient_id/episodes", EpisodeController, :index)
     get("/patients/:patient_id/episodes/:id", EpisodeController, :show)
@@ -140,6 +143,9 @@ defmodule ApiWeb.Router do
 
       get("/medication_statements", SummaryController, :list_medication_statements)
       get("/medication_statements/:id", MedicationStatementController, :show)
+
+      get("/diagnostic_reports", SummaryController, :list_diagnostic_reports)
+      get("/diagnostic_reports/:id", SummaryController, :show_diagnostic_report)
 
       get("/diagnoses", SummaryController, :list_diagnoses)
     end

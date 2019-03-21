@@ -1,0 +1,709 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "coding_item": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "Symbol in syntax defined by the system"
+        }
+      },
+      "required": [
+        "code",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "coding": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/coding_item"
+      }
+    },
+    "codeable_concept": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "$ref": "#/definitions/coding"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "coding"
+      ],
+      "additionalProperties": false
+    },
+    "identifier": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/codeable_concept"
+        },
+        "value": {
+          "type": "string",
+          "description": "The value that is unique"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "report_origin": {
+      "type": "object",
+      "properties": {
+        "coding": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "system": {
+                "type": "string",
+                "enum": [
+                  "eHealth/report_origins"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "description": "Dictionary: eHealth/report_origins"
+              }
+            },
+            "required": [
+              "code",
+              "system"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "diagnostic_report": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "$ref": "#/definitions/uuid"
+        },
+        "based_on": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "service_request"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "maxLength": 2000,
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "origin_episode": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "episode"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "maxLength": 2000,
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "final"
+          ]
+        },
+        "category": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/diagnostic_report_categories"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "description": "Dictionary: eHealth/diagnostic_report_categories"
+                      }
+                    },
+                    "required": [
+                      "system",
+                      "code"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string",
+                  "maxLength": 2000
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        },
+        "effective_date_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "effective_period": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "string",
+              "format": "dateTime"
+            },
+            "end": {
+              "type": "string",
+              "format": "dateTime"
+            }
+          },
+          "required": [
+            "start"
+          ],
+          "additionalProperties": false
+        },
+        "issued": {
+          "type": "string",
+          "format": "dateTime"
+        },
+        "code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/LOINC/diagnostic_report_codes"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary: eHealth/LOINC/diagnostic_report_codes"
+                  }
+                },
+                "required": [
+                  "system",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          "additionalProperties": false
+        },
+        "conclusion": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "conclusion_code": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/SNOMED/clinical_findings"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary: eHealth/SNOMED/clinical_findings"
+                  }
+                },
+                "required": [
+                  "system",
+                  "code"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          "additionalProperties": false
+        },
+        "recorded_by": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "employee"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "coding"
+                  ],
+                  "description": "Description of identifier",
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "encounter": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "encounter"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "primary_source": {
+          "type": "boolean",
+          "description": "could be false"
+        },
+        "managing_organization": {
+          "type": "object",
+          "properties": {
+            "identifier": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "coding": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "eHealth/resources"
+                            ]
+                          },
+                          "code": {
+                            "type": "string",
+                            "enum": [
+                              "legal_entity"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "code"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  },
+                  "description": "Description of identifier",
+                  "additionalProperties": false
+                },
+                "value": {
+                  "type": "string",
+                  "description": "The value that is unique"
+                }
+              },
+              "required": [
+                "type",
+                "value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "identifier"
+          ]
+        },
+        "report_origin": {
+          "$ref": "#/definitions/report_origin"
+        },
+        "performer": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "reference": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "object",
+                      "properties": {
+                        "coding": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "system": {
+                                "type": "string",
+                                "enum": [
+                                  "eHealth/resources"
+                                ]
+                              },
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "employee"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "system"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "coding"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "value": {
+                      "type": "string",
+                      "description": "The value that is unique"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "identifier"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "results_interpreter": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "reference": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "object",
+                      "properties": {
+                        "coding": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "system": {
+                                "type": "string",
+                                "enum": [
+                                  "eHealth/resources"
+                                ]
+                              },
+                              "code": {
+                                "type": "string",
+                                "enum": [
+                                  "employee"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "code",
+                              "system"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "text": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "coding"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "value": {
+                      "type": "string",
+                      "description": "The value that is unique"
+                    }
+                  },
+                  "required": [
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "identifier"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "code",
+        "issued",
+        "recorded_by",
+        "encounter",
+        "primary_source",
+        "inserted_at",
+        "updated_at"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "data": {
+      "$ref": "#/definitions/diagnostic_report"
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "additionalProperties": false
+}

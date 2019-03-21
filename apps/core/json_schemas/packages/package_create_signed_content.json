@@ -3331,7 +3331,7 @@
                     },
                     "text": {
                       "type": "string",
-                      "maxLenght": 2000
+                      "maxLength": 2000
                     }
                   },
                   "description": "Description of identifier",
@@ -3399,7 +3399,7 @@
                     },
                     "text": {
                       "type": "string",
-                      "maxLenght": 2000
+                      "maxLength": 2000
                     }
                   },
                   "description": "Description of identifier",
@@ -3427,7 +3427,7 @@
         },
         "effective_period": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "medication_code": {
           "type": "object",
@@ -3454,18 +3454,18 @@
             },
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             }
           },
           "additionalProperties": false
         },
         "note": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "dosage": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "report_origin": {
           "$ref": "#/definitions/report_origin"
@@ -3530,7 +3530,7 @@
                     }
                   },
                   "description": "Description of identifier",
-                  "maxLenght": 2000,
+                  "maxLength": 2000,
                   "additionalProperties": false
                 },
                 "value": {
@@ -3587,12 +3587,16 @@
                 },
                 "text": {
                   "type": "string",
-                  "maxLenght": 2000
+                  "maxLength": 2000
                 }
               },
               "additionalProperties": false
             }
           ]
+        },
+        "effective_date_time": {
+          "type": "string",
+          "format": "date-time"
         },
         "effective_period": {
           "type": "object",
@@ -3643,14 +3647,14 @@
             },
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             }
           },
           "additionalProperties": false
         },
         "conclusion": {
           "type": "string",
-          "maxLenght": 2000
+          "maxLength": 2000
         },
         "conclusion_code": {
           "type": "object",
@@ -3680,7 +3684,7 @@
             },
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             }
           },
           "additionalProperties": false
@@ -3874,7 +3878,7 @@
           "properties": {
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             },
             "reference": {
               "type": "object",
@@ -3944,7 +3948,7 @@
           "properties": {
             "text": {
               "type": "string",
-              "maxLenght": 2000
+              "maxLength": 2000
             },
             "reference": {
               "type": "object",

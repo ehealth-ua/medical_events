@@ -7,6 +7,7 @@ defmodule Api.Web.SummaryController do
   alias Api.Web.ConditionView
   alias Api.Web.DeviceView
   alias Api.Web.DiagnosisView
+  alias Api.Web.DiagnosticReportView
   alias Api.Web.EpisodeView
   alias Api.Web.ImmunizationView
   alias Api.Web.MedicationStatementView
@@ -17,6 +18,7 @@ defmodule Api.Web.SummaryController do
   alias Core.Observations
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
+  alias Core.Patients.DiagnosticReports
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
@@ -112,6 +114,23 @@ defmodule Api.Web.SummaryController do
       conn
       |> put_view(MedicationStatementView)
       |> render("index.json", medication_statements: medication_statements, paging: paging)
+    end
+  end
+
+  def list_diagnostic_reports(conn, params) do
+    with {:ok, %Page{entries: diagnostic_reports} = paging} <-
+           DiagnosticReports.list(params, :diagnostic_report_summary) do
+      conn
+      |> put_view(DiagnosticReportView)
+      |> render("index.json", diagnostic_reports: diagnostic_reports, paging: paging)
+    end
+  end
+
+  def show_diagnostic_report(conn, %{"patient_id_hash" => patient_id_hash, "id" => diagnostic_report_id}) do
+    with {:ok, diagnostic_report} <- DiagnosticReports.get_summary(patient_id_hash, diagnostic_report_id) do
+      conn
+      |> put_view(DiagnosticReportView)
+      |> render("show.json", diagnostic_report: diagnostic_report)
     end
   end
 end

@@ -8,6 +8,7 @@ defmodule Core.Factories do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
+  alias Core.DiagnosticReport
   alias Core.Device
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
@@ -15,6 +16,7 @@ defmodule Core.Factories do
   alias Core.Encounter
   alias Core.Episode
   alias Core.Evidence
+  alias Core.Executor
   alias Core.Identifier
   alias Core.Immunization
   alias Core.Job
@@ -102,6 +104,13 @@ defmodule Core.Factories do
         {UUID.binary_to_string!(id), medication_statement}
       end)
 
+    diagnostic_reports = build_list(2, :diagnostic_report)
+
+    diagnostic_reports =
+      Enum.into(diagnostic_reports, %{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+        {UUID.binary_to_string!(id), diagnostic_report}
+      end)
+
     id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
@@ -116,6 +125,7 @@ defmodule Core.Factories do
       risk_assessments: risk_assessments,
       devices: devices,
       medication_statements: medication_statements,
+      diagnostic_reports: diagnostic_reports,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: user_id,
@@ -251,6 +261,42 @@ defmodule Core.Factories do
         ),
       note: "note",
       dosage: "dosage",
+      inserted_at: now,
+      updated_at: now,
+      inserted_by: id,
+      updated_by: id
+    }
+  end
+
+  def diagnostic_report_factory do
+    id = Mongo.string_to_uuid(UUID.uuid4())
+    now = DateTime.utc_now()
+
+    %DiagnosticReport{
+      id: id,
+      based_on: reference_coding(system: "eHealth/resources", code: "service_request"),
+      origin_episode: reference_coding(system: "eHealth/resources", code: "episode"),
+      status: DiagnosticReport.status(:final),
+      category: [codeable_concept_coding(system: "eHealth/diagnostic_report_categories", code: "LAB")],
+      code: codeable_concept_coding(system: "eHealth/LOINC/diagnostic_report_codes", code: "10217-8"),
+      encounter: reference_coding(system: "eHealth/resources", code: "encounter"),
+      effective: %EffectiveAt{type: "effective_date_time", value: now},
+      issued: now,
+      primary_source: true,
+      source:
+        build(
+          :source,
+          type: "performer",
+          value: %Executor{type: "reference", value: reference_coding(system: "eHealth/resources", code: "employee")}
+        ),
+      recorded_by: reference_coding(system: "eHealth/resources", code: "employee"),
+      results_interpreter: %Executor{
+        type: "reference",
+        value: reference_coding(system: "eHealth/resources", code: "employee")
+      },
+      managing_organization: reference_coding(system: "eHealth/resources", code: "legal_entity"),
+      conclusion: "conclusion",
+      conclusion_code: codeable_concept_coding(system: "eHealth/SNOMED/clinical_findings", code: "109006"),
       inserted_at: now,
       updated_at: now,
       inserted_by: id,

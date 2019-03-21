@@ -86,8 +86,8 @@ defmodule Core.Patients.RiskAssessments do
     asserted_date_from = Search.get_filter_date(:from, params["asserted_date_from"])
     asserted_date_to = Search.get_filter_date(:to, params["asserted_date_to"])
 
-    episode_id = if params["episode_id"], do: Mongo.string_to_uuid(params["episode_id"]), else: nil
-    encounter_ids = if is_nil(episode_id), do: nil, else: get_encounter_ids(patient_id_hash, episode_id)
+    episode_id = if params["episode_id"], do: Mongo.string_to_uuid(params["episode_id"])
+    encounter_ids = if !is_nil(episode_id), do: get_encounter_ids(patient_id_hash, episode_id)
 
     search_pipeline =
       %{"$match" => %{}}
