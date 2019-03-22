@@ -196,10 +196,11 @@ defmodule Core.Patients do
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
-           {:ok, risk_assessments} <- create_risk_assessments(job, observations, conditions, content),
+           {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content),
+           {:ok, risk_assessments} <-
+             create_risk_assessments(job, observations, conditions, diagnostic_reports, content),
            {:ok, devices} <- create_devices(job, content),
-           {:ok, medication_statements} <- create_medication_statements(job, content),
-           {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content) do
+           {:ok, medication_statements} <- create_medication_statements(job, content) do
         encounter =
           encounter
           |> Encounters.fill_up_encounter_performer()
@@ -651,6 +652,7 @@ defmodule Core.Patients do
          },
          observations,
          conditions,
+         diagnostic_reports,
          %{"risk_assessments" => _} = content
        ) do
     now = DateTime.utc_now()
@@ -669,8 +671,18 @@ defmodule Core.Patients do
         }
         |> RiskAssessmentValidations.validate_context(encounter_id)
         |> RiskAssessmentValidations.validate_asserted_date()
-        |> RiskAssessmentValidations.validate_reason_references(observations, conditions, patient_id_hash)
-        |> RiskAssessmentValidations.validate_basis_references(observations, conditions, patient_id_hash)
+        |> RiskAssessmentValidations.validate_reason_references(
+          observations,
+          conditions,
+          diagnostic_reports,
+          patient_id_hash
+        )
+        |> RiskAssessmentValidations.validate_basis_references(
+          observations,
+          conditions,
+          diagnostic_reports,
+          patient_id_hash
+        )
         |> RiskAssessmentValidations.validate_performer(client_id)
         |> RiskAssessmentValidations.validate_predictions()
       end)
@@ -690,7 +702,7 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_risk_assessments(_, _, _, _), do: {:ok, []}
+  defp create_risk_assessments(_, _, _, _, _), do: {:ok, []}
 
   defp create_devices(
          %PackageCreateJob{

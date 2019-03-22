@@ -116,7 +116,9 @@ config :vex,
       service_request_reference: Core.Validators.ServiceRequestReference,
       max_days_passed: Core.Validators.MaxDaysPassed,
       approval_granted_to_reference: Core.Validators.ApprovalGrantedToReference,
-      medication_request_reference: Core.Validators.MedicationRequestReference
+      medication_request_reference: Core.Validators.MedicationRequestReference,
+      diagnostic_report_reference: Core.Validators.DiagnosticReportReference,
+      diagnostic_report_context: Core.Validators.DiagnosticReportContext
     ],
     Vex.Validators
   ]

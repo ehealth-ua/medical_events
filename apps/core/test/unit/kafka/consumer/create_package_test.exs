@@ -1172,6 +1172,10 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               "href" => "/api/patients/#{patient_id}/medication_statements/#{medication_statement_id}"
             },
             %{
+              "entity" => "diagnostic_report",
+              "href" => "/api/patients/#{patient_id}/diagnostic_reports/#{diagnostic_report_id}"
+            },
+            %{
               "entity" => "condition",
               "href" => "/api/patients/#{patient_id}/conditions/#{condition_id}"
             },

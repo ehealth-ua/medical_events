@@ -278,6 +278,17 @@ defmodule Core.Patients.Package do
           ]
       end)
 
+    links =
+      Enum.reduce(diagnostic_reports, links, fn diagnostic_report, acc ->
+        acc ++
+          [
+            %{
+              "entity" => "diagnostic_report",
+              "href" => "/api/patients/#{patient_id}/diagnostic_reports/#{diagnostic_report.id}"
+            }
+          ]
+      end)
+
     conditions = Enum.map(conditions, &Conditions.create/1)
     observations = Enum.map(observations, &Observations.create/1)
 

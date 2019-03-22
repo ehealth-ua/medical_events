@@ -3115,7 +3115,7 @@
                               "enum": [
                                 "condition",
                                 "observation",
-                                "diagostic_report"
+                                "diagnostic_report"
                               ]
                             }
                           },

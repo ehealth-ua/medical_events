@@ -34,13 +34,13 @@ defmodule Core.Patients.RiskAssessments.Validations do
         %RiskAssessment{reason: %Reason{type: "reason_references"} = reason} = risk_assessment,
         observations,
         conditions,
+        diagnostic_reports,
         patient_id_hash
       ) do
     value =
       Enum.map(reason.value, fn value ->
         reference_type = value.identifier.type.coding |> List.first() |> Map.get(:code)
 
-        # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
         identifier =
           case reference_type do
             "observation" ->
@@ -52,6 +52,11 @@ defmodule Core.Patients.RiskAssessments.Validations do
               add_validations(value.identifier, :value,
                 condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
               )
+
+            "diagnostic_report" ->
+              add_validations(value.identifier, :value,
+                diagnostic_report_context: [patient_id_hash: patient_id_hash, diagnostic_reports: diagnostic_reports]
+              )
           end
 
         %{value | identifier: identifier}
@@ -60,31 +65,37 @@ defmodule Core.Patients.RiskAssessments.Validations do
     %{risk_assessment | reason: %{reason | value: value}}
   end
 
-  def validate_reason_references(%RiskAssessment{} = risk_assessment, _, _, _), do: risk_assessment
+  def validate_reason_references(%RiskAssessment{} = risk_assessment, _, _, _, _), do: risk_assessment
 
-  def validate_basis_references(%RiskAssessment{basis: nil} = risk_assessment, _, _, _), do: risk_assessment
+  def validate_basis_references(%RiskAssessment{basis: nil} = risk_assessment, _, _, _, _), do: risk_assessment
 
-  def validate_basis_references(%RiskAssessment{basis: %ExtendedReference{references: nil}} = risk_assessment, _, _, _),
-    do: risk_assessment
+  def validate_basis_references(
+        %RiskAssessment{basis: %ExtendedReference{references: nil}} = risk_assessment,
+        _,
+        _,
+        _,
+        _
+      ),
+      do: risk_assessment
 
   def validate_basis_references(
         %RiskAssessment{basis: %ExtendedReference{references: references} = basis} = risk_assessment,
         observations,
         conditions,
+        diagnostic_reports,
         patient_id_hash
       ) do
     references =
       Enum.map(references, fn reference ->
-        validate_basis_reference(reference, observations, conditions, patient_id_hash)
+        validate_basis_reference(reference, observations, conditions, diagnostic_reports, patient_id_hash)
       end)
 
     %{risk_assessment | basis: %{basis | references: references}}
   end
 
-  def validate_basis_reference(%Reference{} = reference, observations, conditions, patient_id_hash) do
+  def validate_basis_reference(%Reference{} = reference, observations, conditions, diagnostic_reports, patient_id_hash) do
     reference_type = reference.identifier.type.coding |> List.first() |> Map.get(:code)
 
-    # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
     identifier =
       case reference_type do
         "observation" ->
@@ -95,6 +106,11 @@ defmodule Core.Patients.RiskAssessments.Validations do
         "condition" ->
           add_validations(reference.identifier, :value,
             condition_context: [patient_id_hash: patient_id_hash, conditions: conditions]
+          )
+
+        "diagnostic_report" ->
+          add_validations(reference.identifier, :value,
+            diagnostic_report_context: [patient_id_hash: patient_id_hash, diagnostic_reports: diagnostic_reports]
           )
       end
 

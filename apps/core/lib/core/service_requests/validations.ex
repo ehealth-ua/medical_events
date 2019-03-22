@@ -192,11 +192,15 @@ defmodule Core.ServiceRequests.Validations do
     completed_with = service_request.completed_with
     reference_type = completed_with.identifier.type.coding |> List.first() |> Map.get(:code)
 
-    # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
     identifier =
       case reference_type do
         "encounter" ->
           add_validations(completed_with.identifier, :value, encounter_reference: [patient_id_hash: patient_id_hash])
+
+        "diagnostic_report" ->
+          add_validations(completed_with.identifier, :value,
+            diagnostic_report_reference: [patient_id_hash: patient_id_hash]
+          )
       end
 
     %{service_request | completed_with: %{completed_with | identifier: identifier}}

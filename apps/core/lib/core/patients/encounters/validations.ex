@@ -172,10 +172,18 @@ defmodule Core.Patients.Encounters.Validations do
   def validate_supporting_info(%Encounter{supporting_info: nil} = encounter, _), do: encounter
 
   def validate_supporting_info(%Encounter{} = encounter, patient_id_hash) do
-    # TODO: add diagnostic_report_reference validation when diagnostic_report is implemented
     supporting_info =
       Enum.map(encounter.supporting_info, fn info ->
-        identifier = add_validations(info.identifier, :value, observation_reference: [patient_id_hash: patient_id_hash])
+        reference_type = info.identifier.type.coding |> List.first() |> Map.get(:code)
+
+        identifier =
+          case reference_type do
+            "observation" ->
+              add_validations(info.identifier, :value, observation_reference: [patient_id_hash: patient_id_hash])
+
+            "diagnostic_report" ->
+              add_validations(info.identifier, :value, diagnostic_report_reference: [patient_id_hash: patient_id_hash])
+          end
 
         %{info | identifier: identifier}
       end)
