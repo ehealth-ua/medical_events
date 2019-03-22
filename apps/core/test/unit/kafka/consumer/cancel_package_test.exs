@@ -93,6 +93,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       medication_statement = build(:medication_statement, context: context)
       medication_statement_id = UUID.binary_to_string!(medication_statement.id.binary)
 
+      diagnostic_report = build(:diagnostic_report, encounter: context)
+      diagnostic_report_id = UUID.binary_to_string!(diagnostic_report.id.binary)
+
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -114,6 +117,9 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         },
         medication_statements: %{
           medication_statement_id => medication_statement
+        },
+        diagnostic_reports: %{
+          diagnostic_report_id => diagnostic_report
         }
       )
 
@@ -137,7 +143,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           "risk_assessments" => render(:risk_assessments, [%{risk_assessment | status: @entered_in_error}]),
           "devices" => render(:devices, [%{device | status: @entered_in_error}]),
           "medication_statements" =>
-            render(:medication_statements, [%{medication_statement | status: @entered_in_error}])
+            render(:medication_statements, [%{medication_statement | status: @entered_in_error}]),
+          "diagnostic_reports" => render(:diagnostic_reports, [%{diagnostic_report | status: @entered_in_error}])
         }
         |> Jason.encode!()
         |> Base.encode64()
@@ -163,6 +170,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
         immunization_status = "immunizations.#{immunization_id}.status"
         device_status = "devices.#{device_id}.status"
         medication_statements_status = "medication_statements.#{medication_statement_id}.status"
+        diagnostic_reports_status = "diagnostic_reports.#{diagnostic_report_id}.status"
 
         assert %{
                  "$set" => %{
@@ -175,7 +183,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                    ^risk_assessment_status => @entered_in_error,
                    ^immunization_status => @entered_in_error,
                    ^device_status => @entered_in_error,
-                   ^medication_statements_status => @entered_in_error
+                   ^medication_statements_status => @entered_in_error,
+                   ^diagnostic_reports_status => @entered_in_error
                  }
                } = patient_set
 

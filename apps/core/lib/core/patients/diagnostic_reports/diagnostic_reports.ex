@@ -132,6 +132,18 @@ defmodule Core.Patients.DiagnosticReports do
     end
   end
 
+  def get_by_encounter_id(patient_id_hash, %BSON.Binary{} = encounter_id) do
+    @collection
+    |> Mongo.aggregate([
+      %{"$match" => %{"_id" => patient_id_hash}},
+      %{"$project" => %{"diagnostic_reports" => %{"$objectToArray" => "$diagnostic_reports"}}},
+      %{"$unwind" => "$diagnostic_reports"},
+      %{"$match" => %{"diagnostic_reports.v.encounter.identifier.value" => encounter_id}},
+      %{"$replaceRoot" => %{"newRoot" => "$diagnostic_reports.v"}}
+    ])
+    |> Enum.map(&DiagnosticReport.create/1)
+  end
+
   def fill_up_diagnostic_report_performer(
         %DiagnosticReport{source: %Source{value: %Executor{type: "reference"} = executor}} = diagnostic_report
       ) do

@@ -7,6 +7,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.DateView
   alias Core.Device
   alias Core.DiagnosisView
+  alias Core.DiagnosticReport
   alias Core.Encounter
   alias Core.Episode
   alias Core.Immunization
@@ -21,6 +22,7 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
+  alias Core.Patients.DiagnosticReports
   alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
@@ -48,7 +50,8 @@ defmodule Core.Patients.Encounters.Cancel do
     "conditions" => [status: "verification_status"],
     "observations" => [status: "status"],
     "devices" => [status: "status"],
-    "medication_statements" => [status: "status"]
+    "medication_statements" => [status: "status"],
+    "diagnostic_reports" => [status: "status"]
   }
 
   @doc """
@@ -83,6 +86,7 @@ defmodule Core.Patients.Encounters.Cancel do
       immunizations_ids: get_immunizations_ids(package_data),
       devices_ids: get_devices_ids(package_data),
       medication_statements_ids: get_medication_statements_ids(package_data),
+      diagnostic_reports_ids: get_diagnostic_reports_ids(package_data),
       current_diagnoses: get_current_diagnoses(episode, encounter_id)
     }
 
@@ -195,6 +199,13 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
+  defp get_diagnostic_reports_ids(package_data) do
+    package_data
+    |> Map.get("diagnostic_reports", [])
+    |> Enum.filter(&(Map.get(&1, "status") == @entered_in_error))
+    |> Enum.map(&Map.get(&1, "id"))
+  end
+
   defp update_patient(
          user_id,
          patient,
@@ -214,6 +225,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> set_immunizations(update_data.immunizations_ids, user_id, now)
     |> set_devices(update_data.devices_ids, user_id, now)
     |> set_medication_statements(update_data.medication_statements_ids, user_id, now)
+    |> set_diagnostic_reports(update_data.diagnostic_reports_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
     |> set_encounter_diagnoses(patient, encounter)
   end
@@ -265,6 +277,16 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(user_id, "medication_statements.#{id}.updated_by")
       |> Mongo.add_to_set(now, "medication_statements.#{id}.updated_at")
       |> Mongo.convert_to_uuid("medication_statements.#{id}.updated_by")
+    end)
+  end
+
+  defp set_diagnostic_reports(set, ids, user_id, now) do
+    Enum.reduce(ids, set, fn id, acc ->
+      acc
+      |> Mongo.add_to_set(@entered_in_error, "diagnostic_reports.#{id}.status")
+      |> Mongo.add_to_set(user_id, "diagnostic_reports.#{id}.updated_by")
+      |> Mongo.add_to_set(now, "diagnostic_reports.#{id}.updated_at")
+      |> Mongo.convert_to_uuid("diagnostic_reports.#{id}.updated_by")
     end)
   end
 
@@ -345,7 +367,8 @@ defmodule Core.Patients.Encounters.Cancel do
       get_entities_statuses(decoded_content["conditions"], "verification_status"),
       get_entities_statuses(decoded_content["observations"], "status"),
       get_entities_statuses(decoded_content["devices"], "status"),
-      get_entities_statuses(decoded_content["medication_statements"], "status")
+      get_entities_statuses(decoded_content["medication_statements"], "status"),
+      get_entities_statuses(decoded_content["diagnostic_reports"], "status")
     ]
     |> Enum.flat_map(& &1)
     |> Enum.any?(&(&1 == @entered_in_error))
@@ -367,7 +390,8 @@ defmodule Core.Patients.Encounters.Cancel do
       condition: get_entities_statuses(package[:conditions], :verification_status),
       observation: get_entities_statuses(package[:observations], :status),
       device: get_entities_statuses(package[:devices], :status),
-      medication_statement: get_entities_statuses(package[:medication_statements], :status)
+      medication_statement: get_entities_statuses(package[:medication_statements], :status),
+      diagnostic_reports: get_entities_statuses(package[:diagnostic_reports], :status)
     ]
     |> Enum.reject(fn {_, statuses} -> statuses == [] end)
     |> Enum.reduce_while(:ok, fn {key, statuses}, _acc ->
@@ -397,7 +421,8 @@ defmodule Core.Patients.Encounters.Cancel do
       "immunizations" => &Immunization.create/1,
       "observations" => &Observation.create/1,
       "devices" => &Device.create/1,
-      "medication_statements" => &MedicationStatement.create/1
+      "medication_statements" => &MedicationStatement.create/1,
+      "diagnostic_reports" => &DiagnosticReport.create/1
     }
 
     entities_to_load
@@ -533,6 +558,12 @@ defmodule Core.Patients.Encounters.Cancel do
   defp get_entities("medication_statements", ids, patient_id_hash, encounter_uuid) do
     patient_id_hash
     |> MedicationStatements.get_by_encounter_id(encounter_uuid)
+    |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
+  end
+
+  defp get_entities("diagnostic_reports", ids, patient_id_hash, encounter_uuid) do
+    patient_id_hash
+    |> DiagnosticReports.get_by_encounter_id(encounter_uuid)
     |> Enum.filter(&(UUID.binary_to_string!(&1.id.binary) in ids))
   end
 
@@ -697,6 +728,28 @@ defmodule Core.Patients.Encounters.Cancel do
         asserted_date: DateView.render_datetime(medication_statement.asserted_date)
       })
       |> Map.merge(render_source(medication_statement.source))
+    end)
+  end
+
+  defp render(:diagnostic_reports, diagnostic_reports) do
+    Enum.map(diagnostic_reports, fn diagnostic_report ->
+      diagnostic_report
+      |> Map.take(~w(primary_source conclusion)a)
+      |> Map.merge(%{
+        id: UUIDView.render(diagnostic_report.id),
+        based_on: ReferenceView.render(diagnostic_report.based_on),
+        origin_episode: ReferenceView.render(diagnostic_report.origin_episode),
+        category: ReferenceView.render(diagnostic_report.category),
+        code: ReferenceView.render(diagnostic_report.code),
+        encounter: ReferenceView.render(diagnostic_report.encounter),
+        issued: DateView.render_datetime(diagnostic_report.issued),
+        recorded_by: ReferenceView.render(diagnostic_report.recorded_by),
+        results_interpreter: ReferenceView.render(diagnostic_report.results_interpreter),
+        managing_organization: ReferenceView.render(diagnostic_report.managing_organization),
+        conclusion_code: ReferenceView.render(diagnostic_report.conclusion_code)
+      })
+      |> Map.merge(ReferenceView.render_effective_at(diagnostic_report.effective))
+      |> Map.merge(ReferenceView.render_source(diagnostic_report.source))
     end)
   end
 

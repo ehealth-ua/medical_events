@@ -10,8 +10,10 @@ defmodule Core.DiagnosticReport do
   alias Core.Source
 
   @status_final "final"
+  @status_entered_in_error "entered_in_error"
 
   def status(:final), do: @status_final
+  def status(:entered_in_error), do: @status_entered_in_error
 
   embedded_schema do
     field(:id, presence: true, mongo_uuid: true)
