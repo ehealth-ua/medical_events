@@ -278,4 +278,23 @@ defmodule Core.ReferenceView do
   end
 
   def render_when(_), do: %{}
+
+  def remove_display_values(map) do
+    map = Map.drop(map, [:display_value])
+
+    map
+    |> Map.keys()
+    |> Enum.reduce(map, fn key, map ->
+      value =
+        map
+        |> Map.get(key)
+        |> process_value()
+
+      Map.put(map, key, value)
+    end)
+  end
+
+  defp process_value(value) when is_list(value), do: Enum.map(value, &process_value/1)
+  defp process_value(value) when is_map(value), do: remove_display_values(value)
+  defp process_value(value), do: value
 end

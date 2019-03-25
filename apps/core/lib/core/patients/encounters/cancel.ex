@@ -585,17 +585,18 @@ defmodule Core.Patients.Encounters.Cancel do
       id: UUIDView.render(encounter.id),
       date: DateView.render_datetime(encounter.date),
       visit: ReferenceView.render(encounter.visit),
-      episode: render(encounter.episode),
+      episode: ReferenceView.render(encounter.episode),
       class: ReferenceView.render(encounter.class),
       type: ReferenceView.render(encounter.type),
       incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
-      performer: render(encounter.performer),
+      performer: ReferenceView.render(encounter.performer),
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
       actions: ReferenceView.render(encounter.actions),
-      division: render(encounter.division),
-      supporting_info: Enum.map(encounter.supporting_info, &render/1)
+      division: ReferenceView.render(encounter.division),
+      supporting_info: ReferenceView.render(encounter.supporting_info)
     }
+    |> ReferenceView.remove_display_values()
   end
 
   defp render(:allergy_intolerances, allergy_intolerances) do
@@ -610,7 +611,8 @@ defmodule Core.Patients.Encounters.Cancel do
         asserted_date: DateView.render_datetime(allergy_intolerance.asserted_date),
         last_occurrence: DateView.render_datetime(allergy_intolerance.last_occurrence)
       })
-      |> Map.merge(render_source(allergy_intolerance.source))
+      |> Map.merge(ReferenceView.render_source(allergy_intolerance.source))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -636,7 +638,8 @@ defmodule Core.Patients.Encounters.Cancel do
         vaccination_protocols: ReferenceView.render(immunization.vaccination_protocols),
         explanation: ReferenceView.render(immunization.explanation)
       })
-      |> Map.merge(render_source(immunization.source))
+      |> Map.merge(ReferenceView.render_source(immunization.source))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -654,7 +657,8 @@ defmodule Core.Patients.Encounters.Cancel do
         asserted_date: DateView.render_date(condition.asserted_date),
         onset_date: DateView.render_datetime(condition.onset_date)
       }
-      |> Map.merge(render_source(condition.source))
+      |> Map.merge(ReferenceView.render_source(condition.source))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -676,8 +680,9 @@ defmodule Core.Patients.Encounters.Cancel do
         components: ReferenceView.render(observation.components)
       })
       |> Map.merge(ReferenceView.render_effective_at(observation.effective_at))
-      |> Map.merge(render_source(observation.source))
+      |> Map.merge(ReferenceView.render_source(observation.source))
       |> Map.merge(ReferenceView.render_value(observation.value))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -691,11 +696,12 @@ defmodule Core.Patients.Encounters.Cancel do
         code: ReferenceView.render(risk_assessment.code),
         asserted_date: DateView.render_datetime(risk_assessment.asserted_date),
         method: ReferenceView.render(risk_assessment.method),
-        performer: render(risk_assessment.performer),
+        performer: ReferenceView.render(risk_assessment.performer),
         basis: ReferenceView.render(risk_assessment.basis),
         predictions: ReferenceView.render(risk_assessment.predictions)
       })
       |> Map.merge(ReferenceView.render_reason(risk_assessment.reason))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -712,7 +718,8 @@ defmodule Core.Patients.Encounters.Cancel do
         manufacture_date: DateView.render_datetime(device.manufacture_date),
         expiration_date: DateView.render_datetime(device.expiration_date)
       })
-      |> Map.merge(render_source(device.source))
+      |> Map.merge(ReferenceView.render_source(device.source))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -727,7 +734,8 @@ defmodule Core.Patients.Encounters.Cancel do
         context: ReferenceView.render(medication_statement.context),
         asserted_date: DateView.render_datetime(medication_statement.asserted_date)
       })
-      |> Map.merge(render_source(medication_statement.source))
+      |> Map.merge(ReferenceView.render_source(medication_statement.source))
+      |> ReferenceView.remove_display_values()
     end)
   end
 
@@ -750,20 +758,7 @@ defmodule Core.Patients.Encounters.Cancel do
       })
       |> Map.merge(ReferenceView.render_effective_at(diagnostic_report.effective))
       |> Map.merge(ReferenceView.render_source(diagnostic_report.source))
+      |> ReferenceView.remove_display_values()
     end)
-  end
-
-  def render(%Core.Reference{} = reference),
-    do: %{identifier: ReferenceView.render(reference.identifier)}
-
-  def render(value), do: value
-
-  def render_source(%Core.Source{type: "performer", value: value}),
-    do: %{performer: render(value)}
-
-  def render_source(%Core.Source{type: "asserter", value: value}), do: %{asserter: render(value)}
-
-  def render_source(%Core.Source{type: type, value: value}) do
-    %{String.to_atom(type) => ReferenceView.render(value)}
   end
 end
