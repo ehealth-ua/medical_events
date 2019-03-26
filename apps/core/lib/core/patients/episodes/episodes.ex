@@ -49,6 +49,7 @@ defmodule Core.Patients.Episodes do
     |> search_period_criterias(params)
     |> search_code(Map.get(params, "code"))
     |> search_service_request_id(Map.get(params, "service_request_id"))
+    |> search_status(Map.get(params, "status"))
   end
 
   defp search_period_criterias(pipeline, %{"period_from" => date_from, "period_to" => date_to}) do
@@ -143,5 +144,11 @@ defmodule Core.Patients.Episodes do
           }
         }
       ]
+  end
+
+  defp search_status(pipeline, nil), do: pipeline
+
+  defp search_status(pipeline, status) do
+    pipeline ++ [%{"$match" => %{"status" => status}}]
   end
 end

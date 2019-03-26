@@ -464,6 +464,31 @@ defmodule Api.Web.EpisodeControllerTest do
       assert %{"page_number" => 1, "total_entries" => 0, "total_pages" => 0} = resp["paging"]
     end
 
+    test "get episodes by status", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      episode1 = build(:episode, status: "active")
+      episode2 = build(:episode, status: "inactive")
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{to_string(episode1.id) => episode1, to_string(episode2.id) => episode2}
+      )
+
+      expect_get_person_data(patient_id)
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"status" => "active"})
+        |> json_response(200)
+
+      assert [episode] = resp["data"]
+      assert_json_schema(episode, "episodes/episode_show.json")
+      assert "active" == episode["status"]
+    end
+
     test "get episodes by code", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
