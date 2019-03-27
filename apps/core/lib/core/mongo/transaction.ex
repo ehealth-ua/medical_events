@@ -33,6 +33,17 @@ defmodule Core.Mongo.Transaction do
     %{transaction | operations: transaction.operations ++ [operation]}
   end
 
+  def add_operation(%__MODULE__{} = transaction, collection, :delete, filter) do
+    filter_bson =
+      filter
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    operation = %{"filter" => filter_bson, "operation" => "delete_one", "collection" => collection}
+    %{transaction | operations: transaction.operations ++ [operation]}
+  end
+
   def flush(%__MODULE__{} = transaction) do
     @worker.run("me_transactions", Core, :transaction, Jason.encode!(transaction.operations))
   end

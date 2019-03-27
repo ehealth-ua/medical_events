@@ -4,12 +4,16 @@ defmodule MedicalEventsScheduler.Worker do
   use Quantum.Scheduler, otp_app: :medical_events_scheduler
 
   alias Crontab.CronExpression.Parser
-  alias MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration
+  alias MedicalEventsScheduler.Jobs.ApprovalsCleanup
+  alias MedicalEventsScheduler.Jobs.JobsCleanup
+  alias MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration
   alias Quantum.Job
   alias Quantum.RunStrategy.Local
 
   def create_jobs do
-    create_job(&ServiceRequestAutoexpiration.run/0, :service_request_autoexpiration_schedule)
+    create_job(&ServiceRequestsAutoexpiration.run/0, :service_requests_autoexpiration_schedule)
+    create_job(&ApprovalsCleanup.run/0, :approvals_cleanup_schedule)
+    create_job(&JobsCleanup.run/0, :jobs_cleanup_schedule)
   end
 
   defp create_job(fun, config_name) do

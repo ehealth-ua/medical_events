@@ -1,7 +1,5 @@
-defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration do
+defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
   @moduledoc false
-
-  use Confex, otp_app: :medical_events_scheduler
 
   alias Core.Mongo
   alias Core.Mongo.Transaction

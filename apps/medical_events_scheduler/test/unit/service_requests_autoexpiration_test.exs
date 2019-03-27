@@ -1,4 +1,4 @@
-defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
+defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
   @moduledoc false
 
   use ExUnit.Case
@@ -9,7 +9,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
 
   alias Core.Mongo
   alias Core.ServiceRequest
-  alias MedicalEventsScheduler.Jobs.ServiceRequestAutoexpiration
+  alias MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration
 
   @collection ServiceRequest.metadata().collection
 
@@ -23,19 +23,16 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
   test "success service requests autoexpiration" do
     stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-    service_request_not_updated_1 =
-      insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(1))
+    insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(1))
 
-    service_request_not_updated_2 =
-      insert(:service_request,
-        status: ServiceRequest.status(:in_progress),
-        expiration_date: expiration_date_from_now(-1)
-      )
+    insert(:service_request,
+      status: ServiceRequest.status(:in_progress),
+      expiration_date: expiration_date_from_now(-1)
+    )
 
     service_request_updated =
       insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(-1))
 
-    not_updated_list = [service_request_not_updated_1, service_request_not_updated_2]
     updated_list = [service_request_updated]
     status_cancelled = ServiceRequest.status(:cancelled)
 
@@ -44,20 +41,19 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
       |> Confex.fetch_env!(:system_user)
       |> Mongo.string_to_uuid()
 
-    expect(WorkerMock, :run, fn _, _, :transaction, args ->
-      assert [%{"collection" => @collection, "operation" => "update_one", "filter" => filter, "set" => set}] =
-               Jason.decode!(args)
+    Enum.each(updated_list, fn service_request ->
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert [%{"collection" => @collection, "operation" => "update_one", "filter" => filter, "set" => set}] =
+                 Jason.decode!(args)
 
-      filter_bson = filter |> Base.decode64!() |> BSON.decode()
+        filter_bson = filter |> Base.decode64!() |> BSON.decode()
 
-      set_bson =
-        set
-        |> Base.decode64!()
-        |> BSON.decode()
+        set_bson =
+          set
+          |> Base.decode64!()
+          |> BSON.decode()
 
-      Enum.each(updated_list, fn service_request ->
         service_request_id = service_request._id
-
         assert %{"_id" => ^service_request_id} = filter_bson
 
         assert %{
@@ -90,16 +86,12 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
                    "updated_by" => ^user_id
                  }
                } = set_bson
-      end)
 
-      Enum.each(not_updated_list, fn service_request ->
-        refute %{"_id" => service_request._id} == filter_bson
+        :ok
       end)
-
-      :ok
     end)
 
-    ServiceRequestAutoexpiration.run()
+    ServiceRequestsAutoexpiration.run()
   end
 
   test "service requests autoexpiration failed" do
@@ -112,7 +104,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestAutoexpirationTest do
       {:error, :badrpc}
     end)
 
-    assert capture_log(fn -> ServiceRequestAutoexpiration.run() end) =~ "Failed to update service request (id: #{id})"
+    assert capture_log(fn -> ServiceRequestsAutoexpiration.run() end) =~ "Failed to update service request (id: #{id})"
   end
 
   defp expiration_date_from_now(shift_days) do
