@@ -5,6 +5,77 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [1.2.0](https://github.com/edenlabllc/medical_events/compare/1.1.0...1.2.0) (2019-3-27)
+
+
+
+
+### Features:
+
+* Approvals and job collections clean up#4144 (#378)
+
+* added diagnostic_report reference validation where TODOs were left (#371)
+
+* added diagnostic reports to cancel package ws (#370)
+
+* GET routes for diagnostic reports (#365)
+
+* added diagnostic reports to create package ws (#363)
+
+* new episode contexts routes (#361)
+
+* add episode context rpc functions (#359)
+
+* medical events scheduler init (#351)
+
+* changed permitted episodes validation in service requests (#339)
+
+* send to manager event (#350)
+
+* added process service request WS (#346)
+
+* removed referral requests references from episode schema (#317)
+
+* added complete service request WS (#343)
+
+* used_by field changes in service requests (#337)
+
+* One of validation#5067 (#333)
+
+* Removed referral requests from episodes (#336)
+
+* Added supporting info to encounter (#331)
+
+* ehealth_logger (#345)
+
+### Bug Fixes:
+
+* allow in progress status in service request reference validation (#374)
+
+* cancel encounter package render (#373)
+
+* naming pods (#368)
+
+* used_by_legal_entity validation in complete/process service request (#364)
+
+* service requests services status (#362)
+
+* logging (#360)
+
+* Fixed some service requests services (#357)
+
+* drop immunization dose_status, dose_status_reason (#358)
+
+* permitted_episodes are now not required in cancel/recall service request WS (#352)
+
+* medical events scheduler app and config fixed (#355)
+
+* service request autoexpiration datetime fixed (#354)
+
+* don't close service request on episode close (#353)
+
+* transaction fail case (#344)
+
 ## [1.1.0](https://github.com/edenlabllc/medical_events/compare/1.0.1...1.1.0) (2019-3-4)
 
 
