@@ -7,13 +7,14 @@ defmodule Core.Validators.ServiceRequestReference do
   alias Core.Validators.Employee
 
   @status_active ServiceRequest.status(:active)
+  @status_in_progress ServiceRequest.status(:in_progress)
 
   @counselling_category ServiceRequest.category(:counselling)
 
   def validate(value, options) do
     case ServiceRequests.get_by_id(value) do
       nil ->
-        error(options, "Referral with such id is not found")
+        error(options, "Service request with such id is not found")
 
       {:ok,
        %ServiceRequest{
@@ -37,7 +38,8 @@ defmodule Core.Validators.ServiceRequestReference do
   end
 
   defp validate_status(@status_active, _), do: :ok
-  defp validate_status(_, options), do: error(options, "Incoming referral is not active")
+  defp validate_status(@status_in_progress, _), do: :ok
+  defp validate_status(_, options), do: error(options, "Service request is not active or in progress")
 
   defp validate_used_by_employee(nil, _), do: :ok
 
