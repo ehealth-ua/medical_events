@@ -252,7 +252,7 @@ spec:
             container(name: 'docker', shell: '/bin/sh') {
               sh 'sed -i "s/travis/${POD_IP}/g" .env'
               sh 'echo -----Build Docker container for EHealth API-------'
-              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl erlang-crypto  openssl make g++ erlang-runtime-tools;'
+              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl erlang-crypto  openssl make g++ erlang-runtime-tools build-base;'
               sh 'echo " ---- step: Build docker image ---- ";'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_new/build-container.sh -o build-container.sh; bash ./build-container.sh'
               sh 'echo " ---- step: Start docker container ---- ";'
@@ -382,7 +382,7 @@ spec:
             container(name: 'docker', shell: '/bin/sh') {
               sh 'sed -i "s/travis/${POD_IP}/g" .env'
               sh 'echo -----Build Docker container for Casher-------'
-              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools;'
+              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools build-base;'
               sh 'echo " ---- step: Build docker image ---- ";'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_new/build-container.sh -o build-container.sh; bash ./build-container.sh'
               sh 'echo " ---- step: Start docker container ---- ";'
@@ -513,7 +513,7 @@ spec:
             container(name: 'docker', shell: '/bin/sh') {
               sh 'sed -i "s/travis/${POD_IP}/g" .env'
               sh 'echo -----Build Docker container for GraphQL-------'
-              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools;'
+              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools build-base;'
               sh 'echo " ---- step: Build docker image ---- ";'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/build-container.sh -o build-container.sh; bash ./build-container.sh'
               sh 'echo " ---- step: Start docker container ---- ";'
@@ -644,7 +644,7 @@ spec:
             container(name: 'docker', shell: '/bin/sh') {
               sh 'sed -i "s/travis/${POD_IP}/g" .env'
               sh 'echo -----Build Docker container for MergeLegalEntities consumer-------'
-              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools;'
+              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools build-base;'
               sh 'echo " ---- step: Build docker image ---- ";'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/build-container.sh -o build-container.sh; bash ./build-container.sh'
               sh 'echo " ---- step: Start docker container ---- ";'
@@ -763,7 +763,7 @@ spec:
             container(name: 'docker', shell: '/bin/sh') {
               sh 'sed -i "s/travis/${POD_IP}/g" .env'
               sh 'echo -----Build Docker container for Scheduler-------'
-              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools;'
+              sh 'apk update && apk add --no-cache jq curl bash elixir git ncurses-libs zlib ca-certificates openssl make g++ erlang-crypto erlang-runtime-tools build-base;'
               sh 'echo " ---- step: Build docker image ---- ";'
               sh 'curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins/build-container.sh -o build-container.sh; bash ./build-container.sh'
               sh 'echo " ---- step: Start docker container ---- ";'
