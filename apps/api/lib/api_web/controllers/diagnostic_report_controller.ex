@@ -3,6 +3,7 @@ defmodule Api.Web.DiagnosticReportController do
 
   use ApiWeb, :controller
 
+  alias Api.Web.JobView
   alias Core.Patients.DiagnosticReports
   alias Scrivener.Page
 
@@ -17,6 +18,16 @@ defmodule Api.Web.DiagnosticReportController do
   def show(conn, %{"patient_id_hash" => patient_id_hash, "id" => diagnostic_report_id}) do
     with {:ok, diagnostic_report} <- DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report_id) do
       render(conn, "show.json", diagnostic_report: diagnostic_report)
+    end
+  end
+
+  def create(conn, params) do
+    with {:ok, job} <-
+           DiagnosticReports.produce_create_package(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("create.json", job: job)
     end
   end
 end

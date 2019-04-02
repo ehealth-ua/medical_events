@@ -24,6 +24,7 @@ defmodule ApiWeb.Router do
 
     post("/patients/:patient_id/encounter_package", EncounterController, :create)
     post("/patients/:patient_id/episodes", EpisodeController, :create)
+    post("/patients/:patient_id/diagnostic_report_package", DiagnosticReportController, :create)
 
     scope "/" do
       pipe_through(:authorize_party)

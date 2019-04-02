@@ -110,8 +110,6 @@ defmodule Core.Observations do
   end
 
   def create(%Observation{} = observation) do
-    context = observation.context
-
     source =
       case observation.source do
         %Source{type: "report_origin"} = source ->
@@ -148,18 +146,27 @@ defmodule Core.Observations do
           end)
       end
 
+    context =
+      case observation.context do
+        nil ->
+          nil
+
+        _ ->
+          %{
+            observation.context
+            | identifier: %{
+                observation.context.identifier
+                | value: Mongo.string_to_uuid(observation.context.identifier.value)
+              }
+          }
+      end
+
     %{
       observation
       | _id: Mongo.string_to_uuid(observation._id),
         inserted_by: Mongo.string_to_uuid(observation.inserted_by),
         updated_by: Mongo.string_to_uuid(observation.updated_by),
-        context: %{
-          context
-          | identifier: %{
-              context.identifier
-              | value: Mongo.string_to_uuid(context.identifier.value)
-            }
-        },
+        context: context,
         source: source,
         based_on: based_on
     }

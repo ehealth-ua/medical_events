@@ -99,7 +99,9 @@ defmodule Core.Patients do
       %{"params" => ["when_range", "when_period"], "required" => false}
     ],
     "$.devices" => %{"params" => ["report_origin", "asserter"], "required" => true},
-    "$.medication_statements" => %{"params" => ["report_origin", "asserter"], "required" => true}
+    "$.medication_statements" => %{"params" => ["report_origin", "asserter"], "required" => true},
+    "$.diagnostic_reports.results_interpreter" => %{"params" => ["reference", "text"], "required" => true},
+    "$.diagnostic_reports.performer" => %{"params" => ["reference", "text"], "required" => true}
   }
 
   def get_pk_hash(nil), do: nil
