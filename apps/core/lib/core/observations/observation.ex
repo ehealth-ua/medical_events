@@ -36,7 +36,8 @@ defmodule Core.Observation do
     )
 
     field(:patient_id, presence: true)
-    field(:context, presence: true, reference: [path: "context"])
+    field(:context, reference: [path: "context"])
+    field(:diagnostic_report, reference: [path: "diagnostic_report"])
     field(:effective_at, presence: true, reference: [path: "effective_at"])
     field(:issued, presence: true)
     field(:primary_source, strict_presence: true)
@@ -64,8 +65,17 @@ defmodule Core.Observation do
         {"categories", v} ->
           {:categories, Enum.map(v, &CodeableConcept.create/1)}
 
+        {"context", nil} ->
+          {:context, nil}
+
         {"context", v} ->
           {:context, Reference.create(v)}
+
+        {"diagnostic_report", nil} ->
+          {:diagnostic_report, nil}
+
+        {"diagnostic_report", v} ->
+          {:diagnostic_report, Reference.create(v)}
 
         {"effective_date_time", v} ->
           {:effective_at, %EffectiveAt{type: "effective_date_time", value: create_datetime(v)}}

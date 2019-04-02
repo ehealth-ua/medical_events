@@ -168,7 +168,6 @@ defmodule Core.Patients.RiskAssessments.Validations do
       add_validations(
         period,
         :end,
-        datetime: [less_than_or_equal_to: now, message: "End date must be in past"],
         datetime: [greater_than: period.start, message: "End date must be greater than the start date"]
       )
     else

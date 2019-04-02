@@ -297,6 +297,7 @@ defmodule Core.Factories do
       managing_organization: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       conclusion: "conclusion",
       conclusion_code: codeable_concept_coding(system: "eHealth/SNOMED/clinical_findings", code: "109006"),
+      signed_content_links: [],
       inserted_at: now,
       updated_at: now,
       inserted_by: id,

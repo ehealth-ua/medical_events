@@ -6,6 +6,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
   alias Core.Jobs.ApprovalResendJob
+  alias Core.Jobs.DiagnosticReportPackageCreateJob
   alias Core.Jobs.EpisodeCancelJob
   alias Core.Jobs.EpisodeCloseJob
   alias Core.Jobs.EpisodeCreateJob
@@ -21,6 +22,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
+  alias Core.Patients.DiagnosticReports
   alias Core.Patients.Episodes.Consumer, as: EpisodesConsumer
   alias Core.ServiceRequests.Consumer, as: ServiceRequestsConsumer
 
@@ -88,6 +90,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%ApprovalResendJob{} = approval_resend_job) do
     do_consume(Approvals, :consume_resend_approval, approval_resend_job)
+  end
+
+  def consume(%DiagnosticReportPackageCreateJob{} = diagnostic_report_package_create_job) do
+    do_consume(DiagnosticReports, :consume_create_package, diagnostic_report_package_create_job)
   end
 
   def consume(value) do

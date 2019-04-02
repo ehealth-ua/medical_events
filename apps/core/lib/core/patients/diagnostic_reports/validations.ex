@@ -9,21 +9,73 @@ defmodule Core.Patients.DiagnosticReports.Validations do
   alias Core.Period
   alias Core.Source
 
-  def validate_source(%DiagnosticReport{source: %Source{type: "performer"}} = diagnostic_report, client_id) do
-    diagnostic_report =
-      add_validations(
-        diagnostic_report,
-        :source,
-        source: [primary_source: diagnostic_report.primary_source, primary_required: "performer"]
-      )
-
-    source = diagnostic_report.source
-    source = %{source | value: validate_performer(source.value, client_id)}
-    %{diagnostic_report | source: source}
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: true,
+          source: %Source{type: "performer", value: %Executor{type: "reference"}} = source
+        } = diagnostic_report,
+        client_id
+      ) do
+    %{diagnostic_report | source: %{source | value: validate_performer(source.value, client_id)}}
   end
 
-  def validate_source(%DiagnosticReport{} = diagnostic_report, _) do
-    add_validations(diagnostic_report, :source, source: [primary_source: diagnostic_report.primary_source])
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: true
+        } = diagnostic_report,
+        _
+      ) do
+    diagnostic_report
+  end
+
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: false,
+          source: %Source{type: "performer", value: %Executor{type: "reference"} = value} = source
+        } = diagnostic_report,
+        _
+      ) do
+    %{
+      diagnostic_report
+      | source: %{
+          source
+          | value:
+              add_validations(value, :type,
+                value: [equals: "string", message: "performer with type reference must not be filled"]
+              )
+        }
+    }
+  end
+
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: false,
+          source: %Source{type: "performer", value: %Executor{type: "string"}}
+        } = diagnostic_report,
+        _
+      ) do
+    diagnostic_report
+  end
+
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: false,
+          source: %Source{type: "report_origin"}
+        } = diagnostic_report,
+        _
+      ) do
+    diagnostic_report
+  end
+
+  def validate_source(
+        %DiagnosticReport{
+          primary_source: false
+        } = diagnostic_report,
+        _
+      ) do
+    add_validations(diagnostic_report, :source,
+      presence: [message: "report_origin or performer with type text must be filled"]
+    )
   end
 
   def validate_performer(%Executor{type: "reference"} = performer, client_id) do
@@ -64,7 +116,6 @@ defmodule Core.Patients.DiagnosticReports.Validations do
       add_validations(
         period,
         :end,
-        datetime: [less_than_or_equal_to: now, message: "End date must be in past"],
         datetime: [greater_than: period.start, message: "End date must be greater than the start date"]
       )
     else
@@ -95,6 +146,13 @@ defmodule Core.Patients.DiagnosticReports.Validations do
     %{diagnostic_report | encounter: %{encounter | identifier: identifier}}
   end
 
+  def validate_managing_organization(
+        %DiagnosticReport{primary_source: true, managing_organization: nil} = diagnostic_report,
+        _
+      ) do
+    add_validations(diagnostic_report, :managing_organization, presence: [message: "Must be filled"])
+  end
+
   def validate_managing_organization(%DiagnosticReport{managing_organization: nil} = diagnostic_report, _),
     do: diagnostic_report
 
@@ -119,6 +177,22 @@ defmodule Core.Patients.DiagnosticReports.Validations do
       )
 
     %{diagnostic_report | managing_organization: %{managing_organization | identifier: identifier}}
+  end
+
+  def validate_results_interpreter(
+        %DiagnosticReport{
+          primary_source: false,
+          results_interpreter: %Executor{type: "reference"} = results_interpreter
+        } = diagnostic_report,
+        _
+      ) do
+    %{
+      diagnostic_report
+      | results_interpreter:
+          add_validations(results_interpreter, :type,
+            value: [equals: "string", message: "results_interpreter with type reference must not be filled"]
+          )
+    }
   end
 
   def validate_results_interpreter(

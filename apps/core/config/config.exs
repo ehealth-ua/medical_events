@@ -44,6 +44,7 @@ config :core, Core.Microservices.MediaStorage,
   endpoint: {:system, "MEDIA_STORAGE_ENDPOINT", "http://api-svc.ael"},
   encounter_bucket: {:system, "MEDIA_STORAGE_ENCOUNTER_BUCKET", "encounters-dev"},
   service_request_bucket: {:system, "MEDIA_STORAGE_SERVICE_REQUEST_BUCKET", "service-requests-dev"},
+  diagnostic_report_bucket: {:system, "MEDIA_STORAGE_DIAGNOSTIC_REPORT_BUCKET", "diagnostic-reports-dev"},
   enabled?: {:system, :boolean, "MEDIA_STORAGE_ENABLED", false},
   hackney_options: [
     connect_timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000},
