@@ -444,6 +444,13 @@ defmodule Core.Patients.DiagnosticReports do
          %{"observations" => _} = content
        ) do
     now = DateTime.utc_now()
+    encounter_id = get_in(content, ~w(diagnostic_report encounter identifier value))
+
+    episode_id =
+      case Encounters.get_by_id(patient_id_hash, encounter_id) do
+        {:ok, encounter} -> to_string(encounter.episode.identifier.value)
+        _ -> nil
+      end
 
     observations =
       Enum.map(content["observations"], fn data ->
@@ -458,7 +465,8 @@ defmodule Core.Patients.DiagnosticReports do
             updated_at: now,
             inserted_by: user_id,
             updated_by: user_id,
-            patient_id: patient_id_hash
+            patient_id: patient_id_hash,
+            context_episode_id: episode_id
         }
         |> ObservationValidations.validate_issued()
         |> ObservationValidations.validate_effective_at()

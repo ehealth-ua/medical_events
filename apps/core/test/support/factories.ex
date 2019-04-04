@@ -425,11 +425,11 @@ defmodule Core.Factories do
     }
   end
 
-  def observation_factory do
+  def observation_factory(attrs) do
     user_id = UUID.uuid4()
     now = DateTime.utc_now()
 
-    %Observation{
+    entity = %Observation{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       status: Observation.status(:valid),
       categories: [codeable_concept_coding(system: "eHealth/observation_categories", code: "1")],
@@ -474,11 +474,31 @@ defmodule Core.Factories do
             )
           ]
         ),
+      context_episode_id: Mongo.string_to_uuid(UUID.uuid4()),
       inserted_at: now,
       updated_at: now,
       inserted_by: Mongo.string_to_uuid(user_id),
       updated_by: Mongo.string_to_uuid(user_id)
     }
+
+    entity =
+      if Map.has_key?(attrs, :encounter_context) do
+        encounter = Map.get(attrs, :encounter_context, %{})
+        episode_id = encounter.episode.identifier.value
+        context = build_encounter_context(encounter.id)
+        %{entity | context: context, context_episode_id: episode_id}
+      else
+        entity
+      end
+
+    attrs =
+      if Map.has_key?(attrs, :encounter_context) do
+        Map.drop(attrs, ~w(encounter_context context context_episode_id)a)
+      else
+        attrs
+      end
+
+    merge_attributes(entity, attrs)
   end
 
   def source_factory do
@@ -637,11 +657,11 @@ defmodule Core.Factories do
     }
   end
 
-  def condition_factory do
+  def condition_factory(attrs) do
     patient_id = Patients.get_pk_hash(UUID.uuid4())
     user_id = UUID.uuid4()
 
-    %Condition{
+    entity = %Condition{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
       context: reference_coding(code: "encounter"),
       code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "R80"),
@@ -670,8 +690,28 @@ defmodule Core.Factories do
           type: "asserter",
           value: reference_coding(system: "eHealth/resources", code: "employee")
         ),
-      primary_source: true
+      primary_source: true,
+      context_episode_id: Mongo.string_to_uuid(UUID.uuid4())
     }
+
+    entity =
+      if Map.has_key?(attrs, :encounter_context) do
+        encounter = Map.get(attrs, :encounter_context, %{})
+        episode_id = encounter.episode.identifier.value
+        context = build_encounter_context(encounter.id)
+        %{entity | context: context, context_episode_id: episode_id}
+      else
+        entity
+      end
+
+    attrs =
+      if Map.has_key?(attrs, :encounter_context) do
+        Map.drop(attrs, ~w(encounter_context context context_episode_id)a)
+      else
+        attrs
+      end
+
+    merge_attributes(entity, attrs)
   end
 
   def status_history_factory do
@@ -779,5 +819,12 @@ defmodule Core.Factories do
   defp insert_entity(entity) do
     {:ok, _} = Mongo.insert_one(entity)
     entity
+  end
+
+  defp build_encounter_context(encounter_id) do
+    build(
+      :reference,
+      identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
+    )
   end
 end

@@ -5,7 +5,6 @@ defmodule Core.Observations do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Paging
-  alias Core.Patients.Encounters
   alias Core.Reference
   alias Core.Search
   alias Core.Source
@@ -29,22 +28,15 @@ defmodule Core.Observations do
   end
 
   def get_by_id_episode_id(patient_id_hash, id, episode_id) do
-    encounter_ids = get_encounter_ids(patient_id_hash, Mongo.string_to_uuid(episode_id))
-
-    if episode_id != nil and encounter_ids == [] do
-      nil
-    else
-      pipeline =
-        %{"$match" => %{"patient_id" => patient_id_hash, "_id" => Mongo.string_to_uuid(id)}}
-        |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
-        |> List.wrap()
-
-      with [observation] <- @observation_collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
-        {:ok, Observation.create(observation)}
-      else
-        _ ->
-          nil
-      end
+    @observation_collection
+    |> Mongo.find_one(%{
+      "_id" => Mongo.string_to_uuid(id),
+      "patient_id" => patient_id_hash,
+      "context_episode_id" => Mongo.string_to_uuid(episode_id)
+    })
+    |> case do
+      %{} = observation -> {:ok, Observation.create(observation)}
+      _ -> nil
     end
   end
 
@@ -161,11 +153,18 @@ defmodule Core.Observations do
           }
       end
 
+    context_episode_uuid =
+      case observation.context_episode_id do
+        nil -> nil
+        _ -> Mongo.string_to_uuid(observation.context_episode_id)
+      end
+
     %{
       observation
       | _id: Mongo.string_to_uuid(observation._id),
         inserted_by: Mongo.string_to_uuid(observation.inserted_by),
         updated_by: Mongo.string_to_uuid(observation.updated_by),
+        context_episode_id: context_episode_uuid,
         context: context,
         source: source,
         based_on: based_on
@@ -176,28 +175,17 @@ defmodule Core.Observations do
     code = params["code"]
     issued_from = filter_date(params["issued_from"])
     issued_to = filter_date(params["issued_to"], true)
-
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
-    encounter_ids = get_encounter_ids(patient_id_hash, episode_id)
+    encounter_id = Maybe.map(params["encounter_id"], &Mongo.string_to_uuid(&1))
 
-    if episode_id != nil and encounter_ids == [] do
-      []
-    else
-      encounter_ids =
-        Maybe.map(
-          params["encounter_id"],
-          &Enum.uniq([Mongo.string_to_uuid(&1) | encounter_ids]),
-          encounter_ids
-        )
-
-      %{"$match" => %{"patient_id" => patient_id_hash}}
-      |> Search.add_param(code, ["$match", "code.coding.0.code"])
-      |> Search.add_param(encounter_ids, ["$match", "context.identifier.value"], "$in")
-      |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
-      |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
-      |> List.wrap()
-      |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
-    end
+    %{"$match" => %{"patient_id" => patient_id_hash}}
+    |> Search.add_param(code, ["$match", "code.coding.0.code"])
+    |> Search.add_param(encounter_id, ["$match", "context.identifier.value"])
+    |> Search.add_param(episode_id, ["$match", "context_episode_id"])
+    |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
+    |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
+    |> List.wrap()
+    |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
   end
 
   defp search_observations_summary(%{"patient_id_hash" => patient_id_hash} = params) do
@@ -222,14 +210,6 @@ defmodule Core.Observations do
       {:ok, date_time, _} -> date_time
       _ -> nil
     end
-  end
-
-  def get_encounter_ids(_patient_id_hash, nil), do: []
-
-  def get_encounter_ids(patient_id_hash, episode_id) do
-    patient_id_hash
-    |> Encounters.get_episode_encounters(episode_id)
-    |> Enum.map(& &1["encounter_id"])
   end
 
   defp fill_up_observation_performer(%Reference{identifier: identifier}) do

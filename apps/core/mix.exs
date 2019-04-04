@@ -59,7 +59,7 @@ defmodule Core.MixProject do
       {:translit, "~> 0.1.0"},
       {:vex, "~> 0.8.0"},
       {:mox, "~> 0.4.0", only: :test},
-      {:ex_machina, "~> 2.2", only: :test}
+      {:ex_machina, "~> 2.3", only: :test}
     ]
   end
 end
