@@ -378,6 +378,7 @@ defmodule Core.Patients do
        ) do
     now = DateTime.utc_now()
     encounter_id = content["encounter"]["id"]
+    episode_id = get_in(content, ~w(encounter episode identifier value))
 
     conditions =
       Enum.map(content["conditions"], fn data ->
@@ -389,7 +390,8 @@ defmodule Core.Patients do
             updated_at: now,
             inserted_by: user_id,
             updated_by: user_id,
-            patient_id: patient_id_hash
+            patient_id: patient_id_hash,
+            context_episode_id: episode_id
         }
         |> ConditionValidations.validate_onset_date()
         |> ConditionValidations.validate_context(encounter_id)
@@ -421,6 +423,7 @@ defmodule Core.Patients do
        ) do
     now = DateTime.utc_now()
     encounter_id = content["encounter"]["id"]
+    episode_id = get_in(content, ~w(encounter episode identifier value))
 
     observations =
       Enum.map(content["observations"], fn data ->
@@ -435,7 +438,8 @@ defmodule Core.Patients do
             updated_at: now,
             inserted_by: user_id,
             updated_by: user_id,
-            patient_id: patient_id_hash
+            patient_id: patient_id_hash,
+            context_episode_id: episode_id
         }
         |> ObservationValidations.validate_issued()
         |> ObservationValidations.validate_effective_at()

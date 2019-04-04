@@ -53,6 +53,7 @@ defmodule Core.Observation do
     field(:method, dictionary_reference: [path: "method", referenced_field: "system", field: "code"])
     field(:reference_ranges, reference: [path: "reference_ranges"])
     field(:components, reference: [path: "components"])
+    field(:context_episode_id)
 
     timestamps()
     changed_by()

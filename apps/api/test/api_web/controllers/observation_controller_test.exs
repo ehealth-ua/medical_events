@@ -42,7 +42,6 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       episode = build(:episode)
-
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
 
       insert(
@@ -56,13 +55,11 @@ defmodule Api.Web.ObservationControllerTest do
         }
       )
 
-      context = build_encounter_context(encounter.id)
-
       observation =
         insert(:observation,
           patient_id: patient_id_hash,
           value: %Value{type: "period", value: build(:period)},
-          context: context
+          encounter_context: encounter
         )
 
       expect_get_person_data(patient_id)
@@ -90,7 +87,6 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       episode = build(:episode)
-
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
 
       insert(
@@ -104,13 +100,11 @@ defmodule Api.Web.ObservationControllerTest do
         }
       )
 
-      context = build_encounter_context(encounter.id)
-
       observation =
         insert(:observation,
           patient_id: patient_id_hash,
           value: %Value{type: "period", value: build(:period)},
-          context: context
+          encounter_context: encounter
         )
 
       expect_get_person_data(patient_id)
@@ -182,18 +176,34 @@ defmodule Api.Web.ObservationControllerTest do
 
       expect_get_person_data(patient_id)
       {code, observation_code} = build_observation_code()
-      context = build(:reference, identifier: build(:identifier, value: encounter.id))
 
       {_, issued, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, issued2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
 
-      insert(:observation, patient_id: patient_id_hash, context: context, code: observation_code, issued: issued)
-      insert(:observation, patient_id: patient_id_hash, context: context, code: observation_code, issued: issued)
+      insert(:observation,
+        patient_id: patient_id_hash,
+        encounter_context: encounter,
+        code: observation_code,
+        issued: issued
+      )
+
+      insert(:observation,
+        patient_id: patient_id_hash,
+        encounter_context: encounter,
+        code: observation_code,
+        issued: issued
+      )
 
       # Next observations have no correct code, encounter, patient_id, issued
-      insert(:observation, patient_id: patient_id_hash, context: context, code: observation_code, issued: issued2)
-      insert(:observation, patient_id: patient_id_hash, context: context)
-      insert(:observation, context: context)
+      insert(:observation,
+        patient_id: patient_id_hash,
+        encounter_context: encounter,
+        code: observation_code,
+        issued: issued2
+      )
+
+      insert(:observation, patient_id: patient_id_hash, encounter_context: encounter)
+      insert(:observation, encounter_context: encounter)
       insert(:observation)
 
       request_params = %{
@@ -285,10 +295,12 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, encounters: %{encounter_id => encounter}, _id: patient_id_hash)
-      context = build_encounter_context(encounter.id)
       expect_get_person_data(patient_id)
 
-      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+      insert_list(3, :observation,
+        patient_id: patient_id_hash,
+        encounter_context: encounter
+      )
 
       # Next observations have no encounter_id
       insert_list(2, :observation, patient_id: patient_id_hash)
@@ -313,8 +325,6 @@ defmodule Api.Web.ObservationControllerTest do
       episode = build(:episode)
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       encounter2 = build(:encounter)
-      context = build_encounter_context(encounter.id)
-      context2 = build_encounter_context(encounter2.id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -330,10 +340,14 @@ defmodule Api.Web.ObservationControllerTest do
       )
 
       expect_get_person_data(patient_id)
-      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+
+      insert_list(3, :observation,
+        patient_id: patient_id_hash,
+        encounter_context: encounter
+      )
 
       # Next observations have no episode_id
-      insert_list(10, :observation, patient_id: patient_id_hash, context: context2)
+      insert_list(10, :observation, patient_id: patient_id_hash, encounter_context: encounter2)
 
       request_params = %{
         "episode_id" => UUID.binary_to_string!(episode.id.binary)
@@ -351,8 +365,6 @@ defmodule Api.Web.ObservationControllerTest do
       episode = build(:episode)
       encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       encounter2 = build(:encounter)
-      context = build_encounter_context(encounter1.id)
-      context2 = build_encounter_context(encounter2.id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -368,10 +380,11 @@ defmodule Api.Web.ObservationControllerTest do
       )
 
       expect_get_person_data(patient_id)
-      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+
+      insert_list(3, :observation, patient_id: patient_id_hash, encounter_context: encounter1)
 
       # Next observations have no episode_id
-      insert_list(10, :observation, patient_id: patient_id_hash, context: context2)
+      insert_list(10, :observation, patient_id: patient_id_hash, encounter_context: encounter2)
 
       response =
         conn
@@ -424,8 +437,7 @@ defmodule Api.Web.ObservationControllerTest do
         encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
       )
 
-      context = build_encounter_context(encounter.id)
-      insert_list(3, :observation, patient_id: patient_id_hash, context: context)
+      insert_list(3, :observation, patient_id: patient_id_hash, encounter_context: encounter)
 
       request_data = %{
         "episode_id" => UUID.binary_to_string!(episode.id.binary)
@@ -480,11 +492,5 @@ defmodule Api.Web.ObservationControllerTest do
     code = "1"
     observation_code = codeable_concept_coding(code: code, system: "eHealth/LOINC/observation_codes")
     {code, observation_code}
-  end
-
-  defp build_encounter_context(%BSON.Binary{} = encounter_id) do
-    build(:reference,
-      identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
-    )
   end
 end

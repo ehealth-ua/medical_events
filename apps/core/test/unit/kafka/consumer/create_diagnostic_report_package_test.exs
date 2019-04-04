@@ -112,8 +112,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
          }}
       end)
 
-      encounter_id = UUID.uuid4()
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -135,9 +133,12 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       db_immunization_id = UUID.uuid4()
       immunization = build(:immunization, id: Mongo.string_to_uuid(db_immunization_id), reactions: [build(:reaction)])
 
+      encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
+
       insert(
         :patient,
         _id: patient_id_hash,
+        encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter},
         episodes: %{UUID.binary_to_string!(episode.id.binary) => episode},
         immunizations: %{db_immunization_id => immunization}
       )
@@ -387,7 +388,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                   }
                 ]
               },
-              "value" => encounter_id
+              "value" => to_string(encounter.id)
             }
           },
           "primary_source" => true,

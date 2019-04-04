@@ -43,7 +43,6 @@ defmodule Api.Web.ConditionControllerTest do
       expect_get_person_data(patient_id)
 
       {code, condition_code} = build_condition_code()
-      context = build_encounter_context(encounter.id)
 
       {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
@@ -52,15 +51,20 @@ defmodule Api.Web.ConditionControllerTest do
         2,
         :condition,
         patient_id: patient_id_hash,
-        context: context,
+        encounter_context: encounter,
         code: condition_code,
         asserted_date: nil,
         onset_date: onset_date
       )
 
       # Missed code, encounter, patient_id
-      insert(:condition, patient_id: patient_id_hash, context: context, onset_date: onset_date2)
-      insert(:condition, patient_id: patient_id_hash, context: context)
+      insert(:condition,
+        patient_id: patient_id_hash,
+        encounter_context: encounter,
+        onset_date: onset_date2
+      )
+
+      insert(:condition, patient_id: patient_id_hash, encounter_context: encounter)
       insert(:condition, patient_id: patient_id_hash)
       insert(:condition)
 
@@ -156,8 +160,6 @@ defmodule Api.Web.ConditionControllerTest do
       encounter = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       encounter2 = build(:encounter)
 
-      context = build_encounter_context(encounter.id)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -173,7 +175,7 @@ defmodule Api.Web.ConditionControllerTest do
 
       expect_get_person_data(patient_id)
 
-      insert_list(4, :condition, patient_id: patient_id_hash, context: context)
+      insert_list(4, :condition, patient_id: patient_id_hash, encounter_context: encounter)
 
       # Missed encounter, episode_id
       insert_list(5, :condition, patient_id: patient_id_hash)
@@ -202,8 +204,6 @@ defmodule Api.Web.ConditionControllerTest do
       encounter1 = build(:encounter, episode: build(:reference, identifier: build(:identifier, value: episode.id)))
       encounter2 = build(:encounter)
 
-      context = build_encounter_context(encounter1.id)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -219,7 +219,7 @@ defmodule Api.Web.ConditionControllerTest do
 
       expect_get_person_data(patient_id)
 
-      insert_list(4, :condition, patient_id: patient_id_hash, context: context)
+      insert_list(4, :condition, patient_id: patient_id_hash, encounter_context: encounter1)
 
       # Missed encounter, episode_id
       insert_list(5, :condition, patient_id: patient_id_hash)
@@ -244,10 +244,9 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}, _id: patient_id_hash)
-      context = build_encounter_context(encounter.id)
       expect_get_person_data(patient_id, 2)
 
-      insert_list(11, :condition, patient_id: patient_id_hash, context: context)
+      insert_list(11, :condition, patient_id: patient_id_hash, encounter_context: encounter)
 
       # Missed context
       insert_list(2, :condition, patient_id: patient_id_hash)
@@ -310,8 +309,7 @@ defmodule Api.Web.ConditionControllerTest do
         encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}
       )
 
-      context = build_encounter_context(encounter.id)
-      insert_list(3, :condition, patient_id: patient_id_hash, context: context)
+      insert_list(3, :condition, patient_id: patient_id_hash, encounter_context: encounter)
 
       request_data = %{
         "episode_id" => UUID.binary_to_string!(episode.id.binary)
@@ -393,8 +391,7 @@ defmodule Api.Web.ConditionControllerTest do
         }
       )
 
-      context = build_encounter_context(encounter.id)
-      condition = insert(:condition, patient_id: patient_id_hash, context: context, asserted_date: nil)
+      condition = insert(:condition, patient_id: patient_id_hash, encounter_context: encounter, asserted_date: nil)
 
       expect_get_person_data(patient_id)
 
@@ -430,8 +427,7 @@ defmodule Api.Web.ConditionControllerTest do
         }
       )
 
-      context = build_encounter_context(encounter.id)
-      condition = insert(:condition, patient_id: patient_id_hash, context: context, asserted_date: nil)
+      condition = insert(:condition, patient_id: patient_id_hash, encounter_context: encounter, asserted_date: nil)
 
       expect_get_person_data(patient_id)
 
@@ -456,12 +452,5 @@ defmodule Api.Web.ConditionControllerTest do
       build(:codeable_concept, coding: [build(:coding, code: code, system: "eHealth/ICD10/condition_codes")])
 
     {code, condition_code}
-  end
-
-  defp build_encounter_context(encounter_id) do
-    build(
-      :reference,
-      identifier: build(:identifier, value: encounter_id, type: codeable_concept_coding(code: "encounter"))
-    )
   end
 end

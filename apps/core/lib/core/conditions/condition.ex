@@ -26,6 +26,7 @@ defmodule Core.Condition do
     field(:asserted_date)
     field(:stage, reference: [path: "stage"])
     field(:evidences, reference: [path: "evidences"])
+    field(:context_episode_id)
 
     timestamps()
     changed_by()
