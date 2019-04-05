@@ -378,19 +378,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
               "value" => employee_id
             }
           },
-          "encounter" => %{
-            "identifier" => %{
-              "type" => %{
-                "coding" => [
-                  %{
-                    "system" => "eHealth/resources",
-                    "code" => "encounter"
-                  }
-                ]
-              },
-              "value" => to_string(encounter.id)
-            }
-          },
           "primary_source" => true,
           "managing_organization" => %{
             "identifier" => %{
@@ -494,7 +481,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
-      encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -755,19 +741,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 ]
               },
               "value" => employee_id
-            }
-          },
-          "encounter" => %{
-            "identifier" => %{
-              "type" => %{
-                "coding" => [
-                  %{
-                    "system" => "eHealth/resources",
-                    "code" => "encounter"
-                  }
-                ]
-              },
-              "value" => encounter_id
             }
           },
           "primary_source" => true,

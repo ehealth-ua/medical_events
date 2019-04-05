@@ -438,6 +438,7 @@ defmodule Core.Factories do
       patient_id: Patients.get_pk_hash(UUID.uuid4()),
       based_on: [reference_coding(system: "eHealth/resources", code: "service_request")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
+      diagnostic_report: reference_coding(system: "eHealth/resources", code: "diagnostic_report"),
       effective_at: %EffectiveAt{type: "effective_date_time", value: now},
       issued: now,
       primary_source: true,

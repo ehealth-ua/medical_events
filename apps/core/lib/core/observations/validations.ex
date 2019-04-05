@@ -132,4 +132,36 @@ defmodule Core.Observations.Validations do
       period
     end
   end
+
+  def validate_diagnostic_report(%Observation{diagnostic_report: nil} = observation, _, _), do: observation
+
+  def validate_diagnostic_report(
+        %Observation{diagnostic_report: diagnostic_report} = observation,
+        patient_id_hash,
+        diagnostic_reports
+      ) do
+    identifier =
+      add_validations(
+        diagnostic_report.identifier,
+        :value,
+        diagnostic_report_context: [
+          patient_id_hash: patient_id_hash,
+          diagnostic_reports: diagnostic_reports,
+          payload_only: true
+        ]
+      )
+
+    %{observation | diagnostic_report: %{diagnostic_report | identifier: identifier}}
+  end
+
+  def validate_diagnostic_report(%Observation{diagnostic_report: diagnostic_report} = observation, diagnostic_report_id) do
+    identifier =
+      add_validations(
+        diagnostic_report.identifier,
+        :value,
+        value: [equals: diagnostic_report_id, message: "Submitted diagnostic report is not allowed for the observation"]
+      )
+
+    %{observation | diagnostic_report: %{diagnostic_report | identifier: identifier}}
+  end
 end

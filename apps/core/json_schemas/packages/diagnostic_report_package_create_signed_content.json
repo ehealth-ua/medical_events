@@ -1192,64 +1192,6 @@
           ],
           "additionalProperties": false
         },
-        "encounter": {
-          "type": "object",
-          "properties": {
-            "identifier": {
-              "type": "object",
-              "properties": {
-                "type": {
-                  "type": "object",
-                  "properties": {
-                    "coding": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "system": {
-                            "type": "string",
-                            "enum": [
-                              "eHealth/resources"
-                            ]
-                          },
-                          "code": {
-                            "type": "string",
-                            "enum": [
-                              "encounter"
-                            ]
-                          }
-                        },
-                        "required": [
-                          "system",
-                          "code"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "text": {
-                      "type": "string"
-                    }
-                  },
-                  "description": "Description of identifier",
-                  "additionalProperties": false
-                },
-                "value": {
-                  "type": "string",
-                  "description": "The value that is unique"
-                }
-              },
-              "required": [
-                "type",
-                "value"
-              ],
-              "additionalProperties": false
-            }
-          },
-          "required": [
-            "identifier"
-          ],
-          "additionalProperties": false
-        },
         "primary_source": {
           "type": "boolean",
           "enum": [
@@ -1462,7 +1404,6 @@
         "code",
         "issued",
         "recorded_by",
-        "encounter",
         "primary_source",
         "managing_organization"
       ],
