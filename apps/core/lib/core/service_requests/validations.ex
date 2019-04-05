@@ -82,10 +82,18 @@ defmodule Core.ServiceRequests.Validations do
   def validate_supporting_info(%ServiceRequest{} = service_request, patient_id_hash) do
     supporting_info =
       Enum.map(service_request.supporting_info, fn info ->
+        reference_type = info.identifier.type.coding |> List.first() |> Map.get(:code)
+
         identifier =
-          add_validations(info.identifier, :value,
-            episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
-          )
+          case reference_type do
+            "episode_of_care" ->
+              add_validations(info.identifier, :value,
+                episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
+              )
+
+            "diagnostic_report" ->
+              add_validations(info.identifier, :value, diagnostic_report_reference: [patient_id_hash: patient_id_hash])
+          end
 
         %{info | identifier: identifier}
       end)
@@ -113,8 +121,10 @@ defmodule Core.ServiceRequests.Validations do
     %{service_request | reason_reference: references}
   end
 
-  def validate_permitted_episodes(%ServiceRequest{} = service_request, patient_id_hash) do
-    permitted_episodes = service_request.permitted_episodes || []
+  def validate_permitted_resources(%ServiceRequest{permitted_resources: nil} = service_request, _), do: service_request
+
+  def validate_permitted_resources(%ServiceRequest{} = service_request, patient_id_hash) do
+    permitted_resources = service_request.permitted_resources || []
 
     category_value =
       if is_nil(service_request.category) do
@@ -125,31 +135,41 @@ defmodule Core.ServiceRequests.Validations do
 
     service_request =
       if category_value == ServiceRequest.category(:laboratory_procedure) do
-        add_validations(service_request, :permitted_episodes,
+        add_validations(service_request, :permitted_resources,
           value: [
             equals: [],
-            message: "Permitted episodes are not allowed for laboratory category of service request"
+            message: "Permitted resources are not allowed for laboratory category of service request"
           ]
         )
       else
         service_request
       end
 
-    permitted_episodes =
+    permitted_resources =
       if category_value == ServiceRequest.category(:laboratory_procedure) do
-        permitted_episodes
+        permitted_resources
       else
-        Enum.map(permitted_episodes, fn permitted_episode ->
-          identifier =
-            add_validations(permitted_episode.identifier, :value,
-              episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
-            )
+        Enum.map(permitted_resources, fn permitted_resource ->
+          reference_type = permitted_resource.identifier.type.coding |> List.first() |> Map.get(:code)
 
-          %{permitted_episode | identifier: identifier}
+          identifier =
+            case reference_type do
+              "episode_of_care" ->
+                add_validations(permitted_resource.identifier, :value,
+                  episode_reference: [patient_id_hash: patient_id_hash, status: Episode.status(:active)]
+                )
+
+              "diagnostic_report" ->
+                add_validations(permitted_resource.identifier, :value,
+                  diagnostic_report_reference: [patient_id_hash: patient_id_hash]
+                )
+            end
+
+          %{permitted_resource | identifier: identifier}
         end)
       end
 
-    %{service_request | permitted_episodes: permitted_episodes}
+    %{service_request | permitted_resources: permitted_resources}
   end
 
   def validate_used_by_employee(%ServiceRequest{used_by_employee: nil} = service_request, _), do: service_request

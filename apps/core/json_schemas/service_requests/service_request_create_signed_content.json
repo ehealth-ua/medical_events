@@ -350,7 +350,8 @@
                         "code": {
                           "type": "string",
                           "enum": [
-                            "episode_of_care"
+                            "episode_of_care",
+                            "diagnostic_report"
                           ],
                           "description": "Symbol in syntax defined by the system"
                         }
@@ -394,7 +395,7 @@
     "patient_instruction": {
       "type": "string"
     },
-    "permitted_episodes": {
+    "permitted_resources": {
       "type": "array",
       "items": {
         "type": "object",
@@ -420,7 +421,8 @@
                         "code": {
                           "type": "string",
                           "enum": [
-                            "episode_of_care"
+                            "episode_of_care",
+                            "diagnostic_report"
                           ],
                           "description": "Symbol in syntax defined by the system"
                         }

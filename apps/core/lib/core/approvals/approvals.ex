@@ -275,7 +275,7 @@ defmodule Core.Approvals do
     with {:ok, %ServiceRequest{status: @service_request_status_active} = service_request} <-
            ServiceRequests.get_by_id(service_request_id),
          {:expiration_date, nil} <- {:expiration_date, validate_expiration_date(service_request)} do
-      check_episode_references(service_request.permitted_episodes)
+      check_episode_references(service_request.permitted_resources)
     else
       {:ok, %ServiceRequest{} = _} ->
         {:error, "Service request should be active", 409}
@@ -305,9 +305,9 @@ defmodule Core.Approvals do
   defp check_episode_references(nil), do: {:error, "Service request does not contain episode references", 409}
   defp check_episode_references([]), do: check_episode_references(nil)
 
-  defp check_episode_references(permitted_episodes) do
+  defp check_episode_references(permitted_resources) do
     {:ok,
-     Enum.map(permitted_episodes, fn episode_ref ->
+     Enum.map(permitted_resources, fn episode_ref ->
        identifier = episode_ref.identifier
        %{episode_ref | identifier: %{identifier | value: to_string(identifier.value)}}
      end)}
