@@ -469,6 +469,7 @@ defmodule Core.Patients.DiagnosticReports do
             context_episode_id: episode_id
         }
         |> ObservationValidations.validate_issued()
+        |> ObservationValidations.validate_diagnostic_report(content["diagnostic_report"]["id"])
         |> ObservationValidations.validate_effective_at()
         |> ObservationValidations.validate_source(client_id)
         |> ObservationValidations.validate_value()

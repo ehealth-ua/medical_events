@@ -72,6 +72,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         method: ReferenceView.render(observation.method),
         categories: ReferenceView.render(observation.categories),
         context: ReferenceView.render(observation.context),
+        diagnostic_report: ReferenceView.render(observation.diagnostic_report),
         interpretation: ReferenceView.render(observation.interpretation),
         code: ReferenceView.render(observation.code),
         body_site: ReferenceView.render(observation.body_site),

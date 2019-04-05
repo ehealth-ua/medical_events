@@ -450,6 +450,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 "value" => encounter_id
               }
             },
+            "diagnostic_report" => %{
+              "identifier" => %{
+                "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+                "value" => diagnostic_report_id
+              }
+            },
             "categories" => [
               %{"coding" => [%{"code" => "1", "system" => "eHealth/observation_categories"}]}
             ],

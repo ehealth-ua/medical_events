@@ -193,12 +193,12 @@ defmodule Core.Patients do
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id) do
       with {:ok, visit} <- create_visit(job),
-           {:ok, observations} <- create_observations(job, content),
+           {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content),
+           {:ok, observations} <- create_observations(job, content, diagnostic_reports),
            {:ok, conditions} <- create_conditions(job, content, observations),
            {:ok, encounter} <- create_encounter(job, content, conditions, visit),
            {:ok, immunizations} <- create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
-           {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content),
            {:ok, risk_assessments} <-
              create_risk_assessments(job, observations, conditions, diagnostic_reports, content),
            {:ok, devices} <- create_devices(job, content),
@@ -419,7 +419,8 @@ defmodule Core.Patients do
            user_id: user_id,
            client_id: client_id
          },
-         %{"observations" => _} = content
+         %{"observations" => _} = content,
+         diagnostic_reports
        ) do
     now = DateTime.utc_now()
     encounter_id = content["encounter"]["id"]
@@ -442,6 +443,7 @@ defmodule Core.Patients do
             context_episode_id: episode_id
         }
         |> ObservationValidations.validate_issued()
+        |> ObservationValidations.validate_diagnostic_report(patient_id_hash, diagnostic_reports)
         |> ObservationValidations.validate_effective_at()
         |> ObservationValidations.validate_context(encounter_id)
         |> ObservationValidations.validate_source(client_id)
@@ -461,7 +463,7 @@ defmodule Core.Patients do
     end
   end
 
-  defp create_observations(_, _), do: {:ok, []}
+  defp create_observations(_, _, _), do: {:ok, []}
 
   defp create_immunizations(
          %PackageCreateJob{
