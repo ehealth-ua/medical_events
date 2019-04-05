@@ -161,7 +161,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       expect_otp_verification_initialize()
 
       episodes = build_episode_references([episode_1.id, episode_2.id])
-      service_request = insert(:service_request, subject: patient_id_hash, permitted_episodes: episodes)
+      service_request = insert(:service_request, subject: patient_id_hash, permitted_resources: episodes)
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)
@@ -366,7 +366,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       service_request =
         insert(:service_request,
           subject: patient_id_hash,
-          permitted_episodes: episodes,
+          permitted_resources: episodes,
           status: ServiceRequest.status(:cancelled)
         )
 
@@ -437,7 +437,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       service_request =
         insert(:service_request,
           subject: patient_id_hash,
-          permitted_episodes: episodes,
+          permitted_resources: episodes,
           inserted_at: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * (expiration_days + 1)),
           expiration_date: DateTime.from_unix!(DateTime.to_unix(now) - 60 * 60 * 24 * expiration_days)
         )
@@ -516,7 +516,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
 
-      service_request = insert(:service_request, subject: patient_id_hash, permitted_episodes: nil)
+      service_request = insert(:service_request, subject: patient_id_hash, permitted_resources: nil)
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)

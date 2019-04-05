@@ -443,7 +443,7 @@ defmodule Api.Web.ApprovalControllerTest do
   defp build_request_params(:service_request) do
     episodes = build_episode_references()
 
-    service_request = insert(:service_request, permitted_episodes: episodes)
+    service_request = insert(:service_request, permitted_resources: episodes)
     service_request_id = to_string(service_request._id)
 
     to_map(%{
@@ -469,7 +469,7 @@ defmodule Api.Web.ApprovalControllerTest do
 
   defp build_request_params(:invalid) do
     episodes = build_episode_references()
-    service_request = build(:service_request, permitted_episodes: episodes)
+    service_request = build(:service_request, permitted_resources: episodes)
     service_request_id = to_string(service_request._id)
 
     to_map(%{
@@ -495,7 +495,7 @@ defmodule Api.Web.ApprovalControllerTest do
 
   defp build_request_params(:invalid_one_of_all) do
     episodes = build_episode_references()
-    service_request = build(:service_request, permitted_episodes: episodes)
+    service_request = build(:service_request, permitted_resources: episodes)
     service_request_id = to_string(service_request._id)
 
     to_map(%{

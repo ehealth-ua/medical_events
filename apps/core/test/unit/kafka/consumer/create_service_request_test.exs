@@ -176,6 +176,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       patient = insert(:patient, _id: patient_id_hash)
       encounter_id = patient.encounters |> Map.keys() |> hd()
       episode_id = patient.episodes |> Map.keys() |> hd()
+      diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd()
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
@@ -246,13 +247,25 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
               "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
               "value" => episode_id
             }
+          },
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+              "value" => diagnostic_report_id
+            }
           }
         ],
-        "permitted_episodes" => [
+        "permitted_resources" => [
           %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
               "value" => episode_id
+            }
+          },
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+              "value" => diagnostic_report_id
             }
           }
         ]
@@ -322,7 +335,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             }
           }
         ],
-        "permitted_episodes" => [
+        "permitted_resources" => [
           %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
@@ -367,7 +380,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
                })
     end
 
-    test "fail on permitted episodes when category is laboratory procedure" do
+    test "fail on permitted resources when category is laboratory procedure" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
@@ -380,6 +393,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       patient = insert(:patient, _id: patient_id_hash)
       encounter_id = patient.encounters |> Map.keys() |> hd()
       episode_id = patient.episodes |> Map.keys() |> hd()
+      diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd()
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
@@ -409,11 +423,17 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => employee_id
           }
         },
-        "permitted_episodes" => [
+        "permitted_resources" => [
           %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
               "value" => episode_id
+            }
+          },
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+              "value" => diagnostic_report_id
             }
           }
         ]
@@ -425,11 +445,11 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.permitted_episodes",
+              "entry" => "$.service_request.permitted_resources",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
-                  "description" => "Permitted episodes are not allowed for laboratory category of service request",
+                  "description" => "Permitted resources are not allowed for laboratory category of service request",
                   "params" => [],
                   "rule" => "invalid"
                 }
@@ -545,7 +565,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             }
           }
         ],
-        "permitted_episodes" => [
+        "permitted_resources" => [
           %{
             "identifier" => %{
               "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
@@ -559,6 +579,155 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           "end" => end_datetime
         }
       }
+
+      assert :ok =
+               Consumer.consume(%ServiceRequestCreateJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 user_id: user_id,
+                 client_id: client_id,
+                 signed_data: Base.encode64(Jason.encode!(signed_content))
+               })
+    end
+
+    test "inavlid permitted resources in service_request params" do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations()
+      job = insert(:job)
+
+      employee_id = UUID.uuid4()
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      patient = insert(:patient, _id: patient_id_hash)
+      encounter_id = patient.encounters |> Map.keys() |> hd()
+      episode_id = UUID.uuid4()
+      diagnostic_report_id = UUID.uuid4()
+
+      authored_on = DateTime.to_iso8601(DateTime.utc_now())
+
+      expect(WorkerMock, :run, 3, fn
+        _, _, :employees_by_user_id_client_id, _ ->
+          {:ok, [employee_id]}
+
+        _, _, :tax_id_by_employee_id, _ ->
+          "1111111111"
+
+        _, _, :number, _ ->
+          {:ok, UUID.uuid4()}
+      end)
+
+      signed_content = %{
+        "status" => ServiceRequest.status(:active),
+        "intent" => ServiceRequest.intent(:order),
+        "category" => %{
+          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+        },
+        "code" => %{"coding" => [%{"code" => "128004", "system" => "eHealth/SNOMED/procedure_codes"}]},
+        "context" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "encounter", "system" => "eHealth/resources"}]},
+            "value" => encounter_id
+          }
+        },
+        "authored_on" => authored_on,
+        "requester" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
+            "value" => employee_id
+          }
+        },
+        "performer_type" => %{
+          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
+        },
+        "supporting_info" => [
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+              "value" => diagnostic_report_id
+            }
+          }
+        ],
+        "permitted_resources" => [
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
+              "value" => episode_id
+            }
+          },
+          %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+              "value" => diagnostic_report_id
+            }
+          }
+        ]
+      }
+
+      expect_job_update(
+        job._id,
+        Job.status(:failed),
+        %{
+          "invalid" => [
+            %{
+              "entry" => "$.service_request.permitted_resources.[0].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Episode with such ID is not found",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.service_request.permitted_resources.[1].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Diagnostic report with such id is not found",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.service_request.supporting_info.[0].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Episode with such ID is not found",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            },
+            %{
+              "entry" => "$.service_request.supporting_info.[1].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Diagnostic report with such id is not found",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        },
+        422
+      )
 
       assert :ok =
                Consumer.consume(%ServiceRequestCreateJob{

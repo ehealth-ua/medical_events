@@ -94,7 +94,7 @@ defmodule Core.ServiceRequests.Consumer do
         |> ServiceRequestsValidations.validate_authored_on()
         |> ServiceRequestsValidations.validate_supporting_info(patient_id_hash)
         |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
-        |> ServiceRequestsValidations.validate_permitted_episodes(patient_id_hash)
+        |> ServiceRequestsValidations.validate_permitted_resources(patient_id_hash)
         |> generate_requisition_number(patient_id_hash, user_id)
 
       case service_request do
@@ -137,7 +137,7 @@ defmodule Core.ServiceRequests.Consumer do
                     |> Mongo.convert_to_uuid("requester", ~w(identifier value)a)
                     |> Mongo.convert_to_uuid("context", ~w(identifier value)a)
                     |> Mongo.convert_to_uuid("supporting_info", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("permitted_episodes", ~w(identifier value)a)
+                    |> Mongo.convert_to_uuid("permitted_resources", ~w(identifier value)a)
 
                   result =
                     %Transaction{}

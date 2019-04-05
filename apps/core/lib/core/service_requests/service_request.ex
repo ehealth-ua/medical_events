@@ -59,7 +59,7 @@ defmodule Core.ServiceRequest do
     field(:note)
     field(:patient_instruction)
     field(:expiration_date)
-    field(:permitted_episodes, reference: [path: "permitted_episodes"])
+    field(:permitted_resources, reference: [path: "permitted_resources"])
     field(:used_by_employee, reference: [path: "used_by_employee"])
     field(:used_by_legal_entity, reference: [path: "used_by_legal_entity"])
     field(:assignee, reference: [path: "assignee"])
@@ -118,11 +118,11 @@ defmodule Core.ServiceRequest do
         {"supporting_info", v} ->
           {:supporting_info, Enum.map(v, &Reference.create/1)}
 
-        {"permitted_episodes", nil} ->
-          {:permitted_episodes, nil}
+        {"permitted_resources", nil} ->
+          {:permitted_resources, nil}
 
-        {"permitted_episodes", v} ->
-          {:permitted_episodes, Enum.map(v, &Reference.create/1)}
+        {"permitted_resources", v} ->
+          {:permitted_resources, Enum.map(v, &Reference.create/1)}
 
         {"occurrence", %{"type" => type, "value" => value}} ->
           {:occurrence, Occurrence.create(type, value)}
