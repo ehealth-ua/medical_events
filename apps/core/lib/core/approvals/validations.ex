@@ -29,12 +29,22 @@ defmodule Core.Approvals.Validations do
   def validate_granted_resources(%Approval{granted_resources: granted_resources} = approval, patient_id_hash) do
     granted_resources =
       Enum.map(granted_resources, fn resource ->
+        reference_type = resource.identifier.type.coding |> List.first() |> Map.get(:code)
+
         identifier =
-          add_validations(
-            resource.identifier,
-            :value,
-            episode_reference: [patient_id_hash: patient_id_hash]
-          )
+          case reference_type do
+            "episode_of_care" ->
+              add_validations(
+                resource.identifier,
+                :value,
+                episode_reference: [patient_id_hash: patient_id_hash]
+              )
+
+            "diagnostic_report" ->
+              add_validations(resource.identifier, :value,
+                diagnostic_report_reference: [patient_id_hash: patient_id_hash]
+              )
+          end
 
         %{resource | identifier: identifier}
       end)
