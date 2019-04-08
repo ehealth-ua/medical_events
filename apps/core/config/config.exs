@@ -77,7 +77,7 @@ config :core, Core.Microservices.OTPVerification,
     timeout: 30_000
   ]
 
-config :core, Core.Patients.Encryptor,
+config :core, Core.Encryptor,
   keyphrase: {:system, :string, "PERSON_PK_KEYPHRASE"},
   ivphrase: {:system, :string, "PERSON_PK_IVPHRASE"}
 

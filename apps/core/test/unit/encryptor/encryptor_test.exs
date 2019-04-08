@@ -1,8 +1,8 @@
-defmodule Core.Patients.EncryptorTest do
+defmodule Core.EncryptorTest do
   @moduledoc false
 
   use ExUnit.Case
-  alias Core.Patients.Encryptor
+  alias Core.Encryptor
 
   test "encrypt, decrypt" do
     id = UUID.uuid4()

@@ -22,7 +22,7 @@ config :core,
   ],
   rpc_worker: WorkerMock
 
-config :core, Core.Patients.Encryptor,
+config :core, Core.Encryptor,
   keyphrase: "8grv872gt3trc92b",
   ivphrase: "99yBSYB*Y99yr932"
 

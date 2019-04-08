@@ -3,6 +3,7 @@ defmodule Core.ServiceRequests do
 
   use Confex, otp_app: :core
 
+  alias Core.Encryptor
   alias Core.Episode
   alias Core.Mongo
   alias Core.Paging
@@ -73,7 +74,7 @@ defmodule Core.ServiceRequests do
   end
 
   defp search_service_requests_search_pipe(%{"requisition" => requisition} = params) do
-    %{"$match" => %{"requisition" => requisition}}
+    %{"$match" => %{"requisition" => Encryptor.encrypt(requisition)}}
     |> Search.add_param(params["status"], ["$match", "status"])
     |> List.wrap()
     |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])

@@ -4,6 +4,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
   use Core.ModelCase
 
   alias Core.DateView
+  alias Core.Encryptor
   alias Core.Job
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Kafka.Consumer
@@ -317,7 +318,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
           "patient_instruction" => service_request.patient_instruction,
           "permitted_resources" => service_request.permitted_resources,
           "reason_reference" => service_request.reason_reference,
-          "requisition" => service_request.requisition,
+          "requisition" => Encryptor.decrypt(service_request.requisition),
           "status_history" => ReferenceView.render(service_request.status_history),
           "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
           "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),
@@ -407,7 +408,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
           "patient_instruction" => service_request.patient_instruction,
           "permitted_resources" => service_request.permitted_resources,
           "reason_reference" => service_request.reason_reference,
-          "requisition" => service_request.requisition,
+          "requisition" => Encryptor.decrypt(service_request.requisition),
           "status_history" => ReferenceView.render(service_request.status_history),
           "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
           "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),
@@ -511,7 +512,7 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
           "patient_instruction" => service_request.patient_instruction,
           "permitted_resources" => service_request.permitted_resources,
           "reason_reference" => service_request.reason_reference,
-          "requisition" => service_request.requisition,
+          "requisition" => Encryptor.decrypt(service_request.requisition),
           "status_history" => ReferenceView.render(service_request.status_history),
           "used_by_employee" => ReferenceView.render(service_request.used_by_employee),
           "used_by_legal_entity" => ReferenceView.render(service_request.used_by_legal_entity),

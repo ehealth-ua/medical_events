@@ -4,6 +4,7 @@ defmodule Core.ServiceRequests.Consumer do
   use Confex, otp_app: :core
 
   alias Core.CodeableConcept
+  alias Core.Encryptor
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
@@ -968,7 +969,7 @@ defmodule Core.ServiceRequests.Consumer do
              to_string(encounter.episode.identifier.value),
              user_id
            ]) do
-      %{service_request | requisition: number}
+      %{service_request | requisition: Encryptor.encrypt(number)}
     else
       {:encounter, _} ->
         [

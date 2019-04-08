@@ -2,7 +2,7 @@ defmodule Core.Validators.MedicationRequestReference do
   @moduledoc false
 
   use Vex.Validator
-  alias Core.Patients.Encryptor
+  alias Core.Encryptor
 
   @worker Application.get_env(:core, :rpc_worker)
 

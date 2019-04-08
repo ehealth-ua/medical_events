@@ -1,13 +1,15 @@
-defmodule Core.Patients.Encryptor do
+defmodule Core.Encryptor do
   @moduledoc false
 
   use Confex, otp_app: :core
 
   @aes_block_size 16
 
-  def encrypt(patient_id) do
+  def encrypt(nil), do: nil
+
+  def encrypt(data) when is_binary(data) do
     id =
-      patient_id
+      data
       |> UUID.string_to_binary!()
       |> pad(@aes_block_size)
 
