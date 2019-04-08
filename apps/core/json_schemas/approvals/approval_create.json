@@ -27,7 +27,8 @@
                       "code": {
                         "type": "string",
                         "enum": [
-                          "episode_of_care"
+                          "episode_of_care",
+                          "diagnostic_report"
                         ],
                         "description": "Symbol in syntax defined by the system"
                       }

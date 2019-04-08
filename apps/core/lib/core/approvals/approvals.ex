@@ -86,7 +86,7 @@ defmodule Core.Approvals do
           client_id: client_id
         } = job
       ) do
-    with {:ok, episodes} <- get_episodes(resources, service_request),
+    with {:ok, granted_resources} <- get_granted_resources(resources, service_request),
          {:ok, auth_method} <- get_person_auth_method(patient_id) do
       now = DateTime.utc_now()
       approval_expiration_minutes = Confex.fetch_env!(:core, :approval)[:expire_in_minutes]
@@ -118,7 +118,7 @@ defmodule Core.Approvals do
         params
         |> Approval.create()
         |> Map.merge(%{
-          granted_resources: episodes,
+          granted_resources: granted_resources,
           patient_id: patient_id_hash,
           expires_at: DateTime.to_unix(now) + approval_expiration_minutes * 60,
           status: @status_new,
@@ -269,13 +269,13 @@ defmodule Core.Approvals do
     |> Enum.map(&Approval.create/1)
   end
 
-  defp get_episodes(resources, nil), do: {:ok, Enum.map(resources, &Reference.create/1)}
+  defp get_granted_resources(resources, nil), do: {:ok, Enum.map(resources, &Reference.create/1)}
 
-  defp get_episodes(nil, %{"identifier" => %{"value" => service_request_id}}) do
+  defp get_granted_resources(nil, %{"identifier" => %{"value" => service_request_id}}) do
     with {:ok, %ServiceRequest{status: @service_request_status_active} = service_request} <-
            ServiceRequests.get_by_id(service_request_id),
          {:expiration_date, nil} <- {:expiration_date, validate_expiration_date(service_request)} do
-      check_episode_references(service_request.permitted_resources)
+      check_resource_references(service_request.permitted_resources)
     else
       {:ok, %ServiceRequest{} = _} ->
         {:error, "Service request should be active", 409}
@@ -302,14 +302,14 @@ defmodule Core.Approvals do
     end
   end
 
-  defp check_episode_references(nil), do: {:error, "Service request does not contain episode references", 409}
-  defp check_episode_references([]), do: check_episode_references(nil)
+  defp check_resource_references(nil), do: {:error, "Service request does not contain resources references", 409}
+  defp check_resource_references([]), do: check_resource_references(nil)
 
-  defp check_episode_references(permitted_resources) do
+  defp check_resource_references(permitted_resources) do
     {:ok,
-     Enum.map(permitted_resources, fn episode_ref ->
-       identifier = episode_ref.identifier
-       %{episode_ref | identifier: %{identifier | value: to_string(identifier.value)}}
+     Enum.map(permitted_resources, fn resource_ref ->
+       identifier = resource_ref.identifier
+       %{resource_ref | identifier: %{identifier | value: to_string(identifier.value)}}
      end)}
   end
 

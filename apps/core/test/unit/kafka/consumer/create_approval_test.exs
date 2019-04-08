@@ -42,14 +42,17 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       episode_2 = build(:episode)
 
-      insert(
-        :patient,
-        _id: patient_id_hash,
-        episodes: %{
-          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
-          UUID.binary_to_string!(episode_2.id.binary) => episode_2
-        }
-      )
+      patient =
+        insert(
+          :patient,
+          _id: patient_id_hash,
+          episodes: %{
+            UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+            UUID.binary_to_string!(episode_2.id.binary) => episode_2
+          }
+        )
+
+      diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd()
 
       rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
@@ -118,6 +121,12 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                        "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
                        "value" => UUID.binary_to_string!(episode_2.id.binary)
                      }
+                   },
+                   %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+                       "value" => diagnostic_report_id
+                     }
                    }
                  ],
                  service_request: nil,
@@ -147,21 +156,28 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       episode_2 = build(:episode)
 
-      insert(
-        :patient,
-        _id: patient_id_hash,
-        episodes: %{
-          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
-          UUID.binary_to_string!(episode_2.id.binary) => episode_2
-        }
-      )
+      patient =
+        insert(
+          :patient,
+          _id: patient_id_hash,
+          episodes: %{
+            UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+            UUID.binary_to_string!(episode_2.id.binary) => episode_2
+          }
+        )
+
+      diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd() |> Mongo.string_to_uuid()
 
       rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
       expect_otp_verification_initialize()
 
-      episodes = build_episode_references([episode_1.id, episode_2.id])
-      service_request = insert(:service_request, subject: patient_id_hash, permitted_resources: episodes)
+      episodes = build_references(:episode, [episode_1.id, episode_2.id])
+      diagnostic_reports = build_references(:diagnostic_report, [diagnostic_report_id])
+
+      service_request =
+        insert(:service_request, subject: patient_id_hash, permitted_resources: episodes ++ diagnostic_reports)
+
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)
@@ -190,8 +206,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
           |> Enum.map(&get_in(&1, ~w(identifier value)))
           |> Enum.map(&to_string/1)
 
-        Enum.each([episode_1.id, episode_2.id], fn episode_id ->
-          assert to_string(episode_id) in granted_resources_ids
+        Enum.each([episode_1.id, episode_2.id, diagnostic_report_id], fn resource_id ->
+          assert to_string(resource_id) in granted_resources_ids
         end)
 
         assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
@@ -248,14 +264,17 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       episode_2 = build(:episode)
 
-      insert(
-        :patient,
-        _id: patient_id_hash,
-        episodes: %{
-          UUID.binary_to_string!(episode_1.id.binary) => episode_1,
-          UUID.binary_to_string!(episode_2.id.binary) => episode_2
-        }
-      )
+      patient =
+        insert(
+          :patient,
+          _id: patient_id_hash,
+          episodes: %{
+            UUID.binary_to_string!(episode_1.id.binary) => episode_1,
+            UUID.binary_to_string!(episode_2.id.binary) => episode_2
+          }
+        )
+
+      diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd()
 
       offline_auth_rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
@@ -323,6 +342,12 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                        "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
                        "value" => UUID.binary_to_string!(episode_2.id.binary)
                      }
+                   },
+                   %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+                       "value" => diagnostic_report_id
+                     }
                    }
                  ],
                  service_request: nil,
@@ -361,7 +386,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      episodes = build_episode_references([episode_1.id.binary, episode_2.id.binary])
+      episodes = build_references(:episode, [episode_1.id.binary, episode_2.id.binary])
 
       service_request =
         insert(:service_request,
@@ -432,7 +457,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         }
       )
 
-      episodes = build_episode_references([episode_1.id.binary, episode_2.id.binary])
+      episodes = build_references(:episode, [episode_1.id.binary, episode_2.id.binary])
 
       service_request =
         insert(:service_request,
@@ -520,7 +545,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
       service_request_id = to_string(service_request._id)
 
       job = insert(:job)
-      expect_job_update(job._id, Job.status(:failed), "Service request does not contain episode references", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request does not contain resources references", 409)
 
       assert :ok =
                Consumer.consume(%ApprovalCreateJob{
@@ -621,6 +646,17 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
               ]
             },
             %{
+              "entry" => "$.granted_resources.[2].identifier.value",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Diagnostic report with such id is not found",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            },
+            %{
               "entry" => "$.granted_to.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
@@ -656,6 +692,12 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                        "type" => %{"coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}]},
                        "value" => UUID.uuid4()
                      }
+                   },
+                   %{
+                     "identifier" => %{
+                       "type" => %{"coding" => [%{"code" => "diagnostic_report", "system" => "eHealth/resources"}]},
+                       "value" => UUID.uuid4()
+                     }
                    }
                  ],
                  service_request: nil,
@@ -672,13 +714,20 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
   end
 
-  defp build_episode_references(episode_ids) when is_list(episode_ids) do
-    Enum.map(episode_ids, fn episode_id ->
+  defp build_references(type, entity_ids) when is_list(entity_ids) do
+    code =
+      case type do
+        :episode -> "episode_of_care"
+        :diagnostic_report -> "diagnostic_report"
+        _ -> "undefined"
+      end
+
+    Enum.map(entity_ids, fn entity_id ->
       build(:reference,
         identifier:
           build(:identifier,
-            value: episode_id,
-            type: codeable_concept_coding(system: "eHealth/resources", code: "episode_of_care")
+            value: entity_id,
+            type: codeable_concept_coding(system: "eHealth/resources", code: code)
           )
       )
     end)
