@@ -14,6 +14,7 @@ defmodule Core.Factories do
   alias Core.Diagnosis
   alias Core.EffectiveAt
   alias Core.Encounter
+  alias Core.Encryptor
   alias Core.Episode
   alias Core.Evidence
   alias Core.Executor
@@ -738,7 +739,7 @@ defmodule Core.Factories do
 
     %ServiceRequest{
       _id: Mongo.string_to_uuid(UUID.uuid4()),
-      requisition: UUID.uuid4(),
+      requisition: Encryptor.encrypt(UUID.uuid4()),
       status: ServiceRequest.status(:active),
       intent: "plan",
       code: codeable_concept_coding(system: "eHealth/SNOMED/procedure_codes", code: "128004"),

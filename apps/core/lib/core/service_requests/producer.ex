@@ -1,6 +1,7 @@
 defmodule Core.ServiceRequests.Producer do
   @moduledoc false
 
+  alias Core.Encryptor
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
   alias Core.Jobs.ServiceRequestCompleteJob
@@ -10,7 +11,6 @@ defmodule Core.ServiceRequests.Producer do
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
-  alias Core.Patients.Encryptor
   alias Core.Patients.Validators
   alias Core.ServiceRequest
   alias Core.ServiceRequests

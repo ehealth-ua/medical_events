@@ -2,6 +2,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
+  alias Core.Encryptor
   alias Core.Mongo
   alias Core.Patient
   alias Core.Patients
@@ -167,10 +168,11 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition)
       insert(:service_request)
-      conn = get(conn, service_request_path(conn, :search), %{requisition: service_request1.requisition})
+      requisition = Encryptor.decrypt(service_request1.requisition)
+      conn = get(conn, service_request_path(conn, :search), %{requisition: requisition})
       response = json_response(conn, 200)
       assert 2 == response["paging"]["total_entries"]
-      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == service_request1.requisition))
+      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == requisition))
     end
 
     test "status search", %{conn: conn} do
@@ -179,16 +181,17 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition, status: ServiceRequest.status(:completed))
       insert(:service_request)
+      requisition = Encryptor.decrypt(service_request1.requisition)
 
       conn =
         get(conn, service_request_path(conn, :search), %{
-          requisition: service_request1.requisition,
+          requisition: requisition,
           status: service_request1.status
         })
 
       response = json_response(conn, 200)
       assert 1 == response["paging"]["total_entries"]
-      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == service_request1.requisition))
+      assert Enum.all?(response["data"], &(Map.get(&1, "requisition") == requisition))
       assert Enum.all?(response["data"], &(Map.get(&1, "status") == service_request1.status))
     end
 
@@ -198,10 +201,11 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition)
       insert(:service_request, requisition: service_request1.requisition)
+      requisition = Encryptor.decrypt(service_request1.requisition)
 
       conn =
         get(conn, service_request_path(conn, :search), %{
-          requisition: service_request1.requisition,
+          requisition: requisition,
           page: 2,
           page_size: 2
         })

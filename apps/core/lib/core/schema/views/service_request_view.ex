@@ -2,7 +2,7 @@ defmodule Core.ServiceRequestView do
   @moduledoc false
 
   alias Core.DateView
-  alias Core.Patients.Encryptor
+  alias Core.Encryptor
   alias Core.Reference
   alias Core.ReferenceView
   alias Core.ServiceRequest
@@ -12,7 +12,6 @@ defmodule Core.ServiceRequestView do
   def render_service_request(%ServiceRequest{} = service_request) do
     service_request
     |> Map.take(~w(
-      requisition
       status
       intent
       explanator_letter
@@ -50,7 +49,8 @@ defmodule Core.ServiceRequestView do
       updated_at: DateView.render_datetime(service_request.updated_at),
       status_history: StatusHistoryView.render("index.json", %{statuses_history: service_request.status_history}),
       status_reason: ReferenceView.render(service_request.status_reason),
-      completed_with: ReferenceView.render(service_request.completed_with)
+      completed_with: ReferenceView.render(service_request.completed_with),
+      requisition: Encryptor.decrypt(service_request.requisition)
     })
     |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
   end

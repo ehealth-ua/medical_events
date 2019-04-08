@@ -9,6 +9,7 @@ defmodule Core.Patients do
   alias Core.Device
   alias Core.DiagnosticReport
   alias Core.Encounter
+  alias Core.Encryptor
   alias Core.Episode
   alias Core.Immunization
   alias Core.Jobs
@@ -28,7 +29,6 @@ defmodule Core.Patients do
   alias Core.Patients.Encounters
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
-  alias Core.Patients.Encryptor
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.Immunizations.Reaction
