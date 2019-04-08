@@ -26,6 +26,7 @@ defmodule Core.Patients.DiagnosticReports do
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
+  alias Core.Validators.Vex
   alias EView.Views.ValidationError
   alias Scrivener.Page
   require Logger
