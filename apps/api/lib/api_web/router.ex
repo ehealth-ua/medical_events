@@ -90,6 +90,7 @@ defmodule ApiWeb.Router do
     patch("/patients/:patient_id/episodes/:id/actions/close", EpisodeController, :close)
     patch("/patients/:patient_id/episodes/:id/actions/cancel", EpisodeController, :cancel)
     patch("/patients/:patient_id/encounter_package", EncounterController, :cancel)
+    patch("/patients/:patient_id/diagnostic_report_package", DiagnosticReportController, :cancel)
 
     get(
       "/patients/:patient_id/episodes/:episode_id/service_requests/:service_request_id",

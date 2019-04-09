@@ -80,6 +80,77 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
   end
 
+  describe "cancel package" do
+    test "patient not found", %{conn: conn} do
+      conn = post(conn, diagnostic_report_path(conn, :cancel, UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = post(conn, diagnostic_report_path(conn, :cancel, patient_id))
+      assert json_response(conn, 409)
+    end
+
+    test "no signed data set", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      conn = post(conn, diagnostic_report_path(conn, :cancel, patient_id))
+      assert response = json_response(conn, 422)
+
+      assert [
+               %{
+                 "entry" => "$.signed_data",
+                 "entry_type" => "json_data_property",
+                 "rules" => [
+                   %{
+                     "description" => "required property signed_data was not present",
+                     "params" => [],
+                     "rule" => "required"
+                   }
+                 ]
+               }
+             ] = response["error"]["invalid"]
+    end
+
+    test "success", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      conn =
+        post(conn, diagnostic_report_path(conn, :cancel, patient_id), %{
+          "signed_data" => Base.encode64(Jason.encode!(%{}))
+        })
+
+      assert response = json_response(conn, 202)
+
+      assert %{
+               "data" => %{
+                 "id" => _,
+                 "inserted_at" => _,
+                 "status" => "pending",
+                 "updated_at" => _
+               }
+             } = response
+    end
+  end
+
   describe "show diagnostic report" do
     test "successful show", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
