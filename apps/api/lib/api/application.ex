@@ -14,6 +14,16 @@ defmodule Api.Application do
       # worker(Api.Worker, [arg1, arg2, arg3]),
     ]
 
+    children =
+      if Application.get_env(:api, :env) == :prod do
+        children ++
+          [
+            {Cluster.Supervisor, [Application.get_env(:api, :topologies), [name: Api.ClusterSupervisor]]}
+          ]
+      else
+        children
+      end
+
     opts = [strategy: :one_for_one, name: Api.Supervisor]
     Supervisor.start_link(children, opts)
   end

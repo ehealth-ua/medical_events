@@ -24,4 +24,20 @@ config :phoenix, :format_encoders, json: Jason
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
+config :api, env: Mix.env()
+
+config :api,
+  topologies: [
+    k8s_transactions: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "me_transactions",
+        kubernetes_selector: "app=me-transactions",
+        kubernetes_namespace: "me",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
+
 import_config "#{Mix.env()}.exs"
