@@ -59,6 +59,12 @@ defmodule Core.Observations do
     |> Enum.map(&Observation.create/1)
   end
 
+  def get_by_diagnostic_report_id(patient_id_hash, %BSON.Binary{} = diagnostic_report_id) do
+    @observation_collection
+    |> Mongo.find(%{"patient_id" => patient_id_hash, "diagnostic_report.identifier.value" => diagnostic_report_id})
+    |> Enum.map(&Observation.create/1)
+  end
+
   def list(params) do
     json_params = Map.drop(params, ~w(page page_size patient_id patient_id_hash))
 

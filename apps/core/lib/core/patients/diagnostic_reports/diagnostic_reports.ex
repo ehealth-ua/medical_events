@@ -5,6 +5,7 @@ defmodule Core.Patients.DiagnosticReports do
   alias Core.Encounter
   alias Core.Executor
   alias Core.Jobs
+  alias Core.Jobs.DiagnosticReportPackageCancelJob
   alias Core.Jobs.DiagnosticReportPackageCreateJob
   alias Core.Maybe
   alias Core.Mongo
@@ -13,6 +14,7 @@ defmodule Core.Patients.DiagnosticReports do
   alias Core.Paging
   alias Core.Patient
   alias Core.Patients
+  alias Core.Patients.DiagnosticReports.Cancel, as: CancelDiagnosticReport
   alias Core.Patients.DiagnosticReports.Package
   alias Core.Patients.DiagnosticReports.Validations, as: DiagnosticReportValidations
   alias Core.Patients.Encounters
@@ -319,6 +321,20 @@ defmodule Core.Patients.DiagnosticReports do
     end
   end
 
+  def produce_cancel_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
+    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+         :ok <- Validators.is_active(patient),
+         :ok <- JsonSchema.validate(:diagnostic_report_package_cancel, Map.take(params, ["signed_data"])),
+         {:ok, job, diagnostic_report_package_cancel_job} <-
+           Jobs.create(
+             DiagnosticReportPackageCancelJob,
+             params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
+           ),
+         :ok <- @kafka_producer.publish_medical_event(diagnostic_report_package_cancel_job) do
+      {:ok, job}
+    end
+  end
+
   def consume_create_package(
         %DiagnosticReportPackageCreateJob{
           patient_id: patient_id,
@@ -391,6 +407,40 @@ defmodule Core.Patients.DiagnosticReports do
 
       {_, response, status} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status)
+    end
+  end
+
+  def consume_cancel_package(
+        %DiagnosticReportPackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job
+      ) do
+    with {:ok, data} <- decode_signed_data(job.signed_data),
+         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+         :ok <- JsonSchema.validate(:diagnostic_report_package_cancel_signed_content, content),
+         :ok <- OneOf.validate(content, @one_of_request_params),
+         employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
+         diagnostic_report_id <- content["diagnostic_report"]["id"],
+         :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
+         {_, %{} = patient} <- {:patient, Patients.get_by_id(patient_id_hash)},
+         {_, {:ok, %DiagnosticReport{} = diagnostic_report}} <-
+           {:diagnostic_report, get_by_id(patient_id_hash, diagnostic_report_id)},
+         :ok <- CancelDiagnosticReport.validate(content, diagnostic_report, patient_id_hash),
+         :ok <- CancelDiagnosticReport.save(patient, content, diagnostic_report_id, job) do
+      :ok
+    else
+      {:error, %{"error" => error, "meta" => _}} ->
+        Jobs.produce_update_status(job._id, job.request_id, error, 422)
+
+      {:patient, _} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Patient not found", 404)
+
+      {:diagnostic_report, _} ->
+        Jobs.produce_update_status(job._id, job.request_id, "Diagnostic report not found", 404)
+
+      {:error, error} ->
+        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {_, response, status_code} ->
+        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
     end
   end
 

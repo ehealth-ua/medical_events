@@ -30,4 +30,14 @@ defmodule Api.Web.DiagnosticReportController do
       |> render("create.json", job: job)
     end
   end
+
+  def cancel(conn, params) do
+    with {:ok, job} <-
+           DiagnosticReports.produce_cancel_package(params, conn.private[:user_id], conn.private[:client_id]) do
+      conn
+      |> put_status(202)
+      |> put_view(JobView)
+      |> render("cancel.json", job: job)
+    end
+  end
 end

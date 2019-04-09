@@ -6,6 +6,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
   alias Core.Jobs.ApprovalResendJob
+  alias Core.Jobs.DiagnosticReportPackageCancelJob
   alias Core.Jobs.DiagnosticReportPackageCreateJob
   alias Core.Jobs.EpisodeCancelJob
   alias Core.Jobs.EpisodeCloseJob
@@ -94,6 +95,10 @@ defmodule Core.Kafka.Consumer do
 
   def consume(%DiagnosticReportPackageCreateJob{} = diagnostic_report_package_create_job) do
     do_consume(DiagnosticReports, :consume_create_package, diagnostic_report_package_create_job)
+  end
+
+  def consume(%DiagnosticReportPackageCancelJob{} = diagnostic_report_package_cancel_job) do
+    do_consume(DiagnosticReports, :consume_cancel_package, diagnostic_report_package_cancel_job)
   end
 
   def consume(value) do
