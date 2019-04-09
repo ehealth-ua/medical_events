@@ -18,7 +18,7 @@ defmodule Api.Application do
       if Application.get_env(:api, :env) == :prod do
         children ++
           [
-            {Cluster.Supervisor, [Application.get_env(:api, :topologies), [name: Api.ClusterSupervisor]]}
+            {Cluster.Supervisor, [Application.get_env(:core, :topologies), [name: Api.ClusterSupervisor]]}
           ]
       else
         children
