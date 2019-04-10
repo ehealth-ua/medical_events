@@ -750,7 +750,8 @@ defmodule Core.Factories do
       occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
       performer_type:
         codeable_concept_coding(system: "eHealth/SNOMED/service_request_performer_roles", code: "psychiatrist"),
-      requester: reference_coding(system: "eHealth/resources", code: "employee"),
+      requester_employee: reference_coding(system: "eHealth/resources", code: "employee"),
+      requester_legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       authored_on: DateTime.to_iso8601(DateTime.utc_now()),
       subject: patient_id,
       inserted_by: Mongo.string_to_uuid(user_id),

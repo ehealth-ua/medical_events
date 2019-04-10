@@ -130,11 +130,22 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             ]
           },
           %{
-            "entry" => "$.requester",
+            "entry" => "$.requester_employee",
             "entry_type" => "json_data_property",
             "rules" => [
               %{
-                "description" => "required property requester was not present",
+                "description" => "required property requester_employee was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.requester_legal_entity",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property requester_legal_entity was not present",
                 "params" => [],
                 "rule" => "required"
               }
@@ -232,10 +243,16 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         },
         "authored_on" => authored_on,
-        "requester" => %{
+        "requester_employee" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
             "value" => employee_id
+          }
+        },
+        "requester_legal_entity" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+            "value" => client_id
           }
         },
         "performer_type" => %{
@@ -318,10 +335,16 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         },
         "authored_on" => authored_on,
-        "requester" => %{
+        "requester_employee" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
             "value" => employee_id
+          }
+        },
+        "requester_legal_entity" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+            "value" => client_id
           }
         },
         "performer_type" => %{
@@ -351,7 +374,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.requester.identifier.value",
+              "entry" => "$.service_request.requester_employee.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
@@ -417,10 +440,16 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         },
         "authored_on" => authored_on,
-        "requester" => %{
+        "requester_employee" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
             "value" => employee_id
+          }
+        },
+        "requester_legal_entity" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+            "value" => client_id
           }
         },
         "permitted_resources" => [
@@ -548,10 +577,16 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         },
         "authored_on" => authored_on,
-        "requester" => %{
+        "requester_employee" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
             "value" => employee_id
+          }
+        },
+        "requester_legal_entity" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+            "value" => client_id
           }
         },
         "performer_type" => %{
@@ -633,10 +668,16 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           }
         },
         "authored_on" => authored_on,
-        "requester" => %{
+        "requester_employee" => %{
           "identifier" => %{
             "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
             "value" => employee_id
+          }
+        },
+        "requester_legal_entity" => %{
+          "identifier" => %{
+            "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
+            "value" => client_id
           }
         },
         "performer_type" => %{
