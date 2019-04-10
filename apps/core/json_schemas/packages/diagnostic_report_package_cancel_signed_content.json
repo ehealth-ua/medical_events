@@ -1393,6 +1393,45 @@
             }
           },
           "additionalProperties": false
+        },
+        "explanatory_letter": {
+          "type": "string"
+        },
+        "cancellation_reason": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "system": {
+                    "type": "string",
+                    "enum": [
+                      "eHealth/cancellation_reasons"
+                    ]
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Dictionary: eHealth/cancellation_reasons"
+                  }
+                },
+                "required": [
+                  "code",
+                  "system"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "coding"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1402,7 +1441,9 @@
         "issued",
         "recorded_by",
         "primary_source",
-        "managing_organization"
+        "managing_organization",
+        "explanatory_letter",
+        "cancellation_reason"
       ],
       "additionalProperties": false
     }

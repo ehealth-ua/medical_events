@@ -33,6 +33,11 @@ defmodule Core.DiagnosticReport do
     field(:conclusion)
     field(:conclusion_code, dictionary_reference: [path: "conclusion_code", referenced_field: "system", field: "code"])
     field(:signed_content_links)
+    field(:explanatory_letter)
+
+    field(:cancellation_reason,
+      dictionary_reference: [path: "cancellation_reason", referenced_field: "system", field: "code"]
+    )
 
     timestamps()
     changed_by()
@@ -119,6 +124,9 @@ defmodule Core.DiagnosticReport do
 
         {"conclusion_code", v} ->
           {:conclusion_code, CodeableConcept.create(v)}
+
+        {"cancellation_reason", v} ->
+          {:cancellation_reason, CodeableConcept.create(v)}
 
         {k, v} ->
           {String.to_atom(k), v}
