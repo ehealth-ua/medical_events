@@ -269,7 +269,7 @@
       "type": "string",
       "format": "date-time"
     },
-    "requester": {
+    "requester_employee": {
       "type": "object",
       "properties": {
         "identifier": {
@@ -294,6 +294,76 @@
                         "type": "string",
                         "enum": [
                           "employee"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
+            },
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "display_value": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "presentation text"
+        }
+      },
+      "required": [
+        "identifier"
+      ],
+      "additionalProperties": false
+    },
+    "requester_legal_entity": {
+      "type": "object",
+      "properties": {
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "legal_entity"
                         ]
                       }
                     },
@@ -762,7 +832,8 @@
     "code",
     "context",
     "authored_on",
-    "requester",
+    "requester_employee",
+    "requester_legal_entity",
     "status_reason",
     "expiration_date",
     "note",

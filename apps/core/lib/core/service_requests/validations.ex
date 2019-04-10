@@ -10,16 +10,16 @@ defmodule Core.ServiceRequests.Validations do
 
   def validate_signatures(%ServiceRequest{} = service_request, %{"drfo" => drfo}, user_id, client_id) do
     if DigitalSignature.config()[:enabled] do
-      requester = service_request.requester
+      requester_employee = service_request.requester_employee
 
       identifier =
         add_validations(
-          requester.identifier,
+          requester_employee.identifier,
           :value,
           drfo: [drfo: drfo, client_id: client_id, user_id: user_id]
         )
 
-      %{service_request | requester: %{requester | identifier: identifier}}
+      %{service_request | requester_employee: %{requester_employee | identifier: identifier}}
     else
       service_request
     end
@@ -224,5 +224,17 @@ defmodule Core.ServiceRequests.Validations do
       end
 
     %{service_request | completed_with: %{completed_with | identifier: identifier}}
+  end
+
+  def validate_requester_legal_entity(
+        %ServiceRequest{requester_legal_entity: requester_legal_entity} = service_request,
+        client_id
+      ) do
+    identifier =
+      add_validations(requester_legal_entity.identifier, :value,
+        value: [equals: client_id, message: "Must be current legal enity"]
+      )
+
+    %{service_request | requester_legal_entity: %{requester_legal_entity | identifier: identifier}}
   end
 end

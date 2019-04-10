@@ -46,7 +46,8 @@ defmodule Core.ServiceRequest do
     field(:context, reference: [path: "context"])
     field(:occurrence, reference: [path: "occurrence"])
     field(:authored_on, presence: true, reference: [path: "authored_on"])
-    field(:requester, presence: true, reference: [path: "requester"])
+    field(:requester_employee, presence: true, reference: [path: "requester_employee"])
+    field(:requester_legal_entity, presence: true, reference: [path: "requester_legal_entity"])
     field(:priority)
 
     field(:performer_type,
@@ -85,8 +86,11 @@ defmodule Core.ServiceRequest do
         {"code", v} ->
           {:code, CodeableConcept.create(v)}
 
-        {"requester", v} ->
-          {:requester, Reference.create(v)}
+        {"requester_employee", v} ->
+          {:requester_employee, Reference.create(v)}
+
+        {"requester_legal_entity", v} ->
+          {:requester_legal_entity, Reference.create(v)}
 
         {"context", v} ->
           {:context, Reference.create(v)}

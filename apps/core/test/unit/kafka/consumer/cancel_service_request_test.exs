@@ -144,11 +144,22 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
             ]
           },
           %{
-            "entry" => "$.requester",
+            "entry" => "$.requester_employee",
             "entry_type" => "json_data_property",
             "rules" => [
               %{
-                "description" => "required property requester was not present",
+                "description" => "required property requester_employee was not present",
+                "params" => [],
+                "rule" => "required"
+              }
+            ]
+          },
+          %{
+            "entry" => "$.requester_legal_entity",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "required property requester_legal_entity was not present",
                 "params" => [],
                 "rule" => "required"
               }
@@ -304,7 +315,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "code" => ReferenceView.render(service_request.code),
           "context" => ReferenceView.render(service_request.context),
           "authored_on" => service_request.authored_on,
-          "requester" => ReferenceView.render(service_request.requester),
+          "requester_employee" => ReferenceView.render(service_request.requester_employee),
+          "requester_legal_entity" => ReferenceView.render(service_request.requester_legal_entity),
           "performer_type" => ReferenceView.render(service_request.performer_type),
           "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "1"}]},
           "note" => "invalid",
@@ -361,7 +373,7 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
       %BSON.Binary{binary: id} = service_request._id
       service_request_id = UUID.binary_to_string!(id)
       insert(:patient, _id: patient_id_hash)
-      employee_id = to_string(service_request.requester.identifier.value)
+      employee_id = to_string(service_request.requester_employee.identifier.value)
 
       expect_otp_verification_send_sms()
 
@@ -394,7 +406,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "code" => ReferenceView.render(service_request.code),
           "context" => ReferenceView.render(service_request.context),
           "authored_on" => service_request.authored_on,
-          "requester" => ReferenceView.render(service_request.requester),
+          "requester_employee" => ReferenceView.render(service_request.requester_employee),
+          "requester_legal_entity" => ReferenceView.render(service_request.requester_legal_entity),
           "performer_type" => ReferenceView.render(service_request.performer_type),
           "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "1"}]},
           "note" => service_request.note,
@@ -499,7 +512,8 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
           "code" => ReferenceView.render(service_request.code),
           "context" => ReferenceView.render(service_request.context),
           "authored_on" => service_request.authored_on,
-          "requester" => ReferenceView.render(service_request.requester),
+          "requester_employee" => ReferenceView.render(service_request.requester_employee),
+          "requester_legal_entity" => ReferenceView.render(service_request.requester_legal_entity),
           "performer_type" => ReferenceView.render(service_request.performer_type),
           "status_reason" => %{"coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "1"}]},
           "note" => service_request.note,
