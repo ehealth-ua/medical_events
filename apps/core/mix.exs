@@ -43,7 +43,6 @@ defmodule Core.MixProject do
   defp deps do
     [
       {:kube_rpc, "~> 0.1.0"},
-      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:confex, "~> 3.4"},
       {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:elixir_uuid, "~> 1.2"},
