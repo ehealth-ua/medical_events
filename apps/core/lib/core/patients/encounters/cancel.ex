@@ -743,7 +743,7 @@ defmodule Core.Patients.Encounters.Cancel do
   defp render(:diagnostic_reports, diagnostic_reports) do
     Enum.map(diagnostic_reports, fn diagnostic_report ->
       diagnostic_report
-      |> Map.take(~w(primary_source conclusion)a)
+      |> Map.take(~w(primary_source conclusion explanatory_letter)a)
       |> Map.merge(%{
         id: UUIDView.render(diagnostic_report.id),
         based_on: ReferenceView.render(diagnostic_report.based_on),
@@ -755,7 +755,8 @@ defmodule Core.Patients.Encounters.Cancel do
         recorded_by: ReferenceView.render(diagnostic_report.recorded_by),
         results_interpreter: ReferenceView.render(diagnostic_report.results_interpreter),
         managing_organization: ReferenceView.render(diagnostic_report.managing_organization),
-        conclusion_code: ReferenceView.render(diagnostic_report.conclusion_code)
+        conclusion_code: ReferenceView.render(diagnostic_report.conclusion_code),
+        cancellation_reason: ReferenceView.render(diagnostic_report.cancellation_reason)
       })
       |> Map.merge(ReferenceView.render_effective_at(diagnostic_report.effective))
       |> Map.merge(ReferenceView.render_source(diagnostic_report.source))

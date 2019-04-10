@@ -299,6 +299,8 @@ defmodule Core.Factories do
       conclusion: "conclusion",
       conclusion_code: codeable_concept_coding(system: "eHealth/SNOMED/clinical_findings", code: "109006"),
       signed_content_links: [],
+      cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
+      explanatory_letter: "some explanations",
       inserted_at: now,
       updated_at: now,
       inserted_by: id,

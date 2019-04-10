@@ -76,10 +76,16 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
           |> BSON.decode()
 
         diagnostic_reports_status = "diagnostic_reports.#{diagnostic_report_id}.status"
+        diagnostic_reports_explanatory_letter = "diagnostic_reports.#{diagnostic_report_id}.explanatory_letter"
+        diagnostic_reports_cancellation_reason = "diagnostic_reports.#{diagnostic_report_id}.cancellation_reason"
 
         assert %{
                  "$set" => %{
-                   ^diagnostic_reports_status => @entered_in_error
+                   ^diagnostic_reports_status => @entered_in_error,
+                   ^diagnostic_reports_cancellation_reason => %{
+                     "coding" => [%{"system" => "eHealth/cancellation_reasons", "code" => "misspelling"}]
+                   },
+                   ^diagnostic_reports_explanatory_letter => "some explanations"
                  }
                } = patient_set
 

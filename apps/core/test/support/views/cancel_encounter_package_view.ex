@@ -238,6 +238,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       status
       primary_source
       conclusion
+      explanatory_letter
     )a
 
     for diagnostic_report <- diagnostic_reports do
@@ -252,7 +253,8 @@ defmodule Core.TestViews.CancelEncounterPackageView do
         recorded_by: ReferenceView.render(diagnostic_report.recorded_by),
         results_interpreter: ReferenceView.render(diagnostic_report.results_interpreter),
         managing_organization: ReferenceView.render(diagnostic_report.managing_organization),
-        conclusion_code: ReferenceView.render(diagnostic_report.conclusion_code)
+        conclusion_code: ReferenceView.render(diagnostic_report.conclusion_code),
+        cancellation_reason: ReferenceView.render(diagnostic_report.cancellation_reason)
       }
 
       diagnostic_report
