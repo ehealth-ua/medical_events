@@ -8,10 +8,15 @@ defmodule Core.Encryptor do
   def encrypt(nil), do: nil
 
   def encrypt(data) when is_binary(data) do
-    id =
-      data
-      |> UUID.string_to_binary!()
-      |> pad(@aes_block_size)
+    data
+    |> UUID.string_to_binary!()
+    |> do_encrypt()
+  rescue
+    ArgumentError -> do_encrypt(data)
+  end
+
+  defp do_encrypt(data) do
+    id = pad(data, @aes_block_size)
 
     :aes_cbc128
     |> :crypto.block_encrypt(config()[:keyphrase], config()[:ivphrase], id)
@@ -20,11 +25,19 @@ defmodule Core.Encryptor do
     ArgumentError -> nil
   end
 
-  def decrypt(data) do
+  def decrypt(nil), do: nil
+
+  def decrypt(data) when is_binary(data) do
     :aes_cbc128
     |> :crypto.block_decrypt(config()[:keyphrase], config()[:ivphrase], Base.decode16!(data))
     |> unpad()
-    |> UUID.binary_to_string!()
+    |> do_decrypt()
+  end
+
+  defp do_decrypt(data) do
+    UUID.binary_to_string!(data)
+  rescue
+    ArgumentError -> data
   end
 
   def pad(data, block_size) do
