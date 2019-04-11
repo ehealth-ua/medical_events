@@ -11,12 +11,14 @@ defmodule Core.Migrations.ServiceRequestsRequisitionNumberIntoHash do
   def change do
     count =
       @collection
-      |> Mongo.find(%{"requisition" => %{"$exists" => true}}, projection: %{"_id" => true, "requisition" => true})
+      |> Mongo.find(%{"requisition" => %{"$ne" => nil}, "$expr" => %{"$lt" => [%{"$strLenCP" => "$requisition"}, 64]}},
+        projection: %{"_id" => true, "requisition" => true}
+      )
       |> Enum.reduce(0, fn service_request, acc ->
-        acc = acc + update_service_request(service_request)
+        acc + update_service_request(service_request)
       end)
 
-    Logger.info("Service request requisition number convertation process finished: #{count} entities")
+    Logger.info("Service request requisition number convertation process finished: #{count} updated")
   end
 
   defp update_service_request(%{"_id" => id, "requisition" => requisition}) do
