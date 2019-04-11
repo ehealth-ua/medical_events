@@ -12,11 +12,13 @@ defmodule Api.Rpc do
   alias Core.Patients
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
+  alias Core.Patients.DiagnosticReports
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
+  alias Core.ServiceRequests
 
   @status_active Approval.status(:active)
 
@@ -1768,6 +1770,383 @@ defmodule Api.Rpc do
     with {:ok, medication_statement} <- MedicationStatements.get_by_id(patient_id_hash, medication_statement_id),
          {:ok, encounter} <-
            Encounters.get_by_id(patient_id_hash, to_string(medication_statement.context.identifier.value)),
+         {:ok, episode} <- Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value)) do
+      {:ok, EpisodeView.render("show.json", %{episode: episode})}
+    end
+  end
+
+  @doc """
+  Get episode by patient id, service request id
+
+  ## Examples
+
+      iex> Api.Rpc.episode_by_service_request_id(
+        "26e673e1-1d68-413e-b96c-407b45d9f572",
+        "6b4ed713-890e-4d38-80f9-37965989b25d"
+      )
+      {:ok,
+      %{
+        care_manager: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "employee", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "72de5580-35c6-4df0-a7fd-27fa7c89681a"
+          }
+        },
+        closing_summary: "closing summary",
+        current_diagnoses: [
+          %{
+            code: %{
+              coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+              text: "code text"
+            },
+            condition: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "condition", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "636f1b63-687a-4e1c-8bba-df82161d6431"
+              }
+            },
+            rank: 980,
+            role: %{
+              coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+              text: "code text"
+            }
+          },
+          %{
+            code: %{
+              coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+              text: "code text"
+            },
+            condition: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "condition", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "11533d47-29c2-413e-bb1b-d993872ce30a"
+              }
+            },
+            rank: 738,
+            role: %{
+              coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+              text: "code text"
+            }
+          }
+        ],
+        diagnoses_history: [
+          %{
+            date: ~D[2019-04-11],
+            diagnoses: [
+              %{
+                code: %{
+                  coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+                  text: "code text"
+                },
+                condition: %{
+                  display_value: nil,
+                  identifier: %{
+                    type: %{
+                      coding: [%{code: "condition", system: "eHealth/resources"}],
+                      text: "code text"
+                    },
+                    value: "636f1b63-687a-4e1c-8bba-df82161d6431"
+                  }
+                },
+                rank: 980,
+                role: %{
+                  coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+                  text: "code text"
+                }
+              },
+              %{
+                code: %{
+                  coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+                  text: "code text"
+                },
+                condition: %{
+                  display_value: nil,
+                  identifier: %{
+                    type: %{
+                      coding: [%{code: "condition", system: "eHealth/resources"}],
+                      text: "code text"
+                    },
+                    value: "11533d47-29c2-413e-bb1b-d993872ce30a"
+                  }
+                },
+                rank: 738,
+                role: %{
+                  coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+                  text: "code text"
+                }
+              }
+            ],
+            evidence: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "1", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "bae90976-c5ef-4a6e-8ea1-cff42541fe26"
+              }
+            },
+            is_active: true
+          }
+        ],
+        explanatory_letter: "explanatory letter",
+        id: "732462af-9a55-4a2a-88c3-fa55ad83f43d",
+        inserted_at: #DateTime<2019-04-11 13:06:58.692Z>,
+        managing_organization: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "legal_entity", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "e89667f9-d0a1-46c8-b3cb-53faa33d5f46"
+          }
+        },
+        name: "ОРВИ 2018",
+        period: %{end: "2019-04-11", start: "2019-04-11"},
+        referral_requests: [
+          %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "service_request", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "a4f82537-af3e-48bd-bb7b-467c015e50f8"
+            }
+          }
+        ],
+        status: "active",
+        status_history: [
+          %{
+            inserted_at: "2019-04-11T13:06:58.692Z",
+            inserted_by: "0beb742e-4511-440f-9f96-3f725686ef01",
+            status: "active",
+            status_reason: %{
+              coding: [%{code: "1", system: "eHealth/episode_closing_reasons"}],
+              text: "code text"
+            }
+          }
+        ],
+        status_reason: %{
+          coding: [%{code: "1", system: "eHealth/resources"}],
+          text: "code text"
+        },
+        type: %{code: "primary_care", system: "eHealth/episode_types"},
+        updated_at: #DateTime<2019-04-11 13:06:58.692Z>
+      }}
+  """
+  @spec episode_by_service_request_id(
+          patient_id :: binary(),
+          service_request_id :: binary()
+        ) :: nil | {:ok, episode}
+  def episode_by_service_request_id(patient_id, service_request_id) do
+    patient_id_hash = Patients.get_pk_hash(patient_id)
+
+    with {:ok, service_request} <- ServiceRequests.get_by_id(service_request_id),
+         {:ok, encounter} <-
+           Encounters.get_by_id(patient_id_hash, to_string(service_request.context.identifier.value)),
+         {:ok, episode} <- Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value)) do
+      {:ok, EpisodeView.render("show.json", %{episode: episode})}
+    end
+  end
+
+  @doc """
+  Get episode by patient id, diagnostic report id
+
+  ## Examples
+
+      iex> Api.Rpc.episode_by_diagnostic_report_id(
+        "26e673e1-1d68-413e-b96c-407b45d9f572",
+        "6b4ed713-890e-4d38-80f9-37965989b25d"
+      )
+      {:ok,
+      %{
+        care_manager: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "employee", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "616aa065-ba7c-478b-a907-82b1b33c91d1"
+          }
+        },
+        closing_summary: "closing summary",
+        current_diagnoses: [
+          %{
+            code: %{
+              coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+              text: "code text"
+            },
+            condition: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "condition", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "87c4b0dd-0c64-4476-8fbd-5554f44886bf"
+              }
+            },
+            rank: 181,
+            role: %{
+              coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+              text: "code text"
+            }
+          },
+          %{
+            code: %{
+              coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+              text: "code text"
+            },
+            condition: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "condition", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "86dfc4ec-79fb-4b04-9c31-e019d76c94a5"
+              }
+            },
+            rank: 477,
+            role: %{
+              coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+              text: "code text"
+            }
+          }
+        ],
+        diagnoses_history: [
+          %{
+            date: ~D[2019-04-11],
+            diagnoses: [
+              %{
+                code: %{
+                  coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+                  text: "code text"
+                },
+                condition: %{
+                  display_value: nil,
+                  identifier: %{
+                    type: %{
+                      coding: [%{code: "condition", system: "eHealth/resources"}],
+                      text: "code text"
+                    },
+                    value: "87c4b0dd-0c64-4476-8fbd-5554f44886bf"
+                  }
+                },
+                rank: 181,
+                role: %{
+                  coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+                  text: "code text"
+                }
+              },
+              %{
+                code: %{
+                  coding: [%{code: "R80", system: "eHealth/ICPC2/condition_codes"}],
+                  text: "code text"
+                },
+                condition: %{
+                  display_value: nil,
+                  identifier: %{
+                    type: %{
+                      coding: [%{code: "condition", system: "eHealth/resources"}],
+                      text: "code text"
+                    },
+                    value: "86dfc4ec-79fb-4b04-9c31-e019d76c94a5"
+                  }
+                },
+                rank: 477,
+                role: %{
+                  coding: [%{code: "primary", system: "eHealth/diagnosis_roles"}],
+                  text: "code text"
+                }
+              }
+            ],
+            evidence: %{
+              display_value: nil,
+              identifier: %{
+                type: %{
+                  coding: [%{code: "1", system: "eHealth/resources"}],
+                  text: "code text"
+                },
+                value: "b4c39de6-e30f-4672-be8c-7defbef7d672"
+              }
+            },
+            is_active: true
+          }
+        ],
+        explanatory_letter: "explanatory letter",
+        id: "0113d298-103b-48ce-ad72-561c84327d0e",
+        inserted_at: #DateTime<2019-04-11 13:25:23.044Z>,
+        managing_organization: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "legal_entity", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "36f27d27-138e-41f7-90db-5b9b545e3253"
+          }
+        },
+        name: "ОРВИ 2018",
+        period: %{end: "2019-04-11", start: "2019-04-11"},
+        referral_requests: [
+          %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "service_request", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "c7222be0-b3d1-4ab3-b826-f5b7bbfedc7f"
+            }
+          }
+        ],
+        status: "active",
+        status_history: [
+          %{
+            inserted_at: "2019-04-11T13:25:23.044Z",
+            inserted_by: "59d0571c-0aba-483c-99ca-bb5d975a1cbb",
+            status: "active",
+            status_reason: %{
+              coding: [%{code: "1", system: "eHealth/episode_closing_reasons"}],
+              text: "code text"
+            }
+          }
+        ],
+        status_reason: %{
+          coding: [%{code: "1", system: "eHealth/resources"}],
+          text: "code text"
+        },
+        type: %{code: "primary_care", system: "eHealth/episode_types"},
+        updated_at: #DateTime<2019-04-11 13:25:23.044Z>
+      }}
+
+  """
+  @spec episode_by_diagnostic_report_id(
+          patient_id :: binary(),
+          diagnostic_report_id :: binary()
+        ) :: nil | {:ok, episode}
+  def episode_by_diagnostic_report_id(patient_id, diagnostic_report_id) do
+    patient_id_hash = Patients.get_pk_hash(patient_id)
+
+    with {:ok, diagnostic_report} <- DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report_id),
+         {:ok, encounter} <-
+           Encounters.get_by_id(patient_id_hash, to_string(diagnostic_report.encounter.identifier.value)),
          {:ok, episode} <- Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value)) do
       {:ok, EpisodeView.render("show.json", %{episode: episode})}
     end

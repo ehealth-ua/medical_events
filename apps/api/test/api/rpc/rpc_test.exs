@@ -415,6 +415,95 @@ defmodule Api.Rpc.RpcTest do
     end
   end
 
+  describe "episode_by_service_request_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_service_request_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      encounter_id = to_string(encounter_1.id)
+
+      service_request_1 =
+        insert(:service_request,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter")
+        )
+
+      insert(:service_request)
+      service_request_id = to_string(service_request_1._id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2}
+      )
+
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_service_request_id(patient_id, service_request_id)
+    end
+  end
+
+  describe "episode_by_diagnostic_report_id/2" do
+    test "episode not found" do
+      refute Rpc.episode_by_diagnostic_report_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "episode was found" do
+      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      encounter_id = to_string(encounter_1.id)
+
+      diagnostic_report_1 =
+        build(:diagnostic_report,
+          encounter: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter")
+        )
+
+      diagnostic_report_2 = build(:diagnostic_report)
+      diagnostic_report_id = to_string(diagnostic_report_1.id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        diagnostic_reports: %{
+          diagnostic_report_id => diagnostic_report_1,
+          to_string(diagnostic_report_2.id) => diagnostic_report_2
+        },
+        encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2}
+      )
+
+      assert {:ok, %{id: ^episode_id}} =
+               Rpc.episode_by_diagnostic_report_id(patient_id, diagnostic_report_id) |> IO.inspect()
+    end
+  end
+
   describe "approvals_by_episode/3" do
     test "success get approvals by episode" do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
