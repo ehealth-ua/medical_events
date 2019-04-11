@@ -107,6 +107,7 @@ defmodule ApiWeb.Router do
     get("/service_requests", ServiceRequestController, :search)
 
     scope "/patients/:patient_id/service_requests" do
+      get("/", ServiceRequestController, :patient_context_search)
       post("/", ServiceRequestController, :create)
       patch("/:service_request_id/actions/recall", ServiceRequestController, :recall)
       patch("/:service_request_id/actions/cancel", ServiceRequestController, :cancel)

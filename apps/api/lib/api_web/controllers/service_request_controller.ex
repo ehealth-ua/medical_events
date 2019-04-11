@@ -12,20 +12,26 @@ defmodule Api.Web.ServiceRequestController do
   action_fallback(Api.Web.FallbackController)
 
   def index(conn, params) do
-    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.list(params) do
+    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.list(params, :service_request_list) do
       render(conn, "index.json", service_requests: entries, paging: paging)
     end
   end
 
-  def show(conn, %{"patient_id_hash" => patient_id_hash, "episode_id" => episode_id, "service_request_id" => id}) do
-    with {:ok, %ServiceRequest{} = service_request} <-
-           ServiceRequests.get_by_episode_id(patient_id_hash, episode_id, id) do
+  def show(conn, params) do
+    with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_episode_id(params) do
       render(conn, "show.json", service_request: service_request)
     end
   end
 
   def search(conn, params) do
-    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.search(params) do
+    with {:ok, %Page{entries: entries} = paging} <- ServiceRequests.list(params, :service_request_search) do
+      render(conn, "index.json", service_requests: entries, paging: paging)
+    end
+  end
+
+  def patient_context_search(conn, params) do
+    with {:ok, %Page{entries: entries} = paging} <-
+           ServiceRequests.list(params, :service_request_patient_context_search) do
       render(conn, "index.json", service_requests: entries, paging: paging)
     end
   end
