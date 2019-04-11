@@ -27,6 +27,58 @@ defmodule Api.Web.ServiceRequestControllerTest do
       assert json_response(conn, 409)
     end
 
+    test "additional params were sent", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      search_params = %{
+        "requisition" => "requisition",
+        "status" => "active",
+        "requester_legal_entity" => UUID.uuid4(),
+        "used_by_legal_entity" => UUID.uuid4()
+      }
+
+      resp =
+        conn
+        |> get(service_request_path(conn, :index, patient_id, episode_id, search_params))
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.requester_legal_entity",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.requisition",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.used_by_legal_entity",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
     test "success get service_request", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -162,6 +214,50 @@ defmodule Api.Web.ServiceRequestControllerTest do
              } = json_response(conn, 422)["error"]
     end
 
+    test "additional params were sent", %{conn: conn} do
+      search_params = %{
+        "patient_id" => UUID.uuid4(),
+        "episode_id" => UUID.uuid4(),
+        "requisition" => "requisition",
+        "status" => "active",
+        "requester_legal_entity" => UUID.uuid4(),
+        "used_by_legal_entity" => UUID.uuid4()
+      }
+
+      resp =
+        conn
+        |> get(service_request_path(conn, :search), search_params)
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.episode_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.patient_id",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.patient_id_hash",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.requester_legal_entity",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
+               %{
+                 "entry" => "$.used_by_legal_entity",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
     test "success search", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
@@ -213,6 +309,189 @@ defmodule Api.Web.ServiceRequestControllerTest do
       response = json_response(conn, 200)
       assert 3 == response["paging"]["total_entries"]
       assert 2 == response["paging"]["page_number"]
+    end
+  end
+
+  describe "search service requests in patient context" do
+    test "patient not found", %{conn: conn} do
+      conn = get(conn, service_request_path(conn, :patient_context_search, UUID.uuid4()))
+      assert json_response(conn, 404)
+    end
+
+    test "patient is not active", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
+
+      conn = get(conn, service_request_path(conn, :patient_context_search, patient_id))
+      assert json_response(conn, 409)
+    end
+
+    test "additional params were sent", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      search_params = %{
+        "episode_id" => UUID.uuid4(),
+        "requisition" => "requisition",
+        "status" => "active",
+        "requester_legal_entity" => UUID.uuid4(),
+        "used_by_legal_entity" => UUID.uuid4()
+      }
+
+      resp =
+        conn
+        |> get(service_request_path(conn, :patient_context_search, patient_id, search_params))
+        |> json_response(422)
+
+      assert [
+               %{
+                 "entry" => "$.requisition",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               }
+             ] = resp["error"]["invalid"]
+    end
+
+    test "success search by episode_id", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      service_request =
+        insert(:service_request,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter"),
+          subject: patient_id_hash
+        )
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+      conn = get(conn, service_request_path(conn, :patient_context_search, patient_id), %{"episode_id" => episode_id})
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+
+    test "success search by status", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      service_request = insert(:service_request, subject: patient_id_hash, status: ServiceRequest.status(:completed))
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+
+      conn =
+        get(conn, service_request_path(conn, :patient_context_search, patient_id), %{
+          "status" => ServiceRequest.status(:completed)
+        })
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+
+    test "success search by requester_legal_entity", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      requester_legal_entity_id = UUID.uuid4()
+
+      service_request =
+        insert(:service_request,
+          subject: patient_id_hash,
+          requester_legal_entity:
+            reference_coding(Mongo.string_to_uuid(requester_legal_entity_id),
+              system: "eHealth/resources",
+              code: "legal_entity"
+            )
+        )
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+
+      conn =
+        get(conn, service_request_path(conn, :patient_context_search, patient_id), %{
+          "requester_legal_entity" => requester_legal_entity_id
+        })
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+
+    test "success search by used_by_legal_entity", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      used_by_legal_entity_id = UUID.uuid4()
+
+      service_request =
+        insert(:service_request,
+          subject: patient_id_hash,
+          used_by_legal_entity:
+            reference_coding(Mongo.string_to_uuid(used_by_legal_entity_id),
+              system: "eHealth/resources",
+              code: "legal_entity"
+            )
+        )
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+
+      conn =
+        get(conn, service_request_path(conn, :patient_context_search, patient_id), %{
+          "used_by_legal_entity" => used_by_legal_entity_id
+        })
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
     end
   end
 
