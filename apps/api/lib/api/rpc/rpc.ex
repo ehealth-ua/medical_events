@@ -5,6 +5,7 @@ defmodule Api.Rpc do
 
   alias Api.Web.ApprovalView
   alias Api.Web.EpisodeView
+  alias Api.Web.ServiceRequestView
   alias Core.Approval
   alias Core.Approvals
   alias Core.Conditions
@@ -102,6 +103,35 @@ defmodule Api.Rpc do
           status_reason: codeable_concept(),
           type: coding(),
           updated_at: DateTime
+        }
+
+  @type service_request() :: %{
+          authored_on: binary(),
+          category: codeable_concept(),
+          code: codeable_concept(),
+          completed_with: reference_(),
+          context: reference_(),
+          expiration_date: DateTime,
+          id: binary(),
+          inserted_at: DateTime,
+          intent: binary(),
+          note: binary(),
+          occurrence_date_time: DateTime,
+          patient_instruction: binary(),
+          performer_type: codeable_concept(),
+          permitted_resources: list(reference_()),
+          priority: binary(),
+          reason_reference: list(reference_()),
+          requester_legal_entity: reference_(),
+          requisition: binary(),
+          status: binary(),
+          status_history: list(status_history()),
+          status_reason: codeable_concept(),
+          subject: binary(),
+          supporting_info: list(reference_()),
+          updated_at: DateTime,
+          used_by_employee: reference_(),
+          used_by_legal_entity: reference_()
         }
 
   @doc """
@@ -2220,5 +2250,101 @@ defmodule Api.Rpc do
   def approvals_by_episode(patient_id, employee_ids, episode_id, status \\ @status_active) do
     approvals = Approvals.get_by_patient_id_granted_to_episode_id_status(patient_id, employee_ids, episode_id, status)
     ApprovalView.render("index.json", %{approvals: approvals})
+  end
+
+  @doc """
+  Get service_request by id
+
+  ## Examples
+
+      iex> Api.Rpc.service_request_by_id("26e673e1-1d68-413e-b96c-407b45d9f572")
+      {:ok,
+      %{
+        authored_on: "2019-04-11T14:32:57.843325Z",
+        category: %{
+          coding: [
+            %{code: "409063005", system: "eHealth/SNOMED/service_request_categories"}
+          ],
+          text: "code text"
+        },
+        code: %{
+          coding: [%{code: "128004", system: "eHealth/SNOMED/procedure_codes"}],
+          text: "code text"
+        },
+        completed_with: nil,
+        context: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "encounter", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "614ae39c-4af5-44e9-8b55-c75db5f31026"
+          }
+        },
+        expiration_date: #DateTime<2019-04-12 23:59:59Z>,
+        id: "2ab3fe49-d6cb-4522-babc-8ffdcce536dc",
+        inserted_at: "2019-04-11T14:32:57.840Z",
+        intent: "plan",
+        note: nil,
+        occurrence_date_time: "2019-04-11T14:32:57.843198Z",
+        patient_instruction: nil,
+        performer_type: %{
+          coding: [
+            %{
+              code: "psychiatrist",
+              system: "eHealth/SNOMED/service_request_performer_roles"
+            }
+          ],
+          text: "code text"
+        },
+        permitted_resources: nil,
+        priority: nil,
+        reason_reference: nil,
+        requester_employee: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "employee", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "85fc5bde-9c2e-4947-a9e4-14ba1706ae12"
+          }
+        },
+        requester_legal_entity: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "legal_entity", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "52850036-2050-499a-b00e-ed9ebcb5e998"
+          }
+        },
+        requisition: "7e6b4f4d-388e-4782-9a32-f20d79292e5b",
+        status: "active",
+        status_history: [],
+        status_reason: nil,
+        subject: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "patient", system: "eHealth/resources"}],
+              text: ""
+            },
+            value: "4187bcd5-a9f0-48f5-914d-f0f1c3579cba"
+          }
+        },
+        supporting_info: nil,
+        updated_at: "2019-04-11T14:32:57.840Z",
+        used_by_employee: nil,
+        used_by_legal_entity: nil
+      }}
+  """
+  @spec service_request_by_id(service_request_id :: binary()) :: nil | {:ok, service_request}
+  def service_request_by_id(service_request_id) do
+    with {:ok, service_request} <- ServiceRequests.get_by_id(service_request_id) do
+      {:ok, ServiceRequestView.render("show.json", %{service_request: service_request})}
+    end
   end
 end

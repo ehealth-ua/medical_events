@@ -236,11 +236,11 @@ defmodule Core.ReferenceView do
   end
 
   def render_occurrence(%Occurrence{type: "date_time", value: value}) do
-    %{"occurrence_date_time" => DateView.render_datetime(value)}
+    %{occurrence_date_time: DateView.render_datetime(value)}
   end
 
   def render_occurrence(%Occurrence{type: "period", value: value}) do
-    %{"occurrence_period" => render(value)}
+    %{occurrence_period: render(value)}
   end
 
   def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do

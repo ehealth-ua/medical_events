@@ -59,6 +59,21 @@ defmodule Api.Rpc.RpcTest do
     end
   end
 
+  describe "service_request_by_id/2" do
+    test "service_request not found" do
+      refute Rpc.service_request_by_id(UUID.uuid4())
+    end
+
+    test "service_request was found" do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+      service_request_1 = insert(:service_request)
+      insert(:service_request)
+      service_request_id = to_string(service_request_1._id)
+
+      assert {:ok, %{id: ^service_request_id}} = Rpc.service_request_by_id(service_request_id)
+    end
+  end
+
   describe "episode_by_encounter_id/2" do
     test "episode not found" do
       refute Rpc.episode_by_encounter_id(UUID.uuid4(), UUID.uuid4())
@@ -499,8 +514,7 @@ defmodule Api.Rpc.RpcTest do
         encounters: %{encounter_id => encounter_1, to_string(encounter_2.id) => encounter_2}
       )
 
-      assert {:ok, %{id: ^episode_id}} =
-               Rpc.episode_by_diagnostic_report_id(patient_id, diagnostic_report_id) |> IO.inspect()
+      assert {:ok, %{id: ^episode_id}} = Rpc.episode_by_diagnostic_report_id(patient_id, diagnostic_report_id)
     end
   end
 
