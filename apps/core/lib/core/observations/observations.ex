@@ -127,37 +127,9 @@ defmodule Core.Observations do
           }
       end
 
-    based_on =
-      case observation.based_on do
-        nil ->
-          nil
-
-        _ ->
-          Enum.map(observation.based_on, fn item ->
-            %{
-              item
-              | identifier: %{
-                  item.identifier
-                  | value: Mongo.string_to_uuid(item.identifier.value)
-                }
-            }
-          end)
-      end
-
-    context =
-      case observation.context do
-        nil ->
-          nil
-
-        _ ->
-          %{
-            observation.context
-            | identifier: %{
-                observation.context.identifier
-                | value: Mongo.string_to_uuid(observation.context.identifier.value)
-              }
-          }
-      end
+    based_on = update_reference_uuid(observation.based_on)
+    context = update_reference_uuid(observation.context)
+    diagnostic_report = update_reference_uuid(observation.diagnostic_report)
 
     context_episode_uuid =
       case observation.context_episode_id do
@@ -172,6 +144,7 @@ defmodule Core.Observations do
         updated_by: Mongo.string_to_uuid(observation.updated_by),
         context_episode_id: context_episode_uuid,
         context: context,
+        diagnostic_report: diagnostic_report,
         source: source,
         based_on: based_on
     }
@@ -230,5 +203,19 @@ defmodule Core.Observations do
         Logger.warn("Failed to fill up employee value for observation")
         nil
     end
+  end
+
+  defp update_reference_uuid(nil), do: nil
+
+  defp update_reference_uuid(value) when is_list(value), do: Enum.map(value, &update_reference_uuid/1)
+
+  defp update_reference_uuid(value) do
+    %{
+      value
+      | identifier: %{
+          value.identifier
+          | value: Mongo.string_to_uuid(value.identifier.value)
+        }
+    }
   end
 end
