@@ -280,13 +280,33 @@ defmodule Api.Web.EncounterControllerTest do
       episode = build(:reference)
       date_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
       date_to = Date.utc_today() |> Date.add(-10) |> Date.to_iso8601()
+      service_request_id = UUID.uuid4()
 
-      encounter_1 = build(:encounter, date: get_datetime(-15), episode: episode)
-      encounter_2 = build(:encounter, date: get_datetime(-15))
-      encounter_3 = build(:encounter, date: get_datetime())
+      service_request1 =
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(system: "eHealth/resources", code: "service_request"),
+              value: Mongo.string_to_uuid(service_request_id)
+            )
+        )
+
+      service_request2 =
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(system: "eHealth/resources", code: "service_request"),
+              value: Mongo.string_to_uuid(UUID.uuid4())
+            )
+        )
+
+      encounter_1 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referrals: [service_request1])
+      encounter_2 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referrals: [service_request2])
+      encounter_3 = build(:encounter, date: get_datetime(-15))
+      encounter_4 = build(:encounter, date: get_datetime())
 
       encounters =
-        [encounter_1, encounter_2, encounter_3]
+        [encounter_1, encounter_2, encounter_3, encounter_4]
         |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = encounter ->
           {UUID.binary_to_string!(id), encounter}
         end)
@@ -297,7 +317,8 @@ defmodule Api.Web.EncounterControllerTest do
       search_params = %{
         "episode_id" => UUID.binary_to_string!(episode.identifier.value.binary),
         "date_from" => date_from,
-        "date_to" => date_to
+        "date_to" => date_to,
+        "incoming_referral" => service_request_id
       }
 
       resp =
@@ -312,6 +333,7 @@ defmodule Api.Web.EncounterControllerTest do
       assert encounter["id"] == UUID.binary_to_string!(encounter_1.id.binary)
       refute encounter["id"] == UUID.binary_to_string!(encounter_2.id.binary)
       refute encounter["id"] == UUID.binary_to_string!(encounter_3.id.binary)
+      refute encounter["id"] == UUID.binary_to_string!(encounter_4.id.binary)
 
       {:ok, datetime, _} = DateTime.from_iso8601(encounter["date"])
       assert Date.compare(Date.from_iso8601!(date_from), DateTime.to_date(datetime)) in [:lt, :eq]

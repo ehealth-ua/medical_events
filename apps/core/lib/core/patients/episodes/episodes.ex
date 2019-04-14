@@ -48,7 +48,6 @@ defmodule Core.Patients.Episodes do
     pipeline
     |> search_period_criterias(params)
     |> search_code(Map.get(params, "code"))
-    |> search_service_request_id(Map.get(params, "service_request_id"))
     |> search_status(Map.get(params, "status"))
   end
 
@@ -123,24 +122,6 @@ defmodule Core.Patients.Episodes do
         %{
           "$match" => %{
             "current_diagnoses.code.coding.code" => code
-          }
-        }
-      ]
-  end
-
-  defp search_service_request_id(pipeline, nil), do: pipeline
-
-  defp search_service_request_id(pipeline, service_request_id) do
-    pipeline ++
-      [
-        %{
-          "$match" => %{
-            "referral_requests" => %{
-              "$elemMatch" => %{
-                "identifier.type.coding.code" => "service_request",
-                "identifier.value" => Mongo.string_to_uuid(service_request_id)
-              }
-            }
           }
         }
       ]
