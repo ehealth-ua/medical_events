@@ -150,6 +150,7 @@ defmodule Core.Patients.Encounters do
       |> Search.add_param(episode_id, ["$match", "#{path}.episode.identifier.value"])
       |> Search.add_param(date_from, ["$match", "#{path}.date"], "$gte")
       |> Search.add_param(date_to, ["$match", "#{path}.date"], "$lt")
+      |> search_by_incoming_referral(params["incoming_referral"])
 
     search_pipeline
     |> Map.get("$match", %{})
@@ -158,5 +159,16 @@ defmodule Core.Patients.Encounters do
       [] -> pipeline
       _ -> pipeline ++ [search_pipeline]
     end
+  end
+
+  defp search_by_incoming_referral(pipeline, nil), do: pipeline
+
+  defp search_by_incoming_referral(pipeline, incoming_referral) do
+    put_in(pipeline, ["$match", "encounters.v.incoming_referrals"], %{
+      "$elemMatch" => %{
+        "identifier.type.coding.code" => "service_request",
+        "identifier.value" => Mongo.string_to_uuid(incoming_referral)
+      }
+    })
   end
 end

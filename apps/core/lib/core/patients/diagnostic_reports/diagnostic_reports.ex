@@ -136,6 +136,7 @@ defmodule Core.Patients.DiagnosticReports do
     context_episode_id = if params["context_episode_id"], do: Mongo.string_to_uuid(params["context_episode_id"])
     origin_episode_id = if params["origin_episode_id"], do: Mongo.string_to_uuid(params["origin_episode_id"])
     encounter_ids = if !is_nil(context_episode_id), do: get_encounter_ids(patient_id_hash, context_episode_id)
+    based_on = if params["based_on"], do: Mongo.string_to_uuid(params["based_on"])
 
     search_pipeline =
       %{"$match" => %{}}
@@ -149,6 +150,7 @@ defmodule Core.Patients.DiagnosticReports do
       |> Search.add_param(issued_from, ["$match", "#{path}.issued"], "$gte")
       |> Search.add_param(issued_to, ["$match", "#{path}.issued"], "$lt")
       |> Search.add_param(origin_episode_id, ["$match", "#{path}.origin_episode.identifier.value"])
+      |> Search.add_param(based_on, ["$match", "#{path}.based_on.identifier.value"])
 
     search_pipeline =
       if schema == :diagnostic_report_summary do

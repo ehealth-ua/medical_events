@@ -511,6 +511,57 @@ defmodule Api.Web.DiagnosticReportControllerTest do
                |> Map.get("paging")
     end
 
+    test "successful search with search parameters: based_on", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      service_request_id = UUID.uuid4()
+
+      based_on =
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(system: "eHealth/resources", code: "service_request"),
+              value: Mongo.string_to_uuid(service_request_id)
+            )
+        )
+
+      diagnostic_report_1 = build(:diagnostic_report, based_on: based_on)
+      diagnostic_report_2 = build(:diagnostic_report)
+
+      diagnostic_reports =
+        [diagnostic_report_1, diagnostic_report_2]
+        |> Enum.into(%{}, fn %{id: %BSON.Binary{binary: id}} = diagnostic_report ->
+          {UUID.binary_to_string!(id), diagnostic_report}
+        end)
+
+      insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
+      expect_get_person_data(patient_id)
+
+      search_params = %{"based_on" => service_request_id}
+
+      resp =
+        conn
+        |> get(diagnostic_report_path(conn, :index, patient_id), search_params)
+        |> json_response(200)
+
+      resp
+      |> Map.take(["data"])
+      |> assert_json_schema("diagnostic_reports/diagnostic_report_list.json")
+
+      assert %{"page_number" => 1, "total_entries" => 1, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        resp
+        |> Map.get("data")
+        |> hd()
+
+      assert Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_1.id.binary)
+      refute Map.get(resp, "id") == UUID.binary_to_string!(diagnostic_report_2.id.binary)
+    end
+
     test "successful search with search parameters: complex test", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
