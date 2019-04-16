@@ -237,4 +237,26 @@ defmodule Core.ServiceRequests.Validations do
 
     %{service_request | requester_legal_entity: %{requester_legal_entity | identifier: identifier}}
   end
+
+  def validate_code(%ServiceRequest{code: nil} = service_request), do: service_request
+
+  def validate_code(%ServiceRequest{code: code} = service_request) do
+    reference_type = code.identifier.type.coding |> List.first() |> Map.get(:code)
+
+    category =
+      if service_request.category do
+        service_request.category.coding |> List.first() |> Map.get(:code)
+      end
+
+    identifier =
+      case reference_type do
+        "service" ->
+          add_validations(code.identifier, :value, service_reference: [category: category])
+
+        "service_group" ->
+          add_validations(code.identifier, :value, service_group_reference: [])
+      end
+
+    %{service_request | code: %{code | identifier: identifier}}
+  end
 end

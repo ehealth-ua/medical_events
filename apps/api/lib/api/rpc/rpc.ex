@@ -109,7 +109,7 @@ defmodule Api.Rpc do
   @type service_request() :: %{
           authored_on: binary(),
           category: codeable_concept(),
-          code: codeable_concept(),
+          code: reference_(),
           completed_with: reference_(),
           context: reference_(),
           expiration_date: DateTime,
