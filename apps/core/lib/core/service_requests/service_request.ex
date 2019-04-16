@@ -41,7 +41,7 @@ defmodule Core.ServiceRequest do
     field(:status_history)
     field(:intent, presence: true)
     field(:category, dictionary_reference: [path: "category", referenced_field: "system", field: "code"])
-    field(:code, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
+    field(:code, reference: [path: "code"])
     field(:subject, presence: true)
     field(:context, reference: [path: "context"])
     field(:occurrence, reference: [path: "occurrence"])
@@ -84,7 +84,7 @@ defmodule Core.ServiceRequest do
           {:category, CodeableConcept.create(v)}
 
         {"code", v} ->
-          {:code, CodeableConcept.create(v)}
+          {:code, Reference.create(v)}
 
         {"requester_employee", v} ->
           {:requester_employee, Reference.create(v)}

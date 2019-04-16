@@ -744,7 +744,7 @@ defmodule Core.Factories do
       requisition: Encryptor.encrypt(UUID.uuid4()),
       status: ServiceRequest.status(:active),
       intent: "plan",
-      code: codeable_concept_coding(system: "eHealth/SNOMED/procedure_codes", code: "128004"),
+      code: reference_coding(system: "eHealth/resources", code: "service"),
       category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "409063005"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},

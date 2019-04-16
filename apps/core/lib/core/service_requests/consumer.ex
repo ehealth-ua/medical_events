@@ -97,6 +97,7 @@ defmodule Core.ServiceRequests.Consumer do
         |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
         |> ServiceRequestsValidations.validate_permitted_resources(patient_id_hash)
         |> ServiceRequestsValidations.validate_requester_legal_entity(client_id)
+        |> ServiceRequestsValidations.validate_code()
         |> generate_requisition_number(patient_id_hash, user_id)
 
       case service_request do

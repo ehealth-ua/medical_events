@@ -61,37 +61,62 @@
     "code": {
       "type": "object",
       "properties": {
-        "coding": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "properties": {
-              "system": {
-                "type": "string",
-                "enum": [
-                  "eHealth/SNOMED/procedure_codes"
-                ]
+        "identifier": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "object",
+              "properties": {
+                "coding": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "system": {
+                        "type": "string",
+                        "enum": [
+                          "eHealth/resources"
+                        ]
+                      },
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "service_group",
+                          "service"
+                        ],
+                        "description": "Symbol in syntax defined by the system"
+                      }
+                    },
+                    "required": [
+                      "code",
+                      "system"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "text": {
+                  "type": "string"
+                }
               },
-              "code": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Symbol in syntax defined by the system"
-              }
+              "required": [
+                "coding"
+              ],
+              "additionalProperties": false
             },
-            "required": [
-              "code",
-              "system"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "text": {
-          "type": "string"
+            "value": {
+              "type": "string",
+              "description": "The value that is unique"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
-        "coding"
+        "identifier"
       ],
       "additionalProperties": false
     },
