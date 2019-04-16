@@ -61,16 +61,65 @@ defmodule Api.Rpc.RpcTest do
 
   describe "service_request_by_id/2" do
     test "service_request not found" do
-      refute Rpc.service_request_by_id(UUID.uuid4())
+      refute Rpc.service_request_by_id(UUID.uuid4(), UUID.uuid4())
     end
 
     test "service_request was found" do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      service_request_1 = insert(:service_request)
+      patient_id = UUID.uuid4()
+      service_request_1 = insert(:service_request, subject: Patients.get_pk_hash(patient_id))
       insert(:service_request)
       service_request_id = to_string(service_request_1._id)
 
-      assert {:ok, %{id: ^service_request_id}} = Rpc.service_request_by_id(service_request_id)
+      assert {:ok, %{id: ^service_request_id}} = Rpc.service_request_by_id(patient_id, service_request_id)
+    end
+  end
+
+  describe "diagnostic_report_by_id/2" do
+    test "diagnostic_report not found" do
+      refute Rpc.diagnostic_report_by_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "diagnostic_report was found" do
+      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+      episode_1 = build(:episode)
+      episode_2 = build(:episode)
+
+      encounter_1 =
+        build(:encounter, episode: reference_coding(episode_1.id, system: "eHealth/resources", code: "episode"))
+
+      encounter_2 = build(:encounter)
+
+      diagnostic_report_1 =
+        build(:diagnostic_report,
+          encounter: reference_coding(encounter_1.id, system: "eHealth/resources", code: "encounter")
+        )
+
+      diagnostic_report_2 =
+        build(:diagnostic_report,
+          encounter: reference_coding(encounter_2.id, system: "eHealth/resources", code: "encounter")
+        )
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = to_string(episode_1.id)
+      diagnostic_report_id = to_string(diagnostic_report_1.id)
+
+      insert(
+        :patient,
+        _id: patient_id_hash,
+        episodes: %{
+          episode_id => episode_1,
+          to_string(episode_2.id) => episode_2
+        },
+        encounters: %{to_string(encounter_1.id) => encounter_1, to_string(encounter_2.id) => encounter_2},
+        diagnostic_reports: %{
+          diagnostic_report_id => diagnostic_report_1,
+          to_string(diagnostic_report_2.id) => diagnostic_report_2
+        }
+      )
+
+      assert {:ok, %{id: ^diagnostic_report_id}} = Rpc.diagnostic_report_by_id(patient_id, diagnostic_report_id)
     end
   end
 

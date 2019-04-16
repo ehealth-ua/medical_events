@@ -4,6 +4,7 @@ defmodule Api.Rpc do
   """
 
   alias Api.Web.ApprovalView
+  alias Api.Web.DiagnosticReportView
   alias Api.Web.EpisodeView
   alias Api.Web.ServiceRequestView
   alias Core.Approval
@@ -132,6 +133,28 @@ defmodule Api.Rpc do
           updated_at: DateTime,
           used_by_employee: reference_(),
           used_by_legal_entity: reference_()
+        }
+
+  @type diagnostic_report() :: %{
+          based_on: reference_(),
+          cancellation_reason: codeable_concept(),
+          category: list(codeable_concept()),
+          code: codeable_concept(),
+          conclusion: binary(),
+          conclusion_code: codeable_concept(),
+          effective_date_time: binary(),
+          encounter: reference_(),
+          explanatory_letter: binary(),
+          id: binary(),
+          inserted_at: DateTime,
+          issued: binary(),
+          managing_organization: reference_(),
+          origin_episode: reference_(),
+          performer: map(),
+          recorded_by: reference_(),
+          results_interpreter: map(),
+          status: binary(),
+          updated_at: DateTime
         }
 
   @doc """
@@ -2257,7 +2280,7 @@ defmodule Api.Rpc do
 
   ## Examples
 
-      iex> Api.Rpc.service_request_by_id("26e673e1-1d68-413e-b96c-407b45d9f572")
+      iex> Api.Rpc.service_request_by_id("26e673e1-1d68-413e-b96c-407b45d9f572", "26e673e1-1d68-413e-b96c-407b45d9f572")
       {:ok,
       %{
         authored_on: "2019-04-11T14:32:57.843325Z",
@@ -2341,10 +2364,137 @@ defmodule Api.Rpc do
         used_by_legal_entity: nil
       }}
   """
-  @spec service_request_by_id(service_request_id :: binary()) :: nil | {:ok, service_request}
-  def service_request_by_id(service_request_id) do
-    with {:ok, service_request} <- ServiceRequests.get_by_id(service_request_id) do
+  @spec service_request_by_id(patient_id :: binary(), service_request_id :: binary()) :: nil | {:ok, service_request}
+  def service_request_by_id(patient_id, service_request_id) do
+    with {:ok, service_request} <-
+           ServiceRequests.get_by_id_patient_id(service_request_id, Patients.get_pk_hash(patient_id)) do
       {:ok, ServiceRequestView.render("show.json", %{service_request: service_request})}
+    end
+  end
+
+  @doc """
+  Get diagnostic_report by id
+
+  ## Examples
+
+      iex> Api.Rpc.diagnostic_report_by_id(
+        "26e673e1-1d68-413e-b96c-407b45d9f572",
+        "26e673e1-1d68-413e-b96c-407b45d9f572"
+      )
+      {:ok,
+      %{
+        based_on: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "service_request", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "107acd76-8ad7-4d13-be86-13e463f98aa5"
+          }
+        },
+        cancellation_reason: %{
+          coding: [%{code: "misspelling", system: "eHealth/cancellation_reasons"}],
+          text: "code text"
+        },
+        category: [
+          %{
+            coding: [%{code: "LAB", system: "eHealth/diagnostic_report_categories"}],
+            text: "code text"
+          }
+        ],
+        code: %{
+          coding: [
+            %{code: "10217-8", system: "eHealth/LOINC/diagnostic_report_codes"}
+          ],
+          text: "code text"
+        },
+        conclusion: "conclusion",
+        conclusion_code: %{
+          coding: [%{code: "109006", system: "eHealth/SNOMED/clinical_findings"}],
+          text: "code text"
+        },
+        effective_date_time: "2019-04-12T15:33:11.291Z",
+        encounter: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "encounter", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "5cc51928-25de-402c-839a-a8aae1d4da0c"
+          }
+        },
+        explanatory_letter: "some explanations",
+        id: "f0f060d3-8093-4307-a567-79215eade784",
+        inserted_at: #DateTime<2019-04-12 15:33:11.291Z>,
+        issued: "2019-04-12T15:33:11.291Z",
+        managing_organization: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "legal_entity", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "d1e30755-876e-45a9-b07f-fa46a9a11873"
+          }
+        },
+        origin_episode: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "episode", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "adc6bd7f-4a7d-462c-91fe-f85d1f957e4f"
+          }
+        },
+        performer: %{
+          "reference" => %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "employee", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "34172dd5-e472-430d-a8ce-8f8b59ede4fb"
+            }
+          }
+        },
+        primary_source: true,
+        recorded_by: %{
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "employee", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "372e689e-5b70-4df3-9513-80608967dd07"
+          }
+        },
+        results_interpreter: %{
+          "reference" => %{
+            display_value: nil,
+            identifier: %{
+              type: %{
+                coding: [%{code: "employee", system: "eHealth/resources"}],
+                text: "code text"
+              },
+              value: "07fc3bc4-abc2-4117-b77f-e55ef4d0a9a9"
+            }
+          }
+        },
+        status: "final",
+        updated_at: #DateTime<2019-04-12 15:33:11.291Z>
+      }}
+  """
+  @spec diagnostic_report_by_id(patient_id :: binary(), diagnostic_report_id :: binary()) ::
+          nil | {:ok, diagnostic_report}
+  def diagnostic_report_by_id(patient_id, diagnostic_report_id) do
+    patient_id_hash = Patients.get_pk_hash(patient_id)
+
+    with {:ok, diagnostic_report} <- DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report_id) do
+      {:ok, DiagnosticReportView.render("show.json", %{diagnostic_report: diagnostic_report})}
     end
   end
 end

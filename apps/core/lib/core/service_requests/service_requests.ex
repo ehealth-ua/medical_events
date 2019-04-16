@@ -111,4 +111,13 @@ defmodule Core.ServiceRequests do
       _ -> nil
     end
   end
+
+  def get_by_id_patient_id(id, patient_id_hash) do
+    @collection
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "subject" => patient_id_hash})
+    |> case do
+      %{} = service_request -> {:ok, ServiceRequest.create(service_request)}
+      _ -> nil
+    end
+  end
 end
