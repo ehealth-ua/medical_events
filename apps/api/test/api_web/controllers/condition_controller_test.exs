@@ -2,11 +2,8 @@ defmodule Api.Web.ConditionControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   setup %{conn: conn} do
     stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -39,8 +36,6 @@ defmodule Api.Web.ConditionControllerTest do
           UUID.binary_to_string!(encounter2.id.binary) => encounter2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       {code, condition_code} = build_condition_code()
 
@@ -95,7 +90,6 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id, 8)
       create_date = &(DateTime.from_iso8601("#{&1} 00:00:00Z") |> elem(1))
 
       insert_list(10, :condition, patient_id: patient_id_hash, onset_date: create_date.("1990-01-01"))
@@ -131,7 +125,7 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: %{to_string(episode.id) => episode}, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
+
       {code, condition_code} = build_condition_code()
 
       insert_list(2, :condition, patient_id: patient_id_hash, code: condition_code)
@@ -172,8 +166,6 @@ defmodule Api.Web.ConditionControllerTest do
           UUID.binary_to_string!(encounter2.id.binary) => encounter2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       insert_list(4, :condition, patient_id: patient_id_hash, encounter_context: encounter)
 
@@ -217,8 +209,6 @@ defmodule Api.Web.ConditionControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       insert_list(4, :condition, patient_id: patient_id_hash, encounter_context: encounter1)
 
       # Missed encounter, episode_id
@@ -244,8 +234,6 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter}, _id: patient_id_hash)
-      expect_get_person_data(patient_id, 2)
-
       insert_list(11, :condition, patient_id: patient_id_hash, encounter_context: encounter)
 
       # Missed context
@@ -283,7 +271,6 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       insert(:condition)
 
@@ -300,7 +287,6 @@ defmodule Api.Web.ConditionControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-      expect_get_person_data(patient_id)
 
       insert(
         :patient,
@@ -326,7 +312,7 @@ defmodule Api.Web.ConditionControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-      expect_get_person_data(patient_id)
+
       insert(:patient, _id: patient_id_hash)
       search_params = %{"onset_date_from" => "invalid"}
 
@@ -353,8 +339,6 @@ defmodule Api.Web.ConditionControllerTest do
       insert(:patient, _id: patient_id_hash)
       condition = insert(:condition, patient_id: patient_id_hash, asserted_date: nil)
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(condition_path(conn, :show, patient_id, UUID.binary_to_string!(condition._id.binary)))
       |> json_response(200)
@@ -366,7 +350,6 @@ defmodule Api.Web.ConditionControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       conn
       |> get(condition_path(conn, :show, patient_id, UUID.uuid4()))
@@ -392,8 +375,6 @@ defmodule Api.Web.ConditionControllerTest do
       )
 
       condition = insert(:condition, patient_id: patient_id_hash, encounter_context: encounter, asserted_date: nil)
-
-      expect_get_person_data(patient_id)
 
       conn
       |> get(
@@ -428,8 +409,6 @@ defmodule Api.Web.ConditionControllerTest do
       )
 
       condition = insert(:condition, patient_id: patient_id_hash, encounter_context: encounter, asserted_date: nil)
-
-      expect_get_person_data(patient_id)
 
       assert conn
              |> get(

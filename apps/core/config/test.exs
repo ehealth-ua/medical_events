@@ -9,7 +9,6 @@ config :core,
   microservices: [
     il: IlMock,
     digital_signature: DigitalSignatureMock,
-    casher: CasherMock,
     media_storage: MediaStorageMock,
     mpi: MPIMock,
     otp_verification: OTPVerificationMock

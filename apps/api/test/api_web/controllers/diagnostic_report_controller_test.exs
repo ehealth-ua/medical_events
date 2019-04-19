@@ -2,12 +2,9 @@ defmodule Api.Web.DiagnosticReportControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patient
   alias Core.Patients
+  import Mox
 
   describe "create package" do
     test "patient not found", %{conn: conn} do
@@ -170,8 +167,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(diagnostic_report_path(conn, :show, patient_id, UUID.binary_to_string!(diagnostic_report_1.id.binary)))
@@ -183,15 +178,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       assert get_in(resp, ~w(data id)) == UUID.binary_to_string!(diagnostic_report_1.id.binary)
       refute get_in(resp, ~w(data id)) == UUID.binary_to_string!(diagnostic_report_2.id.binary)
-    end
-
-    test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
-
-      conn
-      |> get(diagnostic_report_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
-      |> json_response(403)
     end
 
     test "invalid diagnostic report uuid", %{conn: conn} do
@@ -208,8 +194,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(diagnostic_report_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -222,7 +206,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(diagnostic_report_path(conn, :show, patient_id, UUID.uuid4()))
@@ -238,7 +221,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -270,7 +252,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -319,7 +300,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -376,8 +356,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"context_episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -427,7 +405,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"origin_episode_id" => origin_episode_id}
 
@@ -479,7 +456,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -538,7 +514,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"based_on" => service_request_id}
 
@@ -651,8 +626,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 4)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "code" => code_value,
@@ -733,8 +706,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"context_episode_id" => UUID.uuid4()}
 
       resp =
@@ -756,7 +727,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -849,15 +819,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
              } = resp["error"]
     end
 
-    test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
-
-      conn
-      |> get(diagnostic_report_path(conn, :index, UUID.uuid4()))
-      |> json_response(403)
-    end
-
     test "get patient when no diagnostic_reports", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
@@ -865,7 +826,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -886,7 +846,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn

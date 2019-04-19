@@ -2,11 +2,8 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   describe "show allergy intolerance" do
     test "successful show", %{conn: conn} do
@@ -26,8 +23,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
           UUID.binary_to_string!(allergy_intolerance_2.id.binary) => allergy_intolerance_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -76,8 +71,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
           to_string(allergy_intolerance2.id) => allergy_intolerance2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -133,8 +126,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_allergy_intolerance_path(
@@ -170,8 +161,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         allergy_intolerances: %{UUID.binary_to_string!(allergy_intolerance.id.binary) => allergy_intolerance}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(allergy_intolerance_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -184,7 +173,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(allergy_intolerance_path(conn, :show, patient_id, UUID.uuid4()))
@@ -200,7 +188,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -232,7 +219,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: allergy_intolerances)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -281,7 +267,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: allergy_intolerances)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -338,8 +323,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -395,8 +378,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(episode_context_allergy_intolerance_path(conn, :index, patient_id, to_string(episode1.id)))
@@ -445,7 +426,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: allergy_intolerances)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -546,8 +526,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 3)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "code" => code_value,
@@ -627,8 +605,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.uuid4()}
 
       resp =
@@ -650,7 +626,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -746,7 +721,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -767,7 +741,6 @@ defmodule Api.Web.AllergyIntoleranceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn

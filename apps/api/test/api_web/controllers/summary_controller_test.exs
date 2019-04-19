@@ -3,12 +3,9 @@ defmodule Api.Web.SummaryControllerTest do
 
   use ApiWeb.ConnCase
   use Core.Schema
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Observations.Value
   alias Core.Patients
+  import Mox
 
   describe "list episodes" do
     test "successful search", %{conn: conn} do
@@ -18,7 +15,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -115,8 +111,6 @@ defmodule Api.Web.SummaryControllerTest do
 
       insert(:patient, episodes: episodes, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(summary_path(conn, :list_episodes, patient_id), %{
@@ -151,7 +145,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -219,7 +212,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, immunizations: immunizations)
-      expect_get_person_data(patient_id)
 
       search_params = %{"vaccine_code" => code}
 
@@ -265,7 +257,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, immunizations: immunizations)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -301,7 +292,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, immunizations: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -324,7 +314,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -389,7 +378,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: allergy_intolerances)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -441,7 +429,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: allergy_intolerances)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -480,7 +467,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, allergy_intolerances: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -503,7 +489,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -568,7 +553,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -620,7 +604,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -659,7 +642,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -682,7 +664,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -747,7 +728,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, devices: devices)
-      expect_get_person_data(patient_id)
 
       search_params = %{"type" => type_value}
 
@@ -799,7 +779,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, devices: devices)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -838,7 +817,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, devices: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -861,7 +839,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -926,7 +903,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
-      expect_get_person_data(patient_id)
 
       search_params = %{"medication_code" => medication_code_value}
 
@@ -978,7 +954,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -1017,7 +992,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, medication_statements: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -1038,7 +1012,7 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
+
       {code, condition_code} = build_condition_code("R80")
       {_, onset_date, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
       {_, onset_date2, _} = DateTime.from_iso8601("2010-01-01 00:00:00Z")
@@ -1085,7 +1059,7 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: %{to_string(episode.id) => episode}, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
+
       {code, condition_code} = build_condition_code("A10")
 
       insert_list(2, :condition, patient_id: patient_id_hash, code: condition_code)
@@ -1108,7 +1082,7 @@ defmodule Api.Web.SummaryControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-      expect_get_person_data(patient_id)
+
       insert(:patient, _id: patient_id_hash)
       search_params = %{"onset_date_from" => "invalid"}
 
@@ -1142,8 +1116,6 @@ defmodule Api.Web.SummaryControllerTest do
           code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "R80")
         )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(summary_path(conn, :show_condition, patient_id, UUID.binary_to_string!(condition._id.binary)))
       |> json_response(200)
@@ -1164,8 +1136,6 @@ defmodule Api.Web.SummaryControllerTest do
           code: codeable_concept_coding(system: "eHealth/ICD10/condition_codes", code: "J11")
         )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(summary_path(conn, :show_condition, patient_id, UUID.binary_to_string!(condition._id.binary)))
              |> json_response(404)
@@ -1177,7 +1147,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       conn
       |> get(summary_path(conn, :show_condition, patient_id, UUID.uuid4()))
@@ -1201,8 +1170,6 @@ defmodule Api.Web.SummaryControllerTest do
           code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5")
         )
 
-      expect_get_person_data(patient_id)
-
       response_data =
         conn
         |> get(summary_path(conn, :show_observation, patient_id, UUID.binary_to_string!(observation._id.binary)))
@@ -1221,8 +1188,6 @@ defmodule Api.Web.SummaryControllerTest do
       insert(:patient, _id: patient_id_hash)
       insert(:observation, patient_id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(summary_path(conn, :show_observation, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -1234,7 +1199,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       conn
       |> get(summary_path(conn, :show_condition, patient_id, UUID.uuid4()))
@@ -1249,7 +1213,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -1265,7 +1228,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -1289,8 +1251,6 @@ defmodule Api.Web.SummaryControllerTest do
         _id: patient_id_hash,
         diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
       )
-
-      expect_get_person_data(patient_id)
 
       conn
       |> get(
@@ -1317,8 +1277,6 @@ defmodule Api.Web.SummaryControllerTest do
         diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(
         summary_path(conn, :show_diagnostic_report, patient_id, UUID.binary_to_string!(diagnostic_report.id.binary))
@@ -1338,8 +1296,6 @@ defmodule Api.Web.SummaryControllerTest do
         diagnostic_reports: %{UUID.binary_to_string!(diagnostic_report.id.binary) => diagnostic_report}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(summary_path(conn, :show_diagnostic_report, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -1354,7 +1310,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -1388,7 +1343,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -1453,7 +1407,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -1504,7 +1457,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id)
 
       search_params = %{"origin_episode_id" => origin_episode_id}
 
@@ -1556,7 +1508,6 @@ defmodule Api.Web.SummaryControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -1595,7 +1546,6 @@ defmodule Api.Web.SummaryControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
