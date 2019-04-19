@@ -302,7 +302,7 @@ defmodule Api.Web.EncounterControllerTest do
         "episode_id" => UUID.binary_to_string!(episode.identifier.value.binary),
         "date_from" => date_from,
         "date_to" => date_to,
-        "incoming_referral" => service_request_id
+        "incoming_referral_id" => service_request_id
       }
 
       resp =

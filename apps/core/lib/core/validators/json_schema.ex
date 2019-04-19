@@ -24,6 +24,7 @@ defmodule Core.Validators.JsonSchema do
     "json_schemas/packages/diagnostic_report_package_cancel_signed_content.json"
   )
 
+  use_schema(:encounter_list, "json_schemas/encounters/encounter_list.json")
   use_schema(:episode_create, "json_schemas/episodes/episode_create.json")
   use_schema(:episode_update, "json_schemas/episodes/episode_update.json")
   use_schema(:episode_close, "json_schemas/episodes/episode_close.json")
