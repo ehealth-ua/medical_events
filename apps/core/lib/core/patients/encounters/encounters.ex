@@ -7,6 +7,7 @@ defmodule Core.Patients.Encounters do
   alias Core.Paging
   alias Core.Patient
   alias Core.Search
+  alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
 
@@ -120,6 +121,9 @@ defmodule Core.Patients.Encounters do
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
+    search_params = Map.drop(params, ~w(page page_size))
+    paging_params = Map.take(params, ~w(page page_size))
+
     pipeline =
       [
         %{"$match" => %{"_id" => patient_id_hash}},
@@ -133,8 +137,9 @@ defmodule Core.Patients.Encounters do
         %{"$sort" => %{"inserted_at" => -1}}
       ])
 
-    with %Page{entries: encounters} = paging <-
-           Paging.paginate(:aggregate, @patient_collection, pipeline, Map.take(params, ~w(page page_size))) do
+    with :ok <- JsonSchema.validate(:encounter_list, search_params),
+         %Page{entries: encounters} = paging <-
+           Paging.paginate(:aggregate, @patient_collection, pipeline, paging_params) do
       {:ok, %Page{paging | entries: Enum.map(encounters, &Encounter.create/1)}}
     end
   end
@@ -150,7 +155,7 @@ defmodule Core.Patients.Encounters do
       |> Search.add_param(episode_id, ["$match", "#{path}.episode.identifier.value"])
       |> Search.add_param(date_from, ["$match", "#{path}.date"], "$gte")
       |> Search.add_param(date_to, ["$match", "#{path}.date"], "$lt")
-      |> search_by_incoming_referral(params["incoming_referral"])
+      |> search_by_incoming_referral(params["incoming_referral_id"])
 
     search_pipeline
     |> Map.get("$match", %{})
