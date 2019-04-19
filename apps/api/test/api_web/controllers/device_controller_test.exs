@@ -2,11 +2,8 @@ defmodule Api.Web.DeviceControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   describe "show device" do
     test "successful show", %{conn: conn} do
@@ -26,8 +23,6 @@ defmodule Api.Web.DeviceControllerTest do
           UUID.binary_to_string!(device_2.id.binary) => device_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -74,8 +69,6 @@ defmodule Api.Web.DeviceControllerTest do
           to_string(device2.id) => device2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -131,8 +124,6 @@ defmodule Api.Web.DeviceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_device_path(
@@ -148,7 +139,6 @@ defmodule Api.Web.DeviceControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(device_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
@@ -169,8 +159,6 @@ defmodule Api.Web.DeviceControllerTest do
         devices: %{UUID.binary_to_string!(device.id.binary) => device}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(device_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -183,7 +171,6 @@ defmodule Api.Web.DeviceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, devices: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(device_path(conn, :show, patient_id, UUID.uuid4()))
@@ -199,7 +186,6 @@ defmodule Api.Web.DeviceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -231,7 +217,6 @@ defmodule Api.Web.DeviceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, devices: devices)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -280,7 +265,6 @@ defmodule Api.Web.DeviceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, devices: devices)
-      expect_get_person_data(patient_id)
 
       search_params = %{"type" => type_value}
 
@@ -337,8 +321,6 @@ defmodule Api.Web.DeviceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -389,7 +371,6 @@ defmodule Api.Web.DeviceControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, devices: devices)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -487,8 +468,6 @@ defmodule Api.Web.DeviceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 3)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "type" => type_value,
@@ -568,8 +547,6 @@ defmodule Api.Web.DeviceControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.uuid4()}
 
       resp =
@@ -591,7 +568,6 @@ defmodule Api.Web.DeviceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -673,7 +649,6 @@ defmodule Api.Web.DeviceControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(device_path(conn, :index, UUID.uuid4()))
@@ -687,7 +662,6 @@ defmodule Api.Web.DeviceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, devices: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -708,7 +682,6 @@ defmodule Api.Web.DeviceControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, devices: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn

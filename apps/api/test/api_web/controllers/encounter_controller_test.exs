@@ -2,13 +2,10 @@ defmodule Api.Web.EncounterControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Core.TestViews.CancelEncounterPackageView
-  import Mox
-
   alias Core.Patient
   alias Core.Patients
+  import Core.TestViews.CancelEncounterPackageView
+  import Mox
 
   @status_error "entered_in_error"
 
@@ -107,8 +104,6 @@ defmodule Api.Web.EncounterControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(encounter_path(conn, :show, patient_id, UUID.binary_to_string!(encounter_1.id.binary)))
              |> json_response(200)
@@ -118,7 +113,6 @@ defmodule Api.Web.EncounterControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(encounter_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
@@ -134,7 +128,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, encounters: %{UUID.binary_to_string!(encounter.id.binary) => encounter})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(encounter_path(conn, :show, patient_id, UUID.uuid4()))
@@ -148,7 +141,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, encounters: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(encounter_path(conn, :show, patient_id, UUID.uuid4()))
@@ -172,8 +164,6 @@ defmodule Api.Web.EncounterControllerTest do
           to_string(encounter_2.id) => encounter_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       assert conn
              |> get(
@@ -208,8 +198,6 @@ defmodule Api.Web.EncounterControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_encounter_path(
@@ -232,7 +220,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -259,8 +246,6 @@ defmodule Api.Web.EncounterControllerTest do
           to_string(encounter2.id) => encounter2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -312,7 +297,6 @@ defmodule Api.Web.EncounterControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, encounters: encounters)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "episode_id" => UUID.binary_to_string!(episode.identifier.value.binary),
@@ -359,7 +343,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, encounters: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -377,7 +360,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, encounters: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -444,8 +426,6 @@ defmodule Api.Web.EncounterControllerTest do
           |> Base.encode64()
       }
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> patch(encounter_path(conn, :cancel, patient_id), request_data)
              |> json_response(202)
@@ -460,7 +440,6 @@ defmodule Api.Web.EncounterControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       assert conn
              |> patch(encounter_path(conn, :cancel, patient_id), %{"invalid_signed_data" => 1})

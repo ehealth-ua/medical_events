@@ -11,10 +11,6 @@ defmodule ApiWeb.Router do
     plug(Api.Web.Plugs.PatientIdHasher)
   end
 
-  pipeline :authorize_party do
-    plug(Api.Web.Plugs.AuthorizeParty)
-  end
-
   pipeline :summary do
     plug(Api.Web.Plugs.PatientExists)
   end
@@ -27,8 +23,6 @@ defmodule ApiWeb.Router do
     post("/patients/:patient_id/diagnostic_report_package", DiagnosticReportController, :create)
 
     scope "/" do
-      pipe_through(:authorize_party)
-
       get("/patients/:patient_id/diagnostic_reports", DiagnosticReportController, :index)
       get("/patients/:patient_id/diagnostic_reports/:id", DiagnosticReportController, :show)
     end

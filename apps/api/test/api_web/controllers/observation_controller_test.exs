@@ -2,12 +2,9 @@ defmodule Api.Web.ObservationControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Observations.Value
   alias Core.Patients
+  import Mox
 
   setup %{conn: conn} do
     stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
@@ -24,8 +21,6 @@ defmodule Api.Web.ObservationControllerTest do
 
       observation =
         insert(:observation, patient_id: patient_id_hash, value: %Value{type: "period", value: build(:period)})
-
-      expect_get_person_data(patient_id)
 
       response_data =
         conn
@@ -61,8 +56,6 @@ defmodule Api.Web.ObservationControllerTest do
           value: %Value{type: "period", value: build(:period)},
           encounter_context: encounter
         )
-
-      expect_get_person_data(patient_id)
 
       response_data =
         conn
@@ -107,8 +100,6 @@ defmodule Api.Web.ObservationControllerTest do
           encounter_context: encounter
         )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_observation_path(
@@ -128,7 +119,6 @@ defmodule Api.Web.ObservationControllerTest do
 
       insert(:patient, _id: patient_id_hash)
       observation = insert(:observation, patient_id: Patients.get_pk_hash(UUID.uuid4()))
-      expect_get_person_data(patient_id)
 
       conn
       |> get(observation_path(conn, :show, patient_id, UUID.binary_to_string!(observation._id.binary)))
@@ -141,8 +131,6 @@ defmodule Api.Web.ObservationControllerTest do
 
       insert(:patient, _id: patient_id_hash)
       insert(:observation, patient_id: patient_id_hash)
-
-      expect_get_person_data(patient_id)
 
       conn
       |> get(observation_path(conn, :show, patient_id, UUID.uuid4()))
@@ -174,7 +162,6 @@ defmodule Api.Web.ObservationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
       {code, observation_code} = build_observation_code()
 
       {_, issued, _} = DateTime.from_iso8601("1991-01-01 00:00:00Z")
@@ -227,7 +214,6 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id, 8)
       create_date = &(DateTime.from_iso8601("#{&1} 00:00:00Z") |> elem(1))
 
       insert_list(10, :observation, patient_id: patient_id_hash, issued: create_date.("1990-01-01"))
@@ -261,7 +247,7 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
+
       {code, observation_code} = build_observation_code()
 
       insert(:observation, patient_id: patient_id_hash, code: observation_code)
@@ -295,7 +281,6 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, encounters: %{encounter_id => encounter}, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       insert_list(3, :observation,
         patient_id: patient_id_hash,
@@ -339,8 +324,6 @@ defmodule Api.Web.ObservationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       insert_list(3, :observation,
         patient_id: patient_id_hash,
         encounter_context: encounter
@@ -379,8 +362,6 @@ defmodule Api.Web.ObservationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       insert_list(3, :observation, patient_id: patient_id_hash, encounter_context: encounter1)
 
       # Next observations have no episode_id
@@ -399,7 +380,6 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id, 2)
       insert_list(11, :observation, patient_id: patient_id_hash)
       # defaults: paging = 50, page = 1
       assert %{
@@ -428,7 +408,6 @@ defmodule Api.Web.ObservationControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-      expect_get_person_data(patient_id)
 
       insert(
         :patient,
@@ -455,7 +434,7 @@ defmodule Api.Web.ObservationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
+
       insert(:observation)
 
       assert [] =
@@ -469,7 +448,7 @@ defmodule Api.Web.ObservationControllerTest do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-      expect_get_person_data(patient_id)
+
       insert(:patient, _id: patient_id_hash)
       search_params = %{"issued_from" => "invalid"}
 

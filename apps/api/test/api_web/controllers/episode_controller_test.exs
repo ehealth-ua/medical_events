@@ -3,13 +3,10 @@ defmodule Api.Web.EpisodeControllerTest do
 
   use ApiWeb.ConnCase
   use Core.Schema
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Episode
   alias Core.Patient
   alias Core.Patients
+  import Mox
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -368,8 +365,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(episode_path(conn, :show, patient_id, UUID.binary_to_string!(episode.id.binary)))
       |> json_response(200)
@@ -387,8 +382,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: %{UUID.binary_to_string!(episode.id.binary) => episode}, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(episode_path(conn, :show, patient_id, "invalid-episode-uuid"))
       |> json_response(404)
@@ -401,7 +394,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: %{}, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       conn
       |> get(episode_path(conn, :show, patient_id, UUID.uuid4()))
@@ -417,7 +409,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -435,7 +426,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: %{}, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -453,7 +443,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: nil, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -476,8 +465,6 @@ defmodule Api.Web.EpisodeControllerTest do
         _id: patient_id_hash,
         episodes: %{to_string(episode1.id) => episode1, to_string(episode2.id) => episode2}
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -525,8 +512,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: %{to_string(episode1.id) => episode1})
 
-      expect_get_person_data(patient_id, 2)
-
       resp =
         conn
         |> get(episode_path(conn, :index, patient_id), %{"code" => search_code})
@@ -565,8 +550,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: episodes, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(episode_path(conn, :index, patient_id), %{"page_size" => "1"})
@@ -601,8 +584,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: episodes, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(episode_path(conn, :index, patient_id), %{"page_size" => "200", "page" => "2"})
@@ -621,7 +602,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -670,8 +650,6 @@ defmodule Api.Web.EpisodeControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: episodes, _id: patient_id_hash)
-
-      expect_get_person_data(patient_id)
 
       %{conn: conn}
       |> Map.put(:episodes, episodes_state)
@@ -984,8 +962,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
       insert(:patient, episodes: episodes, _id: patient_id_hash)
 
-      expect_get_person_data(patient_id)
-
       format_date = fn datetime -> datetime |> DateTime.to_date() |> Date.to_string() end
 
       %{conn: conn}
@@ -1119,7 +1095,7 @@ defmodule Api.Web.EpisodeControllerTest do
     test "get episodes by invalid params", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
-      expect_get_person_data(patient_id)
+
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, episodes: %{}, _id: patient_id_hash)

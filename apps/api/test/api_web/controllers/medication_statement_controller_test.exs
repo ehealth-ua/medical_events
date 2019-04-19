@@ -2,11 +2,8 @@ defmodule Api.Web.MedicationStatementControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   describe "show medication statement" do
     test "successful show", %{conn: conn} do
@@ -26,8 +23,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
           UUID.binary_to_string!(medication_statement_2.id.binary) => medication_statement_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -76,8 +71,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
           to_string(medication_statement2.id) => medication_statement2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -133,8 +126,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_medication_statement_path(
@@ -150,7 +141,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(medication_statement_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
@@ -171,8 +161,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         medication_statements: %{UUID.binary_to_string!(medication_statement.id.binary) => medication_statement}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(medication_statement_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -185,7 +173,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, medication_statements: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(medication_statement_path(conn, :show, patient_id, UUID.uuid4()))
@@ -201,7 +188,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -233,7 +219,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -282,7 +267,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
-      expect_get_person_data(patient_id)
 
       search_params = %{"medication_code" => medication_code_value}
 
@@ -339,8 +323,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -391,7 +373,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, medication_statements: medication_statements)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -501,8 +482,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 3)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "medication_code" => medication_code_value,
@@ -582,8 +561,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.uuid4()}
 
       resp =
@@ -605,7 +582,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -687,7 +663,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
 
     test "invalid patient uuid", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-      expect_get_person_data_empty()
 
       conn
       |> get(medication_statement_path(conn, :index, UUID.uuid4()))
@@ -701,7 +676,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, medication_statements: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -722,7 +696,6 @@ defmodule Api.Web.MedicationStatementControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, medication_statements: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn

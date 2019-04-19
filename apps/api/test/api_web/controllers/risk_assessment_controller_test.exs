@@ -2,11 +2,8 @@ defmodule Api.Web.RiskAssessmentControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   describe "show risk assessment" do
     test "successful show", %{conn: conn} do
@@ -26,8 +23,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
           UUID.binary_to_string!(risk_assessment_2.id.binary) => risk_assessment_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -74,8 +69,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
           to_string(risk_assessment2.id) => risk_assessment2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -131,8 +124,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_risk_assessment_path(
@@ -168,8 +159,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         risk_assessments: %{UUID.binary_to_string!(risk_assessment.id.binary) => risk_assessment}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(risk_assessment_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -182,7 +171,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(risk_assessment_path(conn, :show, patient_id, UUID.uuid4()))
@@ -198,7 +186,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -230,7 +217,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -279,7 +265,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
-      expect_get_person_data(patient_id)
 
       search_params = %{"code" => code_value}
 
@@ -336,8 +321,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -388,7 +371,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: risk_assessments)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -488,8 +470,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 3)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "code" => code_value,
@@ -569,8 +549,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.uuid4()}
 
       resp =
@@ -592,7 +570,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -688,7 +665,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -709,7 +685,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, risk_assessments: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn

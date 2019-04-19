@@ -2,11 +2,8 @@ defmodule Api.Web.ImmunizationControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-
-  import Core.Expectations.CasherExpectation
-  import Mox
-
   alias Core.Patients
+  import Mox
 
   describe "show immunization" do
     test "successful show", %{conn: conn} do
@@ -26,8 +23,6 @@ defmodule Api.Web.ImmunizationControllerTest do
           UUID.binary_to_string!(immunization_2.id.binary) => immunization_2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -74,8 +69,6 @@ defmodule Api.Web.ImmunizationControllerTest do
           to_string(immunization2.id) => immunization2
         }
       )
-
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -131,8 +124,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       assert conn
              |> get(
                episode_context_immunization_path(
@@ -168,8 +159,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         immunizations: %{UUID.binary_to_string!(immunization.id.binary) => immunization}
       )
 
-      expect_get_person_data(patient_id)
-
       conn
       |> get(immunization_path(conn, :show, patient_id, UUID.uuid4()))
       |> json_response(404)
@@ -182,7 +171,6 @@ defmodule Api.Web.ImmunizationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, immunizations: %{})
-      expect_get_person_data(patient_id)
 
       conn
       |> get(immunization_path(conn, :show, patient_id, UUID.uuid4()))
@@ -198,7 +186,6 @@ defmodule Api.Web.ImmunizationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -230,7 +217,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, immunizations: immunizations)
-      expect_get_person_data(patient_id)
 
       search_params = %{"encounter_id" => encounter_id}
 
@@ -282,7 +268,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, immunizations: immunizations)
-      expect_get_person_data(patient_id)
 
       search_params = %{"vaccine_code" => code}
 
@@ -339,8 +324,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.binary_to_string!(episode_1.id.binary)}
 
       resp =
@@ -396,8 +379,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       resp =
         conn
         |> get(episode_context_immunization_path(conn, :index, patient_id, to_string(episode1.id)))
@@ -440,7 +421,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         end)
 
       insert(:patient, _id: patient_id_hash, immunizations: immunizations)
-      expect_get_person_data(patient_id, 4)
 
       call_endpoint = fn search_params ->
         conn
@@ -536,8 +516,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id, 3)
-
       search_params = %{
         "encounter_id" => encounter_id_1,
         "vaccine_code" => code,
@@ -617,8 +595,6 @@ defmodule Api.Web.ImmunizationControllerTest do
         }
       )
 
-      expect_get_person_data(patient_id)
-
       search_params = %{"episode_id" => UUID.uuid4()}
 
       resp =
@@ -640,7 +616,6 @@ defmodule Api.Web.ImmunizationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
-      expect_get_person_data(patient_id)
 
       search_params = %{
         "encounter_id" => "test",
@@ -736,7 +711,6 @@ defmodule Api.Web.ImmunizationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, immunizations: %{})
-      expect_get_person_data(patient_id)
 
       resp =
         conn
@@ -757,7 +731,6 @@ defmodule Api.Web.ImmunizationControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash, immunizations: nil)
-      expect_get_person_data(patient_id)
 
       resp =
         conn
