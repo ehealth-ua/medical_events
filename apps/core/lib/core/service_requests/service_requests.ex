@@ -69,12 +69,14 @@ defmodule Core.ServiceRequests do
       if params["requester_legal_entity"], do: Mongo.string_to_uuid(params["requester_legal_entity"])
 
     used_by_legal_entity = if params["used_by_legal_entity"], do: Mongo.string_to_uuid(params["used_by_legal_entity"])
+    code = if params["code"], do: Mongo.string_to_uuid(params["code"])
 
     %{"$match" => %{}}
     |> Search.add_param(Encryptor.encrypt(params["requisition"]), ["$match", "requisition"])
     |> Search.add_param(params["patient_id_hash"], ["$match", "subject"])
     |> search_by_encounters(encounters)
     |> Search.add_param(params["status"], ["$match", "status"])
+    |> Search.add_param(code, ["$match", "code.identifier.value"])
     |> Search.add_param(requester_legal_entity, ["$match", "requester_legal_entity.identifier.value"])
     |> Search.add_param(used_by_legal_entity, ["$match", "used_by_legal_entity.identifier.value"])
     |> List.wrap()
