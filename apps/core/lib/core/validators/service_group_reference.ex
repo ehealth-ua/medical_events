@@ -7,6 +7,12 @@ defmodule Core.Validators.ServiceGroupReference do
 
   def validate(service_group_id, options) do
     case @worker.run("ehealth", EHealth.Rpc, :service_group_by_id, [to_string(service_group_id)]) do
+      {:ok, %{is_active: false}} ->
+        {:error, message(options, "Service group should be active")}
+
+      {:ok, %{request_allowed: false}} ->
+        {:error, message(options, "Request is not allowed for the service group")}
+
       {:ok, _} ->
         :ok
 
