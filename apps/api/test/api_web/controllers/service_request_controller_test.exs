@@ -49,6 +49,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
       )
 
       search_params = %{
+        "code" => UUID.uuid4(),
         "requisition" => "requisition",
         "status" => "active",
         "requester_legal_entity" => UUID.uuid4(),
@@ -79,7 +80,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
              ] = resp["error"]["invalid"]
     end
 
-    test "success get service_request", %{conn: conn} do
+    test "success list service_requests in context", %{conn: conn} do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -109,6 +110,47 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:service_request, subject: patient_id_hash)
       id = to_string(service_request._id)
       conn = get(conn, service_request_path(conn, :index, patient_id, episode_id))
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+
+    test "success list service_requests by code", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      episode_id = UUID.uuid4()
+      episode = build(:episode, id: episode_id)
+
+      encounter =
+        build(:encounter,
+          episode: reference_coding(Mongo.string_to_uuid(episode_id), system: "eHealth/resources", code: "episode")
+        )
+
+      encounter_id = encounter.id
+      code = UUID.uuid4()
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{episode_id => episode},
+        encounters: %{to_string(encounter_id) => encounter}
+      )
+
+      service_request =
+        insert(:service_request,
+          context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter"),
+          subject: patient_id_hash,
+          code: reference_coding(Mongo.string_to_uuid(code), system: "eHealth/resources", code: "service")
+        )
+
+      insert(:service_request,
+        context: reference_coding(encounter_id, system: "eHealth/resources", code: "encounter"),
+        subject: patient_id_hash
+      )
+
+      id = to_string(service_request._id)
+      conn = get(conn, service_request_path(conn, :index, patient_id, episode_id), %{"code" => code})
 
       assert response = json_response(conn, 200)
       assert [%{"id" => ^id}] = response["data"]
@@ -216,6 +258,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
     test "additional params were sent", %{conn: conn} do
       search_params = %{
+        "code" => UUID.uuid4(),
         "patient_id" => UUID.uuid4(),
         "episode_id" => UUID.uuid4(),
         "requisition" => "requisition",
@@ -230,6 +273,11 @@ defmodule Api.Web.ServiceRequestControllerTest do
         |> json_response(422)
 
       assert [
+               %{
+                 "entry" => "$.code",
+                 "entry_type" => "json_data_property",
+                 "rules" => [%{"description" => "schema does not allow additional properties", "rule" => "schema"}]
+               },
                %{
                  "entry" => "$.episode_id",
                  "entry_type" => "json_data_property",
@@ -352,6 +400,7 @@ defmodule Api.Web.ServiceRequestControllerTest do
       )
 
       search_params = %{
+        "code" => UUID.uuid4(),
         "episode_id" => UUID.uuid4(),
         "requisition" => "requisition",
         "status" => "active",
@@ -488,6 +537,38 @@ defmodule Api.Web.ServiceRequestControllerTest do
       conn =
         get(conn, service_request_path(conn, :patient_context_search, patient_id), %{
           "used_by_legal_entity" => used_by_legal_entity_id
+        })
+
+      assert response = json_response(conn, 200)
+      assert [%{"id" => ^id}] = response["data"]
+    end
+
+    test "success search by code", %{conn: conn} do
+      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      code = UUID.uuid4()
+
+      service_request =
+        insert(:service_request,
+          subject: patient_id_hash,
+          code:
+            reference_coding(Mongo.string_to_uuid(code),
+              system: "eHealth/resources",
+              code: "service"
+            )
+        )
+
+      insert(:service_request, subject: patient_id_hash)
+      id = to_string(service_request._id)
+
+      conn =
+        get(conn, service_request_path(conn, :patient_context_search, patient_id), %{
+          "code" => code
         })
 
       assert response = json_response(conn, 200)
