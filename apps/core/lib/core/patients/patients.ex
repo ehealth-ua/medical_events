@@ -824,7 +824,9 @@ defmodule Core.Patients do
             inserted_by: user_id,
             updated_by: user_id
         }
+        |> DiagnosticReportValidations.validate_code(content["observations"])
         |> DiagnosticReportValidations.validate_based_on(client_id)
+        |> DiagnosticReportValidations.validate_conclusion()
         |> DiagnosticReportValidations.validate_effective()
         |> DiagnosticReportValidations.validate_issued()
         |> DiagnosticReportValidations.validate_recorded_by(client_id)

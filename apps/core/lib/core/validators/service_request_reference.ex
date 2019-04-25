@@ -4,6 +4,7 @@ defmodule Core.Validators.ServiceRequestReference do
   use Vex.Validator
   alias Core.ServiceRequest
   alias Core.ServiceRequests
+  alias Core.Services
   alias Core.Validators.Employee
 
   @status_active ServiceRequest.status(:active)
@@ -11,7 +12,11 @@ defmodule Core.Validators.ServiceRequestReference do
 
   @counselling_category ServiceRequest.category(:counselling)
 
+  @worker Application.get_env(:core, :rpc_worker)
+
   def validate(value, options) do
+    service_id = Keyword.get(options, :service_id)
+
     case ServiceRequests.get_by_id(value) do
       nil ->
         error(options, "Service request with such id is not found")
@@ -22,13 +27,15 @@ defmodule Core.Validators.ServiceRequestReference do
          used_by_employee: used_by_employee,
          used_by_legal_entity: used_by_legal_entity,
          expiration_date: expiration_date,
-         category: category
+         category: category,
+         code: code
        }} ->
         with :ok <- validate_status(status, options),
              :ok <- validate_used_by_employee(used_by_employee, options),
              :ok <- validate_used_by_legal_entity(used_by_legal_entity, options),
              :ok <- validate_expiration_date(expiration_date, options),
-             :ok <- validate_category(category, options) do
+             :ok <- validate_category(category, code, service_id, options),
+             :ok <- validate_code(code, service_id, options) do
           :ok
         end
 
@@ -88,13 +95,66 @@ defmodule Core.Validators.ServiceRequestReference do
     end
   end
 
-  defp validate_category(nil, options), do: error(options, "Incorect service request type")
-  defp validate_category(@counselling_category, _), do: :ok
+  defp validate_category(category, _, nil, options) do
+    category_value = category.coding |> List.first() |> Map.get(:code)
 
-  defp validate_category(category, options) when is_map(category),
-    do: validate_category(category.coding |> List.first() |> Map.get(:code), options)
+    if category_value == @counselling_category do
+      :ok
+    else
+      error(options, "Incorect service request type")
+    end
+  end
 
-  defp validate_category(_, options), do: validate_category(nil, options)
+  defp validate_category(category, code, service_id, options) do
+    category_value = category.coding |> List.first() |> Map.get(:code)
+    reference_type = if !is_nil(code), do: code.identifier.type.coding |> List.first() |> Map.get(:code)
+
+    with {:ok, %{category: service_category}} <- Services.get_service(service_id) do
+      if reference_type == "service_group" and service_category != category_value do
+        error(options, "Service request category should be equal to service category")
+      else
+        :ok
+      end
+    else
+      _ -> :ok
+    end
+  end
+
+  defp validate_code(_, nil, _), do: :ok
+
+  defp validate_code(nil, _, _), do: :ok
+
+  defp validate_code(code, service_id, options) do
+    reference_type = code.identifier.type.coding |> List.first() |> Map.get(:code)
+
+    case reference_type do
+      "service" ->
+        if service_id == to_string(code.identifier.value) do
+          :ok
+        else
+          error(options, "Should reference the same service that is referenced in diagnostic report")
+        end
+
+      "service_group" ->
+        validate_service_belongs_to_group(service_id, code.identifier.value, options)
+    end
+  end
+
+  defp validate_service_belongs_to_group(service_id, service_group_id, options) do
+    case @worker.run("ehealth", EHealth.Rpc, :service_belongs_to_group?, [
+           to_string(service_id),
+           to_string(service_group_id)
+         ]) do
+      true ->
+        :ok
+
+      false ->
+        error(options, "Service referenced in diagnostic report should belong to service group")
+
+      _ ->
+        error(options, "Rpc error")
+    end
+  end
 
   def error(options, error_message) do
     {:error, message(options, error_message)}

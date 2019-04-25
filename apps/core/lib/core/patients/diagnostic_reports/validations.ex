@@ -7,7 +7,11 @@ defmodule Core.Patients.DiagnosticReports.Validations do
   alias Core.EffectiveAt
   alias Core.Executor
   alias Core.Period
+  alias Core.Services
   alias Core.Source
+
+  @diagnostic_procedure_category "diagnostic_procedure"
+  @imaging_category "imaging"
 
   def validate_source(
         %DiagnosticReport{
@@ -90,7 +94,13 @@ defmodule Core.Patients.DiagnosticReports.Validations do
     now = DateTime.utc_now()
 
     identifier =
-      add_validations(based_on.identifier, :value, service_request_reference: [client_id: client_id, datetime: now])
+      add_validations(based_on.identifier, :value,
+        service_request_reference: [
+          client_id: client_id,
+          datetime: now,
+          service_id: diagnostic_report.code.identifier.value
+        ]
+      )
 
     %{diagnostic_report | based_on: %{based_on | identifier: identifier}}
   end
@@ -208,7 +218,58 @@ defmodule Core.Patients.DiagnosticReports.Validations do
     }
   end
 
+  def validate_results_interpreter(%DiagnosticReport{primary_source: true} = diagnostic_report, _) do
+    service_id = diagnostic_report.code.identifier.value
+
+    error_message =
+      "results_interpreter with type reference must be filled when service category is #{@diagnostic_procedure_category} or #{
+        @imaging_category
+      }"
+
+    with {:ok, %{category: category}} <- Services.get_service(service_id),
+         true <- category in [@diagnostic_procedure_category, @imaging_category] do
+      case diagnostic_report.results_interpreter do
+        nil ->
+          add_validations(diagnostic_report, :results_interpreter, presence: [message: error_message])
+
+        _ ->
+          %{
+            diagnostic_report
+            | results_interpreter:
+                add_validations(diagnostic_report.results_interpreter, :type,
+                  value: [equals: "reference", message: error_message]
+                )
+          }
+      end
+    else
+      _ -> diagnostic_report
+    end
+  end
+
   def validate_results_interpreter(%DiagnosticReport{} = diagnostic_report, _), do: diagnostic_report
+
+  def validate_code(%DiagnosticReport{code: nil} = diagnostic_report, _), do: diagnostic_report
+
+  def validate_code(%DiagnosticReport{code: code} = diagnostic_report, observations) do
+    identifier = add_validations(code.identifier, :value, service_reference: [observations: observations])
+
+    %{diagnostic_report | code: %{code | identifier: identifier}}
+  end
+
+  def validate_conclusion(diagnostic_report) do
+    service_id = diagnostic_report.code.identifier.value
+
+    with {:ok, %{category: category}} <- Services.get_service(service_id),
+         true <- category in [@diagnostic_procedure_category, @imaging_category] do
+      add_validations(diagnostic_report, :conclusion,
+        presence: [
+          message: "Must be filled when service category is #{@diagnostic_procedure_category} or #{@imaging_category}"
+        ]
+      )
+    else
+      _ -> diagnostic_report
+    end
+  end
 
   defp add_employee_validation(field, client_id) do
     identifier =

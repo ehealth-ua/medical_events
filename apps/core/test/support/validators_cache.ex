@@ -87,7 +87,7 @@ defmodule Core.Validators.CacheTest do
        },
        %{
          "name" => "eHealth/SNOMED/service_request_categories",
-         "values" => %{"409063005" => "test1", "108252007" => "test2"}
+         "values" => %{"counselling" => "counselling", "laboratory_procedure" => "laboratory_procedure"}
        },
        %{
          "name" => "eHealth/SNOMED/service_request_performer_roles",
@@ -96,10 +96,6 @@ defmodule Core.Validators.CacheTest do
        %{
          "name" => "eHealth/SNOMED/clinical_findings",
          "values" => %{"109006" => "109006"}
-       },
-       %{
-         "name" => "eHealth/LOINC/diagnostic_report_codes",
-         "values" => %{"10217-8" => "10217-8"}
        },
        %{
          "name" => "eHealth/diagnostic_report_categories",

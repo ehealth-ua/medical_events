@@ -279,7 +279,7 @@ defmodule Core.Factories do
       origin_episode: reference_coding(system: "eHealth/resources", code: "episode"),
       status: DiagnosticReport.status(:final),
       category: [codeable_concept_coding(system: "eHealth/diagnostic_report_categories", code: "LAB")],
-      code: codeable_concept_coding(system: "eHealth/LOINC/diagnostic_report_codes", code: "10217-8"),
+      code: reference_coding(system: "eHealth/resources", code: "service"),
       encounter: reference_coding(system: "eHealth/resources", code: "encounter"),
       effective: %EffectiveAt{type: "effective_date_time", value: now},
       issued: now,
@@ -745,7 +745,7 @@ defmodule Core.Factories do
       status: ServiceRequest.status(:active),
       intent: "plan",
       code: reference_coding(system: "eHealth/resources", code: "service"),
-      category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "409063005"),
+      category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "counselling"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
       performer_type:

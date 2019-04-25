@@ -200,7 +200,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           "1111111111"
 
         _, _, :service_by_id, _ ->
-          {:ok, %{category: "409063005"}}
+          {:ok, %{category: "counselling"}}
 
         _, _, :number, _ ->
           {:ok, UUID.uuid4()}
@@ -237,7 +237,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -328,7 +328,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       expect(WorkerMock, :run, 4, fn
         _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111112"
-        _, _, :service_by_id, _ -> {:ok, %{category: "409063005"}}
+        _, _, :service_by_id, _ -> {:ok, %{category: "counselling"}}
         _, _, :number, _ -> {:ok, UUID.uuid4()}
       end)
 
@@ -336,7 +336,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -440,7 +440,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       expect(WorkerMock, :run, 4, fn
         _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111111"
-        _, _, :service_by_id, _ -> {:ok, %{category: "108252007"}}
+        _, _, :service_by_id, _ -> {:ok, %{category: "laboratory_procedure"}}
         _, _, :number, _ -> {:ok, UUID.uuid4()}
       end)
 
@@ -448,7 +448,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "108252007", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "laboratory_procedure", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -591,7 +591,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -681,7 +681,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           "1111111111"
 
         _, _, :service_by_id, _ ->
-          {:ok, %{category: "409063005"}}
+          {:ok, %{category: "counselling"}}
 
         _, _, :number, _ ->
           {:ok, UUID.uuid4()}
@@ -691,7 +691,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -879,7 +879,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1010,7 +1010,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1141,7 +1141,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1272,7 +1272,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1403,7 +1403,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1534,7 +1534,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{
@@ -1665,7 +1665,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         "status" => ServiceRequest.status(:active),
         "intent" => ServiceRequest.intent(:order),
         "category" => %{
-          "coding" => [%{"code" => "409063005", "system" => "eHealth/SNOMED/service_request_categories"}]
+          "coding" => [%{"code" => "counselling", "system" => "eHealth/SNOMED/service_request_categories"}]
         },
         "code" => %{
           "identifier" => %{

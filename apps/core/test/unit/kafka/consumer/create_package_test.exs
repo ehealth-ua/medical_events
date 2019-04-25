@@ -16,13 +16,17 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   alias Core.Patients
 
   @status_valid Observation.status(:valid)
+  @drfo "1111111111"
+
+  setup :verify_on_exit!
 
   describe "consume create package event" do
     test "empty content" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       job = insert(:job)
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
 
       expect_job_update(
         job._id,
@@ -62,7 +66,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       job = insert(:job)
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
 
       expect_job_update(
         job._id,
@@ -100,7 +105,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "visit not found" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       expect_doctor(client_id)
 
@@ -140,7 +144,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       condition = insert(:condition, patient_id: patient_id_hash)
       job = insert(:job)
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
+      expect_employee_users(@drfo, user_id)
       episode_id = patient.episodes |> Map.keys() |> hd
 
       signed_content = %{
@@ -233,6 +239,14 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
+      expect_employee_users(@drfo, user_id)
+
+      expect(WorkerMock, :run, fn
+        _, _, :service_by_id, _ -> {:ok, %{category: "category"}}
+      end)
+
       expect_doctor(client_id, 2)
 
       expect(IlMock, :get_division, fn id, _ ->
@@ -262,7 +276,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
-      expect(WorkerMock, :run, 1, fn
+      expect(WorkerMock, :run, fn
         _, _, :medication_request_by_id, [id] ->
           %{
             id: id,
@@ -301,7 +315,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       immunization_id = UUID.uuid4()
       immunization_id2 = UUID.uuid4()
       job = insert(:job)
-      user_id = prepare_signature_expectations()
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
@@ -312,12 +325,21 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       device_id = UUID.uuid4()
       medication_statement_id = UUID.uuid4()
       diagnostic_report_id = UUID.uuid4()
+      service_id = UUID.uuid4()
 
       service_request =
         insert(:service_request,
           used_by_employee: build(:reference),
           used_by_legal_entity:
-            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id)))
+            build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id))),
+          code:
+            build(:reference,
+              identifier:
+                build(:identifier,
+                  type: codeable_concept_coding(code: "service"),
+                  value: Mongo.string_to_uuid(service_id)
+                )
+            )
         )
 
       start_datetime =
@@ -1016,12 +1038,17 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             ],
             "code" => %{
-              "coding" => [
-                %{
-                  "system" => "eHealth/LOINC/diagnostic_report_codes",
-                  "code" => "10217-8"
-                }
-              ]
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "service"
+                    }
+                  ]
+                },
+                "value" => service_id
+              }
             },
             "effective_period" => %{
               "start" => "2018-08-02T10:45:16.000Z",
@@ -1226,10 +1253,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     test "failed when encounter reference episode doesnt match episode managing organization" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
-      expect(MediaStorageMock, :save, fn patient_id, _, _, resource_name ->
-        {:ok, "http://localhost/#{patient_id}/#{resource_name}"}
-      end)
-
       client_id = UUID.uuid4()
       expect_doctor(client_id)
 
@@ -1253,7 +1276,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       db_observation = insert(:observation, patient_id: patient_id_hash)
       condition_id = UUID.uuid4()
       job = insert(:job)
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
+      expect_employee_users(@drfo, user_id)
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
@@ -1655,9 +1680,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       job = insert(:job)
 
       user_id = UUID.uuid4()
-      drfo = "1111111111"
       expect_signature(nil)
-      expect_employee_users(drfo, user_id)
 
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
@@ -1738,7 +1761,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "invalid create package request params" do
       stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-      expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
@@ -1775,7 +1797,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       immunization_id = UUID.uuid4()
       immunization_id2 = UUID.uuid4()
       job = insert(:job)
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
@@ -1786,6 +1809,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       device_id = UUID.uuid4()
       medication_statement_id = UUID.uuid4()
       diagnostic_report_id = UUID.uuid4()
+      service_id = UUID.uuid4()
 
       service_request =
         insert(:service_request,
@@ -2481,12 +2505,17 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
               }
             ],
             "code" => %{
-              "coding" => [
-                %{
-                  "system" => "eHealth/LOINC/diagnostic_report_codes",
-                  "code" => "10217-8"
-                }
-              ]
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "service"
+                    }
+                  ]
+                },
+                "value" => service_id
+              }
             },
             "effective_period" => %{
               "start" => "2018-08-02T10:45:16.000Z",
@@ -2949,17 +2978,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
-
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -2987,7 +3005,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       job = insert(:job)
 
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
+      expect_employee_users(@drfo, user_id)
 
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
@@ -3104,17 +3124,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
-
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -3142,7 +3151,9 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       job = insert(:job)
 
-      user_id = prepare_signature_expectations()
+      user_id = UUID.uuid4()
+      expect_signature(@drfo)
+      expect_employee_users(@drfo, user_id)
 
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
@@ -3162,7 +3173,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
           used_by_employee: build(:reference),
           used_by_legal_entity:
             build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(client_id))),
-          category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "108252007")
+          category:
+            codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "laboratory_procedure")
         )
 
       signed_content = %{
@@ -3258,14 +3270,5 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  signed_data: Base.encode64(Jason.encode!(signed_content))
                })
     end
-  end
-
-  defp prepare_signature_expectations do
-    user_id = UUID.uuid4()
-    drfo = "1111111111"
-    expect_signature(drfo)
-    expect_employee_users(drfo, user_id)
-
-    user_id
   end
 end

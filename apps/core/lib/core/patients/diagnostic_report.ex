@@ -21,7 +21,7 @@ defmodule Core.DiagnosticReport do
     field(:origin_episode, reference: [path: "origin_episode"])
     field(:status, presence: true)
     field(:category, dictionary_reference: [path: "category", referenced_field: "system", field: "code"])
-    field(:code, presence: true, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
+    field(:code, presence: true, reference: [path: "code"])
     field(:encounter, reference: [path: "encounter"])
     field(:effective, reference: [path: "effective"])
     field(:issued, presence: true)
@@ -63,7 +63,7 @@ defmodule Core.DiagnosticReport do
           {:category, Enum.map(v, &CodeableConcept.create/1)}
 
         {"code", v} ->
-          {:code, CodeableConcept.create(v)}
+          {:code, Reference.create(v)}
 
         {"encounter", nil} ->
           {:encounter, nil}

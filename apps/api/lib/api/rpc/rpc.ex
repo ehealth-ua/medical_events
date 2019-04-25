@@ -139,7 +139,7 @@ defmodule Api.Rpc do
           based_on: reference_(),
           cancellation_reason: codeable_concept(),
           category: list(codeable_concept()),
-          code: codeable_concept(),
+          code: reference_(),
           conclusion: binary(),
           conclusion_code: codeable_concept(),
           effective_date_time: binary(),
@@ -2286,13 +2286,19 @@ defmodule Api.Rpc do
         authored_on: "2019-04-11T14:32:57.843325Z",
         category: %{
           coding: [
-            %{code: "409063005", system: "eHealth/SNOMED/service_request_categories"}
+            %{code: "counselling", system: "eHealth/SNOMED/service_request_categories"}
           ],
           text: "code text"
         },
         code: %{
-          coding: [%{code: "128004", system: "eHealth/SNOMED/procedure_codes"}],
-          text: "code text"
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "service", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "f6f7a5bb-ee93-4510-baaa-0b7abf85b2e9"
+          }
         },
         completed_with: nil,
         context: %{
@@ -2404,10 +2410,14 @@ defmodule Api.Rpc do
           }
         ],
         code: %{
-          coding: [
-            %{code: "10217-8", system: "eHealth/LOINC/diagnostic_report_codes"}
-          ],
-          text: "code text"
+          display_value: nil,
+          identifier: %{
+            type: %{
+              coding: [%{code: "service", system: "eHealth/resources"}],
+              text: "code text"
+            },
+            value: "f6f7a5bb-ee93-4510-baaa-0b7abf85b2e9"
+          }
         },
         conclusion: "conclusion",
         conclusion_code: %{
