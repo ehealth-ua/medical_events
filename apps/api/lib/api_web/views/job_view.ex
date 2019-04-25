@@ -4,24 +4,15 @@ defmodule Api.Web.JobView do
   use ApiWeb, :view
   alias Core.Job
 
-  def render("create.json", %{job: %Job{_id: id, status: status} = job}) do
-    job
-    |> Map.take(~w(inserted_at updated_at)a)
-    |> Map.merge(%{id: to_string(id), status: Job.status_to_string(status)})
-  end
-
-  def render("cancel.json", %{job: %Job{_id: id, status: status} = job}) do
-    job
-    |> Map.take(~w(inserted_at updated_at)a)
-    |> Map.merge(%{id: to_string(id), status: Job.status_to_string(status)})
-  end
+  @job_status_pending Job.status(:pending)
+  @job_status_processed Job.status(:processed)
 
   def render("details.json", %{job: job}) do
     %{
       eta: job.eta,
-      status: Job.status_to_string(job.status),
-      status_code: job.status_code
+      status: Job.status_to_string(job.status)
     }
+    |> add_status_code(job)
     |> Map.merge(render_response(job))
   end
 
@@ -34,10 +25,15 @@ defmodule Api.Web.JobView do
     }
   end
 
-  def render_response(%{response: %{"response_data" => data}}), do: %{response_data: data}
-  def render_response(%Job{status_code: 200, response: response}), do: %{links: Map.get(response, "links", [])}
+  defp add_status_code(response, %Job{status: @job_status_pending}), do: response
+  defp add_status_code(response, %Job{} = job), do: Map.put(response, :status_code, job.status_code)
 
-  def render_response(%Job{_id: id}) do
+  defp render_response(%{response: %{"response_data" => data}}), do: %{response_data: data}
+
+  defp render_response(%Job{status: @job_status_processed, response: response}),
+    do: %{links: Map.get(response, "links", [])}
+
+  defp render_response(%Job{_id: id}) do
     %{
       links: [
         %{

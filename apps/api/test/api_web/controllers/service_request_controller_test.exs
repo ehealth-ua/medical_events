@@ -629,21 +629,13 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
       insert(:patient, _id: patient_id_hash)
 
-      conn =
-        post(conn, service_request_path(conn, :create, patient_id), %{
-          "signed_data" => Base.encode64(Jason.encode!(%{}))
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> post(service_request_path(conn, :create, patient_id), %{
+               "signed_data" => Base.encode64(Jason.encode!(%{}))
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -676,22 +668,14 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
-      conn =
-        patch(conn, service_request_path(conn, :use, UUID.binary_to_string!(id)), %{
-          "used_by_employee" => %{"identifier" => %{"value" => ""}},
-          "used_by_legal_entity" => %{"identifier" => %{"value" => ""}}
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :use, UUID.binary_to_string!(id)), %{
+               "used_by_employee" => %{"identifier" => %{"value" => ""}},
+               "used_by_legal_entity" => %{"identifier" => %{"value" => ""}}
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -706,18 +690,12 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
-      conn = patch(conn, service_request_path(conn, :release, UUID.binary_to_string!(id)))
 
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :release, UUID.binary_to_string!(id)))
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -762,21 +740,13 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
-      conn =
-        patch(conn, service_request_path(conn, :recall, patient_id, UUID.binary_to_string!(id)), %{
-          "signed_data" => Jason.encode!(%{})
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :recall, patient_id, UUID.binary_to_string!(id)), %{
+               "signed_data" => Jason.encode!(%{})
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -821,21 +791,13 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
-      conn =
-        patch(conn, service_request_path(conn, :cancel, patient_id, UUID.binary_to_string!(id)), %{
-          "signed_data" => Jason.encode!(%{})
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :cancel, patient_id, UUID.binary_to_string!(id)), %{
+               "signed_data" => Jason.encode!(%{})
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -850,18 +812,12 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
-      conn = patch(conn, service_request_path(conn, :process, UUID.binary_to_string!(id)))
 
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :process, UUID.binary_to_string!(id)))
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -894,21 +850,13 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
-      conn =
-        patch(conn, service_request_path(conn, :complete, UUID.binary_to_string!(id)), %{
-          "completed_with" => %{"identifier" => %{"value" => ""}}
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> patch(service_request_path(conn, :complete, UUID.binary_to_string!(id)), %{
+               "completed_with" => %{"identifier" => %{"value" => ""}}
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 end

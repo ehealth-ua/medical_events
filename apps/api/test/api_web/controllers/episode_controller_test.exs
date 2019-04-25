@@ -72,27 +72,17 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      conn1 = post(conn, episode_path(conn, :create, patient_id), data)
+      assert conn
+             |> post(episode_path(conn, :create, patient_id), data)
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
 
-      assert %{
-               "data" => %{
-                 "id" => job_id,
-                 "status" => "pending"
-               }
-             } = json_response(conn1, 202)
-
-      conn2 = post(conn, episode_path(conn, :create, patient_id), data)
-
-      href = "/jobs/#{job_id}"
-
-      assert %{
-               "data" => %{
-                 "eta" => _,
-                 "links" => [%{"entity" => "job", "href" => ^href}],
-                 "status" => "pending",
-                 "status_code" => 202
-               }
-             } = json_response(conn2, 200)
+      assert conn
+             |> post(episode_path(conn, :create, patient_id), data)
+             |> json_response(200)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -160,27 +150,17 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      conn1 = patch(conn, episode_path(conn, :update, patient_id, episode_id), data)
+      assert conn
+             |> patch(episode_path(conn, :update, patient_id, episode_id), data)
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
 
-      assert %{
-               "data" => %{
-                 "id" => job_id,
-                 "status" => "pending"
-               }
-             } = json_response(conn1, 202)
-
-      conn2 = patch(conn, episode_path(conn, :update, patient_id, episode_id), data)
-
-      href = "/jobs/#{job_id}"
-
-      assert %{
-               "data" => %{
-                 "eta" => _,
-                 "links" => [%{"entity" => "job", "href" => ^href}],
-                 "status" => "pending",
-                 "status_code" => 202
-               }
-             } = json_response(conn2, 200)
+      assert conn
+             |> patch(episode_path(conn, :update, patient_id, episode_id), data)
+             |> json_response(200)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -245,27 +225,17 @@ defmodule Api.Web.EpisodeControllerTest do
         "status_reason" => %{"coding" => [%{"system" => "eHealth/episode_closing_reasons", "code" => "legal_entity"}]}
       }
 
-      conn1 = patch(conn, episode_path(conn, :close, patient_id, episode_id), data)
+      assert conn
+             |> patch(episode_path(conn, :close, patient_id, episode_id), data)
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
 
-      assert %{
-               "data" => %{
-                 "id" => job_id,
-                 "status" => "pending"
-               }
-             } = json_response(conn1, 202)
-
-      conn2 = patch(conn, episode_path(conn, :close, patient_id, episode_id), data)
-
-      href = "/jobs/#{job_id}"
-
-      assert %{
-               "data" => %{
-                 "eta" => _,
-                 "links" => [%{"entity" => "job", "href" => ^href}],
-                 "status" => "pending",
-                 "status_code" => 202
-               }
-             } = json_response(conn2, 200)
+      assert conn
+             |> patch(episode_path(conn, :close, patient_id, episode_id), data)
+             |> json_response(200)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -330,27 +300,17 @@ defmodule Api.Web.EpisodeControllerTest do
         "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"
       }
 
-      conn1 = patch(conn, episode_path(conn, :cancel, patient_id, episode_id), data)
+      assert conn
+             |> patch(episode_path(conn, :cancel, patient_id, episode_id), data)
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
 
-      assert %{
-               "data" => %{
-                 "id" => job_id,
-                 "status" => "pending"
-               }
-             } = json_response(conn1, 202)
-
-      conn2 = patch(conn, episode_path(conn, :cancel, patient_id, episode_id), data)
-
-      href = "/jobs/#{job_id}"
-
-      assert %{
-               "data" => %{
-                 "eta" => _,
-                 "links" => [%{"entity" => "job", "href" => ^href}],
-                 "status" => "pending",
-                 "status_code" => 202
-               }
-             } = json_response(conn2, 200)
+      assert conn
+             |> patch(episode_path(conn, :cancel, patient_id, episode_id), data)
+             |> json_response(200)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 

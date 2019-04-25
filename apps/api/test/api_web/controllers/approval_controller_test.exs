@@ -146,19 +146,11 @@ defmodule Api.Web.ApprovalControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
 
-      assert resp =
-               conn
-               |> post(approval_path(conn, :create, patient_id), build_request_params(:resources))
-               |> json_response(202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = resp
+      assert conn
+             |> post(approval_path(conn, :create, patient_id), build_request_params(:resources))
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
 
     test "success approval create with service_request request param", %{conn: conn} do
@@ -169,19 +161,11 @@ defmodule Api.Web.ApprovalControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
 
-      assert resp =
-               conn
-               |> post(approval_path(conn, :create, patient_id), build_request_params(:service_request))
-               |> json_response(202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = resp
+      assert conn
+             |> post(approval_path(conn, :create, patient_id), build_request_params(:service_request))
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -407,19 +391,11 @@ defmodule Api.Web.ApprovalControllerTest do
       approval = insert(:approval, patient_id: patient_id_hash)
       id = to_string(approval._id)
 
-      assert resp =
-               conn
-               |> patch(approval_path(conn, :resend, patient_id, id))
-               |> json_response(202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = resp
+      assert conn
+             |> patch(approval_path(conn, :resend, patient_id, id))
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 

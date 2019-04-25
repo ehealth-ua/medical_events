@@ -33,7 +33,7 @@ defmodule Api.Web.JobControllerTest do
         |> get(job_path(conn, :show, to_string(job._id)))
         |> json_response(200)
         |> Map.get("data")
-        |> assert_json_schema("jobs/job_details.json")
+        |> assert_json_schema("jobs/job_details_pending.json")
 
       assert Job.status_to_string(job.status) == response["status"]
 
@@ -95,7 +95,7 @@ defmodule Api.Web.JobControllerTest do
       response =
         conn
         |> get(job_path(conn, :show, to_string(job._id)))
-        |> json_response(303)
+        |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details_with_response_data.json")
 
@@ -118,7 +118,7 @@ defmodule Api.Web.JobControllerTest do
       response =
         conn
         |> get(job_path(conn, :show, to_string(job._id)))
-        |> json_response(303)
+        |> json_response(200)
         |> Map.get("data")
         |> assert_json_schema("jobs/job_details_with_response_data.json")
 
@@ -133,7 +133,7 @@ defmodule Api.Web.JobControllerTest do
       job =
         insert(
           :job,
-          status: Job.status(:processed),
+          status: Job.status(:failed),
           status_code: 422,
           response: [%{"type" => "invalid"}]
         )
