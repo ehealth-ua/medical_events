@@ -59,21 +59,13 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       insert(:patient, _id: patient_id_hash)
 
-      conn =
-        post(conn, diagnostic_report_path(conn, :create, patient_id), %{
-          "signed_data" => Base.encode64(Jason.encode!(%{}))
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> post(diagnostic_report_path(conn, :create, patient_id), %{
+               "signed_data" => Base.encode64(Jason.encode!(%{}))
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
@@ -130,21 +122,13 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       insert(:patient, _id: patient_id_hash)
 
-      conn =
-        post(conn, diagnostic_report_path(conn, :cancel, patient_id), %{
-          "signed_data" => Base.encode64(Jason.encode!(%{}))
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> post(diagnostic_report_path(conn, :cancel, patient_id), %{
+               "signed_data" => Base.encode64(Jason.encode!(%{}))
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 

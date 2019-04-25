@@ -7,6 +7,11 @@ defmodule Api.Web.JobController do
   alias Core.Job
   alias Core.Jobs
 
+  @job_status_pending Job.status(:pending)
+  @job_status_processed Job.status(:processed)
+  @job_status_failed Job.status(:failed)
+  @job_status_failed_with_error Job.status(:failed_with_error)
+
   action_fallback(Api.Web.FallbackController)
 
   def show(conn, %{"id" => id}) do
@@ -19,10 +24,14 @@ defmodule Api.Web.JobController do
     end
   end
 
-  defp map_http_response_code(%Job{status_code: 200}), do: {303, "details.json"}
-  defp map_http_response_code(%Job{status_code: 202}), do: {200, "details.json"}
+  defp map_http_response_code(%Job{status: @job_status_processed, response: %{"response_data" => _}}),
+    do: {200, "details.json"}
 
-  defp map_http_response_code(%Job{status_code: code}) when code in [404, 422, 409, 500] do
+  defp map_http_response_code(%Job{status: @job_status_processed}), do: {303, "details.json"}
+  defp map_http_response_code(%Job{status: @job_status_pending}), do: {200, "details.json"}
+
+  defp map_http_response_code(%Job{status: status})
+       when status in [@job_status_failed, @job_status_failed_with_error] do
     {200, "details_error.json"}
   end
 

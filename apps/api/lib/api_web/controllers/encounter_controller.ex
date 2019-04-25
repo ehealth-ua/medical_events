@@ -35,7 +35,7 @@ defmodule Api.Web.EncounterController do
       conn
       |> put_status(202)
       |> put_view(JobView)
-      |> render("create.json", job: job)
+      |> render("details.json", job: job)
     end
   end
 
@@ -44,7 +44,7 @@ defmodule Api.Web.EncounterController do
       conn
       |> put_status(202)
       |> put_view(JobView)
-      |> render("cancel.json", job: job)
+      |> render("details.json", job: job)
     end
   end
 end

@@ -63,25 +63,17 @@ defmodule Api.Web.EncounterControllerTest do
       insert(:patient, _id: patient_id_hash)
       now = DateTime.utc_now()
 
-      conn =
-        post(conn, encounter_path(conn, :create, patient_id), %{
-          "visit" => %{
-            "id" => UUID.uuid4(),
-            "period" => %{"start" => DateTime.to_iso8601(now), "end" => DateTime.to_iso8601(now)}
-          },
-          "signed_data" => Base.encode64(Jason.encode!(%{}))
-        })
-
-      assert response = json_response(conn, 202)
-
-      assert %{
-               "data" => %{
-                 "id" => _,
-                 "inserted_at" => _,
-                 "status" => "pending",
-                 "updated_at" => _
-               }
-             } = response
+      assert conn
+             |> post(encounter_path(conn, :create, patient_id), %{
+               "visit" => %{
+                 "id" => UUID.uuid4(),
+                 "period" => %{"start" => DateTime.to_iso8601(now), "end" => DateTime.to_iso8601(now)}
+               },
+               "signed_data" => Base.encode64(Jason.encode!(%{}))
+             })
+             |> json_response(202)
+             |> Map.get("data")
+             |> assert_json_schema("jobs/job_details_pending.json")
     end
   end
 
