@@ -1388,13 +1388,15 @@ defmodule Api.Web.SummaryControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      code_value = "1"
+      service_id = UUID.uuid4()
 
       code =
-        build(
-          :codeable_concept,
-          coding: [build(:coding, code: code_value, system: "eHealth/LOINC/diagnostic_report_codes")]
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(code: "service"),
+              value: Mongo.string_to_uuid(service_id)
+            )
         )
 
       diagnostic_report_1 = build(:diagnostic_report, code: code)
@@ -1408,7 +1410,7 @@ defmodule Api.Web.SummaryControllerTest do
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
 
-      search_params = %{"code" => code_value}
+      search_params = %{"code" => service_id}
 
       resp =
         conn

@@ -17,8 +17,8 @@ defmodule Core.ServiceRequest do
   @intent_order "order"
   @intent_plan "plan"
 
-  @laboratory_procedure "108252007"
-  @counselling "409063005"
+  @laboratory_procedure "laboratory_procedure"
+  @counselling "counselling"
 
   def status(:active), do: @status_active
   def status(:in_progress), do: @status_in_progress

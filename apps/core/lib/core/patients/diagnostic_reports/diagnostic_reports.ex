@@ -133,6 +133,7 @@ defmodule Core.Patients.DiagnosticReports do
     issued_from = Search.get_filter_date(:from, params["issued_from"])
     issued_to = Search.get_filter_date(:to, params["issued_to"])
 
+    code = if params["code"], do: Mongo.string_to_uuid(params["code"])
     context_episode_id = if params["context_episode_id"], do: Mongo.string_to_uuid(params["context_episode_id"])
     origin_episode_id = if params["origin_episode_id"], do: Mongo.string_to_uuid(params["origin_episode_id"])
     encounter_ids = if !is_nil(context_episode_id), do: get_encounter_ids(patient_id_hash, context_episode_id)
@@ -140,11 +141,7 @@ defmodule Core.Patients.DiagnosticReports do
 
     search_pipeline =
       %{"$match" => %{}}
-      |> Search.add_param(
-        %{"code" => params["code"]},
-        ["$match", "#{path}.code.coding"],
-        "$elemMatch"
-      )
+      |> Search.add_param(code, ["$match", "#{path}.code.identifier.value"])
       |> Search.add_param(encounter_id, ["$match", "#{path}.encounter.identifier.value"])
       |> add_search_param(encounter_ids, ["$match", "#{path}.encounter.identifier.value"], "$in")
       |> Search.add_param(issued_from, ["$match", "#{path}.issued"], "$gte")
@@ -452,11 +449,11 @@ defmodule Core.Patients.DiagnosticReports do
            user_id: user_id,
            client_id: client_id
          },
-         %{"diagnostic_report" => diagnostic_report}
+         %{"diagnostic_report" => _} = content
        ) do
     now = DateTime.utc_now()
 
-    diagnostic_report = DiagnosticReport.create(diagnostic_report)
+    diagnostic_report = DiagnosticReport.create(content["diagnostic_report"])
 
     diagnostic_report =
       %{
@@ -466,7 +463,9 @@ defmodule Core.Patients.DiagnosticReports do
           inserted_by: user_id,
           updated_by: user_id
       }
+      |> DiagnosticReportValidations.validate_code(content["observations"])
       |> DiagnosticReportValidations.validate_based_on(client_id)
+      |> DiagnosticReportValidations.validate_conclusion()
       |> DiagnosticReportValidations.validate_effective()
       |> DiagnosticReportValidations.validate_issued()
       |> DiagnosticReportValidations.validate_recorded_by(client_id)

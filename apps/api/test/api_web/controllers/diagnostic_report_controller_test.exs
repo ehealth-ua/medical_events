@@ -265,13 +265,15 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      code_value = "1"
+      service_id = UUID.uuid4()
 
       code =
-        build(
-          :codeable_concept,
-          coding: [build(:coding, code: code_value, system: "eHealth/LOINC/diagnostic_report_codes")]
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(code: "service"),
+              value: Mongo.string_to_uuid(service_id)
+            )
         )
 
       diagnostic_report_1 = build(:diagnostic_report, code: code)
@@ -285,7 +287,7 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       insert(:patient, _id: patient_id_hash, diagnostic_reports: diagnostic_reports)
 
-      search_params = %{"code" => code_value}
+      search_params = %{"code" => service_id}
 
       resp =
         conn
@@ -526,16 +528,15 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
-      code_value = "1"
+      service_id = UUID.uuid4()
 
       code =
-        build(
-          :codeable_concept,
-          coding: [
-            build(:coding, code: code_value, system: "eHealth/diagnostic_report_medications"),
-            build(:coding, code: "test", system: "eHealth/diagnostic_report_medications")
-          ]
+        build(:reference,
+          identifier:
+            build(:identifier,
+              type: codeable_concept_coding(code: "service"),
+              value: Mongo.string_to_uuid(service_id)
+            )
         )
 
       issued_from = Date.utc_today() |> Date.add(-20) |> Date.to_iso8601()
@@ -612,7 +613,7 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       search_params = %{
         "encounter_id" => encounter_id_1,
-        "code" => code_value,
+        "code" => service_id,
         "origin_episode_id" => origin_episode_id,
         "context_episode_id" => UUID.binary_to_string!(episode.id.binary),
         "issued_from" => issued_from,
