@@ -137,6 +137,7 @@ defmodule Core.ServiceRequests.Consumer do
                     |> Mongo.convert_to_uuid("_id")
                     |> Mongo.convert_to_uuid("inserted_by")
                     |> Mongo.convert_to_uuid("updated_by")
+                    |> Mongo.convert_to_uuid("code", ~w(identifier value)a)
                     |> Mongo.convert_to_uuid("requester_employee", ~w(identifier value)a)
                     |> Mongo.convert_to_uuid("requester_legal_entity", ~w(identifier value)a)
                     |> Mongo.convert_to_uuid("context", ~w(identifier value)a)
