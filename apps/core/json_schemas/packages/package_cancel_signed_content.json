@@ -1262,11 +1262,8 @@
           ],
           "additionalProperties": false
         },
-        "incoming_referrals": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/reference"
-          }
+        "incoming_referral": {
+          "$ref": "#/definitions/reference"
         },
         "performer": {
           "$ref": "#/definitions/performer"

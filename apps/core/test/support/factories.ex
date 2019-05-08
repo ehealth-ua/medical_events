@@ -558,7 +558,7 @@ defmodule Core.Factories do
       reasons: [codeable_concept_coding(system: "eHealth/ICPC2/reasons", code: "reason")],
       diagnoses: [build(:diagnosis)],
       cancellation_reason: codeable_concept_coding(system: "eHealth/cancellation_reasons", code: "misspelling"),
-      incoming_referrals: [reference_coding(system: "eHealth/resources", code: "service_request")],
+      incoming_referral: reference_coding(system: "eHealth/resources", code: "service_request"),
       actions: [codeable_concept_coding(system: "eHealth/ICPC2/actions", code: "action")],
       division: reference_coding(system: "eHealth/resources", code: "division"),
       supporting_info: [reference_coding(system: "eHealth/resources", code: "observation")],

@@ -57,13 +57,10 @@ defmodule Core.Patients.Package do
         ~w(condition identifier value)a
       )
       |> Mongo.convert_to_uuid(
-        "encounters.#{encounter.id}.incoming_referrals",
-        ~w(identifier value)a
-      )
-      |> Mongo.convert_to_uuid(
         "encounters.#{encounter.id}.supporting_info",
         ~w(identifier value)a
       )
+      |> Mongo.convert_to_uuid("encounters.#{encounter.id}.incoming_referral.identifier.value")
       |> Mongo.convert_to_uuid("encounters.#{encounter.id}.service_provider.identifier.value")
       |> Mongo.convert_to_uuid("updated_by")
 
