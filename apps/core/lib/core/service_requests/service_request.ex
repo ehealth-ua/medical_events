@@ -12,7 +12,7 @@ defmodule Core.ServiceRequest do
   @status_in_progress "in_progress"
   @status_completed "completed"
   @status_entered_in_error "entered_in_error"
-  @status_cancelled "cancelled"
+  @status_recalled "recalled"
 
   @intent_order "order"
   @intent_plan "plan"
@@ -24,7 +24,7 @@ defmodule Core.ServiceRequest do
   def status(:in_progress), do: @status_in_progress
   def status(:completed), do: @status_completed
   def status(:entered_in_error), do: @status_entered_in_error
-  def status(:cancelled), do: @status_cancelled
+  def status(:recalled), do: @status_recalled
 
   def intent(:order), do: @intent_order
   def intent(:plan), do: @intent_plan
