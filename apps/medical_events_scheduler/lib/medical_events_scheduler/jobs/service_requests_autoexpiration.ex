@@ -40,7 +40,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
       %{
         "updated_by" => updated_by,
         "updated_at" => updated_at,
-        "status" => ServiceRequest.status(:cancelled),
+        "status" => ServiceRequest.status(:recalled),
         "status_reason" => %{
           "coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "autoexpired"}],
           "text" => nil
@@ -50,7 +50,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
 
     status_history =
       StatusHistory.create(%{
-        "status" => ServiceRequest.status(:cancelled),
+        "status" => ServiceRequest.status(:recalled),
         "status_reason" => %{
           "coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "autoexpired"}],
           "text" => nil

@@ -392,7 +392,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         insert(:service_request,
           subject: patient_id_hash,
           permitted_resources: episodes,
-          status: ServiceRequest.status(:cancelled)
+          status: ServiceRequest.status(:recalled)
         )
 
       service_request_id = to_string(service_request._id)

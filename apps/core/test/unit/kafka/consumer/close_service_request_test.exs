@@ -76,7 +76,7 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
       client_id = UUID.uuid4()
       job = insert(:job)
 
-      service_request = insert(:service_request, status: ServiceRequest.status(:cancelled))
+      service_request = insert(:service_request, status: ServiceRequest.status(:recalled))
       %BSON.Binary{binary: id} = service_request._id
       id = UUID.binary_to_string!(id)
 
@@ -85,9 +85,9 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       user_id = UUID.uuid4()
 
-      expect_job_update(job._id, Job.status(:failed), "Service request with status cancelled can't be closed", 409)
+      expect_job_update(job._id, Job.status(:failed), "Service request with status recalled can't be closed", 409)
 
-      assert service_request.status == ServiceRequest.status(:cancelled)
+      assert service_request.status == ServiceRequest.status(:recalled)
 
       assert :ok =
                Consumer.consume(%ServiceRequestCloseJob{

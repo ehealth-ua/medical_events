@@ -380,7 +380,7 @@ defmodule Core.ServiceRequests.Consumer do
             service_request
             | updated_by: user_id,
               updated_at: now,
-              status: ServiceRequest.status(:entered_in_error),
+              status: ServiceRequest.status(:recalled),
               status_reason: CodeableConcept.create(content["status_reason"])
           }
           |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
@@ -458,7 +458,7 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
-                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:entered_in_error))
+                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:recalled))
                   :ok
 
                 {:error, reason} ->
@@ -529,7 +529,7 @@ defmodule Core.ServiceRequests.Consumer do
             service_request
             | updated_by: user_id,
               updated_at: now,
-              status: ServiceRequest.status(:cancelled),
+              status: ServiceRequest.status(:entered_in_error),
               status_reason: CodeableConcept.create(content["status_reason"])
           }
           |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
@@ -607,7 +607,7 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
-                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:cancelled))
+                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:entered_in_error))
                   :ok
 
                 {:error, reason} ->

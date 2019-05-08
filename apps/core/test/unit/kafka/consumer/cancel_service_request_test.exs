@@ -383,7 +383,7 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
         _, _, :get_auth_method, _ -> {:ok, %{"type" => "OTP", "phone_number" => "+380639999999"}}
       end)
 
-      status = ServiceRequest.status(:cancelled)
+      status = ServiceRequest.status(:entered_in_error)
 
       expect(KafkaMock, :publish_to_event_manager, fn event ->
         assert %{

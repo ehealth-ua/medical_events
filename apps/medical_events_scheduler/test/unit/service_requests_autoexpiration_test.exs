@@ -34,7 +34,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
       insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(-1))
 
     updated_list = [service_request_updated]
-    status_cancelled = ServiceRequest.status(:cancelled)
+    status_recalled = ServiceRequest.status(:recalled)
 
     user_id =
       :core
@@ -60,7 +60,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
                  "$push" => %{
                    "status_history" => %{
                      "inserted_by" => ^user_id,
-                     "status" => ^status_cancelled,
+                     "status" => ^status_recalled,
                      "status_reason" => %{
                        "coding" => [
                          %{
@@ -73,7 +73,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
                    }
                  },
                  "$set" => %{
-                   "status" => ^status_cancelled,
+                   "status" => ^status_recalled,
                    "status_reason" => %{
                      "coding" => [
                        %{
