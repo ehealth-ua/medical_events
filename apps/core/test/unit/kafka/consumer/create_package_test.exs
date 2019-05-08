@@ -398,14 +398,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           },
           "prescriptions" => "Дієта №1",
-          "incoming_referrals" => [
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                "value" => to_string(service_request._id)
-              }
+          "incoming_referral" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+              "value" => to_string(service_request._id)
             }
-          ],
+          },
           "supporting_info" => [
             %{
               "identifier" => %{
@@ -1874,14 +1872,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           },
           "prescriptions" => "Дієта №1",
-          "incoming_referrals" => [
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                "value" => to_string(service_request._id)
-              }
+          "incoming_referral" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+              "value" => to_string(service_request._id)
             }
-          ]
+          }
         },
         "conditions" => [
           %{
@@ -3066,14 +3062,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           },
           "prescriptions" => "Дієта №1",
-          "incoming_referrals" => [
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                "value" => to_string(service_request._id)
-              }
+          "incoming_referral" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+              "value" => to_string(service_request._id)
             }
-          ]
+          }
         }
       }
 
@@ -3083,7 +3077,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.encounter.incoming_referrals.[0].identifier.value",
+              "entry" => "$.encounter.incoming_referral.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
@@ -3218,14 +3212,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
             }
           },
           "prescriptions" => "Дієта №1",
-          "incoming_referrals" => [
-            %{
-              "identifier" => %{
-                "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
-                "value" => to_string(service_request._id)
-              }
+          "incoming_referral" => %{
+            "identifier" => %{
+              "type" => %{"coding" => [%{"code" => "service_request", "system" => "eHealth/resources"}]},
+              "value" => to_string(service_request._id)
             }
-          ]
+          }
         }
       }
 
@@ -3235,7 +3227,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.encounter.incoming_referrals.[0].identifier.value",
+              "entry" => "$.encounter.incoming_referral.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{

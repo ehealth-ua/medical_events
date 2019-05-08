@@ -169,11 +169,11 @@ defmodule Core.Patients.Encounters do
   defp search_by_incoming_referral(pipeline, nil), do: pipeline
 
   defp search_by_incoming_referral(pipeline, incoming_referral) do
-    put_in(pipeline, ["$match", "encounters.v.incoming_referrals"], %{
-      "$elemMatch" => %{
-        "identifier.type.coding.code" => "service_request",
-        "identifier.value" => Mongo.string_to_uuid(incoming_referral)
-      }
-    })
+    pipeline
+    |> Search.add_param("service_request", ["$match", "encounters.v.incoming_referral.identifier.type.coding.code"])
+    |> Search.add_param(Mongo.string_to_uuid(incoming_referral), [
+      "$match",
+      "encounters.v.incoming_referral.identifier.value"
+    ])
   end
 end

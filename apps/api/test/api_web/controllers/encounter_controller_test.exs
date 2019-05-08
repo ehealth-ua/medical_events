@@ -277,8 +277,8 @@ defmodule Api.Web.EncounterControllerTest do
             )
         )
 
-      encounter_1 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referrals: [service_request1])
-      encounter_2 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referrals: [service_request2])
+      encounter_1 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referral: service_request1)
+      encounter_2 = build(:encounter, date: get_datetime(-15), episode: episode, incoming_referral: service_request2)
       encounter_3 = build(:encounter, date: get_datetime(-15))
       encounter_4 = build(:encounter, date: get_datetime())
 

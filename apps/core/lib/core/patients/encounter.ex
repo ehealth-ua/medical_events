@@ -30,7 +30,7 @@ defmodule Core.Encounter do
       dictionary_reference: [path: "type", referenced_field: "system", field: "code"]
     )
 
-    field(:incoming_referrals, reference: [path: "incoming_referrals"])
+    field(:incoming_referral, reference: [path: "incoming_referral"])
     field(:duration)
 
     field(:reasons,
@@ -94,11 +94,11 @@ defmodule Core.Encounter do
         {"performer", v} ->
           {:performer, Reference.create(v)}
 
-        {"incoming_referrals", nil} ->
-          {:incoming_referrals, nil}
+        {"incoming_referral", nil} ->
+          {:incoming_referral, nil}
 
-        {"incoming_referrals", v} ->
-          {:incoming_referrals, Enum.map(v, &Reference.create/1)}
+        {"incoming_referral", v} ->
+          {:incoming_referral, Reference.create(v)}
 
         {"service_provider", v} ->
           {:service_provider, Reference.create(v)}

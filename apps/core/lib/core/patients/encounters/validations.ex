@@ -103,22 +103,20 @@ defmodule Core.Patients.Encounters.Validations do
     )
   end
 
-  def validate_incoming_referrals(%Encounter{} = encounter, client_id) do
-    incoming_referrals = encounter.incoming_referrals || []
+  def validate_incoming_referral(%Encounter{incoming_referral: nil} = encounter, _), do: encounter
+
+  def validate_incoming_referral(%Encounter{incoming_referral: incoming_referral} = encounter, client_id) do
     now = DateTime.utc_now()
 
-    incoming_referrals =
-      Enum.map(incoming_referrals, fn referral ->
-        identifier = referral.identifier
+    incoming_referral = %{
+      incoming_referral
+      | identifier:
+          add_validations(incoming_referral.identifier, :value,
+            service_request_reference: [client_id: client_id, datetime: now]
+          )
+    }
 
-        %{
-          referral
-          | identifier:
-              add_validations(identifier, :value, service_request_reference: [client_id: client_id, datetime: now])
-        }
-      end)
-
-    %{encounter | incoming_referrals: incoming_referrals}
+    %{encounter | incoming_referral: incoming_referral}
   end
 
   def validate_date(%Encounter{} = encounter) do

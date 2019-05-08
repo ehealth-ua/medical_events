@@ -17,7 +17,7 @@ defmodule Core.TestViews.CancelEncounterPackageView do
       episode: ReferenceView.render(encounter.episode),
       class: ReferenceView.render(encounter.class),
       type: ReferenceView.render(encounter.type),
-      incoming_referrals: ReferenceView.render(encounter.incoming_referrals),
+      incoming_referral: ReferenceView.render(encounter.incoming_referral),
       performer: ReferenceView.render(encounter.performer),
       reasons: ReferenceView.render(encounter.reasons),
       diagnoses: Enum.map(encounter.diagnoses, &DiagnosisView.render/1),
