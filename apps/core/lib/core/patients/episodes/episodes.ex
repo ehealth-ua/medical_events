@@ -49,6 +49,7 @@ defmodule Core.Patients.Episodes do
     |> search_period_criterias(params)
     |> search_code(Map.get(params, "code"))
     |> search_status(Map.get(params, "status"))
+    |> search_managing_organization(Map.get(params, "managing_organization"))
   end
 
   defp search_period_criterias(pipeline, %{"period_from" => date_from, "period_to" => date_to}) do
@@ -131,5 +132,18 @@ defmodule Core.Patients.Episodes do
 
   defp search_status(pipeline, status) do
     pipeline ++ [%{"$match" => %{"status" => status}}]
+  end
+
+  defp search_managing_organization(pipeline, nil), do: pipeline
+
+  defp search_managing_organization(pipeline, managing_organization) do
+    pipeline ++
+      [
+        %{
+          "$match" => %{
+            "managing_organization.identifier.value" => Mongo.string_to_uuid(managing_organization)
+          }
+        }
+      ]
   end
 end

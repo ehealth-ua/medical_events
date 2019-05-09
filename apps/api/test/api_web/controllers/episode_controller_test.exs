@@ -487,6 +487,39 @@ defmodule Api.Web.EpisodeControllerTest do
                |> Map.get("paging")
     end
 
+    test "get episodes by managing organization", %{conn: conn} do
+      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
+
+      managing_organization = UUID.uuid4()
+
+      episode1 =
+        build(:episode,
+          managing_organization: reference_coding(Mongo.string_to_uuid(managing_organization), code: "legal_entity")
+        )
+
+      episode2 =
+        build(:episode,
+          managing_organization: reference_coding(Mongo.string_to_uuid(UUID.uuid4()), code: "legal_entity")
+        )
+
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient,
+        _id: patient_id_hash,
+        episodes: %{to_string(episode1.id) => episode1, to_string(episode2.id) => episode2}
+      )
+
+      resp =
+        conn
+        |> get(episode_path(conn, :index, patient_id), %{"managing_organization" => managing_organization})
+        |> json_response(200)
+
+      assert [episode] = resp["data"]
+      assert_json_schema(episode, "episodes/episode_show.json")
+      assert managing_organization == episode["managing_organization"]["identifier"]["value"]
+    end
+
     test "get episodes order by inserted first episode", %{conn: conn} do
       expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
