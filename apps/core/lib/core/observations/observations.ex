@@ -156,6 +156,7 @@ defmodule Core.Observations do
     issued_to = filter_date(params["issued_to"], true)
     episode_id = Maybe.map(params["episode_id"], &Mongo.string_to_uuid(&1))
     encounter_id = Maybe.map(params["encounter_id"], &Mongo.string_to_uuid(&1))
+    diagnostic_report_id = Maybe.map(params["diagnostic_report_id"], &Mongo.string_to_uuid(&1))
 
     %{"$match" => %{"patient_id" => patient_id_hash}}
     |> Search.add_param(code, ["$match", "code.coding.0.code"])
@@ -163,6 +164,7 @@ defmodule Core.Observations do
     |> Search.add_param(episode_id, ["$match", "context_episode_id"])
     |> Search.add_param(issued_from, ["$match", "issued"], "$gte")
     |> Search.add_param(issued_to, ["$match", "issued"], "$lte")
+    |> Search.add_param(diagnostic_report_id, ["$match", "diagnostic_report.identifier.value"])
     |> List.wrap()
     |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
   end

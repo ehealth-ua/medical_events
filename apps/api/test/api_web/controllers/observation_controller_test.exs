@@ -139,7 +139,7 @@ defmodule Api.Web.ObservationControllerTest do
   end
 
   describe "search observations" do
-    test "success by code, encounter_id, episode_id, issued_from, issued_to", %{conn: conn} do
+    test "success by code, encounter_id, episode_id, issued_from, issued_to, diagnostic_report_id", %{conn: conn} do
       episode = build(:episode)
       episode2 = build(:episode)
 
@@ -148,6 +148,8 @@ defmodule Api.Web.ObservationControllerTest do
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      diagnostic_report_id = UUID.uuid4()
 
       insert(
         :patient,
@@ -171,22 +173,27 @@ defmodule Api.Web.ObservationControllerTest do
         patient_id: patient_id_hash,
         encounter_context: encounter,
         code: observation_code,
-        issued: issued
+        issued: issued,
+        diagnostic_report:
+          build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(diagnostic_report_id)))
       )
 
       insert(:observation,
         patient_id: patient_id_hash,
         encounter_context: encounter,
         code: observation_code,
-        issued: issued
+        issued: issued,
+        diagnostic_report:
+          build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(diagnostic_report_id)))
       )
 
-      # Next observations have no correct code, encounter, patient_id, issued
+      # Next observations have no correct code, encounter, patient_id, issued, diagnostic_report_id
       insert(:observation,
         patient_id: patient_id_hash,
         encounter_context: encounter,
         code: observation_code,
-        issued: issued2
+        issued: issued2,
+        diagnostic_report: build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(UUID.uuid4())))
       )
 
       insert(:observation, patient_id: patient_id_hash, encounter_context: encounter)
@@ -198,7 +205,8 @@ defmodule Api.Web.ObservationControllerTest do
         "encounter_id" => UUID.binary_to_string!(encounter.id.binary),
         "episode_id" => UUID.binary_to_string!(episode.id.binary),
         "issued_from" => "1980-01-01",
-        "issued_to" => "2000-01-01"
+        "issued_to" => "2000-01-01",
+        "diagnostic_report_id" => diagnostic_report_id
       }
 
       response =
@@ -370,6 +378,37 @@ defmodule Api.Web.ObservationControllerTest do
       response =
         conn
         |> get(episode_context_observation_path(conn, :index, patient_id, to_string(episode.id)))
+        |> json_response(200)
+
+      assert 3 == get_in(response, ["paging", "total_entries"])
+    end
+
+    test "success by diagnostic_report_id", %{conn: conn} do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      insert(:patient, _id: patient_id_hash)
+
+      diagnostic_report_id = UUID.uuid4()
+
+      insert_list(3, :observation,
+        patient_id: patient_id_hash,
+        diagnostic_report:
+          build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(diagnostic_report_id)))
+      )
+
+      insert_list(10, :observation,
+        patient_id: patient_id_hash,
+        diagnostic_report: build(:reference, identifier: build(:identifier, value: Mongo.string_to_uuid(UUID.uuid4())))
+      )
+
+      request_params = %{
+        "diagnostic_report_id" => diagnostic_report_id
+      }
+
+      response =
+        conn
+        |> get(observation_path(conn, :index, patient_id), request_params)
         |> json_response(200)
 
       assert 3 == get_in(response, ["paging", "total_entries"])
