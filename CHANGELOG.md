@@ -5,12 +5,56 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
-## [1.2.0](https://github.com/edenlabllc/medical_events/compare/1.1.0...1.2.0) (2019-3-27)
+## [1.2.0](https://github.com/edenlabllc/medical_events/compare/1.2.0...1.2.0) (2019-5-9)
 
 
 
 
 ### Features:
+
+* added new diagnostic report validations (#416)
+
+* validate that service/group is active and request_allowed = true (#413)
+
+* service requests search by code (#412)
+
+* added json schema validation on encounters list, renamed attribute (#411)
+
+* drop casher (#410)
+
+* code/category validations on service request create ws (#407)
+
+* get diagnostic_report by id rpc (#405)
+
+* search by service request changes in episodes/encounters/dr's (#406)
+
+* new route for service requests search, some refactoring (#403)
+
+* service_request by id rpc (#402)
+
+* abac rpc context functions (#401)
+
+* encryptor module improved to use all binary data (#400)
+
+* added requester_legal_enity field to service requests (#398)
+
+* Service requests requisition number into hash migration fix (#399)
+
+* added explanatory_letter and cancellation_reason to DR cancel (#397)
+
+* added diagnostic report package cancel WS (#393)
+
+* service request requisition number into hash#4543 (#391)
+
+* diagnostic report could be submitted as a granted_resources on approvals (#388)
+
+* added diagnostic report reference to observations (#386)
+
+* Service request reference on dr#4648 (#387)
+
+* conditions and observations get by episode id functions improved (#381)
+
+* added diagnostic report package creation (#384)
 
 * Approvals and job collections clean up#4144 (#378)
 
@@ -47,41 +91,6 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 * Added supporting info to encounter (#331)
 
 * ehealth_logger (#345)
-
-### Bug Fixes:
-
-* allow in progress status in service request reference validation (#374)
-
-* cancel encounter package render (#373)
-
-* naming pods (#368)
-
-* used_by_legal_entity validation in complete/process service request (#364)
-
-* service requests services status (#362)
-
-* logging (#360)
-
-* Fixed some service requests services (#357)
-
-* drop immunization dose_status, dose_status_reason (#358)
-
-* permitted_episodes are now not required in cancel/recall service request WS (#352)
-
-* medical events scheduler app and config fixed (#355)
-
-* service request autoexpiration datetime fixed (#354)
-
-* don't close service request on episode close (#353)
-
-* transaction fail case (#344)
-
-## [1.1.0](https://github.com/edenlabllc/medical_events/compare/1.0.1...1.1.0) (2019-3-4)
-
-
-
-
-### Features:
 
 * add separate actions for get by id in episode context (#324)
 
@@ -131,6 +140,52 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 ### Bug Fixes:
 
+* service requests cancel/recall/autoexpiration status (#418)
+
+* job responses redesigned (#414)
+
+* convert code identifier value in service requests to UUID (#417)
+
+* service requests recall/cancel schema (#409)
+
+* diagnostic_report reference in observation, cancel rendering (#404)
+
+* libcluster api app config removed to core app (#396)
+
+* migrator starts lib_cluster (#395)
+
+* service requests requisition mumber into hash migration improved (#394)
+
+* observation context_episode_id set on nil on dr package create (#392)
+
+* added alias for our Vex module to use instead of default (#390)
+
+* allow in progress status in service request reference validation (#374)
+
+* cancel encounter package render (#373)
+
+* naming pods (#368)
+
+* used_by_legal_entity validation in complete/process service request (#364)
+
+* service requests services status (#362)
+
+* logging (#360)
+
+* Fixed some service requests services (#357)
+
+* drop immunization dose_status, dose_status_reason (#358)
+
+* permitted_episodes are now not required in cancel/recall service request WS (#352)
+
+* medical events scheduler app and config fixed (#355)
+
+* service request autoexpiration datetime fixed (#354)
+
+* don't close service request on episode close (#353)
+
+* transaction fail case (#344)
+
 * search conditions on package create (#335)
 
 * fail on transaction service failure (#334)
@@ -176,8 +231,3 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 * remote patient_id from use, release service request (#267)
 
 * fail on saving to media storage (#264)
-
-## [1.0.1](https://github.com/edenlabllc/medical_events/compare/1.0.1...1.0.1) (2019-1-23)
-
-
-
