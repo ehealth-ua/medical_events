@@ -264,9 +264,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -362,9 +359,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
             "value" => client_id
           }
-        },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
         },
         "supporting_info" => [
           %{
@@ -618,9 +612,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -717,9 +708,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
             "value" => client_id
           }
-        },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
         },
         "supporting_info" => [
           %{
@@ -906,9 +894,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -1036,9 +1021,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
             "value" => client_id
           }
-        },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
         },
         "supporting_info" => [
           %{
@@ -1168,9 +1150,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -1298,9 +1277,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
             "value" => client_id
           }
-        },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
         },
         "supporting_info" => [
           %{
@@ -1430,9 +1406,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -1561,9 +1534,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "value" => client_id
           }
         },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
-        },
         "supporting_info" => [
           %{
             "identifier" => %{
@@ -1691,9 +1661,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
             "type" => %{"coding" => [%{"code" => "legal_entity", "system" => "eHealth/resources"}]},
             "value" => client_id
           }
-        },
-        "performer_type" => %{
-          "coding" => [%{"code" => "psychiatrist", "system" => "eHealth/SNOMED/service_request_performer_roles"}]
         },
         "supporting_info" => [
           %{

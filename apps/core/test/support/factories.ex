@@ -748,8 +748,6 @@ defmodule Core.Factories do
       category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "counselling"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
-      performer_type:
-        codeable_concept_coding(system: "eHealth/SNOMED/service_request_performer_roles", code: "psychiatrist"),
       requester_employee: reference_coding(system: "eHealth/resources", code: "employee"),
       requester_legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       authored_on: DateTime.to_iso8601(DateTime.utc_now()),
