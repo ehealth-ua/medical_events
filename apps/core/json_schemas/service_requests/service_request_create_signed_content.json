@@ -301,43 +301,6 @@
       ],
       "additionalProperties": false
     },
-    "performer_type": {
-      "type": "object",
-      "properties": {
-        "coding": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "properties": {
-              "system": {
-                "type": "string",
-                "enum": [
-                  "eHealth/SNOMED/service_request_performer_roles"
-                ]
-              },
-              "code": {
-                "type": "string",
-                "minLength": 1,
-                "description": "Symbol in syntax defined by the system"
-              }
-            },
-            "required": [
-              "code",
-              "system"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "text": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "coding"
-      ],
-      "additionalProperties": false
-    },
     "reason_reference": {
       "type": "array",
       "minItems": 1,

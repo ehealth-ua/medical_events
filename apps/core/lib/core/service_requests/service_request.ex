@@ -49,12 +49,6 @@ defmodule Core.ServiceRequest do
     field(:requester_employee, presence: true, reference: [path: "requester_employee"])
     field(:requester_legal_entity, presence: true, reference: [path: "requester_legal_entity"])
     field(:priority)
-
-    field(:performer_type,
-      reference: [path: "performer_type"],
-      dictionary_reference: [referenced_field: "system", field: "code"]
-    )
-
     field(:reason_reference, reference: [path: "reason_reference"])
     field(:supporting_info, reference: [path: "supporting_info"])
     field(:note)
@@ -106,9 +100,6 @@ defmodule Core.ServiceRequest do
 
         {"used_by_legal_entity", v} ->
           {:used_by_legal_entity, Reference.create(v)}
-
-        {"performer_type", v} ->
-          {:performer_type, CodeableConcept.create(v)}
 
         {"reason_reference", nil} ->
           {:reason_reference, nil}

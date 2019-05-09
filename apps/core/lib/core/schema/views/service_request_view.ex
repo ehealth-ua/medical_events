@@ -28,7 +28,6 @@ defmodule Core.ServiceRequestView do
       context: ReferenceView.render(service_request.context),
       requester_employee: ReferenceView.render(service_request.requester_employee),
       requester_legal_entity: ReferenceView.render(service_request.requester_legal_entity),
-      performer_type: ReferenceView.render(service_request.performer_type),
       reason_reference: ReferenceView.render(service_request.reason_reference),
       supporting_info: ReferenceView.render(service_request.supporting_info),
       permitted_resources: ReferenceView.render(service_request.permitted_resources),

@@ -119,7 +119,6 @@ defmodule Api.Rpc do
           note: binary(),
           occurrence_date_time: DateTime,
           patient_instruction: binary(),
-          performer_type: codeable_concept(),
           permitted_resources: list(reference_()),
           priority: binary(),
           reason_reference: list(reference_()),
@@ -2318,15 +2317,6 @@ defmodule Api.Rpc do
         note: nil,
         occurrence_date_time: "2019-04-11T14:32:57.843198Z",
         patient_instruction: nil,
-        performer_type: %{
-          coding: [
-            %{
-              code: "psychiatrist",
-              system: "eHealth/SNOMED/service_request_performer_roles"
-            }
-          ],
-          text: "code text"
-        },
         permitted_resources: nil,
         priority: nil,
         reason_reference: nil,
