@@ -1,1 +1,1 @@
-db.getCollection('service_requests').update({}, {$unset: {"performer_type": ""}})
+db.getCollection('service_requests').updateMany({}, {$unset: {"performer_type": ""}})
