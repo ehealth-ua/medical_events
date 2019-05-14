@@ -13,12 +13,7 @@ config :core,
     validators: Core.Validators.Cache
   ],
   kafka: [
-    producer: Core.Kafka.Producer,
-    partitions: %{
-      "medical_events" => {:system, :integer, "MEDICAL_EVENTS_PARTITIONS"},
-      "person_events" => {:system, :integer, "PERSON_EVENTS_PARTITIONS"},
-      "mongo_events" => {:system, :integer, "MONGO_EVENTS_PARTITIONS"}
-    }
+    producer: Core.Kafka.Producer
   ],
   rpc_worker: Core.Rpc.Worker,
   system_user: {:system, "EHEALTH_SYSTEM_USER", "4261eacf-8008-4e62-899f-de1e2f7065f0"}
