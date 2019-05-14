@@ -9,8 +9,7 @@ defmodule Mix.Tasks.Migrate do
   def run(_) do
     {:ok, _} = Application.ensure_all_started(:mongodb)
 
-    {:ok, pid} =
-      Mongo.start_link(name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy)
+    {:ok, pid} = Mongo.start_link(name: :mongo, url: Confex.fetch_env!(:core, :mongo)[:url], pool: DBConnection.Poolboy)
 
     with :ok <- Migrator.migrate() do
       Logger.info(IO.ANSI.green() <> "Migrations completed" <> IO.ANSI.default_color())

@@ -32,14 +32,22 @@ defmodule Core.Application do
       redix_workers ++
         [
           worker(Core.Validators.Cache, []),
-          worker(Mongo, [[name: :mongo, url: Application.get_env(:core, :mongo)[:url], pool: DBConnection.Poolboy]]),
+          worker(Mongo, [
+            [
+              name: :mongo,
+              url: Confex.fetch_env!(:core, :mongo)[:url],
+              pool: DBConnection.Poolboy,
+              pool_size: Confex.fetch_env!(:core, :mongo)[:pool_size]
+            ]
+          ]),
           worker(
             Mongo,
             [
               [
                 name: :mongo_audit_log,
-                url: Application.get_env(:core, :mongo_audit_log)[:url],
-                pool: DBConnection.Poolboy
+                url: Confex.fetch_env!(:core, :mongo_audit_log)[:url],
+                pool: DBConnection.Poolboy,
+                pool_size: Confex.fetch_env!(:core, :mongo_audit_log)[:pool_size]
               ]
             ],
             id: :mongo_audit_log
