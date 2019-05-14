@@ -5,6 +5,23 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [1.3.0](https://github.com/edenlabllc/medical_events/compare/1.2.0...1.3.0) (2019-5-14)
+
+
+
+
+### Features:
+
+* added search by managing_organization to episodes (#426)
+
+* added search by diagnostic_report_id to observations (#425)
+
+### Bug Fixes:
+
+* kafka producer partition selection (#428)
+
+* incoming_referrals/performer_type migrations (#424)
+
 ## [1.2.0](https://github.com/edenlabllc/medical_events/compare/1.2.0...1.2.0) (2019-5-9)
 
 
