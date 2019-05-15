@@ -28,11 +28,10 @@ pipeline {
           sudo rm /var/cache/apt/archives/lock
           sudo rm /var/lib/dpkg/lock      
           sudo dpkg --configure -a
-          until  sudo apt-get update;
+          until  sudo apt-get install -y ruby-dev;
             do
               sleep 2
             done
-          sudo apt-get install -y ruby-dev;
           sudo gem install json;
           env;
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/check-PR.sh -o check-PR.sh;
