@@ -9,6 +9,7 @@ defmodule Core.Validators.JsonSchema do
 
   use_schema(:package_create, "json_schemas/packages/package_create.json")
   use_schema(:package_create_signed_content, "json_schemas/packages/package_create_signed_content.json")
+  use_schema(:package_create_signed_content_short, "json_schemas/packages/package_create_signed_content_short.json")
   use_schema(:package_cancel, "json_schemas/packages/package_cancel.json")
   use_schema(:package_cancel_signed_content, "json_schemas/packages/package_cancel_signed_content.json")
   use_schema(:diagnostic_report_package_create, "json_schemas/packages/diagnostic_report_package_create.json")
