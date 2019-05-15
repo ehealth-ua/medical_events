@@ -186,9 +186,16 @@ defmodule Core.Patients do
           user_id: user_id
         } = job
       ) do
+    schema =
+      if Confex.fetch_env!(:core, :encounter_package)[:use_encounter_package_short_schema] do
+        :package_create_signed_content_short
+      else
+        :package_create_signed_content
+      end
+
     with {:ok, data} <- decode_signed_data(job.signed_data),
          {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
-         :ok <- JsonSchema.validate(:package_create_signed_content, content),
+         :ok <- JsonSchema.validate(schema, content),
          :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id) do
