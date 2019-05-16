@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [2.0.0](https://github.com/edenlabllc/medical_events/compare/1.4.0...2.0.0) (2019-5-16)
+### Breaking Changes:
+
+* audit log
+
+
+
+### Features:
+
+* you can now use short json schema in create encounter package (#435)
+
+### Bug Fixes:
+
+* js migrations (#436)
+
 ## [1.4.0](https://github.com/edenlabllc/medical_events/compare/1.3.0...1.4.0) (2019-5-14)
 
 
