@@ -99,10 +99,13 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       user_id = UUID.uuid4()
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [
-                 %{"collection" => "patients", "operation" => "update_one", "set" => updated_episode},
-                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
-               ] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "patients", "operation" => "update_one", "set" => updated_episode},
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         updated_episode = updated_episode |> Base.decode64!() |> BSON.decode()
         assert updated_episode["$set"]["episodes.#{episode_id}.name"] == "ОРВИ 2019"

@@ -145,8 +145,8 @@ defmodule Core.ServiceRequests.Consumer do
                     |> Mongo.convert_to_uuid("permitted_resources", ~w(identifier value)a)
 
                   result =
-                    %Transaction{}
-                    |> Transaction.add_operation(@collection, :insert, doc)
+                    %Transaction{actor_id: user_id}
+                    |> Transaction.add_operation(@collection, :insert, doc, doc["_id"])
                     |> Jobs.update(
                       job._id,
                       Job.status(:processed),
@@ -243,8 +243,14 @@ defmodule Core.ServiceRequests.Consumer do
             )
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{"$set" => set},
+              service_request._id
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -316,8 +322,14 @@ defmodule Core.ServiceRequests.Consumer do
           }
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{"$set" => set})
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{"$set" => set},
+              service_request._id
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -436,11 +448,17 @@ defmodule Core.ServiceRequests.Consumer do
               end
 
               result =
-                %Transaction{}
-                |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
-                  "$set" => set,
-                  "$push" => push
-                })
+                %Transaction{actor_id: user_id}
+                |> Transaction.add_operation(
+                  @collection,
+                  :update,
+                  %{"_id" => service_request._id},
+                  %{
+                    "$set" => set,
+                    "$push" => push
+                  },
+                  service_request._id
+                )
                 |> Jobs.update(
                   job._id,
                   Job.status(:processed),
@@ -585,11 +603,17 @@ defmodule Core.ServiceRequests.Consumer do
               end
 
               result =
-                %Transaction{}
-                |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
-                  "$set" => set,
-                  "$push" => push
-                })
+                %Transaction{actor_id: user_id}
+                |> Transaction.add_operation(
+                  @collection,
+                  :update,
+                  %{"_id" => service_request._id},
+                  %{
+                    "$set" => set,
+                    "$push" => push
+                  },
+                  service_request._id
+                )
                 |> Jobs.update(
                   job._id,
                   Job.status(:processed),
@@ -681,11 +705,17 @@ defmodule Core.ServiceRequests.Consumer do
           id = to_string(service_request._id)
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
-              "$set" => set,
-              "$push" => push
-            })
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{
+                "$set" => set,
+                "$push" => push
+              },
+              service_request._id
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -798,11 +828,17 @@ defmodule Core.ServiceRequests.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
-              "$set" => set,
-              "$push" => push
-            })
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{
+                "$set" => set,
+                "$push" => push
+              },
+              service_request._id
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -874,11 +910,17 @@ defmodule Core.ServiceRequests.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => service_request._id}, %{
-              "$set" => set,
-              "$push" => push
-            })
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{
+                "$set" => set,
+                "$push" => push
+              },
+              service_request._id
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),

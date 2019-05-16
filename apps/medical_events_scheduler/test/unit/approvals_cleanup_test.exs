@@ -44,7 +44,10 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanupTest do
 
     Enum.each(deleted_list, fn approval ->
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => @collection, "operation" => "delete_one", "filter" => filter}] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => @collection, "operation" => "delete_one", "filter" => filter}]
+               } = Jason.decode!(args)
 
         filter_bson = filter |> Base.decode64!() |> BSON.decode()
         approval_id = approval._id

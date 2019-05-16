@@ -141,10 +141,16 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.convert_to_uuid("updated_by")
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
-              "$set" => set
-            })
+            %Transaction{actor_id: job.user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => patient_id_hash},
+              %{
+                "$set" => set
+              },
+              patient_id_hash
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -244,11 +250,17 @@ defmodule Core.Patients.Episodes.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
           result =
-            %Transaction{}
-            |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
-              "$set" => set,
-              "$push" => push
-            })
+            %Transaction{actor_id: job.user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => patient_id_hash},
+              %{
+                "$set" => set,
+                "$push" => push
+              },
+              patient_id_hash
+            )
             |> Jobs.update(
               job._id,
               Job.status(:processed),
@@ -366,11 +378,17 @@ defmodule Core.Patients.Episodes.Consumer do
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
 
             result =
-              %Transaction{}
-              |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
-                "$set" => set,
-                "$push" => push
-              })
+              %Transaction{actor_id: job.user_id}
+              |> Transaction.add_operation(
+                @collection,
+                :update,
+                %{"_id" => patient_id_hash},
+                %{
+                  "$set" => set,
+                  "$push" => push
+                },
+                patient_id_hash
+              )
               |> Jobs.update(
                 job._id,
                 Job.status(:processed),
@@ -421,8 +439,8 @@ defmodule Core.Patients.Episodes.Consumer do
 
   defp save(job, episode_id, set) do
     result =
-      %Transaction{}
-      |> Transaction.add_operation(@collection, :update, %{"_id" => job.patient_id_hash}, set)
+      %Transaction{actor_id: job.user_id}
+      |> Transaction.add_operation(@collection, :update, %{"_id" => job.patient_id_hash}, set, job.patient_id_hash)
       |> Jobs.update(
         job._id,
         Job.status(:processed),

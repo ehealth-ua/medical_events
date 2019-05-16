@@ -3,20 +3,38 @@ defmodule Core.Mongo.Transaction do
 
   @worker Application.get_env(:core, :rpc_worker)
 
-  defstruct operations: []
+  @derive Jason.Encoder
+  defstruct operations: [], actor_id: ""
 
-  def add_operation(%__MODULE__{} = transaction, collection, :insert, value) do
+  def add_operation(%__MODULE__{} = transaction, collection, :insert, value, id) do
     value_bson =
       value
       |> BSON.Encoder.encode()
       |> do_bson_encode("")
       |> Base.encode64()
 
-    operation = %{"set" => value_bson, "operation" => "insert", "collection" => collection}
+    operation = %{"set" => value_bson, "operation" => "insert", "collection" => collection, "id" => to_string(id)}
     %{transaction | operations: transaction.operations ++ [operation]}
   end
 
-  def add_operation(%__MODULE__{} = transaction, collection, :update, filter, set) do
+  def add_operation(%__MODULE__{} = transaction, collection, :delete, filter, id) do
+    filter_bson =
+      filter
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    operation = %{
+      "filter" => filter_bson,
+      "operation" => "delete_one",
+      "collection" => collection,
+      "id" => to_string(id)
+    }
+
+    %{transaction | operations: transaction.operations ++ [operation]}
+  end
+
+  def add_operation(%__MODULE__{} = transaction, collection, :update, filter, set, id) do
     filter_bson =
       filter
       |> BSON.Encoder.encode()
@@ -29,23 +47,19 @@ defmodule Core.Mongo.Transaction do
       |> do_bson_encode("")
       |> Base.encode64()
 
-    operation = %{"filter" => filter_bson, "set" => set_bson, "operation" => "update_one", "collection" => collection}
-    %{transaction | operations: transaction.operations ++ [operation]}
-  end
+    operation = %{
+      "filter" => filter_bson,
+      "set" => set_bson,
+      "operation" => "update_one",
+      "collection" => collection,
+      "id" => to_string(id)
+    }
 
-  def add_operation(%__MODULE__{} = transaction, collection, :delete, filter) do
-    filter_bson =
-      filter
-      |> BSON.Encoder.encode()
-      |> do_bson_encode("")
-      |> Base.encode64()
-
-    operation = %{"filter" => filter_bson, "operation" => "delete_one", "collection" => collection}
     %{transaction | operations: transaction.operations ++ [operation]}
   end
 
   def flush(%__MODULE__{} = transaction) do
-    @worker.run("me_transactions", Core, :transaction, Jason.encode!(transaction.operations))
+    @worker.run("me_transactions", Core, :transaction, Jason.encode!(transaction))
   end
 
   defp do_bson_encode(value, acc) when is_binary(value), do: acc <> value

@@ -43,8 +43,12 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
 
     Enum.each(updated_list, fn service_request ->
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => @collection, "operation" => "update_one", "filter" => filter, "set" => set}] =
-                 Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => @collection, "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         filter_bson = filter |> Base.decode64!() |> BSON.decode()
 

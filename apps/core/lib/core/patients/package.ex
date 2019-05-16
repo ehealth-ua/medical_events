@@ -311,11 +311,17 @@ defmodule Core.Patients.Package do
           ]
       end)
 
-    %Transaction{}
-    |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
-      "$set" => set,
-      "$push" => push
-    })
+    %Transaction{actor_id: job.user_id}
+    |> Transaction.add_operation(
+      @collection,
+      :update,
+      %{"_id" => patient_id_hash},
+      %{
+        "$set" => set,
+        "$push" => push
+      },
+      patient_id_hash
+    )
     |> insert_conditions(conditions)
     |> insert_observations(observations)
     |> Jobs.update(job._id, Job.status(:processed), %{"links" => links}, 200)
@@ -324,13 +330,13 @@ defmodule Core.Patients.Package do
 
   def insert_conditions(transaction, conditions) do
     Enum.reduce(conditions || [], transaction, fn condition, acc ->
-      Transaction.add_operation(acc, @conditions_collection, :insert, Mongo.prepare_doc(condition))
+      Transaction.add_operation(acc, @conditions_collection, :insert, Mongo.prepare_doc(condition), condition._id)
     end)
   end
 
   def insert_observations(transaction, observations) do
     Enum.reduce(observations || [], transaction, fn observation, acc ->
-      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation))
+      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation), observation._id)
     end)
   end
 

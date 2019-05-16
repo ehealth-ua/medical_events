@@ -62,8 +62,8 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
     push = Mongo.add_to_push(%{}, status_history, "status_history")
 
     result =
-      %Transaction{}
-      |> Transaction.add_operation(@collection, :update, %{"_id" => id}, %{"$set" => set, "$push" => push})
+      %Transaction{actor_id: updated_by}
+      |> Transaction.add_operation(@collection, :update, %{"_id" => id}, %{"$set" => set, "$push" => push}, id)
       |> Transaction.flush()
 
     case result do

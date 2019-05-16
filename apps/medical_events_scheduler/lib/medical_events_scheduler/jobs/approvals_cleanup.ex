@@ -39,9 +39,11 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanup do
   end
 
   defp delete_approval(%{"_id" => id}) do
+    updated_by = Confex.fetch_env!(:core, :system_user)
+
     result =
-      %Transaction{}
-      |> Transaction.add_operation(@collection, :delete, %{"_id" => id})
+      %Transaction{actor_id: updated_by}
+      |> Transaction.add_operation(@collection, :delete, %{"_id" => id}, id)
       |> Transaction.flush()
 
     case result do
