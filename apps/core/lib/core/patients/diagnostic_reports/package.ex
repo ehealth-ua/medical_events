@@ -70,10 +70,16 @@ defmodule Core.Patients.DiagnosticReports.Package do
           ]
       end)
 
-    %Transaction{}
-    |> Transaction.add_operation(@collection, :update, %{"_id" => patient_id_hash}, %{
-      "$set" => set
-    })
+    %Transaction{actor_id: job.user_id}
+    |> Transaction.add_operation(
+      @collection,
+      :update,
+      %{"_id" => patient_id_hash},
+      %{
+        "$set" => set
+      },
+      patient_id_hash
+    )
     |> insert_observations(observations)
     |> Jobs.update(job._id, Job.status(:processed), %{"links" => links}, 200)
     |> Transaction.flush()
@@ -81,7 +87,7 @@ defmodule Core.Patients.DiagnosticReports.Package do
 
   def insert_observations(transaction, observations) do
     Enum.reduce(observations || [], transaction, fn observation, acc ->
-      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation))
+      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation), observation._id)
     end)
   end
 end

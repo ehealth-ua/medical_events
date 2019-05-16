@@ -154,8 +154,8 @@ defmodule Core.Approvals do
                 |> Mongo.convert_to_uuid("reason", ~w(identifier value)a)
 
               result =
-                %Transaction{}
-                |> Transaction.add_operation(@collection, :insert, doc)
+                %Transaction{actor_id: user_id}
+                |> Transaction.add_operation(@collection, :insert, doc, doc["_id"])
                 |> Jobs.update(
                   job._id,
                   Job.status(:processed),

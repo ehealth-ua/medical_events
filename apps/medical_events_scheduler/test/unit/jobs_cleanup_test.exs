@@ -7,8 +7,8 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias Core.Mongo
   alias Core.Job
+  alias Core.Mongo
   alias MedicalEventsScheduler.Jobs.JobsCleanup
 
   @collection Job.metadata().collection
@@ -45,7 +45,10 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
 
     Enum.each(deleted_list, fn job ->
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => @collection, "operation" => "delete_one", "filter" => filter}] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => @collection, "operation" => "delete_one", "filter" => filter}]
+               } = Jason.decode!(args)
 
         filter_bson = filter |> Base.decode64!() |> BSON.decode()
         job_id = job._id

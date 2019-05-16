@@ -64,8 +64,12 @@ defmodule Core.JobsTest do
       job_id = to_string(job._id)
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
-                 Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 
@@ -94,8 +98,12 @@ defmodule Core.JobsTest do
       job_id = to_string(job._id)
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
-                 Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 

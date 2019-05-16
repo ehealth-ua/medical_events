@@ -54,8 +54,14 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
              package_data
            ) do
       result =
-        %Transaction{}
-        |> Transaction.add_operation(@patients_collection, :update, %{"_id" => job.patient_id_hash}, %{"$set" => set})
+        %Transaction{actor_id: user_id}
+        |> Transaction.add_operation(
+          @patients_collection,
+          :update,
+          %{"_id" => job.patient_id_hash},
+          %{"$set" => set},
+          job.patient_id_hash
+        )
         |> update_observations(observations_ids, user_id)
         |> Jobs.update(job._id, Job.status(:processed), %{}, 200)
         |> Transaction.flush()
@@ -69,13 +75,20 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
 
   defp update_observations(%Transaction{} = transaction, ids, user_id) do
     Enum.reduce(ids, transaction, fn id, acc ->
-      Transaction.add_operation(acc, @observations_collection, :update, %{"_id" => Mongo.string_to_uuid(id)}, %{
-        "$set" => %{
-          "status" => @entered_in_error,
-          "updated_by" => Mongo.string_to_uuid(user_id),
-          "updated_at" => DateTime.utc_now()
-        }
-      })
+      Transaction.add_operation(
+        acc,
+        @observations_collection,
+        :update,
+        %{"_id" => Mongo.string_to_uuid(id)},
+        %{
+          "$set" => %{
+            "status" => @entered_in_error,
+            "updated_by" => Mongo.string_to_uuid(user_id),
+            "updated_at" => DateTime.utc_now()
+          }
+        },
+        Mongo.string_to_uuid(id)
+      )
     end)
   end
 

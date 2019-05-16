@@ -64,11 +64,14 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
         |> Base.encode64()
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [
-                 %{"collection" => "patients", "operation" => "update_one", "set" => patient_set},
-                 %{"collection" => "observations", "operation" => "update_one", "filter" => observation_filter},
-                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
-               ] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "patients", "operation" => "update_one", "set" => patient_set},
+                   %{"collection" => "observations", "operation" => "update_one", "filter" => observation_filter},
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         patient_set =
           patient_set

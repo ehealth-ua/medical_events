@@ -11,8 +11,12 @@ defmodule Core.Expectations.JobExpectations do
 
   def expect_job_update(id, status, response, code) do
     expect(WorkerMock, :run, fn _, _, :transaction, args ->
-      assert [%{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}] =
-               Jason.decode!(args)
+      assert %{
+               "actor_id" => _,
+               "operations" => [
+                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+               ]
+             } = Jason.decode!(args)
 
       assert %{"_id" => id} == filter |> Base.decode64!() |> BSON.decode()
 

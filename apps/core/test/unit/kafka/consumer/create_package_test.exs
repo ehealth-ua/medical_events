@@ -1137,13 +1137,16 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       }
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [
-                 %{"collection" => "patients", "operation" => "update_one", "set" => patient_data},
-                 %{"collection" => "conditions", "operation" => "insert"},
-                 %{"collection" => "observations", "operation" => "insert"},
-                 %{"collection" => "observations", "operation" => "insert"},
-                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
-               ] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "patients", "operation" => "update_one", "set" => patient_data},
+                   %{"collection" => "conditions", "operation" => "insert"},
+                   %{"collection" => "observations", "operation" => "insert"},
+                   %{"collection" => "observations", "operation" => "insert"},
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         patient_data = patient_data |> Base.decode64!() |> BSON.decode()
 

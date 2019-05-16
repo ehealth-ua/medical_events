@@ -92,10 +92,13 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       user_id = UUID.uuid4()
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
-        assert [
-                 %{"collection" => "patients", "operation" => "update_one"},
-                 %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
-               ] = Jason.decode!(args)
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [
+                   %{"collection" => "patients", "operation" => "update_one"},
+                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                 ]
+               } = Jason.decode!(args)
 
         assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 

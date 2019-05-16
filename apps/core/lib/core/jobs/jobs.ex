@@ -85,9 +85,11 @@ defmodule Core.Jobs do
       "response" => response
     }
 
+    id = ObjectId.decode!(id)
+
     :ok =
       %Transaction{}
-      |> Transaction.add_operation("jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
+      |> Transaction.add_operation("jobs", :update, %{"_id" => id}, %{"$set" => set_data}, id)
       |> Transaction.flush()
   end
 
@@ -99,7 +101,9 @@ defmodule Core.Jobs do
       "response" => response
     }
 
-    Transaction.add_operation(transaction, "jobs", :update, %{"_id" => ObjectId.decode!(id)}, %{"$set" => set_data})
+    id = ObjectId.decode!(id)
+
+    Transaction.add_operation(transaction, "jobs", :update, %{"_id" => id}, %{"$set" => set_data}, id)
   end
 
   def create(module, data) do

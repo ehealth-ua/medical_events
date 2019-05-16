@@ -206,10 +206,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
           {:ok, UUID.uuid4()}
 
         _, _, :transaction, args ->
-          assert [
-                   %{"collection" => "service_requests", "operation" => "insert"},
-                   %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
-                 ] = Jason.decode!(args)
+          assert %{
+                   "actor_id" => _,
+                   "operations" => [
+                     %{"collection" => "service_requests", "operation" => "insert"},
+                     %{"collection" => "jobs", "operation" => "update_one", "filter" => filter, "set" => set}
+                   ]
+                 } = Jason.decode!(args)
 
           assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 
