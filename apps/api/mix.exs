@@ -46,7 +46,8 @@ defmodule Api.Mixfile do
       {:jason, "~> 1.1"},
       {:confex, "~> 3.3"},
       {:eview, "~> 0.14.0"},
-      {:scrivener, "~> 2.5"}
+      {:scrivener, "~> 2.5"},
+      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"}
     ]
   end
 
