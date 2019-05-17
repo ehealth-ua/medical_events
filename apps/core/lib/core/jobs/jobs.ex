@@ -126,14 +126,14 @@ defmodule Core.Jobs do
         }
 
         data =
-          job
-          |> Mongo.prepare_doc()
+          data
+          |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
           |> Map.put(:_id, to_string(job._id))
           |> Map.put(:request_id, Logger.metadata()[:request_id])
 
         result =
           %Transaction{actor_id: actor_id}
-          |> Transaction.add_operation("jobs", :insert, data, job._id)
+          |> Transaction.add_operation("jobs", :insert, Mongo.prepare_doc(job), job._id)
           |> Transaction.flush()
 
         case result do
