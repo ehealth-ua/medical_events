@@ -24,6 +24,7 @@ defmodule Core.ServiceRequests.Producer do
          :ok <- JsonSchema.validate(:service_request_create, Map.take(params, ~w(signed_data))),
          {:ok, job, service_request_create_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -37,6 +38,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
          {:ok, job, service_request_use_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestUseJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -53,6 +55,7 @@ defmodule Core.ServiceRequests.Producer do
     with {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
          {:ok, job, service_request_release_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestReleaseJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -73,6 +76,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
          {:ok, job, service_request_recall_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestRecallJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -93,6 +97,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
          {:ok, job, service_request_cancel_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestCancelJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -110,6 +115,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
          {:ok, job, service_request_complete_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestCompleteJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -126,6 +132,7 @@ defmodule Core.ServiceRequests.Producer do
     with {:ok, %ServiceRequest{subject: patient_id_hash}} <- ServiceRequests.get_by_id(params["service_request_id"]),
          {:ok, job, service_request_process_job} <-
            Jobs.create(
+             user_id,
              ServiceRequestProcessJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))

@@ -312,6 +312,7 @@ defmodule Core.Patients.DiagnosticReports do
          :ok <- JsonSchema.validate(:diagnostic_report_package_create, Map.take(params, ["signed_data"])),
          {:ok, job, diagnostic_report_package_create_job} <-
            Jobs.create(
+             user_id,
              DiagnosticReportPackageCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -326,6 +327,7 @@ defmodule Core.Patients.DiagnosticReports do
          :ok <- JsonSchema.validate(:diagnostic_report_package_cancel, Map.take(params, ["signed_data"])),
          {:ok, job, diagnostic_report_package_cancel_job} <-
            Jobs.create(
+             user_id,
              DiagnosticReportPackageCancelJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),

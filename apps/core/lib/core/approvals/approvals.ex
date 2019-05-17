@@ -49,6 +49,7 @@ defmodule Core.Approvals do
          :ok <- OneOf.validate(Map.take(params, @create_request_params), @one_of_create_request_params),
          {:ok, job, approval_create_job} <-
            Jobs.create(
+             user_id,
              ApprovalCreateJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -67,6 +68,7 @@ defmodule Core.Approvals do
          {:ok, %Approval{}} <- get_by_id(id),
          {:ok, job, approval_resend_job} <-
            Jobs.create(
+             user_id,
              ApprovalResendJob,
              Map.merge(params, %{"user_id" => user_id, "client_id" => client_id})
            ),

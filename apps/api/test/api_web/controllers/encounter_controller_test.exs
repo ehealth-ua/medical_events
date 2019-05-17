@@ -63,6 +63,15 @@ defmodule Api.Web.EncounterControllerTest do
       insert(:patient, _id: patient_id_hash)
       now = DateTime.utc_now()
 
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
       assert conn
              |> post(encounter_path(conn, :create, patient_id), %{
                "visit" => %{
@@ -417,6 +426,15 @@ defmodule Api.Web.EncounterControllerTest do
           |> Jason.encode!()
           |> Base.encode64()
       }
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(encounter_path(conn, :cancel, patient_id), request_data)

@@ -6,6 +6,7 @@ defmodule Api.Web.JobControllerTest do
   alias Core.Jobs
   alias Core.Jobs.PackageCreateJob
   alias Core.Patients
+  import Mox
 
   setup %{conn: conn} do
     {:ok, conn: put_consumer_id_header(conn)}
@@ -14,6 +15,7 @@ defmodule Api.Web.JobControllerTest do
   describe "get job by id" do
     test "status: pending", %{conn: conn} do
       patient_id = UUID.uuid4()
+      user_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       data = %{
@@ -22,11 +24,21 @@ defmodule Api.Web.JobControllerTest do
         "patient_id_hash" => patient_id_hash,
         "visit" => [],
         "signed_data" => [],
-        "user_id" => UUID.uuid4(),
+        "user_id" => user_id,
         "client_id" => UUID.uuid4()
       }
 
-      {:ok, job, _} = Jobs.create(PackageCreateJob, data)
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
+      {:ok, job, _} = Jobs.create(user_id, PackageCreateJob, data)
+      insert(:job, _id: job._id, status: job.status, response: job.response)
 
       response =
         conn

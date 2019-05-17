@@ -19,6 +19,7 @@ defmodule Core.Patients.Episodes.Producer do
          :ok <- JsonSchema.validate(:episode_create, Map.drop(params, ~w(patient_id patient_id_hash))),
          {:ok, job, episode_create_job} <-
            Jobs.create(
+             user_id,
              EpisodeCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -38,6 +39,7 @@ defmodule Core.Patients.Episodes.Producer do
          :ok <- JsonSchema.validate(:episode_update, request_params),
          {:ok, job, episode_update_job} <-
            Jobs.create(
+             conn_params["user_id"],
              EpisodeUpdateJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),
@@ -57,6 +59,7 @@ defmodule Core.Patients.Episodes.Producer do
          :ok <- JsonSchema.validate(:episode_close, request_params),
          {:ok, job, episode_close_job} <-
            Jobs.create(
+             conn_params["user_id"],
              EpisodeCloseJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),
@@ -76,6 +79,7 @@ defmodule Core.Patients.Episodes.Producer do
          :ok <- JsonSchema.validate(:episode_cancel, request_params),
          {:ok, job, episode_cancel_job} <-
            Jobs.create(
+             conn_params["user_id"],
              EpisodeCancelJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),

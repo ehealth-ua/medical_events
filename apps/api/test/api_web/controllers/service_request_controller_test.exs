@@ -629,6 +629,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
       insert(:patient, _id: patient_id_hash)
 
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
       assert conn
              |> post(service_request_path(conn, :create, patient_id), %{
                "signed_data" => Base.encode64(Jason.encode!(%{}))
@@ -668,6 +677,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
       assert conn
              |> patch(service_request_path(conn, :use, UUID.binary_to_string!(id)), %{
                "used_by_employee" => %{"identifier" => %{"value" => ""}},
@@ -690,6 +708,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(service_request_path(conn, :release, UUID.binary_to_string!(id)))
@@ -739,6 +766,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(service_request_path(conn, :recall, patient_id, UUID.binary_to_string!(id)), %{
@@ -791,6 +827,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
 
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
       assert conn
              |> patch(service_request_path(conn, :cancel, patient_id, UUID.binary_to_string!(id)), %{
                "signed_data" => Jason.encode!(%{})
@@ -812,6 +857,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
       insert(:patient, _id: patient_id_hash)
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(service_request_path(conn, :process, UUID.binary_to_string!(id)))
@@ -849,6 +903,15 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
       service_request = insert(:service_request)
       %BSON.Binary{binary: id} = service_request._id
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(service_request_path(conn, :complete, UUID.binary_to_string!(id)), %{

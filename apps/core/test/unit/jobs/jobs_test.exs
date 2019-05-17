@@ -12,10 +12,27 @@ defmodule Core.JobsTest do
       data = %{"foo" => "bar"}
       hash = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.url_encode64(padding: false)
       insert(:job, hash: hash, status: Job.status(:processed))
+      user_id = UUID.uuid4()
 
-      assert {:ok, job, _} = Jobs.create(EpisodeCreateJob, data)
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
+      assert {:ok, job, _} = Jobs.create(user_id, EpisodeCreateJob, data)
+    end
+
+    test "job exists" do
+      data = %{"bar" => "baz"}
+      hash = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.url_encode64(padding: false)
+      job = insert(:job, hash: hash)
+      user_id = UUID.uuid4()
       job_id = to_string(job._id)
-      assert {:job_exists, ^job_id} = Jobs.create(EpisodeCreateJob, data)
+      assert {:job_exists, ^job_id} = Jobs.create(user_id, EpisodeCreateJob, data)
     end
 
     test "success update job with response as map" do
