@@ -59,6 +59,15 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
       insert(:patient, _id: patient_id_hash)
 
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
+
       assert conn
              |> post(diagnostic_report_path(conn, :create, patient_id), %{
                "signed_data" => Base.encode64(Jason.encode!(%{}))
@@ -121,6 +130,15 @@ defmodule Api.Web.DiagnosticReportControllerTest do
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
       insert(:patient, _id: patient_id_hash)
+
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> post(diagnostic_report_path(conn, :cancel, patient_id), %{

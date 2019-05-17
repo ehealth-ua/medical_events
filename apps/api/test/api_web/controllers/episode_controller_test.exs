@@ -72,15 +72,18 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      assert conn
-             |> post(episode_path(conn, :create, patient_id), data)
-             |> json_response(202)
-             |> Map.get("data")
-             |> assert_json_schema("jobs/job_details_pending.json")
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> post(episode_path(conn, :create, patient_id), data)
-             |> json_response(200)
+             |> json_response(202)
              |> Map.get("data")
              |> assert_json_schema("jobs/job_details_pending.json")
     end
@@ -150,15 +153,18 @@ defmodule Api.Web.EpisodeControllerTest do
         }
       }
 
-      assert conn
-             |> patch(episode_path(conn, :update, patient_id, episode_id), data)
-             |> json_response(202)
-             |> Map.get("data")
-             |> assert_json_schema("jobs/job_details_pending.json")
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(episode_path(conn, :update, patient_id, episode_id), data)
-             |> json_response(200)
+             |> json_response(202)
              |> Map.get("data")
              |> assert_json_schema("jobs/job_details_pending.json")
     end
@@ -225,15 +231,18 @@ defmodule Api.Web.EpisodeControllerTest do
         "status_reason" => %{"coding" => [%{"system" => "eHealth/episode_closing_reasons", "code" => "legal_entity"}]}
       }
 
-      assert conn
-             |> patch(episode_path(conn, :close, patient_id, episode_id), data)
-             |> json_response(202)
-             |> Map.get("data")
-             |> assert_json_schema("jobs/job_details_pending.json")
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(episode_path(conn, :close, patient_id, episode_id), data)
-             |> json_response(200)
+             |> json_response(202)
              |> Map.get("data")
              |> assert_json_schema("jobs/job_details_pending.json")
     end
@@ -300,15 +309,18 @@ defmodule Api.Web.EpisodeControllerTest do
         "explanatory_letter" => "Епізод був відмінений у зв'язку з помилкою при виборі пацієнта"
       }
 
-      assert conn
-             |> patch(episode_path(conn, :cancel, patient_id, episode_id), data)
-             |> json_response(202)
-             |> Map.get("data")
-             |> assert_json_schema("jobs/job_details_pending.json")
+      expect(WorkerMock, :run, fn _, _, :transaction, args ->
+        assert %{
+                 "actor_id" => _,
+                 "operations" => [%{"collection" => "jobs", "operation" => "insert"}]
+               } = Jason.decode!(args)
+
+        :ok
+      end)
 
       assert conn
              |> patch(episode_path(conn, :cancel, patient_id, episode_id), data)
-             |> json_response(200)
+             |> json_response(202)
              |> Map.get("data")
              |> assert_json_schema("jobs/job_details_pending.json")
     end

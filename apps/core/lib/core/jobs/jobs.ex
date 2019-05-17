@@ -106,7 +106,7 @@ defmodule Core.Jobs do
     Transaction.add_operation(transaction, "jobs", :update, %{"_id" => id}, %{"$set" => set_data}, id)
   end
 
-  def create(module, data) do
+  def create(actor_id, module, data) do
     hash = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.url_encode64(padding: false)
 
     case Mongo.find_one(@collection, %{"hash" => hash, "status" => Job.status(:pending)}, projection: [_id: true]) do
@@ -126,13 +126,23 @@ defmodule Core.Jobs do
         }
 
         data =
-          data
-          |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
+          job
+          |> Mongo.prepare_doc()
           |> Map.put(:_id, to_string(job._id))
           |> Map.put(:request_id, Logger.metadata()[:request_id])
 
-        with {:ok, _} <- Mongo.insert_one(job) do
-          {:ok, job, struct(module, data)}
+        result =
+          %Transaction{actor_id: actor_id}
+          |> Transaction.add_operation("jobs", :insert, data, job._id)
+          |> Transaction.flush()
+
+        case result do
+          :ok ->
+            {:ok, job, struct(module, data)}
+
+          {:error, reason} ->
+            Logger.error(reason)
+            {:error, "Internal error"}
         end
     end
   end
