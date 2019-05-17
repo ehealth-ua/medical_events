@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [2.1.1](https://github.com/edenlabllc/medical_events/compare/2.1.0...2.1.1) (2019-5-17)
+
+
+
+
+### Bug Fixes:
+
+* save jobs via ergonode (#443)
+
 ## [2.1.0](https://github.com/edenlabllc/medical_events/compare/2.0.0...2.1.0) (2019-5-17)
 
 
