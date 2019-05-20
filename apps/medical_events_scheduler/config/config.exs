@@ -14,6 +14,8 @@ config :medical_events_scheduler, MedicalEventsScheduler.Jobs.ApprovalsCleanup,
 config :medical_events_scheduler, MedicalEventsScheduler.Jobs.JobsCleanup,
   job_ttl_days: {:system, :integer, "JOB_TTL_DAYS", 7}
 
+config :swarm, node_blacklist: [~r/^.+$/]
+
 config :medical_events_scheduler,
   topologies: [
     k8s_transactions: [
