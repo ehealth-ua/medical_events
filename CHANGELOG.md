@@ -5,6 +5,21 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [2.2.0](https://github.com/edenlabllc/medical_events/compare/2.1.1...2.2.0) (2019-5-21)
+
+
+
+
+### Features:
+
+* number generator save via ergonode (#448)
+
+### Bug Fixes:
+
+* scheduler swarm blacklist (#447)
+
+* add topologies to api (#446)
+
 ## [2.1.1](https://github.com/edenlabllc/medical_events/compare/2.1.0...2.1.1) (2019-5-17)
 
 
