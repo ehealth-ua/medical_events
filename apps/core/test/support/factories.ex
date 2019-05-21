@@ -8,10 +8,10 @@ defmodule Core.Factories do
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Condition
-  alias Core.DiagnosticReport
   alias Core.Device
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
+  alias Core.DiagnosticReport
   alias Core.EffectiveAt
   alias Core.Encounter
   alias Core.Encryptor
@@ -23,6 +23,7 @@ defmodule Core.Factories do
   alias Core.Job
   alias Core.MedicationStatement
   alias Core.Mongo
+  alias Core.Number
   alias Core.Observation
   alias Core.Observations.Component
   alias Core.Observations.ReferenceRange
@@ -144,6 +145,15 @@ defmodule Core.Factories do
       inserted_by: Mongo.string_to_uuid(id),
       updated_by: Mongo.string_to_uuid(id),
       period: build(:period)
+    }
+  end
+
+  def number_factory do
+    %Number{
+      _id: UUID.uuid4(),
+      entity_type: "service_request",
+      number: to_string(DateTime.to_unix(DateTime.utc_now())),
+      inserted_by: UUID.uuid4()
     }
   end
 

@@ -3,6 +3,7 @@ defmodule NumberGenerator.Generator do
 
   use Confex, otp_app: :number_generator
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Number
 
   @alphabet "0123456789"
@@ -19,6 +20,34 @@ defmodule NumberGenerator.Generator do
   end
 
   defp do_generate(entity_type, entity_id, actor_id, salt) do
+    number = hash_entity_id(entity_id, salt)
+
+    case Mongo.find_one(@collection, %{"entity_type" => entity_type, "number" => number}) do
+      nil ->
+        document = %Number{
+          _id: Mongo.string_to_uuid(entity_id),
+          entity_type: entity_type,
+          number: number,
+          inserted_by: Mongo.string_to_uuid(actor_id)
+        }
+
+        insert_result =
+          %Transaction{actor_id: actor_id}
+          |> Transaction.add_operation(@collection, :insert, Mongo.prepare_doc(document), entity_id)
+          |> Transaction.flush()
+
+        case insert_result do
+          :ok -> number
+          # Number was already generated for this entity_id
+          {:error, _} -> generate(entity_type, entity_id, actor_id)
+        end
+
+      %{} ->
+        do_generate(entity_type, entity_id, actor_id, UUID.uuid4())
+    end
+  end
+
+  def hash_entity_id(entity_id, salt) do
     blake = Blake2.hash2b(entity_id <> salt, 16, config()[:key])
     base = String.length(@alphabet)
 
@@ -29,26 +58,6 @@ defmodule NumberGenerator.Generator do
       end)
 
     slices = for <<x::binary-4 <- hash>>, do: x
-    number = Enum.join(slices, "-")
-
-    case Mongo.find_one(@collection, %{"entity_type" => entity_type, "number" => number}) do
-      nil ->
-        insert_result =
-          Mongo.insert_one(%Number{
-            _id: Mongo.string_to_uuid(entity_id),
-            entity_type: entity_type,
-            number: number,
-            inserted_by: Mongo.string_to_uuid(actor_id)
-          })
-
-        case insert_result do
-          {:ok, %{inserted_id: _id}} -> number
-          # Number was already generated for this entity_id
-          {:error, %{code: 11_000}} -> generate(entity_type, entity_id, actor_id)
-        end
-
-      %{} ->
-        do_generate(entity_type, entity_id, actor_id, UUID.uuid4())
-    end
+    Enum.join(slices, "-")
   end
 end
