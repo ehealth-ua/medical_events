@@ -3,7 +3,6 @@ defmodule Core.Mongo do
 
   alias Core.Mongo.AuditLog
   alias Core.Validators.Vex
-  alias DBConnection.Poolboy
   alias Mongo, as: M
   require Logger
 
@@ -11,10 +10,7 @@ defmodule Core.Mongo do
   defdelegate object_id, to: M
 
   defp execute(fun, args) do
-    opts =
-      args
-      |> List.last()
-      |> Keyword.put(:pool, Poolboy)
+    opts = List.last(args)
 
     enriched_args =
       args

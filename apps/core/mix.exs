@@ -52,7 +52,7 @@ defmodule Core.MixProject do
       {:jason, "~> 1.1"},
       {:jvalid, "~> 0.7.0"},
       {:kaffe, "~> 1.11"},
-      {:mongodb, "~> 0.4.6"},
+      {:mongodb, "~> 0.5.1"},
       {:poolboy, "~> 1.5"},
       {:redix, "~> 0.7.1"},
       {:scrivener, "~> 2.5"},
