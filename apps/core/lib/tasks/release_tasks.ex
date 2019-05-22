@@ -6,7 +6,7 @@ defmodule Core.ReleaseTasks do
 
   def migrate do
     {:ok, _} = Application.ensure_all_started(:core)
-    Mongo.start_link(name: :mongo, url: Confex.fetch_env!(:core, :mongo)[:url], pool: DBConnection.Poolboy)
+    Mongo.start_link(name: :mongo, url: Confex.fetch_env!(:core, :mongo)[:url])
 
     with :ok <- Migrator.migrate() do
       Logger.info(IO.ANSI.green() <> "Migrations completed")

@@ -36,7 +36,6 @@ defmodule Core.Application do
             [
               name: :mongo,
               url: Confex.fetch_env!(:core, :mongo)[:url],
-              pool: DBConnection.Poolboy,
               pool_size: Confex.fetch_env!(:core, :mongo)[:pool_size]
             ]
           ]),
@@ -46,7 +45,6 @@ defmodule Core.Application do
               [
                 name: :mongo_audit_log,
                 url: Confex.fetch_env!(:core, :mongo_audit_log)[:url],
-                pool: DBConnection.Poolboy,
                 pool_size: Confex.fetch_env!(:core, :mongo_audit_log)[:pool_size]
               ]
             ],

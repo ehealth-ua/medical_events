@@ -2,7 +2,6 @@ defmodule Core.Mongo.AuditLog do
   @moduledoc false
 
   alias Core.Mongo.Event
-  alias DBConnection.Poolboy
   alias Mongo.DeleteResult
   alias Mongo.Error
   alias Mongo.InsertOneResult
@@ -113,9 +112,9 @@ defmodule Core.Mongo.AuditLog do
      }}
   end
 
-  defp prepare_event(%UpdateResult{modified_count: 0}, _, _), do: :skip_audit_log
+  defp prepare_event(%UpdateResult{modified_count: 0, upserted_ids: nil}, _, _), do: :skip_audit_log
 
-  defp prepare_event(%UpdateResult{matched_count: 0, modified_count: count}, _operation, args) when count > 0 do
+  defp prepare_event(%UpdateResult{modified_count: 0}, _operation, args) do
     {params, filter} = fetch_event_data(@update, args)
 
     {:ok,
@@ -176,7 +175,7 @@ defmodule Core.Mongo.AuditLog do
   Insert MongoDB operation log into audit_log collection
   """
   def store_event(%Event{} = event) do
-    case Mongo.insert_one(:mongo_audit_log, @collection_audit_log, Map.from_struct(event), pool: Poolboy) do
+    case Mongo.insert_one(:mongo_audit_log, @collection_audit_log, Map.from_struct(event)) do
       {:ok, _} ->
         :ok
 

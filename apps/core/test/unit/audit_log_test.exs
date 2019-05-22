@@ -7,7 +7,6 @@ defmodule Core.AuditLogTest do
   import Core.Factories
   import Mox
 
-  alias DBConnection.Poolboy
   alias Core.Mongo, as: CoreMongo
   alias Core.Mongo.AuditLog
   alias Core.Mongo.Event
@@ -92,10 +91,13 @@ defmodule Core.AuditLogTest do
       ]
 
       assert {:ok, %{inserted_ids: inserted_ids}} = CoreMongo.insert_many(@test_collection, docs, [])
-      assert 2 == map_size(inserted_ids)
+      assert 2 == Enum.count(inserted_ids)
 
-      assert %{"_id" => _, "title" => "one"} = CoreMongo.find_one(@test_collection, %{"_id" => inserted_ids[0]})
-      assert %{"_id" => _, "title" => "two"} = CoreMongo.find_one(@test_collection, %{"_id" => inserted_ids[1]})
+      assert %{"_id" => _, "title" => "one"} =
+               CoreMongo.find_one(@test_collection, %{"_id" => Enum.at(inserted_ids, 0)})
+
+      assert %{"_id" => _, "title" => "two"} =
+               CoreMongo.find_one(@test_collection, %{"_id" => Enum.at(inserted_ids, 1)})
     end
 
     test "update_one with upsert option" do
@@ -451,7 +453,7 @@ defmodule Core.AuditLogTest do
       # actor_id fetched from opts
       assert CoreMongo.delete_one!("patients", %{"_id" => id}, actor_id: actor_id)
 
-      opts = [orderby: %{inserted_at: 1}, pool: Poolboy]
+      opts = [orderby: %{inserted_at: 1}]
 
       logs =
         :mongo_audit_log
@@ -470,7 +472,7 @@ defmodule Core.AuditLogTest do
   end
 
   defp assert_audit_log(entry_id, type, actor_id, collection \\ @test_collection) do
-    log_entry = Mongo.find_one(:mongo_audit_log, @audit_log_collection, %{entry_id: entry_id}, pool: Poolboy)
+    log_entry = Mongo.find_one(:mongo_audit_log, @audit_log_collection, %{entry_id: entry_id})
     assert log_entry
     assert entry_id == log_entry["entry_id"]
     assert type == log_entry["type"]
