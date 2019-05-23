@@ -10,20 +10,6 @@ defmodule MedicalEventsScheduler.Application do
       {Worker, []}
     ]
 
-    children =
-      if Application.get_env(:medical_events_scheduler, :env) == :prod do
-        children ++
-          [
-            {Cluster.Supervisor,
-             [
-               Application.get_env(:medical_events_scheduler, :topologies),
-               [name: MedicalEventsScheduler.ClusterSupervisor]
-             ]}
-          ]
-      else
-        children
-      end
-
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: MedicalEventsScheduler.Supervisor]

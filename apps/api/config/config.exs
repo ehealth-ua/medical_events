@@ -22,20 +22,6 @@ config :api, ApiWeb.Endpoint,
   ],
   instrumenters: [LoggerJSON.Phoenix.Instruments]
 
-config :api,
-  topologies: [
-    k8s_transactions: [
-      strategy: Elixir.Cluster.Strategy.Kubernetes,
-      config: [
-        mode: :dns,
-        kubernetes_node_basename: "me_transactions",
-        kubernetes_selector: "app=me-transactions",
-        kubernetes_namespace: "me",
-        polling_interval: 10_000
-      ]
-    ]
-  ]
-
 config :phoenix, :format_encoders, json: Jason
 
 # Import environment specific config. This must remain at the bottom

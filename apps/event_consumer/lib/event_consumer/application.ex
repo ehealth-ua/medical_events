@@ -13,17 +13,6 @@ defmodule EventConsumer.Application do
 
     Application.put_env(:kaffe, :consumer, Application.get_env(:event_consumer, :kaffe_consumer))
 
-    children =
-      if Application.get_env(:event_consumer, :env) == :prod do
-        children ++
-          [
-            {Cluster.Supervisor,
-             [Application.get_env(:event_consumer, :topologies), [name: EventConsumer.ClusterSupervisor]]}
-          ]
-      else
-        children
-      end
-
     opts = [strategy: :one_for_one, name: EventConsumer.Supervisor]
     Supervisor.start_link(children, opts)
   end

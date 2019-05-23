@@ -58,6 +58,7 @@ defmodule Core.MixProject do
       {:scrivener, "~> 2.5"},
       {:translit, "~> 0.1.0"},
       {:vex, "~> 0.8.0"},
+      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:mox, "~> 0.4.0", only: :test},
       {:ex_machina, "~> 2.3", only: :test}
     ]

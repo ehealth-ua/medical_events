@@ -29,7 +29,6 @@ defmodule NumberGenerator.MixProject do
     [
       {:confex_config_provider, "~> 0.1.0"},
       {:blake2, "~> 1.0"},
-      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
       {:core, in_umbrella: true}
     ]
   end
