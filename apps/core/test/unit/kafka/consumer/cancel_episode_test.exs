@@ -14,7 +14,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
 
   describe "consume cancel episode event" do
     test "cancel with invalid status" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: @canceled)
 
       patient_id = UUID.uuid4()
@@ -44,8 +43,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
     end
 
     test "failed when episode's managing organization is invalid" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{
@@ -109,8 +106,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
     end
 
     test "episode was canceled" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{

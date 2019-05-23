@@ -21,8 +21,6 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanupTest do
   end
 
   test "success approvals clean up" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     approval_deletion_hours = Confex.fetch_env!(:medical_events_scheduler, ApprovalsCleanup)[:approval_ttl_hours]
 
     now = DateTime.utc_now()
@@ -61,8 +59,6 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanupTest do
   end
 
   test "approvals clean up failed" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     approval_deletion_hours = Confex.fetch_env!(:medical_events_scheduler, ApprovalsCleanup)[:approval_ttl_hours]
 
     %{_id: id} =

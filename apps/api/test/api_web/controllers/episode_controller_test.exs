@@ -19,8 +19,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -31,7 +29,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "json schema validation failed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -44,7 +41,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "success create episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -96,8 +92,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "episode not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -108,8 +102,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -120,7 +112,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "json schema validation failed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -134,7 +125,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "success update episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -177,8 +167,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "episode not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -189,8 +177,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -201,7 +187,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "json schema validation failed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -215,7 +200,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "success close episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -255,8 +239,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "episode not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -267,8 +249,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -279,7 +259,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "json schema validation failed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -293,7 +272,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "success cancel episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, 2, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -328,8 +306,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "show episode" do
     test "get episode success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode = build(:episode)
 
       patient_id = UUID.uuid4()
@@ -345,8 +321,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episode invalid episode uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode = build(:episode)
 
       patient_id = UUID.uuid4()
@@ -360,8 +334,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episode when no episodes", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -375,8 +347,6 @@ defmodule Api.Web.EpisodeControllerTest do
 
   describe "list episodes" do
     test "get episodes success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -392,8 +362,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes no episodes", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -409,8 +377,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes is nil", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -426,8 +392,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes by status", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode1 = build(:episode, status: "active")
       episode2 = build(:episode, status: "inactive")
       patient_id = UUID.uuid4()
@@ -449,8 +413,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes by code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -500,8 +462,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes by managing_organization_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       managing_organization_id = UUID.uuid4()
 
       episode1 =
@@ -533,8 +493,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes order by inserted first episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       tomorrow = DateTime.from_unix!(DateTime.to_unix(DateTime.utc_now()) + 60 * 60 * 24)
       yesterday = DateTime.from_unix!(DateTime.to_unix(DateTime.utc_now()) - 60 * 60 * 24)
 
@@ -567,8 +525,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes order by inserted last episode", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       tomorrow = DateTime.from_unix!(DateTime.to_unix(DateTime.utc_now()) + 60 * 60 * 24)
       yesterday = DateTime.from_unix!(DateTime.to_unix(DateTime.utc_now()) - 60 * 60 * 24)
 
@@ -601,8 +557,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes paging string instead of int", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -623,8 +577,6 @@ defmodule Api.Web.EpisodeControllerTest do
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
-
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       episode1 = build(:episode, period: %{start: create_datetime("2014-02-02")})
       episode2 = build(:episode, period: %{start: create_datetime("2018-07-02")})
@@ -902,8 +854,6 @@ defmodule Api.Web.EpisodeControllerTest do
         {:ok, %{"data" => %{}}}
       end)
 
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       week_ago = create_datetime(Date.add(Date.utc_today(), -7))
       next_week = create_datetime(Date.add(Date.utc_today(), 7))
       tomorrow = create_datetime(Date.add(Date.utc_today(), +1))
@@ -1098,7 +1048,6 @@ defmodule Api.Web.EpisodeControllerTest do
     end
 
     test "get episodes by invalid params", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
 
       patient_id_hash = Patients.get_pk_hash(patient_id)

@@ -21,8 +21,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
 
   describe "consume recall service_request event" do
     test "empty content" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -60,8 +58,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
     end
 
     test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -299,7 +295,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
     end
 
     test "compare with db failed on recall service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -365,7 +360,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
     end
 
     test "success recall service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
@@ -487,7 +481,6 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
     end
 
     test "invalid recall service_request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)

@@ -1,7 +1,7 @@
 defmodule PersonConsumer.Kafka.PersonEventConsumer do
   @moduledoc false
 
-  alias Core.Mongo
+  alias Core.Mongo.Transaction
   alias Core.Patient
   alias Core.Patients
   require Logger
@@ -18,8 +18,10 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
 
   def consume(%{"id" => person_id, "status" => status, "updated_by" => updated_by})
       when status in [@status_active, @status_inactive] do
-    Mongo.update_one(
+    %Transaction{}
+    |> Transaction.add_operation(
       Patient.metadata().collection,
+      :upsert,
       %{"_id" => Patients.get_pk_hash(person_id)},
       %{
         "$set" => %{"status" => status, "updated_by" => updated_by},
@@ -36,8 +38,9 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
           "status_history" => []
         }
       },
-      upsert: true
+      Patients.get_pk_hash(person_id)
     )
+    |> Transaction.flush()
 
     :ok
   end

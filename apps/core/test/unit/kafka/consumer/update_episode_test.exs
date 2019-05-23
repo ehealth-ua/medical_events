@@ -18,7 +18,6 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
   describe "consume update episode event" do
     test "update with invalid status" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: Episode.status(:closed))
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -57,8 +56,6 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
     end
 
     test "episode was updated" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       current_config = Application.get_env(:core, :service_request_expiration_days)
       expiration_days = 2
 

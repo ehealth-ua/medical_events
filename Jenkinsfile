@@ -3,8 +3,8 @@ def author() {
 }
 pipeline {
   agent {
-    node { 
-      label 'ehealth-build-big' 
+    node {
+      label 'ehealth-build-big'
       }
   }
   environment {
@@ -24,9 +24,9 @@ pipeline {
       }
       steps {
         sh '''
-          sudo rm /var/lib/dpkg/lock-frontend    
+          sudo rm /var/lib/dpkg/lock-frontend
           sudo rm /var/cache/apt/archives/lock
-          sudo rm /var/lib/dpkg/lock      
+          sudo rm /var/lib/dpkg/lock
           sudo dpkg --configure -a
           until  sudo apt-get install -y ruby-dev;
             do
@@ -39,7 +39,7 @@ pipeline {
           ./check-PR.sh
           '''
       }
-    }       
+    }
     stage('Init') {
       options {
         timeout(activity: true, time: 3)
@@ -105,7 +105,7 @@ pipeline {
             sh '''
               curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/build-container.sh -o build-container.sh;
               chmod +x ./build-container.sh;
-              ./build-container.sh;  
+              ./build-container.sh;
             '''
           }
         }
@@ -120,7 +120,7 @@ pipeline {
             sh '''
               curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/build-container.sh -o build-container.sh;
               chmod +x ./build-container.sh;
-              ./build-container.sh;  
+              ./build-container.sh;
             '''
           }
         }
@@ -130,21 +130,6 @@ pipeline {
           }
           environment {
             APPS='[{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"}]'
-          }
-          steps {
-            sh '''
-              curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/build-container.sh -o build-container.sh;
-              chmod +x ./build-container.sh;
-              ./build-container.sh;
-            '''
-          }
-        }
-        stage('Build audit-log-consumer-app') {
-          options {
-            timeout(activity: true, time: 3)
-          }
-          environment {
-            APPS='[{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"}]'
           }
           steps {
             sh '''
@@ -165,7 +150,7 @@ pipeline {
             sh '''
               curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/build-container.sh -o build-container.sh;
               chmod +x ./build-container.sh;
-              ./build-container.sh; 
+              ./build-container.sh;
             '''
           }
         }
@@ -196,7 +181,7 @@ pipeline {
       steps {
         sh '''
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
+          chmod +x ./start-container.sh;
           ./start-container.sh;
         '''
         withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -219,7 +204,7 @@ pipeline {
       steps {
         sh '''
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
+          chmod +x ./start-container.sh;
           ./start-container.sh;
         '''
         withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -242,30 +227,7 @@ pipeline {
       steps {
         sh '''
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
-          ./start-container.sh;
-        '''
-        withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-          sh 'echo " ---- step: Push docker image ---- ";'
-          sh '''
-              curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/push-changes.sh -o push-changes.sh;
-              chmod +x ./push-changes.sh;
-              ./push-changes.sh
-            '''
-        }
-      }
-    }
-    stage('Run audit-log-consumer-app and push') {
-      options {
-        timeout(activity: true, time: 3)
-      }
-      environment {
-        APPS='[{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"}]'
-      }
-      steps {
-        sh '''
-          curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
+          chmod +x ./start-container.sh;
           ./start-container.sh;
         '''
         withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -288,7 +250,7 @@ pipeline {
       steps {
         sh '''
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
+          chmod +x ./start-container.sh;
           ./start-container.sh;
         '''
         withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -311,7 +273,7 @@ pipeline {
       steps {
         sh '''
           curl -s https://raw.githubusercontent.com/edenlabllc/ci-utils/umbrella_jenkins_gce/start-container.sh -o start-container.sh;
-          chmod +x ./start-container.sh; 
+          chmod +x ./start-container.sh;
           ./start-container.sh;
         '''
         withCredentials(bindings: [usernamePassword(credentialsId: '8232c368-d5f5-4062-b1e0-20ec13b0d47b', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
@@ -329,7 +291,7 @@ pipeline {
         timeout(activity: true, time: 3)
       }
       environment {
-        APPS = '[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"},{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"event-consumer","label":"event-consumer"},{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"},{"app":"audit_log_consumer","chart":"medical-events-api","namespace":"me","deployment":"audit-log-consumer","label":"audit-log-consumer"},{"app":"number_generator","chart":"medical-events-api","namespace":"me","deployment":"number-generator","label":"number-generator"},{"app":"medical_events_scheduler","chart":"medical-events-api","namespace":"me","deployment":"medical-events-scheduler","label":"medical-events-scheduler"}]'
+        APPS = '[{"app":"medical_events_api","chart":"medical-events-api","namespace":"me","deployment":"api-medical-events","label":"api-medical-events"},{"app":"event_consumer","chart":"medical-events-api","namespace":"me","deployment":"event-consumer","label":"event-consumer"},{"app":"person_consumer","chart":"medical-events-api","namespace":"me","deployment":"person-consumer","label":"person-consumer"},{"app":"number_generator","chart":"medical-events-api","namespace":"me","deployment":"number-generator","label":"number-generator"},{"app":"medical_events_scheduler","chart":"medical-events-api","namespace":"me","deployment":"medical-events-scheduler","label":"medical-events-scheduler"}]'
       }
       steps {
         withCredentials([string(credentialsId: '86a8df0b-edef-418f-844a-cd1fa2cf813d', variable: 'GITHUB_TOKEN')]) {
@@ -374,4 +336,3 @@ pipeline {
     }
   }
 }
-

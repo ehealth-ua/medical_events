@@ -18,8 +18,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
@@ -30,8 +28,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "invalid request params except oneOf validation", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -70,8 +66,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "invalid request params: both oneOf parameters are sent", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -110,8 +104,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "invalid request params: none of the oneOf parameters are sent", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -139,7 +131,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "success approval create with resources request param", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -163,7 +154,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "success approval create with service_request request param", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -189,8 +179,6 @@ defmodule Api.Web.ApprovalControllerTest do
 
   describe "verify approval" do
     test "success verify approval", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -211,8 +199,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "patient not found", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       approval = insert(:approval)
       id = to_string(approval._id)
 
@@ -222,8 +208,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
@@ -243,8 +227,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "approval not found", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -255,8 +237,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "approval status is not NEW", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -276,8 +256,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "verification phone_number is not found", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -311,8 +289,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "verification code is invalid", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -346,8 +322,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "success verify approval when person's auth method is not OTP", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -375,8 +349,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, status: Patient.status(:inactive), _id: patient_id_hash)
@@ -387,8 +359,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "approval not found", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -399,7 +369,6 @@ defmodule Api.Web.ApprovalControllerTest do
     end
 
     test "success approval resend", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()

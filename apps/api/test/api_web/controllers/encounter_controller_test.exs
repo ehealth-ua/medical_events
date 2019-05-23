@@ -16,8 +16,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -28,8 +26,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "no signed data set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -54,7 +50,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "success create visit", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -88,8 +83,6 @@ defmodule Api.Web.EncounterControllerTest do
 
   describe "show encounter" do
     test "successful show", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       encounter_1 = build(:encounter)
       encounter_2 = build(:encounter)
 
@@ -113,16 +106,12 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       conn
       |> get(encounter_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
       |> json_response(404)
     end
 
     test "invalid encounter uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       encounter = build(:encounter)
 
       patient_id = UUID.uuid4()
@@ -136,8 +125,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "get patient when no encounters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -149,8 +136,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "success show encounter in episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       encounter_1 = build(:encounter)
       encounter_2 = build(:encounter)
 
@@ -182,8 +167,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "encounter not found in episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       encounter_1 = build(:encounter)
       encounter_2 = build(:encounter)
 
@@ -215,8 +198,6 @@ defmodule Api.Web.EncounterControllerTest do
 
   describe "index encounter" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -232,8 +213,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "successful search in episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -258,8 +237,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "successful search with search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -329,8 +306,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       assert %{"data" => []} =
                conn
                |> get(encounter_path(conn, :index, UUID.uuid4()))
@@ -338,8 +313,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "get patient when no encounters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -355,8 +328,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "get patient when encounters list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -382,7 +353,6 @@ defmodule Api.Web.EncounterControllerTest do
       encounter = build(:encounter, episode: reference_coding(episode.id, code: "episode"))
       context = reference_coding(encounter.id, code: "encounter")
 
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
       expect(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       immunization = build(:immunization, context: context, status: @status_error)
@@ -444,8 +414,6 @@ defmodule Api.Web.EncounterControllerTest do
     end
 
     test "fail on invalid signed content", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

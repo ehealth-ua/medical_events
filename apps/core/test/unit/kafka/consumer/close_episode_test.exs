@@ -14,7 +14,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
   describe "consume close episode event" do
     test "close with invalid status" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode, status: @closed)
 
       patient_id = UUID.uuid4()
@@ -46,8 +45,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
     end
 
     test "failed when episode's managing organization is invalid" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
@@ -112,7 +109,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
     end
 
     test "episode was closed" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _event -> :ok end)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->

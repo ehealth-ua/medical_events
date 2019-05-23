@@ -20,7 +20,6 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
   describe "consume cancel package event" do
     test "success" do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       client_id = UUID.uuid4()
 
@@ -122,8 +121,6 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
     end
 
     test "failed when no entities with entered_in_error status" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       client_id = UUID.uuid4()
 
       user_id = prepare_signature_expectations()
@@ -184,8 +181,6 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
     end
 
     test "faild when entity has alraady entered_in_error status" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       client_id = UUID.uuid4()
 
       user_id = prepare_signature_expectations()
@@ -232,8 +227,6 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
     end
 
     test "fail on signed content" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       client_id = UUID.uuid4()
 
       user_id = prepare_signature_expectations()

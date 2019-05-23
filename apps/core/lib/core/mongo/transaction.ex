@@ -34,6 +34,30 @@ defmodule Core.Mongo.Transaction do
     %{transaction | operations: transaction.operations ++ [operation]}
   end
 
+  def add_operation(%__MODULE__{} = transaction, collection, :upsert, filter, set, id) do
+    filter_bson =
+      filter
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    set_bson =
+      set
+      |> BSON.Encoder.encode()
+      |> do_bson_encode("")
+      |> Base.encode64()
+
+    operation = %{
+      "filter" => filter_bson,
+      "set" => set_bson,
+      "operation" => "upsert_one",
+      "collection" => collection,
+      "id" => to_string(id)
+    }
+
+    %{transaction | operations: transaction.operations ++ [operation]}
+  end
+
   def add_operation(%__MODULE__{} = transaction, collection, :update, filter, set, id) do
     filter_bson =
       filter

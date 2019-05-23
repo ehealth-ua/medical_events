@@ -29,8 +29,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
   describe "consume create approval event" do
     test "success approval create with resources request param" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -146,8 +144,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "success approval create with service_request request param" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -257,8 +253,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "success approval create when person's auth method is not OTP" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -373,8 +367,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "failed approval create with service_request request param when service_request is not active" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -434,8 +426,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "failed approval create with service_request request param when service_request expiration_date is invalid" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       current_config = Application.get_env(:core, :service_request_expiration_days)
       expiration_days = 2
 
@@ -544,8 +534,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "failed approval create with service_request request param when service_request does not contain episode references" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -584,8 +572,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "failed approval create with service_request request param when service_request is not found" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()
@@ -621,8 +607,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
     end
 
     test "failed approval create when granted_to and granted_resources params are invalid" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       employee_id = UUID.uuid4()

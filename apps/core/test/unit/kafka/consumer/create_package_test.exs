@@ -22,8 +22,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
   describe "consume create package event" do
     test "empty content" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -63,8 +61,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -104,7 +100,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "visit not found" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       expect_doctor(client_id)
 
@@ -236,7 +231,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "success create package" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
@@ -1252,8 +1246,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "failed when encounter reference episode doesnt match episode managing organization" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       client_id = UUID.uuid4()
       expect_doctor(client_id)
 
@@ -1650,7 +1642,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "fail on invalid drfo" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
 
       encounter_id = UUID.uuid4()
@@ -1761,7 +1752,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "invalid create package request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
@@ -2973,7 +2963,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "fail on invalid incoming_referral's used_by_legal_entity" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 
@@ -3117,7 +3106,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
     end
 
     test "fail on invalid incoming_referral's category" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       expect_doctor(client_id, 2)
 

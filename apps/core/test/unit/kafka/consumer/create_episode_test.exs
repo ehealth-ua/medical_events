@@ -16,8 +16,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
 
   describe "consume create episode event" do
     test "episode already exists" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -67,8 +65,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
     end
 
     test "episode was created" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

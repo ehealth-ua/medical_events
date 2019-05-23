@@ -3,12 +3,9 @@ defmodule Api.Web.ImmunizationControllerTest do
 
   use ApiWeb.ConnCase
   alias Core.Patients
-  import Mox
 
   describe "show immunization" do
     test "successful show", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       immunization_1 = build(:immunization)
       immunization_2 = build(:immunization)
 
@@ -38,8 +35,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful show by episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       episode1 = build(:episode)
       episode2 = build(:episode)
 
@@ -92,8 +87,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "not found by episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       episode1 = build(:episode)
       episode2 = build(:episode)
 
@@ -138,16 +131,12 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       conn
       |> get(immunization_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
       |> json_response(404)
     end
 
     test "invalid immunization uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       immunization = build(:immunization)
 
       patient_id = UUID.uuid4()
@@ -165,8 +154,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "get patient when no immunizations", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -180,8 +167,6 @@ defmodule Api.Web.ImmunizationControllerTest do
 
   describe "index immunization" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -200,8 +185,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search with search parameters: encounter_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -242,8 +225,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search with search parameters: vaccine_code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -292,8 +273,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -347,8 +326,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search by episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode1 = build(:episode)
       episode2 = build(:episode)
 
@@ -400,8 +377,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -450,8 +425,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "successful search with search parameters: complex test", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -563,8 +536,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -610,8 +581,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "invalid search params", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -696,8 +665,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       assert %{"data" => []} =
                conn
                |> get(immunization_path(conn, :index, UUID.uuid4()))
@@ -705,8 +672,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "get patient when no immunizations", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -725,8 +690,6 @@ defmodule Api.Web.ImmunizationControllerTest do
     end
 
     test "get patient when immunizations list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
