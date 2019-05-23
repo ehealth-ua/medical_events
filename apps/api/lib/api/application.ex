@@ -11,16 +11,6 @@ defmodule Api.Application do
       supervisor(ApiWeb.Endpoint, [])
     ]
 
-    children =
-      if Application.get_env(:api, :env) == :prod do
-        children ++
-          [
-            {Cluster.Supervisor, [Application.get_env(:api, :topologies), [name: Api.ClusterSupervisor]]}
-          ]
-      else
-        children
-      end
-
     opts = [strategy: :one_for_one, name: Api.Supervisor]
     Supervisor.start_link(children, opts)
   end

@@ -18,6 +18,8 @@ config :core,
   rpc_worker: Core.Rpc.Worker,
   system_user: {:system, "EHEALTH_SYSTEM_USER", "4261eacf-8008-4e62-899f-de1e2f7065f0"}
 
+config :core, env: Mix.env()
+
 config :logger_json, :backend,
   formatter: EhealthLogger.Formatter,
   metadata: :all
@@ -25,6 +27,60 @@ config :logger_json, :backend,
 config :logger,
   backends: [LoggerJSON],
   level: :info
+
+config :core,
+  topologies: [
+    k8s_transactions: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "me_transactions",
+        kubernetes_selector: "app=me-transactions",
+        kubernetes_namespace: "me",
+        polling_interval: 10_000
+      ]
+    ],
+    k8s_ehealth: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "ehealth",
+        kubernetes_selector: "app=api",
+        kubernetes_namespace: "il",
+        polling_interval: 10_000
+      ]
+    ],
+    k8s_number_generator: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "number_generator",
+        kubernetes_selector: "app=number-generator",
+        kubernetes_namespace: "me",
+        polling_interval: 10_000
+      ]
+    ],
+    k8s_mpi: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "mpi",
+        kubernetes_selector: "app=api",
+        kubernetes_namespace: "mpi",
+        polling_interval: 10_000
+      ]
+    ],
+    k8s_ops: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: "ops",
+        kubernetes_selector: "app=api",
+        kubernetes_namespace: "ops",
+        polling_interval: 10_000
+      ]
+    ]
+  ]
 
 config :core, Core.Microservices.Il,
   endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
