@@ -3,14 +3,12 @@ defmodule Api.Rpc.RpcTest do
 
   use ExUnit.Case
   import Core.Factories
-  import Mox
 
   alias Api.Rpc
   alias Core.Approval
   alias Core.Patients
 
   test "get encounter status by id" do
-    expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
     encounter_1 = build(:encounter)
     encounter_2 = build(:encounter, status: "entered_in_error")
     patient_id = UUID.uuid4()
@@ -39,7 +37,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
       patient_id = UUID.uuid4()
@@ -65,7 +62,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "service_request was found" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       service_request_1 = insert(:service_request, subject: Patients.get_pk_hash(patient_id))
       insert(:service_request)
@@ -81,7 +77,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "diagnostic_report was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -129,7 +124,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -163,13 +157,11 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "encounter not found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       observation = insert(:observation)
       refute Rpc.episode_by_observation_id(UUID.uuid4(), to_string(observation._id))
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -209,13 +201,11 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "encounter not found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       condition = insert(:condition)
       refute Rpc.episode_by_condition_id(UUID.uuid4(), to_string(condition._id))
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -255,7 +245,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -301,7 +290,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -347,7 +335,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -393,7 +380,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -439,7 +425,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -485,7 +470,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -527,7 +511,6 @@ defmodule Api.Rpc.RpcTest do
     end
 
     test "episode was found" do
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -569,7 +552,6 @@ defmodule Api.Rpc.RpcTest do
 
   describe "approvals_by_episode/3" do
     test "success get approvals by episode" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

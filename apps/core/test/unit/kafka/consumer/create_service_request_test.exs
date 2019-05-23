@@ -17,8 +17,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
   describe "consume create service_request event" do
     test "empty content" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -56,8 +54,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -174,7 +170,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "success create service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
@@ -309,7 +304,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "fail on invalid drfo" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -417,7 +411,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "fail on permitted resources when category is laboratory procedure" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -524,7 +517,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid create service_request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -650,7 +642,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "inavlid permitted resources in service_request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -811,7 +802,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service reference does not exist" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -939,7 +929,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service reference is not active" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -1067,7 +1056,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service reference is not allowed in request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -1195,7 +1183,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service group reference does not exist" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -1323,7 +1310,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service group reference is not active" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -1451,7 +1437,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code - service group reference is not allowed in request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -1579,7 +1564,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
     end
 
     test "invalid code category" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)

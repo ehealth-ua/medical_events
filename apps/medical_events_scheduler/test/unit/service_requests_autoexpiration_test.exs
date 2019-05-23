@@ -21,8 +21,6 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
   end
 
   test "success service requests autoexpiration" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(1))
 
     insert(:service_request,
@@ -99,8 +97,6 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
   end
 
   test "service requests autoexpiration failed" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     %{_id: id} =
       insert(:service_request, status: ServiceRequest.status(:active), expiration_date: expiration_date_from_now(-1))
 

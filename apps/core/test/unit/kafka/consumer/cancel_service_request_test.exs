@@ -23,8 +23,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
 
   describe "consume cancel service_request event" do
     test "empty content" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -59,8 +57,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
     end
 
     test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = prepare_signature_expectations()
 
@@ -293,7 +289,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
     end
 
     test "compare with db failed on cancel service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)
@@ -359,7 +354,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
     end
 
     test "success cancel service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
@@ -482,7 +476,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
     end
 
     test "invalid cancel service_request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = prepare_signature_expectations()
       job = insert(:job)

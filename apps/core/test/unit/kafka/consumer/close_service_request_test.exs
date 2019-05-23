@@ -13,7 +13,6 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
 
   describe "consume close service_request event" do
     test "success close service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -75,7 +74,6 @@ defmodule Core.Kafka.Consumer.CloseServiceRequestTest do
     end
 
     test "can't close service_request with invalid status" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 

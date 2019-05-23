@@ -8,7 +8,6 @@ defmodule NumberGenerator.GeneratorTest do
 
   describe "test generate" do
     test "success generate" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       entity_type = "episode_id"
       entity_id = UUID.uuid4()
       actor_id = UUID.uuid4()
@@ -26,7 +25,6 @@ defmodule NumberGenerator.GeneratorTest do
     end
 
     test "number already exists" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       entity_id = UUID.uuid4()
       hash = Generator.hash_entity_id(entity_id, "")
       number = insert(:number, _id: entity_id, number: hash)

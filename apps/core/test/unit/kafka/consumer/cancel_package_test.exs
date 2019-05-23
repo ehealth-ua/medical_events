@@ -47,7 +47,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "success", %{test_data: {episode, encounter, context}} do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
 
       expect(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
@@ -222,8 +221,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "invalid cancel package request params", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
-
       client_id = UUID.uuid4()
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
@@ -683,8 +680,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "failed when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{
@@ -758,8 +753,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "faild when entity has alraady entered_in_error status", %{test_data: {episode, encounter, _}} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{
@@ -823,8 +816,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "failed when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, 3, fn _event -> :ok end)
-
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{
@@ -922,7 +913,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "fail on signed content", %{test_data: {episode, encounter, context}} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       user_id = prepare_signature_expectations()
 
       expect(IlMock, :get_legal_entity, fn id, _ ->
@@ -994,7 +984,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "fail on validate diagnoses" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       user_id = prepare_signature_expectations()
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
@@ -1084,7 +1073,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "diagnosis deactivated" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
 
       expect(IlMock, :get_legal_entity, fn id, _ ->
@@ -1201,7 +1189,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "episode not found" do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       user_id = prepare_signature_expectations()
 
       job = insert(:job)

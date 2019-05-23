@@ -13,7 +13,6 @@ defmodule Core.Kafka.Consumer.ProcessServiceRequestTest do
 
   describe "consume process service_request event" do
     test "success process service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -77,8 +76,6 @@ defmodule Core.Kafka.Consumer.ProcessServiceRequestTest do
   end
 
   test "fail on invalid status" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     client_id = UUID.uuid4()
     job = insert(:job)
 
@@ -128,7 +125,6 @@ defmodule Core.Kafka.Consumer.ProcessServiceRequestTest do
   end
 
   test "fail on invalid used_by_legal_entity" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
     client_id = UUID.uuid4()
     job = insert(:job)
 

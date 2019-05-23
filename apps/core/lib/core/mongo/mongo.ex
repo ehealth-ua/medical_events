@@ -1,7 +1,6 @@
 defmodule Core.Mongo do
   @moduledoc false
 
-  alias Core.Mongo.AuditLog
   alias Core.Validators.Vex
   alias Mongo, as: M
   require Logger
@@ -18,9 +17,7 @@ defmodule Core.Mongo do
       |> List.insert_at(0, :mongo)
 
     try do
-      M
-      |> apply(fun, enriched_args)
-      |> AuditLog.log_operation(fun, args)
+      apply(M, fun, enriched_args)
     rescue
       error ->
         Logger.info("Error: #{inspect(error)}, #{fun}: #{inspect(enriched_args)}")

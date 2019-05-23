@@ -5,7 +5,3 @@ config :core, Core.Patients, pk_hash_salt: "aNg9JXF48uQrIjFYSGXDmKEYBXuu0BOEbkec
 config :core, :mongo,
   url: "mongodb://localhost:27017/medical_data",
   pool_size: 10
-
-config :core, :mongo_audit_log,
-  url: "mongodb://localhost:27017/medical_data",
-  pool_size: 10

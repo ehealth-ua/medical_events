@@ -3,12 +3,9 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
   use ApiWeb.ConnCase
   alias Core.Patients
-  import Mox
 
   describe "show risk assessment" do
     test "successful show", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       risk_assessment_1 = build(:risk_assessment)
       risk_assessment_2 = build(:risk_assessment)
 
@@ -38,8 +35,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful show by episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       episode1 = build(:episode)
       episode2 = build(:episode)
 
@@ -92,8 +87,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "not found by episode context", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       episode1 = build(:episode)
       episode2 = build(:episode)
 
@@ -138,16 +131,12 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       conn
       |> get(risk_assessment_path(conn, :show, UUID.uuid4(), UUID.uuid4()))
       |> json_response(404)
     end
 
     test "invalid risk assessment uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       risk_assessment = build(:risk_assessment)
 
       patient_id = UUID.uuid4()
@@ -165,8 +154,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "get patient when no risk assessments", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -180,8 +167,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
 
   describe "index risk assessments" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -200,8 +185,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful search with search parameters: encounter_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -242,8 +225,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful search with search parameters: code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -289,8 +270,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful search with search parameters: episode_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -344,8 +323,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -403,8 +380,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "successful search with search parameters: complex test", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -517,8 +492,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -564,8 +537,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "invalid search params", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -650,8 +621,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "invalid patient uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       assert %{"data" => []} =
                conn
                |> get(risk_assessment_path(conn, :index, UUID.uuid4()))
@@ -659,8 +628,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "get patient when no risk assessments", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -679,8 +646,6 @@ defmodule Api.Web.RiskAssessmentControllerTest do
     end
 
     test "get patient when risk assessments list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

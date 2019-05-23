@@ -16,8 +16,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -28,8 +26,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "additional params were sent", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -81,8 +77,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success list service_requests in context", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -116,8 +110,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success list service_requests by code", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -164,8 +156,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -176,8 +166,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "service_request doesn't belong to episode", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -204,8 +192,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success get service_request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -307,8 +293,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition)
       insert(:service_request)
@@ -320,8 +304,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "status search", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition, status: ServiceRequest.status(:completed))
       insert(:service_request)
@@ -340,8 +322,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "pagination search", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       service_request1 = insert(:service_request)
       insert(:service_request, requisition: service_request1.requisition)
       insert(:service_request, requisition: service_request1.requisition)
@@ -367,8 +347,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -379,8 +357,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "additional params were sent", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -423,8 +399,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search by episode_id", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       episode_id = UUID.uuid4()
@@ -458,8 +432,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search by status", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -480,8 +452,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search by requester_legal_entity", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -512,8 +482,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search by used_by_legal_entity", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -544,8 +512,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success search by code", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -583,8 +549,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -595,8 +559,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "no signed data set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -621,7 +583,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success create service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -650,8 +611,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
   describe "use service request" do
     test "used_by_legal_entity is not set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       conn = patch(conn, service_request_path(conn, :use, UUID.uuid4()))
       assert response = json_response(conn, 422)
 
@@ -671,7 +630,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success use service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       service_request = insert(:service_request)
@@ -699,7 +657,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
   describe "release service request" do
     test "success release service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -733,8 +690,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -746,7 +701,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
     test "invalid params", %{conn: conn} do
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -757,7 +711,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success recall service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -793,8 +746,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -806,7 +757,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
     test "invalid params", %{conn: conn} do
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -817,7 +767,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success cancel service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -848,7 +797,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
   describe "process service request" do
     test "success process service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -877,8 +825,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
 
   describe "complete service request" do
     test "completed_with is not set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       conn = patch(conn, service_request_path(conn, :complete, UUID.uuid4()))
       assert response = json_response(conn, 422)
 
@@ -898,7 +844,6 @@ defmodule Api.Web.ServiceRequestControllerTest do
     end
 
     test "success complete service request", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       service_request = insert(:service_request)

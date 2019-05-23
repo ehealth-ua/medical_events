@@ -17,8 +17,6 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
 
   describe "consume resend approval event" do
     test "success approval resend" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       patient_id = UUID.uuid4()
@@ -49,8 +47,6 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
   end
 
   test "success approval resend when person's auth method is not OTP" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     user_id = UUID.uuid4()
     client_id = UUID.uuid4()
     patient_id = UUID.uuid4()
@@ -79,8 +75,6 @@ defmodule Core.Kafka.Consumer.ResendApprovalTest do
   end
 
   test "failed when approval status is not NEW" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     user_id = UUID.uuid4()
     client_id = UUID.uuid4()
     patient_id = UUID.uuid4()

@@ -21,8 +21,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
 
   describe "consume create package event" do
     test "empty content" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -61,8 +59,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "empty map" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -101,7 +97,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "success create package" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
@@ -508,7 +503,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "invalid create package request params" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -1028,7 +1022,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "conclusion must be filled when service category is diagnostic_procedure" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -1413,7 +1406,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "results_interpreter with type reference must be filled when service category is diagnostic_procedure" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -1785,7 +1777,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "observations must be filled when service category is laboratory" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -2025,7 +2016,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "service request category should be equal to service category" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -2412,7 +2402,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "service referenced in diagnostic report should belong to service group" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
@@ -2803,7 +2792,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
     end
 
     test "service request should reference the same service that is referenced in diagnostic report" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)

@@ -4,11 +4,8 @@ defmodule Api.Web.ObservationControllerTest do
   use ApiWeb.ConnCase
   alias Core.Observations.Value
   alias Core.Patients
-  import Mox
 
   setup %{conn: conn} do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     {:ok, conn: put_consumer_id_header(conn)}
   end
 
@@ -484,7 +481,6 @@ defmodule Api.Web.ObservationControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

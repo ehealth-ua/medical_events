@@ -13,8 +13,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -25,8 +23,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "no signed data set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -51,7 +47,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "success", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -85,8 +80,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "patient is not active", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -97,8 +90,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "no signed data set", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -123,7 +114,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "success", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       stub(KafkaMock, :publish_medical_event, fn _ -> :ok end)
 
       patient_id = UUID.uuid4()
@@ -152,8 +142,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
   describe "show diagnostic report" do
     test "successful show", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       diagnostic_report_1 = build(:diagnostic_report)
       diagnostic_report_2 = build(:diagnostic_report)
 
@@ -183,8 +171,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "invalid diagnostic report uuid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       diagnostic_report = build(:diagnostic_report)
 
       patient_id = UUID.uuid4()
@@ -202,8 +188,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "get patient when no diagnostic reports", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -217,8 +201,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
 
   describe "index diagnostic reports" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -237,8 +219,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: encounter_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -279,8 +259,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       service_id = UUID.uuid4()
@@ -328,8 +306,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: context_episode_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -383,8 +359,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: origin_episode_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -433,8 +407,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -492,8 +464,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: based_on", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -542,8 +512,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "successful search with search parameters: complex test", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       service_id = UUID.uuid4()
@@ -677,8 +645,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "empty search list when episode_id not found in encounters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       episode_1 = build(:episode)
       episode_2 = build(:episode)
 
@@ -724,8 +690,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "invalid search params", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -823,8 +787,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "get patient when no diagnostic_reports", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -843,8 +805,6 @@ defmodule Api.Web.DiagnosticReportControllerTest do
     end
 
     test "get patient when diagnostic_reports list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

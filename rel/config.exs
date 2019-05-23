@@ -73,20 +73,6 @@ release :person_consumer do
   set(config_providers: [ConfexConfigProvider])
 end
 
-release :audit_log_consumer do
-  set(version: current_version(:audit_log_consumer))
-
-  set(
-    applications: [
-      :runtime_tools,
-      audit_log_consumer: :permanent,
-      core: :permanent
-    ]
-  )
-
-  set(config_providers: [ConfexConfigProvider])
-end
-
 release :number_generator do
   set(version: current_version(:number_generator))
 

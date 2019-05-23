@@ -21,8 +21,6 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
   end
 
   test "success jobs clean up" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     job_deletion_days = Confex.fetch_env!(:medical_events_scheduler, JobsCleanup)[:job_ttl_days]
     now = DateTime.utc_now()
 
@@ -62,8 +60,6 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
   end
 
   test "jobs clean up failed" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     job_deletion_days = Confex.fetch_env!(:medical_events_scheduler, JobsCleanup)[:job_ttl_days]
     now = DateTime.utc_now()
 

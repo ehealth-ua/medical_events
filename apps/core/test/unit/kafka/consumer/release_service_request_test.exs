@@ -12,7 +12,6 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
 
   describe "consume release service_request event" do
     test "success release service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -75,8 +74,6 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
   end
 
   test "fail on invalid expiration_date" do
-    stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
     current_config = Application.get_env(:core, :service_request_expiration_days)
     expiration_days = 2
 

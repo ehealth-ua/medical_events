@@ -9,8 +9,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list episodes" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -29,7 +27,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -59,8 +56,6 @@ defmodule Api.Web.SummaryControllerTest do
       expect(IlMock, :get_dictionaries, fn _, _ ->
         {:ok, %{"data" => %{}}}
       end)
-
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
 
       week_ago = create_datetime(Date.add(Date.utc_today(), -7))
       next_week = create_datetime(Date.add(Date.utc_today(), 7))
@@ -139,8 +134,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list immunizations" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -159,7 +152,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -186,8 +178,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: vaccine_code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -236,8 +226,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -286,8 +274,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when immunizations list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -308,8 +294,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list allergy intolerances" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -328,7 +312,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -355,8 +338,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -402,8 +383,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -461,8 +440,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when allergy intolerances list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -483,8 +460,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list risk assessments" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -503,7 +478,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -530,8 +504,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -577,8 +549,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -636,8 +606,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when risk assessments list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -658,8 +626,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list devices" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -678,7 +644,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -705,8 +670,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: type", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -752,8 +715,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -811,8 +772,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when devices list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -833,8 +792,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list medication statements" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -853,7 +810,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -880,8 +836,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: medication_code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -927,8 +881,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -986,8 +938,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when medication statements list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1008,7 +958,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "search conditions" do
     test "success by code, onset_date", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -1052,7 +1001,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid code", %{conn: conn} do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       episode = build(:episode)
 
       patient_id = UUID.uuid4()
@@ -1079,7 +1027,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1103,7 +1050,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "get condition" do
     test "success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -1123,7 +1069,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "condition has different code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -1142,7 +1087,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "condition not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1156,7 +1100,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "get observation" do
     test "success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1181,7 +1124,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "observation has different code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1194,7 +1136,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "observation not found", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1208,8 +1149,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list active diagnoses" do
     test "success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -1223,8 +1162,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -1240,8 +1177,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "get diagnostic report" do
     test "success", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1262,7 +1197,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "not found when conclusion_code is not allowed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1285,7 +1219,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "not found when id is invalid", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1304,8 +1237,6 @@ defmodule Api.Web.SummaryControllerTest do
 
   describe "list diagnostic reports" do
     test "successful search", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1324,8 +1255,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "conclusion_code is not allowed", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1357,7 +1286,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "invalid search parameters", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1384,8 +1312,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: code", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       service_id = UUID.uuid4()
@@ -1433,8 +1359,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: origin_episode_id", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1483,8 +1407,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: date", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1542,8 +1464,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "get patient when diagnostic reports list is null", %{conn: conn} do
-      expect(KafkaMock, :publish_mongo_event, 2, fn _event -> :ok end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 

@@ -15,7 +15,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
 
   describe "consume use service_request event" do
     test "success use service_request" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -82,7 +81,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
     end
 
     test "fail on invalid drfo" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -149,7 +147,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
     end
 
     test "fail on invalid used_by_legal_entity" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -206,7 +203,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
     end
 
     test "fail when used_by_legal_entity is already filled" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
       client_id = UUID.uuid4()
       job = insert(:job)
 
@@ -250,8 +246,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
     end
 
     test "fail on invalid expiration_date" do
-      stub(KafkaMock, :publish_mongo_event, fn _event -> :ok end)
-
       current_config = Application.get_env(:core, :service_request_expiration_days)
       expiration_days = 2
 
