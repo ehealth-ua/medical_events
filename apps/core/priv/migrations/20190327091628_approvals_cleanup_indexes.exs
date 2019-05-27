@@ -7,7 +7,7 @@ defmodule Core.Migrations.ApprovalsCleanupIndexes do
   def change do
     {:ok, _} =
       Mongo.command(
-        createIndexes: Approval.metadata().collection,
+        createIndexes: Approval.collection(),
         indexes: [
           %{
             key: %{

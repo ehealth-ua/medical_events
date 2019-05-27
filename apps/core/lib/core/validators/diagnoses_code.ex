@@ -1,8 +1,6 @@
 defmodule Core.Validators.DiagnosesCode do
   @moduledoc false
 
-  use Vex.Validator
-
   def validate(diagnoses, options) when is_list(diagnoses) do
     code = Keyword.get(options, :code)
 
@@ -25,7 +23,11 @@ defmodule Core.Validators.DiagnosesCode do
       :ok
     else
       {:error,
-       message(options, "At least one of the diagnosis codes should be defined in the #{required_system} system")}
+       Keyword.get(
+         options,
+         :message,
+         "At least one of the diagnosis codes should be defined in the #{required_system} system"
+       )}
     end
   end
 

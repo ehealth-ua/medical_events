@@ -1,7 +1,6 @@
 defmodule Core.Patients.Episodes do
   @moduledoc false
 
-  use Core.Schema
   alias Core.Episode
   alias Core.Mongo
   alias Core.Paging
@@ -9,8 +8,9 @@ defmodule Core.Patients.Episodes do
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
+  import Core.DateTime
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def get_by_id(patient_id_hash, id) do
     with %{"episodes" => %{^id => episode}} <-
@@ -26,7 +26,11 @@ defmodule Core.Patients.Episodes do
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params, schema \\ :episode_get) do
-    with :ok <- JsonSchema.validate(schema, Map.drop(params, ~w(page page_size patient_id patient_id_hash))) do
+    with :ok <-
+           JsonSchema.validate(
+             schema,
+             Map.drop(params, ~w(page page_size patient_id patient_id_hash))
+           ) do
       pipeline =
         [
           %{"$match" => %{"_id" => patient_id_hash}},
@@ -38,7 +42,12 @@ defmodule Core.Patients.Episodes do
         |> Enum.concat([%{"$sort" => %{"inserted_at" => -1}}])
 
       with %Page{entries: episodes} = paging <-
-             Paging.paginate(:aggregate, @collection, pipeline, Map.take(params, ~w(page page_size))) do
+             Paging.paginate(
+               :aggregate,
+               @collection,
+               pipeline,
+               Map.take(params, ~w(page page_size))
+             ) do
         {:ok, %Page{paging | entries: Enum.map(episodes, &Episode.create/1)}}
       end
     end

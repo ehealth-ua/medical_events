@@ -1,7 +1,6 @@
 defmodule Core.Validators.ObservationReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Mongo
   alias Core.Observation
 
@@ -10,7 +9,7 @@ defmodule Core.Validators.ObservationReference do
   def validate(value, options) do
     patient_id_hash = Keyword.get(options, :patient_id_hash)
 
-    case Mongo.find_one(Observation.metadata().collection, %{
+    case Mongo.find_one(Observation.collection(), %{
            "_id" => Mongo.string_to_uuid(value),
            "patient_id" => patient_id_hash
          }) do
@@ -25,7 +24,7 @@ defmodule Core.Validators.ObservationReference do
     end
   end
 
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
+  def error(options, default_message) do
+    {:error, Keyword.get(options, :message, default_message)}
   end
 end

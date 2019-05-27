@@ -2,9 +2,9 @@ defmodule Api.Web.SummaryControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-  use Core.Schema
   alias Core.Observations.Value
   alias Core.Patients
+  import Core.DateTime
   import Mox
 
   describe "list episodes" do
@@ -1109,7 +1109,7 @@ defmodule Api.Web.SummaryControllerTest do
         insert(
           :observation,
           patient_id: patient_id_hash,
-          value: %Value{type: "period", value: build(:period)},
+          value: %Value{value_period: build(:period)},
           code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5")
         )
 

@@ -8,7 +8,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
 
   require Logger
 
-  @collection ServiceRequest.metadata().collection
+  @collection ServiceRequest.collection()
 
   def run do
     Logger.info("Service request autoexpiration process started")
@@ -36,17 +36,15 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration do
     updated_at = DateTime.utc_now()
     updated_by = Confex.fetch_env!(:core, :system_user)
 
-    set =
-      %{
-        "updated_by" => updated_by,
-        "updated_at" => updated_at,
-        "status" => ServiceRequest.status(:recalled),
-        "status_reason" => %{
-          "coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "autoexpired"}],
-          "text" => nil
-        }
+    set = %{
+      "updated_by" => updated_by,
+      "updated_at" => updated_at,
+      "status" => ServiceRequest.status(:recalled),
+      "status_reason" => %{
+        "coding" => [%{"system" => "eHealth/service_request_cancel_reasons", "code" => "autoexpired"}],
+        "text" => nil
       }
-      |> Mongo.convert_to_uuid("updated_by")
+    }
 
     status_history =
       StatusHistory.create(%{

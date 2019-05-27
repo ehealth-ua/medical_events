@@ -1,7 +1,7 @@
 defmodule Core.Observations.Value do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
   alias Core.Observations.Values.Quantity
@@ -9,59 +9,35 @@ defmodule Core.Observations.Value do
   alias Core.Observations.Values.SampledData
   alias Core.Period
   alias Core.Range
+  import Ecto.Changeset
 
+  @fields_required ~w()a
+  @fields_optional ~w(value_string value_time value_boolean value_date_time)a
+
+  @primary_key false
   embedded_schema do
-    field(:type, presence: true)
-    field(:value, presence: true, reference: [path: nil])
+    field(:value_string, :string)
+    field(:value_time, :string)
+    field(:value_boolean, :boolean)
+    field(:value_date_time, :utc_datetime_usec)
+
+    embeds_one(:value_quantity, Quantity)
+    embeds_one(:value_codeable_concept, CodeableConcept)
+    embeds_one(:value_sampled_data, SampledData)
+    embeds_one(:value_range, Range)
+    embeds_one(:value_ratio, Ratio)
+    embeds_one(:value_period, Period)
   end
 
-  def create("value_string", value) do
-    %__MODULE__{type: "string", value: value}
+  def changeset(%__MODULE__{} = value, params) do
+    value
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:value_quantity)
+    |> cast_embed(:value_codeable_concept)
+    |> cast_embed(:value_sampled_data)
+    |> cast_embed(:value_range)
+    |> cast_embed(:value_ratio)
+    |> cast_embed(:value_period)
   end
-
-  def create("value_time", value) do
-    %__MODULE__{type: "time", value: value}
-  end
-
-  def create("value_boolean", value) do
-    %__MODULE__{type: "boolean", value: value}
-  end
-
-  def create("value_date_time", value) do
-    datetime = create_datetime(value)
-    {:value, %__MODULE__{type: "date_time", value: datetime}}
-  end
-
-  def create("value_quantity", value) do
-    %__MODULE__{type: "quantity", value: Quantity.create(value)}
-  end
-
-  def create("value_codeable_concept", value) do
-    %__MODULE__{type: "codeable_concept", value: CodeableConcept.create(value)}
-  end
-
-  def create("value_sampled_data", value) do
-    %__MODULE__{type: "sampled_data", value: SampledData.create(value)}
-  end
-
-  def create("value_range", value) do
-    %__MODULE__{type: "range", value: Range.create(value)}
-  end
-
-  def create("value_ratio", value) do
-    %__MODULE__{type: "ratio", value: Ratio.create(value)}
-  end
-
-  def create("value_period", value) do
-    %__MODULE__{type: "period", value: Period.create(value)}
-  end
-
-  def create(type, value) do
-    create("value_#{type}", value)
-  end
-end
-
-defimpl Vex.Blank, for: Core.Observations.Value do
-  def blank?(%Core.Observations.Value{}), do: false
-  def blank?(_), do: true
 end

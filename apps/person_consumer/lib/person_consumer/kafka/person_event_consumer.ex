@@ -20,7 +20,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
       when status in [@status_active, @status_inactive] do
     %Transaction{}
     |> Transaction.add_operation(
-      Patient.metadata().collection,
+      Patient.collection(),
       :upsert,
       %{"_id" => Patients.get_pk_hash(person_id)},
       %{

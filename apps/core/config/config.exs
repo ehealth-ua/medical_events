@@ -130,44 +130,6 @@ config :core, Core.Redis,
   database: {:system, "REDIS_DATABASE", nil},
   pool_size: {:system, :integer, "REDIS_POOL_SIZE", 5}
 
-config :vex,
-  sources: [
-    [
-      datetime: Core.Validators.DateTime,
-      date: Core.Validators.Date,
-      reference: Core.Validators.Reference,
-      value: Core.Validators.Value,
-      division: Core.Validators.Division,
-      employee: Core.Validators.Employee,
-      legal_entity: Core.Validators.LegalEntity,
-      diagnoses_role: Core.Validators.DiagnosesRole,
-      visit_context: Core.Validators.VisitContext,
-      diagnosis_condition: Core.Validators.DiagnosisCondition,
-      strict_presence: Core.Validators.StrictPresence,
-      observation_context: Core.Validators.ObservationContext,
-      observation_reference: Core.Validators.ObservationReference,
-      source: Core.Validators.Source,
-      unique_ids: Core.Validators.UniqueIds,
-      mongo_uuid: Core.Validators.MongoUUID,
-      dictionary_reference: Core.Validators.DictionaryReference,
-      drfo: Core.Validators.Drfo,
-      encounter_reference: Core.Validators.EncounterReference,
-      episode_reference: Core.Validators.EpisodeReference,
-      condition_reference: Core.Validators.ConditionReference,
-      condition_context: Core.Validators.ConditionContext,
-      diagnoses_code: Core.Validators.DiagnosesCode,
-      service_request_reference: Core.Validators.ServiceRequestReference,
-      max_days_passed: Core.Validators.MaxDaysPassed,
-      approval_granted_to_reference: Core.Validators.ApprovalGrantedToReference,
-      medication_request_reference: Core.Validators.MedicationRequestReference,
-      diagnostic_report_reference: Core.Validators.DiagnosticReportReference,
-      diagnostic_report_context: Core.Validators.DiagnosticReportContext,
-      service_reference: Core.Validators.ServiceReference,
-      service_group_reference: Core.Validators.ServiceGroupReference
-    ],
-    Vex.Validators
-  ]
-
 config :core, Core.Validators.JsonSchema, errors_limit: {:system, :integer, "JSON_SCHEMA_ERRORS_LIMIT", 6}
 
 config :core, Core.Rpc.Worker,

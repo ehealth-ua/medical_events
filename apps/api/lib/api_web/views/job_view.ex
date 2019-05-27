@@ -2,6 +2,7 @@ defmodule Api.Web.JobView do
   @moduledoc false
 
   use ApiWeb, :view
+  alias Core.DateView
   alias Core.Job
 
   @job_status_pending Job.status(:pending)
@@ -9,7 +10,7 @@ defmodule Api.Web.JobView do
 
   def render("details.json", %{job: job}) do
     %{
-      eta: job.eta,
+      eta: DateView.render_datetime(job.eta),
       status: Job.status_to_string(job.status)
     }
     |> add_status_code(job)
@@ -18,7 +19,7 @@ defmodule Api.Web.JobView do
 
   def render("details_error.json", %{job: job}) do
     %{
-      eta: job.eta,
+      eta: DateView.render_datetime(job.eta),
       errors: job.response,
       status: Job.status_to_string(job.status),
       status_code: job.status_code

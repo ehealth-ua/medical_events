@@ -1,24 +1,26 @@
 defmodule Core.Observations.Values.SampledData do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  import Ecto.Changeset
 
+  @fields_required ~w(data)a
+  @fields_optional ~w(origin period factor lower_limit upper_limit dimensions)a
+
+  @primary_key false
   embedded_schema do
-    field(:origin)
-    field(:period)
-    field(:factor)
-    field(:lower_limit)
-    field(:upper_limit)
-    field(:dimensions)
-    field(:data, presence: true)
+    field(:origin, :float)
+    field(:period, :float)
+    field(:factor, :float)
+    field(:lower_limit, :float)
+    field(:upper_limit, :float)
+    field(:dimensions, :float)
+    field(:data, :string)
   end
 
-  def create(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  def changeset(%__MODULE__{} = sampled_data, params) do
+    sampled_data
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
   end
-end
-
-defimpl Vex.Blank, for: Core.Observations.Values.SampledData do
-  def blank?(%Core.Observations.Values.SampledData{}), do: false
-  def blank?(_), do: true
 end

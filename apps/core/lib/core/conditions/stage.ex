@@ -1,16 +1,20 @@
 defmodule Core.Stage do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
+  alias Core.Validators.DictionaryReference
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:summary, dictionary_reference: [path: "summary", referenced_field: "system", field: "code"])
+    embeds_one(:summary, CodeableConcept)
   end
 
-  def create(data) do
-    %__MODULE__{
-      summary: CodeableConcept.create(Map.get(data, "summary"))
-    }
+  def changeset(%__MODULE__{} = stage, params) do
+    stage
+    |> cast(params, [])
+    |> cast_embed(:summary, required: true)
+    |> validate_change(:summary, &DictionaryReference.validate_change/2)
   end
 end

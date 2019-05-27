@@ -1,8 +1,8 @@
 defmodule Core.Validators.MedicationRequestReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Encryptor
+  import Core.ValidationError
 
   @worker Application.get_env(:core, :rpc_worker)
 
@@ -17,7 +17,7 @@ defmodule Core.Validators.MedicationRequestReference do
         :ok
 
       _ ->
-        {:error, message(options, "Medication request with such ID is not found")}
+        error(options, "Medication request with such ID is not found")
     end
   end
 end

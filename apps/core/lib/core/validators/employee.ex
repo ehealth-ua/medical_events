@@ -1,8 +1,8 @@
 defmodule Core.Validators.Employee do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Rpc
+  import Core.ValidationError
 
   @worker Application.get_env(:core, :rpc_worker)
 
@@ -32,10 +32,6 @@ defmodule Core.Validators.Employee do
     else
       error(options, Keyword.get(options, :messages)[field])
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 
   def get_data(ets_key, employee_id) do

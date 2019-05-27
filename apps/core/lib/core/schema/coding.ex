@@ -1,19 +1,21 @@
 defmodule Core.Coding do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:system, presence: true)
-    field(:code, presence: true)
+    field(:code, :string)
+    field(:system, :string)
   end
 
-  def create(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
-  end
-end
+  @fields_required ~w(code system)a
+  @fields_optional ~w()a
 
-defimpl Vex.Blank, for: Core.Coding do
-  def blank?(%Core.Coding{}), do: false
-  def blank?(_), do: true
+  def changeset(%__MODULE__{} = coding, params) do
+    coding
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+  end
 end

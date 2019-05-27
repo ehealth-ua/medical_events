@@ -18,8 +18,8 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
 
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
 
-  @patients_collection Patient.metadata().collection
-  @observations_collection Observation.metadata().collection
+  @patients_collection Patient.collection()
+  @observations_collection Observation.collection()
 
   @entered_in_error "entered_in_error"
 
@@ -39,7 +39,6 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
   end
 
   def save(
-        patient,
         package_data,
         diagnostic_report_id,
         %DiagnosticReportPackageCancelJob{patient_id: patient_id, user_id: user_id} = job
@@ -47,12 +46,7 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
     observations_ids = get_observations_ids(package_data)
 
     with :ok <- save_signed_content(patient_id, diagnostic_report_id, job.signed_data),
-         set <-
-           update_patient(
-             user_id,
-             patient,
-             package_data
-           ) do
+         set <- update_patient(user_id, package_data) do
       result =
         %Transaction{actor_id: user_id}
         |> Transaction.add_operation(
@@ -112,23 +106,18 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
     |> Enum.map(&Map.get(&1, "id"))
   end
 
-  defp update_patient(
-         user_id,
-         patient,
-         %{"diagnostic_report" => diagnostic_report}
-       ) do
+  defp update_patient(user_id, %{"diagnostic_report" => diagnostic_report}) do
     now = DateTime.utc_now()
 
     %{"updated_by" => user_id, "updated_at" => now}
-    |> Mongo.convert_to_uuid("updated_by")
     |> set_diagnostic_report(user_id, diagnostic_report, now)
+    |> Mongo.prepare_doc()
   end
 
   defp set_diagnostic_report(set, user_id, %{"id" => diagnostic_report_id} = diagnostic_report, now) do
     set
     |> Mongo.add_to_set(user_id, "diagnostic_reports.#{diagnostic_report_id}.updated_by")
     |> Mongo.add_to_set(now, "diagnostic_reports.#{diagnostic_report_id}.updated_at")
-    |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report_id}.updated_by")
     |> Mongo.add_to_set(
       diagnostic_report["cancellation_reason"],
       "diagnostic_reports.#{diagnostic_report_id}.cancellation_reason"

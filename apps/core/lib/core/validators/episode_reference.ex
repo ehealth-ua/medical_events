@@ -1,15 +1,15 @@
 defmodule Core.Validators.EpisodeReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Mongo
   alias Core.Patient
+  import Core.ValidationError
 
   def validate(episode_id, options) do
     patient_id_hash = Keyword.get(options, :patient_id_hash)
 
     result =
-      Patient.metadata().collection
+      Patient.collection()
       |> Mongo.aggregate([
         %{"$match" => %{"_id" => patient_id_hash}},
         %{
@@ -27,10 +27,6 @@ defmodule Core.Validators.EpisodeReference do
          :ok <- validate_field(:managing_organization, result, episode_id, options) do
       :ok
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 
   defp validate_field(:id, search_result, episode_id, options) do

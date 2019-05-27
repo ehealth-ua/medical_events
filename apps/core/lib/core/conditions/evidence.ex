@@ -1,20 +1,31 @@
 defmodule Core.Evidence do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
   alias Core.Reference
+  alias Core.Validators.DictionaryReference
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:codes, dictionary_reference: [path: "codes", referenced_field: "system", field: "code"])
-    field(:details, reference: [path: "details"])
+    embeds_many(:codes, CodeableConcept)
+    embeds_many(:details, Reference)
   end
 
-  def create(data) do
-    %__MODULE__{
-      codes: Enum.map(Map.get(data, "codes"), &CodeableConcept.create/1),
-      details: Enum.map(Map.get(data, "details"), &Reference.create/1)
-    }
+  def changeset(%__MODULE__{} = evidence, params) do
+    evidence
+    |> cast(params, [])
+    |> cast_embed(:codes)
+    |> cast_embed(:details)
+  end
+
+  def encounter_package_changeset(%__MODULE__{} = evidence, params, options) do
+    evidence
+    |> cast(params, [])
+    |> cast_embed(:codes)
+    |> cast_embed(:details, with: &Reference.observation_changeset(&1, &2, options))
+    |> validate_change(:codes, &DictionaryReference.validate_change/2)
   end
 end

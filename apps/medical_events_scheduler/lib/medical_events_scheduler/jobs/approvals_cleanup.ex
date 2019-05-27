@@ -9,7 +9,7 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanup do
 
   require Logger
 
-  @collection Approval.metadata().collection
+  @collection Approval.collection()
 
   def run do
     Logger.info("Approval cleanup process started")

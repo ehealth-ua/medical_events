@@ -1,12 +1,24 @@
 defmodule Core.ServiceRequest do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
+  alias Core.Ecto.UUID, as: U
+  alias Core.Encryptor
+  alias Core.Episode
+  alias Core.Patients.Encounters
   alias Core.Reference
   alias Core.ServiceRequests.Occurrence
   alias Core.StatusHistory
+  alias Core.Validators.DateTime, as: DateTimeValidator
+  alias Core.Validators.DictionaryReference
+  alias Ecto.Changeset
+  import Ecto.Changeset
+
+  def collection, do: "service_requests"
+
+  @worker Application.get_env(:core, :rpc_worker)
 
   @status_active "active"
   @status_in_progress "in_progress"
@@ -32,123 +44,234 @@ defmodule Core.ServiceRequest do
   def category(:laboratory_procedure), do: @laboratory_procedure
   def category(:counselling), do: @counselling
 
-  @primary_key :_id
-  schema :service_requests do
-    field(:_id, presence: true, mongo_uuid: true)
-    field(:status, presence: true)
-    field(:status_reason, reference: [path: "status_reason"])
-    field(:explanatory_letter)
-    field(:status_history)
-    field(:intent, presence: true)
-    field(:category, dictionary_reference: [path: "category", referenced_field: "system", field: "code"])
-    field(:code, reference: [path: "code"])
-    field(:subject, presence: true)
-    field(:context, reference: [path: "context"])
-    field(:occurrence, reference: [path: "occurrence"])
-    field(:authored_on, presence: true, reference: [path: "authored_on"])
-    field(:requester_employee, presence: true, reference: [path: "requester_employee"])
-    field(:requester_legal_entity, presence: true, reference: [path: "requester_legal_entity"])
-    field(:priority)
-    field(:reason_reference, reference: [path: "reason_reference"])
-    field(:supporting_info, reference: [path: "supporting_info"])
-    field(:note)
-    field(:patient_instruction)
-    field(:expiration_date)
-    field(:permitted_resources, reference: [path: "permitted_resources"])
-    field(:used_by_employee, reference: [path: "used_by_employee"])
-    field(:used_by_legal_entity, reference: [path: "used_by_legal_entity"])
-    field(:assignee, reference: [path: "assignee"])
-    field(:signed_content_links)
-    field(:requisition, presence: true)
-    field(:status_history)
-    field(:completed_with, reference: [path: "completed_with"])
+  @fields_required ~w(_id status intent subject authored_on inserted_at updated_at inserted_by updated_by)a
 
-    timestamps()
-    changed_by()
+  @fields_optional ~w(
+    explanatory_letter
+    priority
+    note
+    patient_instruction
+    signed_content_links
+    expiration_date
+    requisition
+  )a
+
+  @primary_key false
+  schema "service_requests" do
+    field(:_id, U)
+    field(:status, :string)
+    field(:explanatory_letter, :string)
+    field(:intent, :string)
+    field(:subject, :string)
+    field(:authored_on, :utc_datetime_usec)
+    field(:priority, :string)
+    field(:note, :string)
+    field(:patient_instruction, :string)
+    field(:expiration_date, :utc_datetime)
+    field(:signed_content_links, {:array, :string})
+    field(:requisition, :string)
+    field(:inserted_by, U)
+    field(:updated_by, U)
+
+    embeds_one(:status_reason, CodeableConcept)
+    embeds_many(:status_history, StatusHistory)
+    embeds_one(:category, CodeableConcept)
+    embeds_one(:code, Reference)
+    embeds_one(:context, Reference)
+    embeds_one(:occurrence, Occurrence)
+    embeds_one(:requester_employee, Reference)
+    embeds_one(:requester_legal_entity, Reference)
+    embeds_many(:reason_reference, Reference)
+    embeds_many(:supporting_info, Reference)
+    embeds_many(:permitted_resources, Reference)
+    embeds_one(:used_by_employee, Reference, on_replace: :delete)
+    embeds_one(:used_by_legal_entity, Reference, on_replace: :delete)
+    embeds_one(:completed_with, Reference)
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"id", v} ->
-          {:_id, v}
+    %__MODULE__{}
+    |> changeset(data)
+    |> apply_changes()
+  end
 
-        {"category", v} ->
-          {:category, CodeableConcept.create(v)}
+  def changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:status_reason)
+    |> cast_embed(:status_history)
+    |> cast_embed(:category)
+    |> cast_embed(:code)
+    |> cast_embed(:context)
+    |> cast_embed(:occurrence)
+    |> cast_embed(:requester_employee)
+    |> cast_embed(:requester_legal_entity)
+    |> cast_embed(:reason_reference)
+    |> cast_embed(:supporting_info)
+    |> cast_embed(:permitted_resources)
+    |> cast_embed(:used_by_employee)
+    |> cast_embed(:used_by_legal_entity)
+    |> cast_embed(:completed_with)
+  end
 
-        {"code", v} ->
-          {:code, Reference.create(v)}
+  def create_changeset(%__MODULE__{} = service_request, params, patient_id_hash, user_id, client_id) do
+    changeset =
+      service_request
+      |> cast(params, @fields_required ++ @fields_optional)
+      |> validate_required(@fields_required)
+      |> cast_embed(:status_reason)
+      |> cast_embed(:status_history)
+      |> cast_embed(:category)
+      |> cast_embed(:context, with: &Reference.encounter_changeset(&1, &2, patient_id_hash: patient_id_hash))
+      |> put_requisition_number(patient_id_hash, user_id)
+      |> cast_embed(:occurrence)
+      |> cast_embed(:requester_employee, required: true)
+      |> cast_embed(:requester_legal_entity,
+        required: true,
+        with:
+          &Reference.equals_changeset(&1, &2,
+            value: client_id,
+            message: "Must be current legal enity"
+          )
+      )
+      |> cast_embed(:reason_reference,
+        with: &Reference.reason_reference_changeset(&1, &2, patient_id_hash: patient_id_hash)
+      )
+      |> cast_embed(:supporting_info,
+        with:
+          &Reference.supporting_info_changeset(&1, &2,
+            patient_id_hash: patient_id_hash,
+            status: Episode.status(:active)
+          )
+      )
 
-        {"requester_employee", v} ->
-          {:requester_employee, Reference.create(v)}
+    category_value = changeset |> get_change(:category) |> get_change(:coding) |> hd() |> get_change(:code)
 
-        {"requester_legal_entity", v} ->
-          {:requester_legal_entity, Reference.create(v)}
-
-        {"context", v} ->
-          {:context, Reference.create(v)}
-
-        {"used_by_employee", nil} ->
-          {:used_by_employee, nil}
-
-        {"used_by_employee", v} ->
-          {:used_by_employee, Reference.create(v)}
-
-        {"used_by_legal_entity", nil} ->
-          {:used_by_legal_entity, nil}
-
-        {"used_by_legal_entity", v} ->
-          {:used_by_legal_entity, Reference.create(v)}
-
-        {"reason_reference", nil} ->
-          {:reason_reference, nil}
-
-        {"reason_reference", v} ->
-          {:reason_reference, Enum.map(v, &Reference.create/1)}
-
-        {"supporting_info", nil} ->
-          {:supporting_info, nil}
-
-        {"supporting_info", v} ->
-          {:supporting_info, Enum.map(v, &Reference.create/1)}
-
-        {"permitted_resources", nil} ->
-          {:permitted_resources, nil}
-
-        {"permitted_resources", v} ->
-          {:permitted_resources, Enum.map(v, &Reference.create/1)}
-
-        {"occurrence", %{"type" => type, "value" => value}} ->
-          {:occurrence, Occurrence.create(type, value)}
-
-        {"occurrence_" <> type, value} ->
-          {:occurrence, Occurrence.create(type, value)}
-
-        {"status_reason", nil} ->
-          {:status_reason, nil}
-
-        {"status_reason", v} ->
-          {:status_reason, CodeableConcept.create(v)}
-
-        {"expiration_date", v} ->
-          {:expiration_date, create_datetime(v)}
-
-        {"status_history", nil} ->
-          {:status_history, nil}
-
-        {"status_history", v} ->
-          {:status_history, Enum.map(v, &StatusHistory.create/1)}
-
-        {"completed_with", nil} ->
-          {:completed_with, nil}
-
-        {"completed_with", v} ->
-          {:completed_with, Reference.create(v)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
+    changeset
+    |> validate_permitted_resources(category_value, patient_id_hash)
+    |> cast_embed(:code, with: &Reference.code_changeset(&1, &2, category: category_value))
+    |> cast_embed(:used_by_employee)
+    |> cast_embed(:used_by_legal_entity)
+    |> cast_embed(:completed_with)
+    |> validate_change(:category, &DictionaryReference.validate_change/2)
+    |> validate_change(
+      :authored_on,
+      &DateTimeValidator.validate_change(&1, &2, less_than: DateTime.utc_now())
     )
   end
+
+  def use_changeset(%__MODULE__{} = service_request, params, client_id) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:used_by_employee,
+      with:
+        &Reference.employee_changeset(&1, &2,
+          type: "DOCTOR",
+          status: "APPROVED",
+          legal_entity_id: client_id,
+          messages: [
+            type: "Employee is not an active doctor",
+            status: "Employee is not approved",
+            legal_entity_id: "Employee #{get_in(&2, ~w(identifier value))} doesn't belong to your legal entity"
+          ]
+        )
+    )
+    |> cast_embed(:used_by_legal_entity,
+      required: true,
+      with:
+        &Reference.equals_changeset(&1, &2,
+          value: client_id,
+          message: "You can assign service request only to your legal entity"
+        )
+    )
+  end
+
+  def release_changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:used_by_employee)
+    |> cast_embed(:used_by_legal_entity)
+  end
+
+  def recall_changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:status_reason)
+  end
+
+  def cancel_changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:status_reason)
+  end
+
+  def close_changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+  end
+
+  def complete_changeset(%__MODULE__{} = service_request, params, patient_id_hash) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:completed_with, with: &Reference.completed_with_changeset(&1, &2, patient_id_hash: patient_id_hash))
+    |> cast_embed(:status_reason)
+  end
+
+  def process_changeset(%__MODULE__{} = service_request, params) do
+    service_request
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+  end
+
+  defp validate_permitted_resources(changeset, category_value, patient_id_hash) do
+    permitted_resources =
+      changeset
+      |> cast_embed(:permitted_resources)
+      |> get_change(:permitted_resources)
+
+    if category_value == category(:laboratory_procedure) and !is_nil(permitted_resources) do
+      add_error(
+        changeset,
+        :permitted_resources,
+        "Permitted resources are not allowed for laboratory category of service request"
+      )
+    else
+      cast_embed(
+        changeset,
+        :permitted_resources,
+        with:
+          &Reference.supporting_info_changeset(&1, &2,
+            patient_id_hash: patient_id_hash,
+            status: Episode.status(:active)
+          )
+      )
+    end
+  end
+
+  defp put_requisition_number(%Changeset{valid?: true} = changeset, patient_id_hash, user_id) do
+    encounter_id = changeset |> get_change(:context) |> get_change(:identifier) |> get_change(:value)
+
+    with {_, {:ok, encounter}} <-
+           {:encounter, Encounters.get_by_id(patient_id_hash, to_string(encounter_id))},
+         {:ok, number} <-
+           @worker.run("number_generator", NumberGenerator.Rpc, :number, [
+             "episode",
+             to_string(encounter.episode.identifier.value),
+             user_id
+           ]) do
+      put_change(changeset, :requisition, Encryptor.encrypt(number))
+    else
+      _ -> add_error(changeset, :requisition, "Failed to generate requisition number")
+    end
+  end
+
+  defp put_requisition_number(changeset, _, _), do: changeset
 end

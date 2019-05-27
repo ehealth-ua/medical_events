@@ -1,20 +1,20 @@
 defmodule Core.Validators.UniqueIds do
   @moduledoc false
 
-  use Vex.Validator
+  alias Ecto.Changeset
 
-  def validate(values, options) do
-    id_field = Keyword.get(options, :field)
-    ids = Enum.map(values, &Map.get(&1, id_field))
+  def validate(field, value) do
+    ids =
+      Enum.map(value, fn changeset ->
+        changeset
+        |> Changeset.apply_changes()
+        |> Map.get(:id)
+      end)
 
     if Enum.uniq(ids) == ids do
-      :ok
+      []
     else
-      error(options, "All primary keys must be unique")
+      [field: "All primary keys must be unique"]
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

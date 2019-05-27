@@ -5,6 +5,10 @@ defmodule Core.ValidationError do
 
   @enforce_keys [:description, :path]
   defstruct description: nil, params: [], rule: :invalid, path: nil
+
+  def error(options, default_message) do
+    {:error, Keyword.get(options, :message, default_message)}
+  end
 end
 
 defprotocol Core.Validators.Error do

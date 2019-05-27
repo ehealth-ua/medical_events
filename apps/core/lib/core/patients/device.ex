@@ -1,12 +1,16 @@
 defmodule Core.Device do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
+  alias Core.Ecto.UUID, as: U
   alias Core.Period
   alias Core.Reference
   alias Core.Source
+  alias Core.Validators.MaxDaysPassed
+  import Ecto.Changeset
+  require Logger
 
   @status_active "active"
   @status_inactive "inactive"
@@ -18,61 +22,111 @@ defmodule Core.Device do
   def status(:entered_in_error), do: @status_entered_in_error
   def status(:unknown), do: @status_unknown
 
-  embedded_schema do
-    field(:id, presence: true, mongo_uuid: true)
-    field(:status, presence: true)
-    field(:asserted_date, presence: true)
-    field(:usage_period, presence: true, reference: [path: "usage_period"])
-    field(:context, presence: true, reference: [path: "context"])
-    field(:primary_source, strict_presence: true)
-    field(:source, presence: true, reference: [path: "source"])
-    field(:type, presence: true)
-    field(:lot_number)
-    field(:manufacturer)
-    field(:manufacture_date)
-    field(:expiration_date)
-    field(:model)
-    field(:version)
-    field(:note)
+  @fields_required ~w(id status asserted_date primary_source inserted_at updated_at inserted_by updated_by)a
+  @fields_optional ~w(lot_number manufacturer manufacture_date expiration_date model version note)a
 
-    timestamps()
-    changed_by()
+  @primary_key false
+  embedded_schema do
+    field(:id, U)
+    field(:status, :string)
+    field(:asserted_date, :utc_datetime)
+    field(:primary_source, :boolean)
+    field(:lot_number, :string)
+    field(:manufacturer, :string)
+    field(:manufacture_date, :utc_datetime)
+    field(:expiration_date, :utc_datetime)
+    field(:model, :string)
+    field(:version, :string)
+    field(:note, :string)
+    field(:inserted_by, U)
+    field(:updated_by, U)
+
+    embeds_one(:usage_period, Period)
+    embeds_one(:context, Reference)
+    embeds_one(:source, Source)
+    embeds_one(:type, CodeableConcept)
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"asserted_date", v} ->
-          {:asserted_date, create_datetime(v)}
+    %__MODULE__{}
+    |> changeset(data)
+    |> apply_changes()
+  end
 
-        {"usage_period", v} ->
-          {:usage_period, Period.create(v)}
+  def changeset(%__MODULE__{} = device, params) do
+    device
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:usage_period)
+    |> cast_embed(:context)
+    |> cast_embed(:source)
+    |> cast_embed(:type)
+  end
 
-        {"context", v} ->
-          {:context, Reference.create(v)}
+  def encounter_package_changeset(%__MODULE__{} = device, params, encounter_id, client_id) do
+    changeset =
+      device
+      |> cast(params, @fields_required ++ @fields_optional)
+      |> validate_required(@fields_required)
+      |> cast_embed(:usage_period, required: true)
+      |> cast_embed(:context,
+        required: true,
+        with:
+          &Reference.equals_changeset(&1, &2,
+            value: encounter_id,
+            message: "Submitted context is not allowed for the device"
+          )
+      )
 
-        {"report_origin", v} ->
-          {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
-
-        {"asserter", v} ->
-          {:source, %Source{type: "asserter", value: Reference.create(v)}}
-
-        {"source", %{"type" => type, "value" => value}} ->
-          {:source, Source.create(type, value)}
-
-        {"type", v} ->
-          {:type, CodeableConcept.create(v)}
-
-        {"manufacture_date", v} ->
-          {:manufacture_date, create_datetime(v)}
-
-        {"expiration_date", v} ->
-          {:expiration_date, create_datetime(v)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
+    changeset
+    |> cast_embed(:source,
+      required: true,
+      with:
+        &Source.report_origin_asserter_changeset(
+          &1,
+          &2,
+          get_change(changeset, :primary_source),
+          client_id
+        )
     )
+    |> cast_embed(:type, required: true)
+    |> validate_change(:asserted_date, &validate_asserted_date/2)
+  end
+
+  defp validate_asserted_date(:asserted_date, value) do
+    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:device_max_days_passed]
+
+    if DateTime.compare(value, DateTime.utc_now()) == :gt do
+      [onset_date_time: "Asserted date must be in past"]
+    else
+      case MaxDaysPassed.validate(value, max_days_passed: max_days_passed) do
+        {:error, reason} -> [asserted_date: reason]
+        _ -> []
+      end
+    end
+  end
+
+  def fill_up_asserter(%__MODULE__{source: source} = device) do
+    case source do
+      %{asserter: asserter} when not is_nil(asserter) ->
+        display_value =
+          with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{asserter.identifier.value}") do
+            first_name = employee.party.first_name
+            second_name = employee.party.second_name
+            last_name = employee.party.last_name
+
+            "#{first_name} #{second_name} #{last_name}"
+          else
+            _ ->
+              Logger.warn("Failed to fill up employee value for device")
+              nil
+          end
+
+        %{device | source: %{source | asserter: %{asserter | display_value: display_value}}}
+
+      _ ->
+        device
+    end
   end
 end

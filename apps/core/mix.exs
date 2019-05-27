@@ -46,7 +46,7 @@ defmodule Core.MixProject do
       {:confex, "~> 3.4"},
       {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:elixir_uuid, "~> 1.2"},
-      {:eview, "~> 0.14.0"},
+      {:eview, "~> 0.15.0"},
       {:httpoison, "~> 1.2"},
       {:iteraptor, "~> 1.3.2"},
       {:jason, "~> 1.1"},
@@ -57,8 +57,8 @@ defmodule Core.MixProject do
       {:redix, "~> 0.7.1"},
       {:scrivener, "~> 2.5"},
       {:translit, "~> 0.1.0"},
-      {:vex, "~> 0.8.0"},
       {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
+      {:ecto, "~> 3.1"},
       {:mox, "~> 0.4.0", only: :test},
       {:ex_machina, "~> 2.3", only: :test}
     ]

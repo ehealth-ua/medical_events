@@ -23,23 +23,22 @@ defmodule Core.Patients.Encounters.Cancel do
   alias Core.Patients.AllergyIntolerances
   alias Core.Patients.Devices
   alias Core.Patients.DiagnosticReports
-  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.Patients.Immunizations
   alias Core.Patients.MedicationStatements
   alias Core.Patients.RiskAssessments
   alias Core.ReferenceView
   alias Core.RiskAssessment
   alias Core.UUIDView
-  alias Core.Validators.Vex
+  alias Ecto.Changeset
   alias EView.Views.ValidationError
 
   require Logger
 
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
 
-  @patients_collection Patient.metadata().collection
-  @observations_collection Observation.metadata().collection
-  @conditions_collection Condition.metadata().collection
+  @patients_collection Patient.collection()
+  @observations_collection Observation.collection()
+  @conditions_collection Condition.collection()
 
   @entered_in_error "entered_in_error"
 
@@ -235,7 +234,6 @@ defmodule Core.Patients.Encounters.Cancel do
     now = DateTime.utc_now()
 
     %{"updated_by" => user_id, "updated_at" => now}
-    |> Mongo.convert_to_uuid("updated_by")
     |> Mongo.add_to_set(
       update_data.current_diagnoses,
       "episodes.#{get_in(encounter, ~w(episode identifier value))}.current_diagnoses"
@@ -248,6 +246,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> set_diagnostic_reports(update_data.diagnostic_reports_ids, user_id, now)
     |> set_encounter(user_id, encounter, now)
     |> set_encounter_diagnoses(patient, encounter)
+    |> Mongo.prepare_doc()
   end
 
   defp set_allergy_intolerances(set, ids, user_id, now) do
@@ -256,7 +255,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "allergy_intolerances.#{id}.verification_status")
       |> Mongo.add_to_set(user_id, "allergy_intolerances.#{id}.updated_by")
       |> Mongo.add_to_set(now, "allergy_intolerances.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("allergy_intolerances.#{id}.updated_by")
     end)
   end
 
@@ -266,7 +264,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "risk_assessments.#{id}.status")
       |> Mongo.add_to_set(user_id, "risk_assessments.#{id}.updated_by")
       |> Mongo.add_to_set(now, "risk_assessments.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("risk_assessments.#{id}.updated_by")
     end)
   end
 
@@ -276,7 +273,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "immunizations.#{id}.status")
       |> Mongo.add_to_set(user_id, "immunizations.#{id}.updated_by")
       |> Mongo.add_to_set(now, "immunizations.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("immunizations.#{id}.updated_by")
     end)
   end
 
@@ -286,7 +282,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "devices.#{id}.status")
       |> Mongo.add_to_set(user_id, "devices.#{id}.updated_by")
       |> Mongo.add_to_set(now, "devices.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("devices.#{id}.updated_by")
     end)
   end
 
@@ -296,7 +291,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "medication_statements.#{id}.status")
       |> Mongo.add_to_set(user_id, "medication_statements.#{id}.updated_by")
       |> Mongo.add_to_set(now, "medication_statements.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("medication_statements.#{id}.updated_by")
     end)
   end
 
@@ -306,7 +300,6 @@ defmodule Core.Patients.Encounters.Cancel do
       |> Mongo.add_to_set(@entered_in_error, "diagnostic_reports.#{id}.status")
       |> Mongo.add_to_set(user_id, "diagnostic_reports.#{id}.updated_by")
       |> Mongo.add_to_set(now, "diagnostic_reports.#{id}.updated_at")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{id}.updated_by")
     end)
   end
 
@@ -323,7 +316,6 @@ defmodule Core.Patients.Encounters.Cancel do
       encounter["explanatory_letter"],
       "encounters.#{encounter_id}.explanatory_letter"
     )
-    |> Mongo.convert_to_uuid("encounters.#{encounter_id}.updated_by")
     |> set_encounter_status(encounter)
   end
 
@@ -448,7 +440,6 @@ defmodule Core.Patients.Encounters.Cancel do
     entities_to_load
     |> Enum.reduce(%{}, fn entity_key, acc ->
       entities = Enum.map(decoded_content[entity_key], &entity_creators[entity_key].(&1))
-
       Map.put(acc, String.to_atom(entity_key), entities)
     end)
     |> Map.put(:encounter, Encounter.create(decoded_content["encounter"]))
@@ -517,25 +508,19 @@ defmodule Core.Patients.Encounters.Cancel do
   defp validate_conditions(_), do: :ok
 
   defp validate_episode_managing_organization(%Episode{} = episode, client_id) do
-    managing_organization = episode.managing_organization
-    identifier = managing_organization.identifier
+    changeset =
+      Episode.cancel_package_changeset(
+        %{episode | managing_organization: nil},
+        %{"managing_organization" => Mongo.prepare_doc(episode.managing_organization)},
+        client_id
+      )
 
-    episode =
-      %{
-        episode
-        | managing_organization: %{
-            managing_organization
-            | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-          }
-      }
-      |> EpisodeValidations.validate_managing_organization(client_id)
-
-    case Vex.errors(episode) do
-      [] ->
+    case changeset do
+      %Changeset{valid?: true} ->
         :ok
 
-      errors ->
-        {:ok, ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}), 422}
+      _ ->
+        {:ok, ValidationError.render("422.json", changeset), 422}
     end
   end
 

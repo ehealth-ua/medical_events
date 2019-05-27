@@ -118,21 +118,8 @@ defmodule Core.Kafka.Consumer.ReleaseServiceRequestTest do
       assert %{
                "$set" => %{
                  "status" => ^status,
-                 "status_code" => 422,
-                 "response" => %{
-                   "invalid" => [
-                     %{
-                       "entry" => "$.expiration_date",
-                       "entry_type" => "json_data_property",
-                       "rules" => [
-                         %{
-                           "params" => [],
-                           "rule" => "invalid"
-                         }
-                       ]
-                     }
-                   ]
-                 }
+                 "status_code" => 409,
+                 "response" => "Service request is expired"
                }
              } = set_bson
 

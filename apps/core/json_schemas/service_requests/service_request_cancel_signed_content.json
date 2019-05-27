@@ -98,7 +98,8 @@
     "status": {
       "type": "string",
       "enum": [
-        "active"
+        "active",
+        "in_progress"
       ]
     },
     "intent": {
@@ -512,7 +513,6 @@
         "null",
         "array"
       ],
-      "minItems": 1,
       "items": {
         "type": "object",
         "properties": {

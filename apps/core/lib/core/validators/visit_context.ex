@@ -1,7 +1,6 @@
 defmodule Core.Validators.VisitContext do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Mongo
   alias Core.Patient
   alias Core.Visit
@@ -16,13 +15,13 @@ defmodule Core.Validators.VisitContext do
     if visit_id == id do
       :ok
     else
-      error(options, "Visit with such ID is not found")
+      {:error, Keyword.get(options, :message, "Visit with such ID is not found")}
     end
   end
 
   defp validate_visit(visit_id, nil, patient_id_hash, options) do
     result =
-      Patient.metadata().collection
+      Patient.collection()
       |> Mongo.aggregate([
         %{"$match" => %{"_id" => patient_id_hash}},
         %{"$project" => %{"_id" => "$visits.#{visit_id}.id"}}
@@ -34,11 +33,7 @@ defmodule Core.Validators.VisitContext do
         :ok
 
       _ ->
-        error(options, "Visit with such ID is not found")
+        {:error, Keyword.get(options, :message, "Visit with such ID is not found")}
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

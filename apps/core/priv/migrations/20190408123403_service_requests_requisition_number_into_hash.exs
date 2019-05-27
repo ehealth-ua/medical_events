@@ -6,7 +6,7 @@ defmodule Core.Migrations.ServiceRequestsRequisitionNumberIntoHash do
   alias Core.ServiceRequest
   require Logger
 
-  @collection ServiceRequest.metadata().collection
+  @collection ServiceRequest.collection()
 
   def change do
     count =

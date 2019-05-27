@@ -32,7 +32,7 @@ defmodule Api.Web.EpisodeView do
       id: UUIDView.render(episode.id),
       type: ReferenceView.render(episode.type),
       status_reason: ReferenceView.render(episode.status_reason),
-      period: ReferenceView.render(episode.period),
+      period: ReferenceView.render_date_period(episode.period),
       diagnoses_history:
         DiagnosesHistoryView.render("diagnoses_history.json", diagnoses_history: episode.diagnoses_history),
       managing_organization: ReferenceView.render(episode.managing_organization),
@@ -52,7 +52,7 @@ defmodule Api.Web.EpisodeView do
     )a)
     |> Map.merge(%{
       id: UUIDView.render(episode.id),
-      period: ReferenceView.render(episode.period)
+      period: ReferenceView.render_date_period(episode.period)
     })
   end
 end

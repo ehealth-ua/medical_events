@@ -67,25 +67,8 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{
-          "invalid" => [
-            %{
-              "entry" => "$.managing_organization.identifier.value",
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "Managing_organization does not correspond to user's legal_entity",
-                  "params" => [],
-                  "rule" => "invalid"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        422
+        "Managing_organization does not correspond to user's legal_entity",
+        409
       )
 
       assert :ok =

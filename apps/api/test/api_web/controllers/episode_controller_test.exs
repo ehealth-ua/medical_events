@@ -2,10 +2,10 @@ defmodule Api.Web.EpisodeControllerTest do
   @moduledoc false
 
   use ApiWeb.ConnCase
-  use Core.Schema
   alias Core.Episode
   alias Core.Patient
   alias Core.Patients
+  import Core.DateTime
   import Mox
 
   setup %{conn: conn} do

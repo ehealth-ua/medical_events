@@ -1,19 +1,20 @@
 defmodule Core.Range do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  alias Core.Observations.Values.Quantity
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:low, presence: true)
-    field(:high, presence: true)
+    embeds_one(:low, Quantity)
+    embeds_one(:high, Quantity)
   end
 
-  def create(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  def changeset(%__MODULE__{} = range, params) do
+    range
+    |> cast(params, [])
+    |> cast_embed(:low, required: true)
+    |> cast_embed(:high, required: true)
   end
-end
-
-defimpl Vex.Blank, for: Core.Range do
-  def blank?(%Core.Range{}), do: false
-  def blank?(_), do: true
 end

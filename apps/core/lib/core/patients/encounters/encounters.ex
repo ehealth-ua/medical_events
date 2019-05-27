@@ -11,7 +11,7 @@ defmodule Core.Patients.Encounters do
   alias Scrivener.Page
   require Logger
 
-  @patient_collection Patient.metadata().collection
+  @patient_collection Patient.collection()
 
   def get_by_id(patient_id_hash, id) do
     with %{"encounters" => %{^id => encounter}} <-
@@ -43,7 +43,8 @@ defmodule Core.Patients.Encounters do
       }
     ]
 
-    with [%{"encounter" => encounter}] <- @patient_collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
+    with [%{"encounter" => encounter}] <-
+           @patient_collection |> Mongo.aggregate(pipeline) |> Enum.to_list() do
       {:ok, Encounter.create(encounter)}
     else
       _ ->
@@ -93,31 +94,6 @@ defmodule Core.Patients.Encounters do
     @patient_collection
     |> Mongo.aggregate(pipeline)
     |> Enum.to_list()
-  end
-
-  def fill_up_encounter_performer(%Encounter{performer: performer} = encounter) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{performer.identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      %{encounter | performer: %{performer | display_value: "#{first_name} #{second_name} #{last_name}"}}
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for encounter")
-        encounter
-    end
-  end
-
-  def fill_up_diagnoses_codes(%Encounter{diagnoses: diagnoses} = encounter) do
-    diagnoses =
-      Enum.map(diagnoses, fn diagnosis ->
-        with [{_, condition}] <- :ets.lookup(:message_cache, "condition_#{diagnosis.condition.identifier.value}") do
-          %{diagnosis | code: Map.get(condition, "code")}
-        end
-      end)
-
-    %{encounter | diagnoses: diagnoses}
   end
 
   def list(%{"patient_id_hash" => patient_id_hash} = params) do
@@ -170,7 +146,10 @@ defmodule Core.Patients.Encounters do
 
   defp search_by_incoming_referral(pipeline, incoming_referral) do
     pipeline
-    |> Search.add_param("service_request", ["$match", "encounters.v.incoming_referral.identifier.type.coding.code"])
+    |> Search.add_param("service_request", [
+      "$match",
+      "encounters.v.incoming_referral.identifier.type.coding.code"
+    ])
     |> Search.add_param(Mongo.string_to_uuid(incoming_referral), [
       "$match",
       "encounters.v.incoming_referral.identifier.value"

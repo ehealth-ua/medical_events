@@ -1,9 +1,9 @@
 defmodule Core.Validators.ObservationContext do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Mongo
   alias Core.Observation
+  import Core.ValidationError
 
   @status_entered_in_error Observation.status(:entered_in_error)
 
@@ -15,7 +15,7 @@ defmodule Core.Validators.ObservationContext do
     if value in observation_ids do
       :ok
     else
-      case Mongo.find_one(Observation.metadata().collection, %{
+      case Mongo.find_one(Observation.collection(), %{
              "_id" => Mongo.string_to_uuid(value),
              "patient_id" => patient_id_hash
            }) do
@@ -29,9 +29,5 @@ defmodule Core.Validators.ObservationContext do
           :ok
       end
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

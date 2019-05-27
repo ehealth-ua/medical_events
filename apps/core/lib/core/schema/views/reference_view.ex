@@ -3,7 +3,6 @@ defmodule Core.ReferenceView do
 
   alias Core.CodeableConcept
   alias Core.Coding
-  alias Core.DatePeriod
   alias Core.DateView
   alias Core.Diagnosis
   alias Core.EffectiveAt
@@ -14,6 +13,8 @@ defmodule Core.ReferenceView do
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
   alias Core.Observations.Values.Quantity
+  alias Core.Observations.Values.Ratio
+  alias Core.Observations.Values.SampledData
   alias Core.Patients.Immunizations.Explanation
   alias Core.Patients.Immunizations.Reaction
   alias Core.Patients.Immunizations.VaccinationProtocol
@@ -23,9 +24,9 @@ defmodule Core.ReferenceView do
   alias Core.Patients.RiskAssessments.Reason
   alias Core.Patients.RiskAssessments.When
   alias Core.Period
+  alias Core.Range
   alias Core.Reference
   alias Core.ServiceRequests.Occurrence
-  alias Core.Source
   alias Core.Stage
   alias Core.StatusHistory
   alias Core.UUIDView
@@ -108,18 +109,10 @@ defmodule Core.ReferenceView do
     }
   end
 
-  def render(%DatePeriod{} = period) do
-    %{
-      start: DateView.render_date(period.start),
-      end: DateView.render_date(period.end)
-    }
-  end
-
   def render(%Coding{} = coding) do
     Map.take(coding, ~w(
       system
       code
-      display
     )a)
   end
 
@@ -151,8 +144,11 @@ defmodule Core.ReferenceView do
     }
   end
 
-  def render(%Explanation{type: type, value: value}) do
-    %{type => render(value)}
+  def render(%Explanation{} = explanation) do
+    explanation
+    |> Map.from_struct()
+    |> Enum.filter(fn {_, v} -> !is_nil(v) end)
+    |> Enum.into(%{}, fn {k, v} -> {k, render(v)} end)
   end
 
   def render(%Quantity{} = quantity) do
@@ -171,12 +167,35 @@ defmodule Core.ReferenceView do
     |> Map.merge(%{status_reason: render(status_history.status_reason)})
   end
 
-  def render(%Executor{type: "reference", value: value}) do
+  def render(%Executor{reference: value}) when not is_nil(value) do
     %{"reference" => render(value)}
   end
 
-  def render(%Executor{type: "string", value: value}) do
+  def render(%Executor{text: value}) do
     %{"text" => value}
+  end
+
+  def render(%SampledData{} = value) do
+    Map.take(value, ~w(
+      origin
+      period
+      factor
+      lower_limit
+      upper_limit
+      dimensions
+      data
+    )a)
+  end
+
+  def render(%Range{} = value) do
+    %{low: render(value.low), high: render(value.high)}
+  end
+
+  def render(%Ratio{} = value) do
+    %{
+      numerator: render(value.numerator),
+      denominator: render(value.denominator)
+    }
   end
 
   def render(nil), do: nil
@@ -185,95 +204,82 @@ defmodule Core.ReferenceView do
     Enum.map(references, &render/1)
   end
 
-  def render_value(%Value{type: "codeable_concept", value: value}) do
-    %{value_codeable_concept: render(value)}
+  def render(value), do: value
+
+  def render_date_period(%Period{} = period) do
+    %{
+      start: DateView.render_date(period.start),
+      end: DateView.render_date(period.end)
+    }
   end
 
-  def render_value(%Value{type: "quantity", value: value}) do
-    fields = ~w(
-      value
-      comparator
-      unit
-      system
-      code
-    )a
-
-    %{value_quantity: Map.take(value, fields)}
-  end
-
-  def render_value(%Value{type: "sampled_data", value: value}) do
-    fields = ~w(
-      origin
-      period
-      factor
-      lower_limit
-      upper_limit
-      dimensions
-      data
-    )a
-
-    %{value_sampled_data: Map.take(value, fields)}
-  end
-
-  def render_value(%Value{type: "range", value: value}) do
-    %{value_range: Map.take(value, ~w(low high)a)}
-  end
-
-  def render_value(%Value{type: "ratio", value: value}) do
-    %{value_ratio: Map.take(value, ~w(numerator denominator)a)}
-  end
-
-  def render_value(%Value{type: "period", value: value}) do
-    %{value_period: render(value)}
-  end
-
-  def render_value(%Value{type: type, value: value}) do
-    %{String.to_atom("value_" <> type) => UUIDView.render(value)}
-  end
-
-  def render_source(%Source{type: type, value: value}) do
-    %{String.to_atom(type) => render(value)}
-  end
-
-  def render_occurrence(%Occurrence{type: "date_time", value: value}) do
-    %{occurrence_date_time: DateView.render_datetime(value)}
-  end
-
-  def render_occurrence(%Occurrence{type: "period", value: value}) do
-    %{occurrence_period: render(value)}
-  end
-
-  def render_effective_at(%EffectiveAt{type: "effective_date_time", value: value}) do
+  def render_value(%EffectiveAt{effective_date_time: value}) when not is_nil(value) do
     %{effective_date_time: DateView.render_datetime(value)}
   end
 
-  def render_effective_at(%EffectiveAt{type: "effective_period", value: value}) do
+  def render_value(%Value{} = value) do
+    value
+    |> Map.from_struct()
+    |> Enum.filter(fn {_, v} -> !is_nil(v) end)
+    |> Enum.into(%{}, fn {k, v} -> {k, render(v)} end)
+  end
+
+  def render_value(nil), do: %{}
+
+  def render_source(%{} = source) do
+    source
+    |> Map.from_struct()
+    |> Enum.filter(fn {_, v} -> !is_nil(v) end)
+    |> Enum.into(%{}, fn {k, v} -> {k, render(v)} end)
+  end
+
+  def render_source(nil), do: %{}
+
+  def render_occurrence(%Occurrence{date_time: value}) when not is_nil(value) do
+    %{occurrence_date_time: DateView.render_datetime(value)}
+  end
+
+  def render_occurrence(%Occurrence{period: value}) do
+    %{occurrence_period: render(value)}
+  end
+
+  def render_occurrence(nil), do: %{}
+
+  def render_effective_at(%EffectiveAt{effective_period: value}) when not is_nil(value) do
     %{effective_period: render(value)}
   end
 
-  def render_reason(%Reason{type: "reason_codes", value: value}) do
+  def render_effective_at(%EffectiveAt{effective_date_time: value}) do
+    %{effective_date_time: DateView.render_datetime(value)}
+  end
+
+  def render_effective_at(nil), do: %{}
+
+  def render_reason(%Reason{reason_codes: value}) when not is_nil(value) do
     %{reason_codes: render(value)}
   end
 
-  def render_reason(%Reason{type: "reason_references", value: value}) do
+  def render_reason(%Reason{reason_references: value}) do
     %{reason_references: render(value)}
   end
 
-  def render_probability(%Probability{type: "probability_decimal", value: value}) do
+  def render_reason(nil), do: %{}
+
+  def render_probability(%Probability{probability_decimal: value}) when not is_nil(value) do
     %{probability_decimal: value}
   end
 
-  def render_probability(%Probability{type: "probability_range", value: value}) do
+  def render_probability(%Probability{probability_range: value}) do
     %{probability_range: Map.take(value, ~w(low high)a)}
   end
 
   def render_probability(_), do: %{}
 
-  def render_when(%When{type: "when_period", value: value}) do
+  def render_when(%When{when_period: value}) when not is_nil(value) do
     %{when_period: render(value)}
   end
 
-  def render_when(%When{type: "when_range", value: value}) do
+  def render_when(%When{when_range: value}) do
     %{when_range: Map.take(value, ~w(low high)a)}
   end
 

@@ -1,7 +1,6 @@
 defmodule Core.Mongo do
   @moduledoc false
 
-  alias Core.Validators.Vex
   alias Mongo, as: M
   require Logger
 
@@ -112,13 +111,7 @@ defmodule Core.Mongo do
   end
 
   def insert_one(%{__meta__: metadata} = doc, opts \\ []) do
-    case Vex.errors(doc) do
-      [] ->
-        insert_one(metadata.collection, prepare_doc(doc), opts)
-
-      errors ->
-        {:error, Enum.map(errors, &vex_to_json/1)}
-    end
+    insert_one(metadata.source, prepare_doc(doc), opts)
   end
 
   def insert_one(coll, doc, opts) do
@@ -126,13 +119,7 @@ defmodule Core.Mongo do
   end
 
   def insert_one!(%{__meta__: metadata} = doc, opts \\ []) do
-    case Vex.errors(doc) do
-      [] ->
-        insert_one!(metadata.collection, prepare_doc(doc), opts)
-
-      errors ->
-        {:error, errors}
-    end
+    insert_one!(metadata.source, prepare_doc(doc), opts)
   end
 
   def insert_one!(coll, doc, opts) do
@@ -163,34 +150,14 @@ defmodule Core.Mongo do
     execute(:update_one!, [coll, filter, update, opts])
   end
 
-  def vex_to_json(errors) when is_list(errors) do
-    Enum.map(errors, &vex_to_json/1)
-  end
-
-  def vex_to_json({:error, field, :presence, message}) do
-    {%{
-       description: message,
-       params: [],
-       rule: :required
-     }, "$.#{field}"}
-  end
-
-  def vex_to_json({:error, field, _, message}) do
-    {%{
-       description: message,
-       params: [],
-       rule: :invalid
-     }, "$.#{field}"}
-  end
-
-  def prepare_doc([%{__struct__: _, __meta__: _} | _] = docs) do
-    Enum.map(docs, &prepare_doc/1)
+  def prepare_doc([h | tail]) do
+    [prepare_doc(h) | prepare_doc(tail)]
   end
 
   def prepare_doc(%{__meta__: _} = doc) do
     doc
     |> Map.from_struct()
-    |> Map.drop(~w(__meta__ __validations__)a)
+    |> Map.drop(~w(__meta__)a)
     |> Enum.into(%{}, fn {k, v} -> {k, prepare_doc(v)} end)
   end
 
@@ -204,8 +171,25 @@ defmodule Core.Mongo do
   def prepare_doc(%BSON.Binary{} = doc), do: doc
   def prepare_doc(%BSON.ObjectId{} = doc), do: doc
 
+  def prepare_doc(%{__struct__: _} = doc) do
+    doc
+    |> Map.from_struct()
+    |> prepare_doc()
+  end
+
   def prepare_doc(%{} = doc) do
     Enum.into(doc, %{}, fn {k, v} -> {k, prepare_doc(v)} end)
+  end
+
+  def prepare_doc(doc) when is_binary(doc) do
+    if String.length(doc) == 36 do
+      case string_to_uuid(doc) do
+        %BSON.Binary{} = value -> value
+        _ -> doc
+      end
+    else
+      doc
+    end
   end
 
   def prepare_doc(doc), do: doc
@@ -221,24 +205,30 @@ defmodule Core.Mongo do
 
   def add_to_set(set, nil, _), do: set
 
-  def add_to_set(set, %{__struct__: module, __meta__: _} = value, path) do
-    fields = Map.keys(module.metadata().fields)
+  def add_to_set(set, %DateTime{} = value, path), do: Map.put(set, path, value)
+  def add_to_set(set, %Date{} = value, path), do: Map.put(set, path, value)
+
+  def add_to_set(set, %{__struct__: _} = value, path) do
+    fields = Map.keys(Map.from_struct(value))
 
     Enum.reduce(fields, set, fn field, acc ->
       add_to_set(acc, Map.get(value, field), "#{path}.#{field}")
     end)
   end
 
-  def add_to_set(set, [%{__struct__: _module, __meta__: _} | _] = values, path) do
-    Map.put(set, path, Enum.map(values, fn value -> prepare_doc(value) end))
+  def add_to_set(set, [%{__struct__: _module} | _] = values, path) do
+    Map.put(set, path, values)
   end
-
-  def add_to_set(set, %{__struct__: _} = value, path), do: Map.put(set, path, prepare_doc(value))
 
   def add_to_set(set, value, path), do: Map.put(set, path, value)
 
   def add_to_push(push, nil, _), do: push
-  def add_to_push(push, %{__struct__: _} = value, path), do: Map.put(push, path, prepare_doc(value))
+
+  def add_to_push(push, [%{__struct__: _} | _] = values, path) do
+    Map.put(push, path, %{"$each" => values})
+  end
+
+  def add_to_push(push, value, path), do: Map.put(push, path, value)
 
   def convert_to_uuid(set, path) do
     uuid = Map.get(set, path)
@@ -250,7 +240,11 @@ defmodule Core.Mongo do
     end
   end
 
-  def convert_to_uuid(set, path, subpath) do
+  def convert_to_uuid(set, path, subpath) when is_binary(path) do
+    convert_to_uuid(set, [path], subpath)
+  end
+
+  def convert_to_uuid(set, path, subpath) when is_list(path) do
     put_item = fn uuid, item ->
       if is_binary(uuid) do
         put_in(item, subpath, string_to_uuid(uuid))
@@ -259,7 +253,7 @@ defmodule Core.Mongo do
       end
     end
 
-    case Map.get(set, path) do
+    case get_in(set, path) do
       nil ->
         set
 
@@ -270,11 +264,11 @@ defmodule Core.Mongo do
             put_item.(uuid, item)
           end)
 
-        Map.replace!(set, path, items)
+        put_in(set, path, items)
 
       %{} = value ->
         uuid = get_in(value, subpath)
-        Map.replace!(set, path, put_item.(uuid, value))
+        put_in(set, path, put_item.(uuid, value))
     end
   end
 
@@ -282,5 +276,11 @@ defmodule Core.Mongo do
     %BSON.Binary{binary: UUID.string_to_binary!(value), subtype: :uuid}
   rescue
     _ -> nil
+  end
+end
+
+defimpl Jason.Encoder, for: [BSON.Binary] do
+  def encode(struct, opts) do
+    Jason.Encode.string(to_string(struct), opts)
   end
 end

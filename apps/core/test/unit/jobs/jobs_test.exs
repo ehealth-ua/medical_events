@@ -5,6 +5,7 @@ defmodule Core.JobsTest do
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
+  alias Core.Mongo
   import Mox
 
   describe "create job" do
@@ -47,7 +48,7 @@ defmodule Core.JobsTest do
                 "coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}],
                 "text" => nil
               },
-              "value" => "a8dd7a9a-6d4c-49b5-a3b1-ffd94ca14592"
+              "value" => Mongo.string_to_uuid("a8dd7a9a-6d4c-49b5-a3b1-ffd94ca14592")
             }
           },
           %{
@@ -57,7 +58,7 @@ defmodule Core.JobsTest do
                 "coding" => [%{"code" => "episode_of_care", "system" => "eHealth/resources"}],
                 "text" => nil
               },
-              "value" => "3b5b0404-7f02-40c5-a532-a4038ebf4540"
+              "value" => Mongo.string_to_uuid("3b5b0404-7f02-40c5-a532-a4038ebf4540")
             }
           }
         ],
@@ -68,10 +69,10 @@ defmodule Core.JobsTest do
               "coding" => [%{"code" => "employee", "system" => "eHealth/resources"}],
               "text" => nil
             },
-            "value" => "0f9bb17c-cdd9-407f-a02d-134b11e82f8c"
+            "value" => Mongo.string_to_uuid("0f9bb17c-cdd9-407f-a02d-134b11e82f8c")
           }
         },
-        "id" => "4520412e-a09f-4521-94db-3a7d19148ec1",
+        "id" => Mongo.string_to_uuid("4520412e-a09f-4521-94db-3a7d19148ec1"),
         "reason" => nil,
         "status" => "new"
       }

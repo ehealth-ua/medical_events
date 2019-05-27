@@ -1,8 +1,8 @@
 defmodule Core.Validators.Division do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Headers
+  import Core.ValidationError
 
   @il_microservice Application.get_env(:core, :microservices)[:il]
 
@@ -32,10 +32,6 @@ defmodule Core.Validators.Division do
     else
       error(options, Keyword.get(options, :messages)[field])
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 
   defp get_data(ets_key, division_id, headers) do
