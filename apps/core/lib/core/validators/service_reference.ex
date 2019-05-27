@@ -2,24 +2,23 @@ defmodule Core.Validators.ServiceReference do
   @moduledoc false
 
   alias Core.Services
-
-  use Vex.Validator
+  import Core.ValidationError
 
   @laboratory_category "laboratory"
 
   def validate(service_id, options) do
     case Services.get_service(service_id) do
       {:ok, %{is_active: false}} ->
-        {:error, message(options, "Service should be active")}
+        error(options, "Service should be active")
 
       {:ok, %{request_allowed: false}} ->
-        {:error, message(options, "Request is not allowed for the service")}
+        error(options, "Request is not allowed for the service")
 
       {:ok, service} ->
         check_category(service, options)
 
       _ ->
-        {:error, message(options, "Service with such ID is not found")}
+        error(options, "Service with such ID is not found")
     end
   end
 
@@ -29,7 +28,7 @@ defmodule Core.Validators.ServiceReference do
     if !Keyword.has_key?(options, :category) or category == Keyword.get(options, :category) do
       check_observations(category, options)
     else
-      {:error, message(options, "Category mismatch")}
+      error(options, "Category mismatch")
     end
   end
 
@@ -43,7 +42,7 @@ defmodule Core.Validators.ServiceReference do
 
   defp check_observations(@laboratory_category, observations, options) do
     if is_nil(observations) or Enum.empty?(observations) do
-      {:error, message(options, "Observations are mandatory when service category = #{@laboratory_category}")}
+      error(options, "Observations are mandatory when service category = #{@laboratory_category}")
     else
       :ok
     end

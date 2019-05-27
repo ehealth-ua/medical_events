@@ -5,9 +5,10 @@ defmodule NumberGenerator.Generator do
   alias Core.Mongo
   alias Core.Mongo.Transaction
   alias Core.Number
+  alias Ecto.Changeset
 
   @alphabet "0123456789"
-  @collection Number.metadata().collection
+  @collection Number.collection()
 
   def generate(entity_type, entity_id, actor_id) do
     case Mongo.find_one(@collection, %{"_id" => Mongo.string_to_uuid(entity_id)}) do
@@ -24,16 +25,20 @@ defmodule NumberGenerator.Generator do
 
     case Mongo.find_one(@collection, %{"entity_type" => entity_type, "number" => number}) do
       nil ->
-        document = %Number{
-          _id: Mongo.string_to_uuid(entity_id),
-          entity_type: entity_type,
-          number: number,
-          inserted_by: Mongo.string_to_uuid(actor_id)
-        }
+        document =
+          %Number{}
+          |> Number.changeset(%{
+            _id: Mongo.string_to_uuid(entity_id),
+            entity_type: entity_type,
+            number: number,
+            inserted_by: Mongo.string_to_uuid(actor_id),
+            inserted_at: DateTime.utc_now()
+          })
+          |> Changeset.apply_changes()
 
         insert_result =
           %Transaction{actor_id: actor_id}
-          |> Transaction.add_operation(@collection, :insert, Mongo.prepare_doc(document), entity_id)
+          |> Transaction.add_operation(@collection, :insert, document, entity_id)
           |> Transaction.flush()
 
         case insert_result do

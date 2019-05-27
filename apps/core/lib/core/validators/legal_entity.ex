@@ -1,8 +1,8 @@
 defmodule Core.Validators.LegalEntity do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Headers
+  import Core.ValidationError
 
   @il_microservice Application.get_env(:core, :microservices)[:il]
 
@@ -26,10 +26,6 @@ defmodule Core.Validators.LegalEntity do
       _ ->
         error(options, "LegalEntity with such ID is not found")
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 
   defp get_data(ets_key, legal_entity_id, headers) do

@@ -1,41 +1,46 @@
 defmodule Core.Observations.Component do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
   alias Core.Observations.ReferenceRange
   alias Core.Observations.Value
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:code, presence: true, reference: [path: "code"])
-    field(:value, presence: true)
-    field(:reference_ranges, reference: [path: "reference_ranges"])
-    field(:interpretation, reference: [path: "interpretation"])
+    embeds_one(:interpretation, CodeableConcept)
+    embeds_one(:code, CodeableConcept)
+    embeds_one(:value, Value)
+    embeds_many(:reference_ranges, ReferenceRange)
   end
 
-  def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"interpretation", v} ->
-          {:interpretation, CodeableConcept.create(v)}
+  def changeset(%__MODULE__{} = component, params) do
+    component
+    |> cast(set_value_params(params), [])
+    |> cast_embed(:interpretation)
+    |> cast_embed(:code, required: true)
+    |> cast_embed(:value, required: true)
+    |> cast_embed(:reference_ranges)
+  end
 
-        {"code", v} ->
-          {:code, CodeableConcept.create(v)}
-
-        {"value", %{"type" => type, "value" => value}} ->
-          {:value, Value.create(type, value)}
-
-        {"value_" <> type, value} ->
-          {:value, Value.create(type, value)}
-
-        {"reference_ranges", v} ->
-          {:reference_ranges, Enum.map(v, &ReferenceRange.create/1)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
-    )
+  def set_value_params(params) do
+    if Map.get(params, "value") do
+      params
+    else
+      Map.merge(params, %{"value" => Map.take(params, ~w(
+          value_string
+          value_time
+          value_boolean
+          value_date_time
+          value_quantity
+          value_codeable_concept
+          value_sampled_data
+          value_range
+          value_ratio
+          value_period
+      ))})
+    end
   end
 end

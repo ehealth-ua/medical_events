@@ -1,22 +1,24 @@
 defmodule Core.Observations.Values.Quantity do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  import Ecto.Changeset
 
+  @fields_required ~w(value unit)a
+  @fields_optional ~w(comparator system code)a
+
+  @primary_key false
   embedded_schema do
-    field(:value, presence: true)
-    field(:comparator)
-    field(:unit, presence: true)
-    field(:system)
-    field(:code)
+    field(:value, :float)
+    field(:comparator, :string)
+    field(:unit, :string)
+    field(:system, :string)
+    field(:code, :string)
   end
 
-  def create(data) do
-    struct(__MODULE__, Enum.map(data, fn {k, v} -> {String.to_atom(k), v} end))
+  def changeset(%__MODULE__{} = quantity, params) do
+    quantity
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
   end
-end
-
-defimpl Vex.Blank, for: Core.Observations.Values.Quantity do
-  def blank?(%Core.Observations.Values.Quantity{}), do: false
-  def blank?(_), do: true
 end

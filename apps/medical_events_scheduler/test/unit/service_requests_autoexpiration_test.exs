@@ -11,7 +11,7 @@ defmodule MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpirationTest do
   alias Core.ServiceRequest
   alias MedicalEventsScheduler.Jobs.ServiceRequestsAutoexpiration
 
-  @collection ServiceRequest.metadata().collection
+  @collection ServiceRequest.collection()
 
   setup :verify_on_exit!
 

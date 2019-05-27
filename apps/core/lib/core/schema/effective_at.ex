@@ -1,24 +1,23 @@
 defmodule Core.EffectiveAt do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.Period
+  import Ecto.Changeset
 
+  @fields_required ~w()a
+  @fields_optional ~w(effective_date_time)a
+
+  @primary_key false
   embedded_schema do
-    field(:type, presence: true)
-    field(:value, presence: true, reference: [path: "value"])
+    field(:effective_date_time, :utc_datetime)
+    embeds_one(:effective_period, Period)
   end
 
-  def create("effective_period" = type, value) do
-    %__MODULE__{type: type, value: Period.create(value)}
+  def changeset(%__MODULE__{} = effective_at, params) do
+    effective_at
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:effective_period)
   end
-
-  def create("effective_date_time" = type, value) do
-    %__MODULE__{type: type, value: create_datetime(value)}
-  end
-end
-
-defimpl Vex.Blank, for: Core.EffectiveAt do
-  def blank?(%Core.EffectiveAt{}), do: false
-  def blank?(_), do: true
 end

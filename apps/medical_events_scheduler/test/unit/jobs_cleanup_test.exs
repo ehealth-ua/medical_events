@@ -11,7 +11,7 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
   alias Core.Mongo
   alias MedicalEventsScheduler.Jobs.JobsCleanup
 
-  @collection Job.metadata().collection
+  @collection Job.collection()
 
   setup :verify_on_exit!
 

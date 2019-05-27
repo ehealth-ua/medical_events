@@ -1,9 +1,9 @@
 defmodule Core.Validators.EncounterReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Encounter
   alias Core.Patients.Encounters
+  import Core.ValidationError
 
   @status_entered_in_error Encounter.status(:entered_in_error)
 
@@ -20,9 +20,5 @@ defmodule Core.Validators.EncounterReference do
       _ ->
         :ok
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

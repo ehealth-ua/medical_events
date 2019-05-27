@@ -1,86 +1,152 @@
 defmodule Core.Condition do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
 
   alias Core.CodeableConcept
+  alias Core.Ecto.UUID, as: U
   alias Core.Evidence
-  alias Core.Maybe
   alias Core.Reference
   alias Core.Source
   alias Core.Stage
+  alias Core.Validators.DictionaryReference
+  alias Core.Validators.MaxDaysPassed
+  import Ecto.Changeset
+  require Logger
 
-  @primary_key :_id
-  schema :conditions do
-    field(:_id, presence: true, mongo_uuid: true)
-    field(:clinical_status)
-    field(:verification_status)
-    field(:severity, reference: [path: "severity"], dictionary_reference: [referenced_field: "system", field: "code"])
-    field(:code, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
-    field(:body_sites, dictionary_reference: [path: "body_sites", referenced_field: "system", field: "code"])
-    field(:patient_id, presence: true)
-    field(:context, presence: true, reference: [path: "context"])
-    field(:onset_date, reference: [path: "onset_date"])
-    field(:primary_source, strict_presence: true)
-    field(:source, presence: true, reference: [path: "source"])
-    field(:asserted_date)
-    field(:stage, reference: [path: "stage"])
-    field(:evidences, reference: [path: "evidences"])
-    field(:context_episode_id)
+  def collection, do: "conditions"
 
-    timestamps()
-    changed_by()
+  @fields_required ~w(_id patient_id primary_source context_episode_id inserted_at updated_at inserted_by updated_by)a
+  @fields_optional ~w(id clinical_status verification_status onset_date asserted_date)a
+
+  @primary_key false
+  schema "conditions" do
+    field(:_id, U)
+    field(:id, :string, virtual: true)
+    field(:clinical_status, :string)
+    field(:verification_status, :string)
+    field(:patient_id, :string)
+    field(:onset_date, :utc_datetime)
+    field(:primary_source, :boolean)
+    field(:asserted_date, :utc_datetime)
+    field(:inserted_by, U)
+    field(:updated_by, U)
+    field(:context_episode_id, U)
+
+    embeds_one(:severity, CodeableConcept)
+    embeds_one(:code, CodeableConcept)
+    embeds_one(:context, Reference)
+    embeds_one(:source, Source)
+    embeds_one(:stage, Stage)
+    embeds_many(:body_sites, CodeableConcept)
+    embeds_many(:evidences, Evidence)
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"evidences", nil} ->
-          {:evidences, nil}
+    %__MODULE__{}
+    |> changeset(set_id(data))
+    |> apply_changes()
+  end
 
-        {"evidences", v} ->
-          {:evidences, Enum.map(v, &Evidence.create/1)}
+  def changeset(%__MODULE__{} = condition, params) do
+    condition
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:severity)
+    |> cast_embed(:code)
+    |> cast_embed(:body_sites)
+    |> cast_embed(:source)
+    |> cast_embed(:context)
+    |> cast_embed(:stage)
+    |> cast_embed(:evidences)
+  end
 
-        {"stage", v} ->
-          {:stage, Maybe.map(v, &Stage.create/1)}
+  def encounter_package_changeset(
+        %__MODULE__{} = condition,
+        params,
+        patient_id_hash,
+        observations,
+        encounter_id,
+        client_id
+      ) do
+    changeset =
+      condition
+      |> cast(params, @fields_required ++ @fields_optional)
+      |> put_id()
+      |> validate_required(@fields_required)
+      |> cast_embed(:severity)
+      |> cast_embed(:code)
+      |> cast_embed(:body_sites)
 
-        {"onset_date", v} ->
-          {:onset_date, Maybe.map(v, &create_datetime/1)}
-
-        {"body_sites", nil} ->
-          {:body_sites, nil}
-
-        {"body_sites", v} ->
-          {:body_sites, Enum.map(v, &CodeableConcept.create/1)}
-
-        {"severity", v} ->
-          {:severity, Maybe.map(v, &CodeableConcept.create/1)}
-
-        {"context", v} ->
-          {:context, Reference.create(v)}
-
-        {"code", v} ->
-          {:code, CodeableConcept.create(v)}
-
-        {"source", %{"type" => type, "value" => value}} ->
-          {:source, Source.create(type, value)}
-
-        {"asserted_date", v} ->
-          {:asserted_date, Maybe.map(v, &create_datetime/1)}
-
-        {"report_origin", v} ->
-          {:source, %Source{type: "report_origin", value: CodeableConcept.create(v)}}
-
-        {"asserter", v} ->
-          {:source, %Source{type: "asserter", value: Reference.create(v)}}
-
-        {"id", v} ->
-          {:_id, v}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
+    changeset
+    |> cast_embed(:source,
+      required: true,
+      with: &Source.report_origin_asserter_changeset(&1, &2, get_change(changeset, :primary_source), client_id)
     )
+    |> cast_embed(:context,
+      required: true,
+      with:
+        &Reference.equals_changeset(&1, &2,
+          value: encounter_id,
+          message: "Submitted context is not allowed for the condition"
+        )
+    )
+    |> cast_embed(:stage)
+    |> cast_embed(:evidences,
+      with: &Evidence.encounter_package_changeset(&1, &2, patient_id_hash: patient_id_hash, observations: observations)
+    )
+    |> validate_change(:severity, &DictionaryReference.validate_change/2)
+    |> validate_change(:code, &DictionaryReference.validate_change/2)
+    |> validate_change(:body_sites, &DictionaryReference.validate_change/2)
+    |> validate_change(:onset_date, &validate_onset_date/2)
+  end
+
+  defp set_id(params) do
+    if params["_id"] do
+      Map.put(params, "id", params["_id"])
+    else
+      Map.put(params, "_id", params["id"])
+    end
+  end
+
+  defp put_id(changeset) do
+    put_change(changeset, :_id, get_change(changeset, :id))
+  end
+
+  defp validate_onset_date(:onset_date, value) do
+    max_days_passed = Confex.fetch_env!(:core, :encounter_package)[:condition_max_days_passed]
+
+    if DateTime.compare(value, DateTime.utc_now()) == :gt do
+      [issued: "Onset date must be in past"]
+    else
+      case MaxDaysPassed.validate(value, max_days_passed: max_days_passed) do
+        {:error, reason} -> [issued: reason]
+        _ -> []
+      end
+    end
+  end
+
+  def fill_up_asserter(%__MODULE__{source: source} = condition) do
+    case source do
+      %{asserter: asserter} when not is_nil(asserter) ->
+        display_value =
+          with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{asserter.identifier.value}") do
+            first_name = employee.party.first_name
+            second_name = employee.party.second_name
+            last_name = employee.party.last_name
+
+            "#{first_name} #{second_name} #{last_name}"
+          else
+            _ ->
+              Logger.warn("Failed to fill up employee value for condition")
+              nil
+          end
+
+        %{condition | source: %{source | asserter: %{asserter | display_value: display_value}}}
+
+      _ ->
+        condition
+    end
   end
 end

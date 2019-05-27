@@ -889,7 +889,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                 %{
                   "description" => "Managing_organization does not correspond to user's legal_entity",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

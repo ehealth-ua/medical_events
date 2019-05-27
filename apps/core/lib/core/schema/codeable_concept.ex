@@ -1,22 +1,23 @@
 defmodule Core.CodeableConcept do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.Coding
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:coding, presence: true, reference: [path: "coding"])
-    field(:text)
+    field(:text, :string)
+    embeds_many(:coding, Coding, on_replace: :delete)
   end
 
-  def create(nil), do: nil
+  @fields_required ~w()a
+  @fields_optional ~w(text)a
 
-  def create(data) do
-    %__MODULE__{coding: Enum.map(Map.get(data, "coding"), &Coding.create/1), text: Map.get(data, "text")}
+  def changeset(%__MODULE__{} = codeable_concept, params) do
+    codeable_concept
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:coding, required: true)
   end
-end
-
-defimpl Vex.Blank, for: Core.CodeableConcept do
-  def blank?(%Core.CodeableConcept{}), do: false
-  def blank?(_), do: true
 end

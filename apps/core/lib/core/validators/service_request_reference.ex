@@ -1,11 +1,11 @@
 defmodule Core.Validators.ServiceRequestReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.ServiceRequest
   alias Core.ServiceRequests
   alias Core.Services
   alias Core.Validators.Employee
+  import Core.ValidationError
 
   @status_active ServiceRequest.status(:active)
   @status_in_progress ServiceRequest.status(:in_progress)
@@ -75,9 +75,8 @@ defmodule Core.Validators.ServiceRequestReference do
   defp validate_used_by_legal_entity(used_by_legal_entity, options) do
     id = used_by_legal_entity.identifier.value
     client_id = Keyword.get(options, :client_id)
-    legal_entity_id = UUID.binary_to_string!(id.binary)
 
-    if legal_entity_id == client_id do
+    if id == client_id do
       :ok
     else
       error(options, "Service request is used by another legal_entity")
@@ -154,9 +153,5 @@ defmodule Core.Validators.ServiceRequestReference do
       _ ->
         error(options, "Rpc error")
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

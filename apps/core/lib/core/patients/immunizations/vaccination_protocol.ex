@@ -1,40 +1,34 @@
 defmodule Core.Patients.Immunizations.VaccinationProtocol do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
+  alias Core.Validators.DictionaryReference
+  import Ecto.Changeset
 
+  @fields_required ~w()a
+  @fields_optional ~w(dose_sequence description series series_doses)a
+
+  @primary_key false
   embedded_schema do
-    field(:dose_sequence, number: [greater_than: 0])
-    field(:description)
-    field(:authority, dictionary_reference: [path: "authority", referenced_field: "system", field: "code"])
-    field(:series)
-    field(:series_doses, number: [greater_than: 0])
+    field(:dose_sequence, :integer)
+    field(:description, :string)
+    field(:series, :string)
+    field(:series_doses, :integer)
 
-    field(:target_diseases,
-      presence: true,
-      dictionary_reference: [path: "target_diseases", referenced_field: "system", field: "code"]
-    )
+    embeds_one(:authority, CodeableConcept)
+    embeds_many(:target_diseases, CodeableConcept)
   end
 
-  def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"target_diseases", v} ->
-          {:target_diseases, Enum.map(v, &CodeableConcept.create/1)}
-
-        {"authority", v} ->
-          {:authority, CodeableConcept.create(v)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
-    )
+  def changeset(%__MODULE__{} = vaccination_protocol, params) do
+    vaccination_protocol
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:authority)
+    |> cast_embed(:target_diseases, required: true)
+    |> validate_number(:dose_sequence, greater_than: 0)
+    |> validate_number(:series_doses, greater_than: 0)
+    |> validate_change(:authority, &DictionaryReference.validate/2)
+    |> validate_change(:target_diseases, &DictionaryReference.validate_change/2)
   end
-end
-
-defimpl Vex.Blank, for: Core.Patients.Immunizations.VaccinationProtocol do
-  def blank?(%Core.Patients.Immunizations.VaccinationProtocol{}), do: false
-  def blank?(_), do: true
 end

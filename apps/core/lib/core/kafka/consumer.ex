@@ -1,7 +1,7 @@
 defmodule Core.Kafka.Consumer do
   @moduledoc false
 
-  alias Core.Approvals
+  alias Core.Approvals.Consumer, as: ApprovalsConsumer
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
@@ -23,7 +23,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
-  alias Core.Patients.DiagnosticReports
+  alias Core.Patients.DiagnosticReports.Consumer, as: DiagnosticReportConsumer
   alias Core.Patients.Episodes.Consumer, as: EpisodesConsumer
   alias Core.ServiceRequests.Consumer, as: ServiceRequestsConsumer
 
@@ -86,19 +86,19 @@ defmodule Core.Kafka.Consumer do
   end
 
   def consume(%ApprovalCreateJob{} = approval_create_job) do
-    do_consume(Approvals, :consume_create_approval, approval_create_job)
+    do_consume(ApprovalsConsumer, :consume_create_approval, approval_create_job)
   end
 
   def consume(%ApprovalResendJob{} = approval_resend_job) do
-    do_consume(Approvals, :consume_resend_approval, approval_resend_job)
+    do_consume(ApprovalsConsumer, :consume_resend_approval, approval_resend_job)
   end
 
   def consume(%DiagnosticReportPackageCreateJob{} = diagnostic_report_package_create_job) do
-    do_consume(DiagnosticReports, :consume_create_package, diagnostic_report_package_create_job)
+    do_consume(DiagnosticReportConsumer, :consume_create_package, diagnostic_report_package_create_job)
   end
 
   def consume(%DiagnosticReportPackageCancelJob{} = diagnostic_report_package_cancel_job) do
-    do_consume(DiagnosticReports, :consume_cancel_package, diagnostic_report_package_cancel_job)
+    do_consume(DiagnosticReportConsumer, :consume_cancel_package, diagnostic_report_package_cancel_job)
   end
 
   def consume(value) do

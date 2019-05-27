@@ -1,7 +1,6 @@
 defmodule Core.Validators.DiagnosisCondition do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Conditions
 
   def validate(value, options) do
@@ -16,17 +15,13 @@ defmodule Core.Validators.DiagnosisCondition do
     else
       case Conditions.get_by_id(patient_id_hash, value) do
         nil ->
-          error(options, "Condition with such id is not found")
+          {:error, Keyword.get(options, :message, "Condition with such id is not found")}
 
         {:ok, condition} ->
           add_to_cache(ets_key, %{"code" => condition.code})
           :ok
       end
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 
   defp add_to_cache(ets_key, condition) do

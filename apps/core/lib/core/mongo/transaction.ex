@@ -1,6 +1,8 @@
 defmodule Core.Mongo.Transaction do
   @moduledoc false
 
+  alias Core.Mongo
+
   @worker Application.get_env(:core, :rpc_worker)
 
   @derive Jason.Encoder
@@ -9,6 +11,7 @@ defmodule Core.Mongo.Transaction do
   def add_operation(%__MODULE__{} = transaction, collection, :insert, value, id) do
     value_bson =
       value
+      |> Mongo.prepare_doc()
       |> BSON.Encoder.encode()
       |> do_bson_encode("")
       |> Base.encode64()
@@ -43,6 +46,7 @@ defmodule Core.Mongo.Transaction do
 
     set_bson =
       set
+      |> Mongo.prepare_doc()
       |> BSON.Encoder.encode()
       |> do_bson_encode("")
       |> Base.encode64()
@@ -67,6 +71,7 @@ defmodule Core.Mongo.Transaction do
 
     set_bson =
       set
+      |> Mongo.prepare_doc()
       |> BSON.Encoder.encode()
       |> do_bson_encode("")
       |> Base.encode64()

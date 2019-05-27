@@ -1,8 +1,6 @@
 defmodule Core.Patients.Episodes.Consumer do
   @moduledoc false
 
-  alias Core.CodeableConcept
-  alias Core.DatePeriod
   alias Core.Encounter
   alias Core.Episode
   alias Core.Job
@@ -16,13 +14,12 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Patient
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
-  alias Core.Patients.Episodes.Validations, as: EpisodeValidations
   alias Core.StatusHistory
-  alias Core.Validators.Vex
+  alias Ecto.Changeset
   alias EView.Views.ValidationError
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def consume_create_episode(
         %EpisodeCreateJob{
@@ -31,41 +28,30 @@ defmodule Core.Patients.Episodes.Consumer do
         } = job
       ) do
     now = DateTime.utc_now()
+    episode = %Episode{}
 
-    episode =
+    params =
       job
-      |> Map.from_struct()
-      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
-      |> Episode.create()
-
-    status_history =
-      StatusHistory.create(%{
-        "status" => episode.status,
-        "status_reason" => episode.status_reason,
-        "inserted_at" => now,
-        "inserted_by" => Mongo.string_to_uuid(job.user_id)
+      |> Map.take(episode |> Map.from_struct() |> Map.keys())
+      |> Map.merge(%{
+        inserted_at: now,
+        updated_at: now,
+        inserted_by: job.user_id,
+        updated_by: job.user_id,
+        status_history: [
+          %{
+            status: job.status,
+            status_reason: nil,
+            inserted_at: now,
+            inserted_by: job.user_id
+          }
+        ]
       })
+      |> Map.put(:period, prepare_period(job.period))
 
-    episode =
-      %{
-        episode
-        | status_history: [],
-          diagnoses_history: [],
-          inserted_by: job.user_id,
-          updated_by: job.user_id,
-          inserted_at: now,
-          updated_at: now
-      }
-      |> Map.put(:status_history, [status_history])
-      |> EpisodeValidations.validate_period()
-      |> EpisodeValidations.validate_managing_organization(client_id)
-      |> EpisodeValidations.validate_care_manager(client_id)
-
-    episode_id = episode.id
-
-    case Vex.errors(episode) do
-      [] ->
-        case Episodes.get_by_id(patient_id_hash, episode_id) do
+    case Episode.create_changeset(episode, params, client_id) do
+      %Changeset{valid?: true} = changeset ->
+        case Episodes.get_by_id(patient_id_hash, Changeset.get_change(changeset, :id)) do
           {:ok, _} ->
             Jobs.produce_update_status(
               job._id,
@@ -76,28 +62,20 @@ defmodule Core.Patients.Episodes.Consumer do
 
           _ ->
             episode =
-              episode
+              changeset
+              |> Changeset.apply_changes()
               |> fill_up_episode_care_manager()
               |> fill_up_episode_managing_organization()
 
-            set =
-              %{"updated_by" => episode.updated_by}
-              |> Mongo.add_to_set(episode, "episodes.#{episode.id}")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.id")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.inserted_by")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.managing_organization.identifier.value")
-              |> Mongo.convert_to_uuid("updated_by")
-
+            set = Mongo.add_to_set(%{"updated_by" => episode.updated_by}, episode, "episodes.#{episode.id}")
             save(job, episode.id, %{"$set" => set})
         end
 
-      errors ->
+      changeset ->
         Jobs.produce_update_status(
           job._id,
           job.request_id,
-          ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+          ValidationError.render("422.json", changeset),
           422
         )
     end
@@ -115,18 +93,16 @@ defmodule Core.Patients.Episodes.Consumer do
     status = Episode.status(:active)
 
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
-      changes = Map.take(job.request_params, ~w(name care_manager))
+      changes =
+        job.request_params
+        |> Map.take(~w(name care_manager))
+        |> Map.merge(%{"updated_by" => job.user_id, "updated_at" => now})
 
-      episode =
-        %{episode | updated_by: job.user_id, updated_at: now}
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> EpisodeValidations.validate_care_manager(job.request_params["care_manager"], client_id)
-        |> EpisodeValidations.validate_managing_organization(client_id)
-
-      case Vex.errors(episode) do
-        [] ->
+      case Episode.update_changeset(episode, changes, client_id) do
+        %Changeset{valid?: true} = changeset ->
           episode =
-            episode
+            changeset
+            |> Changeset.apply_changes()
             |> fill_up_episode_care_manager()
             |> fill_up_episode_managing_organization()
 
@@ -136,9 +112,6 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.add_to_set(episode.name, "episodes.#{episode.id}.name")
             |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
             |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.care_manager.identifier.value")
-            |> Mongo.convert_to_uuid("updated_by")
 
           result =
             %Transaction{actor_id: job.user_id}
@@ -174,11 +147,11 @@ defmodule Core.Patients.Episodes.Consumer do
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
 
-        errors ->
+        changeset ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            ValidationError.render("422.json", changeset),
             422
           )
       end
@@ -200,34 +173,22 @@ defmodule Core.Patients.Episodes.Consumer do
     now = DateTime.utc_now()
     status = Episode.status(:active)
 
-    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id) do
-      managing_organization = episode.managing_organization
-      identifier = managing_organization.identifier
-
-      new_period = DatePeriod.create(job.request_params["period"])
-      changes = Map.take(job.request_params, ~w(closing_summary status_reason))
-
-      episode =
-        %{
-          episode
-          | status: Episode.status(:closed),
-            updated_by: job.user_id,
-            updated_at: now,
-            period: %{episode.period | end: new_period.end},
-            managing_organization: %{
-              managing_organization
-              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-            }
-        }
+    with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id),
+         {true, _} <- {episode.managing_organization.identifier.value == job.client_id, :managing_organization} do
+      changes =
+        job.request_params
+        |> Map.take(~w(closing_summary status_reason))
         |> Map.merge(%{
-          status_reason: CodeableConcept.create(changes["status_reason"]),
-          closing_summary: changes["closing_summary"]
+          "status" => Episode.status(:closed),
+          "updated_by" => job.user_id,
+          "updated_at" => now,
+          "period" => prepare_period(%{"end" => job.request_params["period"]["end"]})
         })
-        |> EpisodeValidations.validate_period()
-        |> EpisodeValidations.validate_managing_organization(job.client_id)
 
-      case Vex.errors(episode) do
-        [] ->
+      case Episode.close_changeset(episode, changes) do
+        %Changeset{valid?: true} = changeset ->
+          episode = Changeset.apply_changes(changeset)
+
           set =
             %{"updated_by" => episode.updated_by, "updated_at" => now}
             |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
@@ -236,15 +197,13 @@ defmodule Core.Patients.Episodes.Consumer do
             |> Mongo.add_to_set(episode.period.end, "episodes.#{episode.id}.period.end")
             |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
             |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
-            |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
-            |> Mongo.convert_to_uuid("updated_by")
 
           status_history =
             StatusHistory.create(%{
               "status" => episode.status,
               "status_reason" => changes["status_reason"],
               "inserted_at" => episode.updated_at,
-              "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
+              "inserted_by" => episode.updated_by
             })
 
           push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
@@ -284,15 +243,23 @@ defmodule Core.Patients.Episodes.Consumer do
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
 
-        errors ->
+        changeset ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            ValidationError.render("422.json", changeset),
             422
           )
       end
     else
+      {_, :managing_organization} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Managing_organization does not correspond to user's legal_entity",
+          409
+        )
+
       {:ok, %Episode{status: status}} ->
         Jobs.produce_update_status(
           job._id,
@@ -317,31 +284,21 @@ defmodule Core.Patients.Episodes.Consumer do
              fn status ->
                "Episode in status #{status} can not be canceled"
              end
-           ) do
-      managing_organization = episode.managing_organization
-      identifier = managing_organization.identifier
-
-      changes = Map.take(job.request_params, ~w(explanatory_letter status_reason))
-
-      episode =
-        %{
-          episode
-          | status: Episode.status(:cancelled),
-            updated_by: job.user_id,
-            updated_at: now,
-            managing_organization: %{
-              managing_organization
-              | identifier: %{identifier | value: UUID.binary_to_string!(identifier.value.binary)}
-            }
-        }
+           ),
+         {true, _} <- {episode.managing_organization.identifier.value == job.client_id, :managing_organization} do
+      changes =
+        job.request_params
+        |> Map.take(~w(explanatory_letter status_reason))
         |> Map.merge(%{
-          status_reason: CodeableConcept.create(changes["status_reason"]),
-          explanatory_letter: changes["explanatory_letter"]
+          "status" => Episode.status(:cancelled),
+          "updated_by" => job.user_id,
+          "updated_at" => now
         })
-        |> EpisodeValidations.validate_managing_organization(job.client_id)
 
-      case Vex.errors(episode) do
-        [] ->
+      case Episode.cancel_changeset(episode, changes) do
+        %Changeset{valid?: true} = changeset ->
+          episode = Changeset.apply_changes(changeset)
+
           all_encounters_canceled =
             patient_id_hash
             |> Encounters.get_episode_encounters(Mongo.string_to_uuid(id), %{
@@ -356,7 +313,6 @@ defmodule Core.Patients.Episodes.Consumer do
               |> Mongo.add_to_set(episode.status, "episodes.#{episode.id}.status")
               |> Mongo.add_to_set(episode.updated_by, "episodes.#{episode.id}.updated_by")
               |> Mongo.add_to_set(now, "episodes.#{episode.id}.updated_at")
-              |> Mongo.convert_to_uuid("episodes.#{episode.id}.updated_by")
               |> Mongo.add_to_set(
                 episode.explanatory_letter,
                 "episodes.#{episode.id}.explanatory_letter"
@@ -365,14 +321,13 @@ defmodule Core.Patients.Episodes.Consumer do
                 episode.status_reason,
                 "episodes.#{episode.id}.status_reason"
               )
-              |> Mongo.convert_to_uuid("updated_by")
 
             status_history =
               StatusHistory.create(%{
                 "status" => episode.status,
                 "status_reason" => changes["status_reason"],
                 "inserted_at" => episode.updated_at,
-                "inserted_by" => Mongo.string_to_uuid(episode.updated_by)
+                "inserted_by" => episode.updated_by
               })
 
             push = Mongo.add_to_push(%{}, status_history, "episodes.#{episode.id}.status_history")
@@ -420,15 +375,23 @@ defmodule Core.Patients.Episodes.Consumer do
             )
           end
 
-        errors ->
+        changeset ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            ValidationError.render("422.json", changeset),
             422
           )
       end
     else
+      {_, :managing_organization} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Managing_organization does not correspond to user's legal_entity",
+          409
+        )
+
       {:error, message} ->
         Jobs.produce_update_status(job._id, job.request_id, message, 422)
 
@@ -471,6 +434,16 @@ defmodule Core.Patients.Episodes.Consumer do
     else
       {:error, message.(status)}
     end
+  end
+
+  defp prepare_period(data) do
+    Enum.into(data, %{}, fn
+      {k, v} when is_binary(v) ->
+        {k, v <> "T00:00:00.0Z"}
+
+      {k, v} ->
+        {k, v}
+    end)
   end
 
   defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do

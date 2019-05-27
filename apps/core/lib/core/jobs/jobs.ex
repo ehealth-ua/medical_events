@@ -7,7 +7,7 @@ defmodule Core.Jobs do
   alias Core.Mongo.Transaction
   require Logger
 
-  @collection Job.metadata().collection
+  @collection Job.collection()
 
   def produce_update_status(id, request_id, response, 200) do
     do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
@@ -133,7 +133,7 @@ defmodule Core.Jobs do
 
         result =
           %Transaction{actor_id: actor_id}
-          |> Transaction.add_operation("jobs", :insert, Mongo.prepare_doc(job), job._id)
+          |> Transaction.add_operation("jobs", :insert, job, job._id)
           |> Transaction.flush()
 
         case result do
@@ -149,12 +149,7 @@ defmodule Core.Jobs do
 
   # ToDo: count real eta based on kafka performance testing. Temporary hardcoded to 10 minutes.
   defp count_eta do
-    time = :os.system_time(:millisecond) + 60_000
-
-    time
-    |> DateTime.from_unix!(:millisecond)
-    |> DateTime.to_naive()
-    |> NaiveDateTime.to_iso8601()
+    DateTime.add(DateTime.utc_now(), 60_000)
   end
 
   defp map_to_job(data) do

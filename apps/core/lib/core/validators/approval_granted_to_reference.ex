@@ -1,7 +1,6 @@
 defmodule Core.Validators.ApprovalGrantedToReference do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.Rpc
 
   @rpc_worker Application.get_env(:core, :rpc_worker)
@@ -14,11 +13,8 @@ defmodule Core.Validators.ApprovalGrantedToReference do
          {true, _} <- {value in employee_ids, "Employee does not related to user"} do
       :ok
     else
-      {_, message} -> error(options, message)
+      {_, message} ->
+        {:error, Keyword.get(options, :message, message)}
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

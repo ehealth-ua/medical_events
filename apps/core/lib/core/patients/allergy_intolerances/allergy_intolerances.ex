@@ -8,12 +8,11 @@ defmodule Core.Patients.AllergyIntolerances do
   alias Core.Patient
   alias Core.Patients.Encounters
   alias Core.Search
-  alias Core.Source
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def get_by_id(patient_id_hash, id) do
     with %{"allergy_intolerances" => %{^id => allergy_intolerance}} <-
@@ -120,35 +119,6 @@ defmodule Core.Patients.AllergyIntolerances do
       put_in(search_params, path, %{operator => value})
     else
       update_in(search_params, path, &Map.merge(&1, %{operator => value}))
-    end
-  end
-
-  def fill_up_allergy_intolerance_asserter(
-        %AllergyIntolerance{source: %Source{type: "report_origin"}} = allergy_intolerance
-      ) do
-    allergy_intolerance
-  end
-
-  def fill_up_allergy_intolerance_asserter(%AllergyIntolerance{source: %Source{value: value}} = allergy_intolerance) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{value.identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      %{
-        allergy_intolerance
-        | source: %{
-            allergy_intolerance.source
-            | value: %{
-                value
-                | display_value: "#{first_name} #{second_name} #{last_name}"
-              }
-          }
-      }
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for allergy_intolerance")
-        allergy_intolerance
     end
   end
 

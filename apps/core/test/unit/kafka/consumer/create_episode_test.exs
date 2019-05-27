@@ -45,6 +45,7 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
                  id: episode_id,
+                 name: "Хвороба",
                  type: %{"code" => "primary_care", "system" => "eHealth/episode_types"},
                  user_id: user_id,
                  client_id: client_id,
@@ -60,7 +61,8 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                      "type" => %{"coding" => [%{"code" => "employee", "system" => "eHealth/resources"}]},
                      "value" => UUID.uuid4()
                    }
-                 }
+                 },
+                 status: Episode.status(:active)
                })
     end
 

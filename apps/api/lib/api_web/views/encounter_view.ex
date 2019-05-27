@@ -21,7 +21,7 @@ defmodule Api.Web.EncounterView do
 
     encounter_data = %{
       id: UUIDView.render(encounter.id),
-      date: DateTime.to_iso8601(encounter.date),
+      date: encounter.date,
       visit: ReferenceView.render(encounter.visit),
       episode: ReferenceView.render(encounter.episode),
       class: ReferenceView.render(encounter.class),

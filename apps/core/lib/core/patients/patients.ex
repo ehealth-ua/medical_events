@@ -3,11 +3,8 @@ defmodule Core.Patients do
 
   use Confex, otp_app: :core
 
-  alias Core.AllergyIntolerance
   alias Core.Condition
-  alias Core.Conditions.Validations, as: ConditionValidations
-  alias Core.Device
-  alias Core.DiagnosticReport
+  alias Core.DiagnosesHistory
   alias Core.Encounter
   alias Core.Encryptor
   alias Core.Episode
@@ -15,42 +12,31 @@ defmodule Core.Patients do
   alias Core.Jobs
   alias Core.Jobs.PackageCancelJob
   alias Core.Jobs.PackageCreateJob
-  alias Core.MedicationStatement
   alias Core.Mongo
   alias Core.Observation
-  alias Core.Observations.Validations, as: ObservationValidations
   alias Core.Patient
   alias Core.Patients.AllergyIntolerances
-  alias Core.Patients.AllergyIntolerances.Validations, as: AllergyIntoleranceValidations
   alias Core.Patients.Devices
-  alias Core.Patients.Devices.Validations, as: DeviceValidations
   alias Core.Patients.DiagnosticReports
-  alias Core.Patients.DiagnosticReports.Validations, as: DiagnosticReportValidations
   alias Core.Patients.Encounters
   alias Core.Patients.Encounters.Cancel, as: CancelEncounter
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
   alias Core.Patients.Episodes
   alias Core.Patients.Immunizations
-  alias Core.Patients.Immunizations.Reaction
-  alias Core.Patients.Immunizations.Validations, as: ImmunizationValidations
   alias Core.Patients.MedicationStatements
-  alias Core.Patients.MedicationStatements.Validations, as: MedicationStatementValidations
   alias Core.Patients.Package
   alias Core.Patients.RiskAssessments
-  alias Core.Patients.RiskAssessments.Validations, as: RiskAssessmentValidations
   alias Core.Patients.Validators
-  alias Core.Patients.Visits.Validations, as: VisitValidations
-  alias Core.RiskAssessment
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
-  alias Core.Validators.Vex
   alias Core.Visit
+  alias Ecto.Changeset
   alias EView.Views.ValidationError
 
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
@@ -92,7 +78,10 @@ defmodule Core.Patients do
       "required" => true
     },
     "$.immunizations" => %{"params" => ["report_origin", "performer"], "required" => true},
-    "$.immunizations.explanation" => %{"params" => ["reasons", "reasons_not_given"], "required" => false},
+    "$.immunizations.explanation" => %{
+      "params" => ["reasons", "reasons_not_given"],
+      "required" => false
+    },
     "$.allergy_intolerances" => %{"params" => ["report_origin", "asserter"], "required" => true},
     "$.risk_assessments.predictions" => [
       %{"params" => ["probability_range", "probability_decimal"], "required" => false},
@@ -100,7 +89,10 @@ defmodule Core.Patients do
     ],
     "$.devices" => %{"params" => ["report_origin", "asserter"], "required" => true},
     "$.medication_statements" => %{"params" => ["report_origin", "asserter"], "required" => true},
-    "$.diagnostic_reports.results_interpreter" => %{"params" => ["reference", "text"], "required" => true},
+    "$.diagnostic_reports.results_interpreter" => %{
+      "params" => ["reference", "text"],
+      "required" => true
+    },
     "$.diagnostic_reports.performer" => %{"params" => ["reference", "text"], "required" => true}
   }
 
@@ -154,10 +146,12 @@ defmodule Core.Patients do
          encounter_id <- content["encounter"]["id"],
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
          {_, %{} = patient} <- {:patient, get_by_id(patient_id_hash)},
-         {_, {:ok, %Encounter{} = encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
+         {_, {:ok, %Encounter{} = encounter}} <-
+           {:encounter, Encounters.get_by_id(patient_id_hash, encounter_id)},
          {_, {:ok, %Episode{} = episode}} <-
            {:episode, Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value))},
-         :ok <- CancelEncounter.validate(content, episode, encounter, patient_id_hash, job.client_id),
+         :ok <-
+           CancelEncounter.validate(content, episode, encounter, patient_id_hash, job.client_id),
          :ok <- CancelEncounter.save(patient, content, episode, encounter_id, job) do
       :ok
     else
@@ -174,7 +168,12 @@ defmodule Core.Patients do
         Jobs.produce_update_status(job._id, job.request_id, "Encounter not found", 404)
 
       {:error, error} ->
-        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          ValidationError.render("422.json", %{schema: error}),
+          422
+        )
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)
@@ -204,8 +203,9 @@ defmodule Core.Patients do
            {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content),
            {:ok, observations} <- create_observations(job, content, diagnostic_reports),
            {:ok, conditions} <- create_conditions(job, content, observations),
-           {:ok, encounter} <- create_encounter(job, content, conditions, visit),
-           {:ok, immunizations} <- create_immunizations(job, content, observations),
+           {:ok, encounter, diagnoses_history} <- create_encounter(job, content, conditions, visit),
+           {:ok, immunizations, immunization_updates} <-
+             create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
            {:ok, risk_assessments} <-
              create_risk_assessments(job, observations, conditions, diagnostic_reports, content),
@@ -213,8 +213,8 @@ defmodule Core.Patients do
            {:ok, medication_statements} <- create_medication_statements(job, content) do
         encounter =
           encounter
-          |> Encounters.fill_up_encounter_performer()
-          |> Encounters.fill_up_diagnoses_codes()
+          |> Encounter.fill_up_performer()
+          |> Encounter.fill_up_diagnoses_codes()
 
         resource_name = "#{encounter.id}/create"
         files = [{'signed_content.txt', job.signed_data}]
@@ -235,7 +235,9 @@ defmodule Core.Patients do
               %{
                 "visit" => visit,
                 "encounter" => encounter,
+                "diagnoses_history" => diagnoses_history,
                 "immunizations" => immunizations,
+                "immunization_updates" => immunization_updates,
                 "allergy_intolerances" => allergy_intolerances,
                 "risk_assessments" => risk_assessments,
                 "devices" => devices,
@@ -256,17 +258,23 @@ defmodule Core.Patients do
         else
           error ->
             Logger.error("Failed to save signed content: #{inspect(error)}")
-            Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              "Failed to save signed content",
+              500
+            )
         end
       else
         {:error, error, status_code} ->
           Jobs.produce_update_status(job._id, job.request_id, error, status_code)
 
-        {:error, error} ->
+        %Changeset{valid?: false} = changeset ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(error)}),
+            ValidationError.render("422.json", changeset),
             422
           )
       end
@@ -275,7 +283,12 @@ defmodule Core.Patients do
         Jobs.produce_update_status(job._id, job.request_id, error, 422)
 
       {:error, error} ->
-        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          ValidationError.render("422.json", %{schema: error}),
+          422
+        )
 
       {:error, {:bad_request, error}} ->
         Jobs.produce_update_status(job._id, job.request_id, error, 422)
@@ -293,16 +306,24 @@ defmodule Core.Patients do
          visit: visit
        }) do
     now = DateTime.utc_now()
-    visit = Visit.create(visit)
 
-    visit =
-      %{visit | inserted_by: user_id, updated_by: user_id, inserted_at: now, updated_at: now}
-      |> VisitValidations.validate_period()
+    changeset =
+      %Visit{}
+      |> Visit.create_changeset(
+        Map.merge(visit, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now
+        })
+      )
 
-    case Vex.errors(%{visit: visit}, visit: [reference: [path: "visit"]]) do
-      [] ->
+    case changeset do
+      %Changeset{valid?: true} ->
+        visit = Changeset.apply_changes(changeset)
+
         result =
-          Patient.metadata().collection
+          Patient.collection()
           |> Mongo.aggregate([
             %{"$match" => %{"_id" => patient_id_hash}},
             %{"$project" => %{"_id" => "$visits.#{visit.id}.id"}}
@@ -317,8 +338,8 @@ defmodule Core.Patients do
             {:ok, visit}
         end
 
-      errors ->
-        {:error, errors}
+      changeset ->
+        changeset
     end
   end
 
@@ -333,45 +354,60 @@ defmodule Core.Patients do
          visit
        ) do
     now = DateTime.utc_now()
-    encounter = Encounter.create(content["encounter"])
 
     encounter =
-      %{
-        encounter
-        | inserted_by: user_id,
-          updated_by: user_id,
-          inserted_at: now,
-          updated_at: now
-      }
-      |> EncounterValidations.validate_episode(client_id, patient_id_hash)
-      |> EncounterValidations.validate_visit(visit, patient_id_hash)
-      |> EncounterValidations.validate_performer(client_id)
-      |> EncounterValidations.validate_division(client_id)
-      |> EncounterValidations.validate_diagnoses(conditions, encounter.class, patient_id_hash)
-      |> EncounterValidations.validate_date()
-      |> EncounterValidations.validate_incoming_referral(client_id)
-      |> EncounterValidations.validate_supporting_info(patient_id_hash)
+      Map.merge(content["encounter"], %{
+        "inserted_by" => user_id,
+        "updated_by" => user_id,
+        "inserted_at" => now,
+        "updated_at" => now
+      })
 
-    case Vex.errors(%{encounter: encounter}, encounter: [reference: [path: "encounter"]]) do
-      [] ->
-        result =
-          Patient.metadata().collection
-          |> Mongo.aggregate([
-            %{"$match" => %{"_id" => patient_id_hash}},
-            %{"$project" => %{"_id" => "$encounters.#{encounter.id}.id"}}
-          ])
-          |> Enum.to_list()
+    changeset =
+      Package.encounter_changeset(
+        %Package{},
+        %{"encounter" => encounter},
+        patient_id_hash,
+        client_id,
+        visit,
+        conditions
+      )
 
-        case result do
-          [%{"_id" => _}] ->
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        encounter = package.encounter
+
+        diagnoses_history =
+          DiagnosesHistory.create_changeset(%DiagnosesHistory{}, %{
+            "date" => now,
+            "evidence" => %{
+              "identifier" => %{
+                "type" => %{
+                  "coding" => [
+                    %{
+                      "system" => "eHealth/resources",
+                      "code" => "encounter"
+                    }
+                  ]
+                },
+                "value" => Mongo.string_to_uuid(encounter.id)
+              }
+            },
+            "is_active" => true,
+            "diagnoses" => content["encounter"]["diagnoses"]
+          })
+
+        case Encounters.get_by_id(patient_id_hash, encounter.id) do
+          {:ok, _} ->
             {:error, "Encounter with such id already exists", 409}
 
           _ ->
-            {:ok, encounter}
+            {:ok, encounter, Changeset.apply_changes(diagnoses_history)}
         end
-
-      errors ->
-        {:error, errors}
     end
   end
 
@@ -390,32 +426,37 @@ defmodule Core.Patients do
 
     conditions =
       Enum.map(content["conditions"], fn data ->
-        condition = Condition.create(data)
-
-        %{
-          condition
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id,
-            patient_id: patient_id_hash,
-            context_episode_id: episode_id
-        }
-        |> ConditionValidations.validate_onset_date()
-        |> ConditionValidations.validate_context(encounter_id)
-        |> ConditionValidations.validate_evidences(observations, patient_id_hash)
-        |> ConditionValidations.validate_source(client_id)
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "patient_id" => patient_id_hash,
+          "context_episode_id" => episode_id,
+          "source" => Map.take(data, ~w(report_origin asserter))
+        })
       end)
 
-    case Vex.errors(
-           %{conditions: conditions},
-           conditions: [unique_ids: [field: :_id], reference: [path: "conditions"]]
-         ) do
-      [] ->
-        validate_conditions(conditions)
+    changeset =
+      Package.conditions_changeset(
+        %Package{},
+        %{"conditions" => conditions},
+        patient_id_hash,
+        observations,
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+
+        package.conditions
+        |> Enum.map(&Condition.fill_up_asserter/1)
+        |> validate_conditions()
     end
   end
 
@@ -436,38 +477,50 @@ defmodule Core.Patients do
 
     observations =
       Enum.map(content["observations"], fn data ->
-        observation =
-          data
-          |> Map.drop(["reaction_on"])
-          |> Observation.create()
-
-        %{
-          observation
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id,
-            patient_id: patient_id_hash,
-            context_episode_id: episode_id
-        }
-        |> ObservationValidations.validate_issued()
-        |> ObservationValidations.validate_diagnostic_report(patient_id_hash, diagnostic_reports)
-        |> ObservationValidations.validate_effective_at()
-        |> ObservationValidations.validate_context(encounter_id)
-        |> ObservationValidations.validate_source(client_id)
-        |> ObservationValidations.validate_value()
-        |> ObservationValidations.validate_components()
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "patient_id" => patient_id_hash,
+          "context_episode_id" => episode_id,
+          "effective_at" => Map.take(data, ~w(effective_date_time effective_period)),
+          "value" => Map.take(data, ~w(
+            value_string
+            value_time
+            value_boolean
+            value_date_time
+            value_quantity
+            value_codeable_concept
+            value_sampled_data
+            value_range
+            value_ratio
+            value_period
+          )),
+          "source" => Map.take(data, ~w(report_origin performer))
+        })
       end)
 
-    case Vex.errors(
-           %{observations: observations},
-           observations: [unique_ids: [field: :_id], reference: [path: "observations"]]
-         ) do
-      [] ->
-        validate_observations(observations)
+    changeset =
+      Package.observations_changeset(
+        %Package{},
+        %{"observations" => observations},
+        patient_id_hash,
+        diagnostic_reports,
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+
+        package.observations
+        |> Enum.map(&Observation.fill_up_performer/1)
+        |> validate_observations()
     end
   end
 
@@ -482,136 +535,102 @@ defmodule Core.Patients do
          content,
          observations
        ) do
-    now = DateTime.utc_now()
-    encounter_id = content["encounter"]["id"]
-    immunization_observation_id_map = get_immunization_observation_id_map(content)
-    db_immunization_ids = get_db_immunization_ids(content)
-
-    immunizations =
-      Enum.map(content["immunizations"] || [], fn data ->
-        immunization =
-          data
-          |> create_immunization_reactions(immunization_observation_id_map)
-          |> Immunization.create()
-
-        %{
-          immunization
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
+    reactions =
+      observations
+      |> Enum.group_by(&Map.get(&1, :reaction_on), &Map.get(&1, :id))
+      |> Enum.filter(fn {k, _} -> !is_nil(k) end)
+      |> Enum.into(%{}, fn {reaction, observation_ids} ->
+        {
+          reaction.identifier.value,
+          Enum.map(observation_ids, fn v ->
+            %{
+              "detail" => %{
+                "identifier" => %{
+                  "type" => %{
+                    "coding" => [
+                      %{
+                        "system" => "eHealth/resources",
+                        "code" => "observation"
+                      }
+                    ]
+                  },
+                  "value" => v
+                }
+              }
+            }
+          end)
         }
-        |> ImmunizationValidations.validate_date()
-        |> ImmunizationValidations.validate_context(encounter_id)
-        |> ImmunizationValidations.validate_source(client_id)
-        |> ImmunizationValidations.validate_reactions(observations, patient_id_hash)
       end)
 
-    with {:ok, db_immunizations} <- get_db_immunizations(db_immunization_ids, patient_id_hash) do
-      immunizations =
-        immunizations ++ update_db_immunizations(db_immunizations, user_id, immunization_observation_id_map)
+    now = DateTime.utc_now()
+    encounter_id = content["encounter"]["id"]
 
-      case Vex.errors(
-             %{immunizations: immunizations},
-             immunizations: [unique_ids: [field: :id], reference: [path: "immunizations"]]
-           ) do
-        [] ->
-          validate_immunizations(patient_id_hash, immunizations)
+    {immunizations, reactions} =
+      Enum.reduce(content["immunizations"] || [], {[], reactions}, fn data, {immunizations, reactions_to_push} ->
+        {immunization_reactions, reactions_to_push} = Map.pop(reactions_to_push, data["id"], [])
 
-        errors ->
-          {:error, errors}
-      end
+        immunization =
+          Map.merge(data, %{
+            "inserted_by" => user_id,
+            "updated_by" => user_id,
+            "inserted_at" => now,
+            "updated_at" => now,
+            "patient_id" => patient_id_hash,
+            "reactions" => immunization_reactions,
+            "source" => Map.take(data, ~w(report_origin performer))
+          })
+
+        {immunizations ++ [immunization], reactions_to_push}
+      end)
+
+    changeset =
+      Package.immunizations_changeset(
+        %Package{},
+        %{"immunizations" => immunizations},
+        patient_id_hash,
+        observations,
+        encounter_id,
+        client_id
+      )
+
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+
+        with {:ok, immunization_updates} <-
+               get_db_immunizations(patient_id_hash, Map.keys(reactions)),
+             {:ok, immunizations} <-
+               validate_immunizations(patient_id_hash, package.immunizations) do
+          {
+            :ok,
+            immunizations,
+            # This changeset should be always valid
+            Enum.map(immunization_updates, fn immunization ->
+              immunization
+              |> Immunization.reactions_update_changeset(
+                %{
+                  "reactions" => reactions[to_string(immunization.id)],
+                  "updated_at" => now,
+                  "updated_by" => user_id
+                },
+                patient_id_hash,
+                observations
+              )
+              |> Changeset.apply_changes()
+            end)
+          }
+        end
     end
   end
 
-  defp get_db_immunizations(immunization_ids, patient_id_hash) do
-    with {:ok, immunizations} <- Immunizations.get_by_ids(patient_id_hash, immunization_ids) do
-      {:ok, immunizations}
-    else
+  defp get_db_immunizations(patient_id_hash, ids) do
+    case Immunizations.get_by_ids(patient_id_hash, ids) do
+      {:ok, immunizations} -> {:ok, immunizations}
       {:error, message} -> {:error, %{"error" => message}, 404}
     end
-  end
-
-  defp update_db_immunizations(immunizations, user_id, immunization_observation_id_map) do
-    now = DateTime.utc_now()
-
-    Enum.map(immunizations, fn %{id: immunization_id} = immunization ->
-      previous_reactions = immunization.reactions || []
-
-      new_reactions =
-        immunization_observation_id_map
-        |> Map.get(to_string(immunization_id), [])
-        |> Enum.map(&Reaction.create(create_reaction(&1)))
-
-      reactions =
-        previous_reactions
-        |> Enum.concat(new_reactions)
-        |> case do
-          [] -> nil
-          reactions -> reactions
-        end
-
-      %{immunization | reactions: reactions, updated_at: now, updated_by: user_id}
-    end)
-  end
-
-  defp get_immunization_observation_id_map(content) do
-    content
-    |> Map.get("observations", [])
-    |> Enum.reduce(%{}, fn %{"id" => observation_id} = observation, acc ->
-      case get_reaction_on_immunization_id(observation["reaction_on"]) do
-        nil -> acc
-        immunization_id -> Map.merge(acc, %{immunization_id => [observation_id]}, fn _key, v1, v2 -> [v2 | v1] end)
-      end
-    end)
-  end
-
-  defp get_request_immunization_ids(content) do
-    content
-    |> Map.get("immunizations", [])
-    |> Enum.map(& &1["id"])
-  end
-
-  defp get_reactions_immunization_ids(content) do
-    content
-    |> Map.get("observations", [])
-    |> Enum.map(&get_reaction_on_immunization_id(&1["reaction_on"]))
-    |> Enum.reject(&is_nil/1)
-  end
-
-  defp get_db_immunization_ids(content) do
-    immunization_ids_from_request = get_request_immunization_ids(content)
-    immunization_ids_from_reactions_on = get_reactions_immunization_ids(content)
-
-    immunization_ids_from_reactions_on -- immunization_ids_from_request
-  end
-
-  defp get_reaction_on_immunization_id(%{"identifier" => %{"value" => immunization_id}}), do: immunization_id
-  defp get_reaction_on_immunization_id(_), do: nil
-
-  defp create_immunization_reactions(%{"id" => immunization_id} = data, immunization_observation_id_map) do
-    case immunization_observation_id_map[immunization_id] do
-      nil -> data
-      observation_ids -> Map.put(data, "reactions", Enum.map(observation_ids, &create_reaction(&1)))
-    end
-  end
-
-  defp create_reaction(observation_id) do
-    %{
-      "detail" => %{
-        "identifier" => %{
-          "type" => %{
-            "coding" => [
-              %{
-                "system" => "eHealth/resources",
-                "code" => "observation"
-              }
-            ]
-          },
-          "value" => observation_id
-        }
-      }
-    }
   end
 
   defp create_allergy_intolerances(
@@ -627,34 +646,30 @@ defmodule Core.Patients do
 
     allergy_intolerances =
       Enum.map(content["allergy_intolerances"], fn data ->
-        allergy_intolerance = AllergyIntolerance.create(data)
-
-        %{
-          allergy_intolerance
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
-        }
-        |> AllergyIntoleranceValidations.validate_context(encounter_id)
-        |> AllergyIntoleranceValidations.validate_source(client_id)
-        |> AllergyIntoleranceValidations.validate_onset_date_time()
-        |> AllergyIntoleranceValidations.validate_last_occurrence()
-        |> AllergyIntoleranceValidations.validate_asserted_date()
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "source" => Map.take(data, ~w(report_origin asserter))
+        })
       end)
 
-    case Vex.errors(
-           %{allergy_intolerances: allergy_intolerances},
-           allergy_intolerances: [
-             unique_ids: [field: :id],
-             reference: [path: "allergy_intolerances"]
-           ]
-         ) do
-      [] ->
-        validate_allergy_intolerances(patient_id_hash, allergy_intolerances)
+    changeset =
+      Package.allergy_intolerances_changeset(
+        %Package{},
+        %{"allergy_intolerances" => allergy_intolerances},
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        validate_allergy_intolerances(patient_id_hash, package.allergy_intolerances)
     end
   end
 
@@ -676,45 +691,34 @@ defmodule Core.Patients do
 
     risk_assessments =
       Enum.map(content["risk_assessments"], fn data ->
-        risk_assessment = RiskAssessment.create(data)
-
-        %{
-          risk_assessment
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
-        }
-        |> RiskAssessmentValidations.validate_context(encounter_id)
-        |> RiskAssessmentValidations.validate_asserted_date()
-        |> RiskAssessmentValidations.validate_reason_references(
-          observations,
-          conditions,
-          diagnostic_reports,
-          patient_id_hash
-        )
-        |> RiskAssessmentValidations.validate_basis_references(
-          observations,
-          conditions,
-          diagnostic_reports,
-          patient_id_hash
-        )
-        |> RiskAssessmentValidations.validate_performer(client_id)
-        |> RiskAssessmentValidations.validate_predictions()
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "reason" => Map.take(data, ~w(reason_references reason_codes))
+        })
       end)
 
-    case Vex.errors(
-           %{risk_assessments: risk_assessments},
-           risk_assessments: [
-             unique_ids: [field: :id],
-             reference: [path: "risk_assessments"]
-           ]
-         ) do
-      [] ->
-        validate_risk_assessments(patient_id_hash, risk_assessments)
+    changeset =
+      Package.risk_assessments_changeset(
+        %Package{},
+        %{"risk_assessments" => risk_assessments},
+        patient_id_hash,
+        observations,
+        conditions,
+        diagnostic_reports,
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        validate_risk_assessments(patient_id_hash, package.risk_assessments)
     end
   end
 
@@ -733,33 +737,30 @@ defmodule Core.Patients do
 
     devices =
       Enum.map(content["devices"], fn data ->
-        device = Device.create(data)
-
-        %{
-          device
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
-        }
-        |> DeviceValidations.validate_context(encounter_id)
-        |> DeviceValidations.validate_asserted_date()
-        |> DeviceValidations.validate_source(client_id)
-        |> DeviceValidations.validate_usage_period()
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "source" => Map.take(data, ~w(report_origin asserter))
+        })
       end)
 
-    case Vex.errors(
-           %{devices: devices},
-           devices: [
-             unique_ids: [field: :id],
-             reference: [path: "devices"]
-           ]
-         ) do
-      [] ->
-        validate_devices(patient_id_hash, devices)
+    changeset =
+      Package.devices_changeset(
+        %Package{},
+        %{"devices" => devices},
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        validate_devices(patient_id_hash, package.devices)
     end
   end
 
@@ -778,33 +779,31 @@ defmodule Core.Patients do
 
     medication_statements =
       Enum.map(content["medication_statements"], fn data ->
-        medication_statement = MedicationStatement.create(data)
-
-        %{
-          medication_statement
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
-        }
-        |> MedicationStatementValidations.validate_context(encounter_id)
-        |> MedicationStatementValidations.validate_asserted_date()
-        |> MedicationStatementValidations.validate_source(client_id)
-        |> MedicationStatementValidations.validate_based_on(patient_id_hash)
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "source" => Map.take(data, ~w(report_origin asserter))
+        })
       end)
 
-    case Vex.errors(
-           %{medication_statements: medication_statements},
-           medication_statements: [
-             unique_ids: [field: :id],
-             reference: [path: "medication_statements"]
-           ]
-         ) do
-      [] ->
-        validate_medication_statements(patient_id_hash, medication_statements)
+    changeset =
+      Package.medication_statements_changeset(
+        %Package{},
+        %{"medication_statements" => medication_statements},
+        patient_id_hash,
+        encounter_id,
+        client_id
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        validate_medication_statements(patient_id_hash, package.medication_statements)
     end
   end
 
@@ -823,39 +822,32 @@ defmodule Core.Patients do
 
     diagnostic_reports =
       Enum.map(content["diagnostic_reports"], fn data ->
-        diagnostic_report = DiagnosticReport.create(data)
-
-        %{
-          diagnostic_report
-          | inserted_at: now,
-            updated_at: now,
-            inserted_by: user_id,
-            updated_by: user_id
-        }
-        |> DiagnosticReportValidations.validate_code(content["observations"])
-        |> DiagnosticReportValidations.validate_based_on(client_id)
-        |> DiagnosticReportValidations.validate_conclusion()
-        |> DiagnosticReportValidations.validate_effective()
-        |> DiagnosticReportValidations.validate_issued()
-        |> DiagnosticReportValidations.validate_recorded_by(client_id)
-        |> DiagnosticReportValidations.validate_encounter(encounter_id)
-        |> DiagnosticReportValidations.validate_source(client_id)
-        |> DiagnosticReportValidations.validate_managing_organization(client_id)
-        |> DiagnosticReportValidations.validate_results_interpreter(client_id)
+        Map.merge(data, %{
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
+          "inserted_at" => now,
+          "updated_at" => now,
+          "effective" => Map.take(data, ~w(effective_date_time effective_period)),
+          "source" => Map.take(data, ~w(performer report_origin))
+        })
       end)
 
-    case Vex.errors(
-           %{diagnostic_reports: diagnostic_reports},
-           diagnostic_reports: [
-             unique_ids: [field: :id],
-             reference: [path: "diagnostic_reports"]
-           ]
-         ) do
-      [] ->
-        validate_diagnostic_reports(patient_id_hash, diagnostic_reports)
+    changeset =
+      Package.diagnostic_reports_changeset(
+        %Package{},
+        %{"diagnostic_reports" => diagnostic_reports},
+        client_id,
+        encounter_id,
+        content["observations"]
+      )
 
-      errors ->
-        {:error, errors}
+    case changeset do
+      %Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        package = Changeset.apply_changes(changeset)
+        validate_diagnostic_reports(patient_id_hash, package.diagnostic_reports)
     end
   end
 
@@ -864,7 +856,7 @@ defmodule Core.Patients do
   defp validate_conditions(conditions) do
     Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
       if Mongo.find_one(
-           Condition.metadata().collection,
+           Condition.collection(),
            %{"_id" => Mongo.string_to_uuid(condition._id)},
            projection: %{"_id" => true}
          ) do
@@ -878,7 +870,7 @@ defmodule Core.Patients do
   defp validate_observations(observations) do
     Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
       if Mongo.find_one(
-           Observation.metadata().collection,
+           Observation.collection(),
            %{"_id" => Mongo.string_to_uuid(observation._id)},
            projection: %{"_id" => true}
          ) do
@@ -938,15 +930,19 @@ defmodule Core.Patients do
   end
 
   defp validate_medication_statements(patient_id_hash, medication_statements) do
-    Enum.reduce_while(medication_statements, {:ok, medication_statements}, fn medication_statement, acc ->
-      case MedicationStatements.get_by_id(patient_id_hash, medication_statement.id) do
-        {:ok, _} ->
-          {:halt, {:error, "Medication statement with id '#{medication_statement.id}' already exists", 409}}
+    Enum.reduce_while(
+      medication_statements,
+      {:ok, medication_statements},
+      fn medication_statement, acc ->
+        case MedicationStatements.get_by_id(patient_id_hash, medication_statement.id) do
+          {:ok, _} ->
+            {:halt, {:error, "Medication statement with id '#{medication_statement.id}' already exists", 409}}
 
-        _ ->
-          {:cont, acc}
+          _ ->
+            {:cont, acc}
+        end
       end
-    end)
+    )
   end
 
   defp validate_diagnostic_reports(patient_id_hash, diagnostic_reports) do
@@ -976,7 +972,8 @@ defmodule Core.Patients do
   end
 
   defp validate_signed_data(signed_data) do
-    with {:ok, %{"content" => _, "signer" => _}} = validation_result <- Signature.validate(signed_data) do
+    with {:ok, %{"content" => _, "signer" => _}} = validation_result <-
+           Signature.validate(signed_data) do
       validation_result
     else
       {:error, error} -> {:error, error, 422}

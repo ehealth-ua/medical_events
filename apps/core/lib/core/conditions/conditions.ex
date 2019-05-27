@@ -2,19 +2,15 @@ defmodule Core.Conditions do
   @moduledoc false
 
   alias Core.Condition
-  alias Core.Evidence
   alias Core.Maybe
   alias Core.Mongo
   alias Core.Paging
-  alias Core.Reference
   alias Core.Search
-  alias Core.Source
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
-
   require Logger
 
-  @condition_collection Condition.metadata().collection
+  @condition_collection Condition.collection()
 
   def get_by_id(patient_id_hash, id) do
     @condition_collection
@@ -89,42 +85,6 @@ defmodule Core.Conditions do
     end
   end
 
-  def create(%Condition{} = condition) do
-    context = condition.context
-
-    source =
-      case condition.source do
-        %Source{type: "report_origin"} = source ->
-          source
-
-        %Source{value: value} = source ->
-          %{
-            source
-            | value: %{
-                value
-                | identifier: %{value.identifier | value: Mongo.string_to_uuid(value.identifier.value)},
-                  display_value: fill_up_condition_asserter(value)
-              }
-          }
-      end
-
-    evidences = create_evidences(condition)
-
-    %{
-      condition
-      | _id: Mongo.string_to_uuid(condition._id),
-        inserted_by: Mongo.string_to_uuid(condition.inserted_by),
-        updated_by: Mongo.string_to_uuid(condition.updated_by),
-        context_episode_id: Mongo.string_to_uuid(condition.context_episode_id),
-        context: %{
-          context
-          | identifier: %{context.identifier | value: Mongo.string_to_uuid(context.identifier.value)}
-        },
-        source: source,
-        evidences: evidences
-    }
-  end
-
   defp search_conditions_pipe(%{"patient_id_hash" => patient_id_hash} = params) do
     code = params["code"]
     onset_date_from = filter_date(params["onset_date_from"])
@@ -164,36 +124,5 @@ defmodule Core.Conditions do
       {:ok, date_time, _} -> date_time
       _ -> nil
     end
-  end
-
-  defp fill_up_condition_asserter(%Reference{identifier: identifier}) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      "#{first_name} #{second_name} #{last_name}"
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for condition")
-        nil
-    end
-  end
-
-  defp create_evidences(%Condition{evidences: nil}), do: nil
-
-  defp create_evidences(%Condition{evidences: evidences}) do
-    Enum.map(evidences, fn
-      %Evidence{details: nil} = evidence ->
-        evidence
-
-      %Evidence{details: details} = evidence ->
-        details =
-          Enum.map(details, fn detail ->
-            %{detail | identifier: %{detail.identifier | value: Mongo.string_to_uuid(detail.identifier.value)}}
-          end)
-
-        %{evidence | details: details}
-    end)
   end
 end

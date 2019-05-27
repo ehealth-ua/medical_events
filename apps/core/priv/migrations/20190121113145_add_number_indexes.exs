@@ -7,7 +7,7 @@ defmodule Core.Migrations.AddNumberIndexes do
   def change do
     {:ok, _} =
       Mongo.command(
-        createIndexes: Number.metadata().collection,
+        createIndexes: Number.collection,
         indexes: [
           %{
             key: %{

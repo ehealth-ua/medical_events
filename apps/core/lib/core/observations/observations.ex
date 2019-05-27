@@ -5,15 +5,12 @@ defmodule Core.Observations do
   alias Core.Mongo
   alias Core.Observation
   alias Core.Paging
-  alias Core.Reference
   alias Core.Search
-  alias Core.Source
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
-
   require Logger
 
-  @observation_collection Observation.metadata().collection
+  @observation_collection Observation.collection()
 
   def get_by_id(patient_id_hash, id) do
     @observation_collection
@@ -45,7 +42,9 @@ defmodule Core.Observations do
     |> Mongo.find_one(%{
       "_id" => Mongo.string_to_uuid(id),
       "patient_id" => patient_id_hash,
-      "code.coding.code" => %{"$in" => Confex.fetch_env!(:core, :summary)[:observations_whitelist]}
+      "code.coding.code" => %{
+        "$in" => Confex.fetch_env!(:core, :summary)[:observations_whitelist]
+      }
     })
     |> case do
       %{} = observation -> {:ok, Observation.create(observation)}
@@ -61,7 +60,10 @@ defmodule Core.Observations do
 
   def get_by_diagnostic_report_id(patient_id_hash, %BSON.Binary{} = diagnostic_report_id) do
     @observation_collection
-    |> Mongo.find(%{"patient_id" => patient_id_hash, "diagnostic_report.identifier.value" => diagnostic_report_id})
+    |> Mongo.find(%{
+      "patient_id" => patient_id_hash,
+      "diagnostic_report.identifier.value" => diagnostic_report_id
+    })
     |> Enum.map(&Observation.create/1)
   end
 
@@ -107,49 +109,6 @@ defmodule Core.Observations do
     end
   end
 
-  def create(%Observation{} = observation) do
-    source =
-      case observation.source do
-        %Source{type: "report_origin"} = source ->
-          source
-
-        %Source{value: value} = source ->
-          %{
-            source
-            | value: %{
-                value
-                | identifier: %{
-                    value.identifier
-                    | value: Mongo.string_to_uuid(value.identifier.value)
-                  },
-                  display_value: fill_up_observation_performer(value)
-              }
-          }
-      end
-
-    based_on = update_reference_uuid(observation.based_on)
-    context = update_reference_uuid(observation.context)
-    diagnostic_report = update_reference_uuid(observation.diagnostic_report)
-
-    context_episode_uuid =
-      case observation.context_episode_id do
-        nil -> nil
-        _ -> Mongo.string_to_uuid(observation.context_episode_id)
-      end
-
-    %{
-      observation
-      | _id: Mongo.string_to_uuid(observation._id),
-        inserted_by: Mongo.string_to_uuid(observation.inserted_by),
-        updated_by: Mongo.string_to_uuid(observation.updated_by),
-        context_episode_id: context_episode_uuid,
-        context: context,
-        diagnostic_report: diagnostic_report,
-        source: source,
-        based_on: based_on
-    }
-  end
-
   defp search_observations_pipe(%{"patient_id_hash" => patient_id_hash} = params) do
     code = params["code"]
     issued_from = filter_date(params["issued_from"])
@@ -191,33 +150,5 @@ defmodule Core.Observations do
       {:ok, date_time, _} -> date_time
       _ -> nil
     end
-  end
-
-  defp fill_up_observation_performer(%Reference{identifier: identifier}) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      "#{first_name} #{second_name} #{last_name}"
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for observation")
-        nil
-    end
-  end
-
-  defp update_reference_uuid(nil), do: nil
-
-  defp update_reference_uuid(value) when is_list(value), do: Enum.map(value, &update_reference_uuid/1)
-
-  defp update_reference_uuid(value) do
-    %{
-      value
-      | identifier: %{
-          value.identifier
-          | value: Mongo.string_to_uuid(value.identifier.value)
-        }
-    }
   end
 end

@@ -3,8 +3,6 @@ defmodule Core.ServiceRequests.Consumer do
 
   use Confex, otp_app: :core
 
-  alias Core.CodeableConcept
-  alias Core.Encryptor
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
@@ -17,31 +15,32 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Mongo
   alias Core.Mongo.Transaction
-  alias Core.Patients.Encounters
-  alias Core.Reference
   alias Core.ServiceRequest
   alias Core.ServiceRequests
   alias Core.ServiceRequests.EventManager
-  alias Core.ServiceRequests.Validations, as: ServiceRequestsValidations
   alias Core.ServiceRequestView
   alias Core.StatusHistory
+  alias Core.Validators.DateTime, as: DateTimeValidations
+  alias Core.Validators.Drfo
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
-  alias Core.Validators.Vex
+  alias Ecto.Changeset
   alias EView.Views.ValidationError
   require Logger
 
   @worker Application.get_env(:core, :rpc_worker)
   @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
-  @collection ServiceRequest.metadata().collection
+  @collection ServiceRequest.collection()
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
   @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
 
   @active ServiceRequest.status(:active)
   @completed ServiceRequest.status(:completed)
 
-  @one_of_request_params %{"$" => %{"params" => ["occurrence_date_time", "occurrence_period"], "required" => false}}
+  @one_of_request_params %{
+    "$" => %{"params" => ["occurrence_date_time", "occurrence_period"], "required" => false}
+  }
 
   def consume_create_service_request(
         %ServiceRequestCreateJob{
@@ -57,6 +56,7 @@ defmodule Core.ServiceRequests.Consumer do
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       expiration_days = config()[:service_request_expiration_days]
+
       expiration_erl_date = now |> DateTime.to_date() |> Date.add(expiration_days) |> Date.to_erl()
 
       expiration_date =
@@ -64,130 +64,114 @@ defmodule Core.ServiceRequests.Consumer do
         |> NaiveDateTime.from_erl!()
         |> DateTime.from_naive!("Etc/UTC")
 
-      service_request =
-        content
-        |> ServiceRequest.create()
-        |> Map.merge(%{
-          _id: UUID.uuid4(),
-          subject: patient_id_hash,
-          inserted_by: user_id,
-          updated_by: user_id,
-          inserted_at: now,
-          updated_at: now,
-          status_history: [],
-          expiration_date: expiration_date
-        })
+      id = UUID.uuid4()
+      resource_name = "#{id}/create"
 
-      status_history =
-        StatusHistory.create(%{
-          "status" => service_request.status,
-          "status_reason" => service_request.status_reason,
+      changes =
+        Map.merge(content, %{
+          "_id" => id,
+          "subject" => patient_id_hash,
+          "inserted_by" => user_id,
+          "updated_by" => user_id,
           "inserted_at" => now,
-          "inserted_by" => Mongo.string_to_uuid(job.user_id)
+          "updated_at" => now,
+          "status_history" => [
+            %{
+              "status" => content["status"],
+              "status_reason" => content["status_reason"],
+              "inserted_at" => now,
+              "inserted_by" => Mongo.string_to_uuid(job.user_id)
+            }
+          ],
+          "expiration_date" => expiration_date,
+          "signed_content_links" => [resource_name]
         })
 
-      service_request =
-        service_request
-        |> Map.put(:status_history, [status_history])
-        |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
-        |> ServiceRequestsValidations.validate_context(patient_id_hash)
-        |> ServiceRequestsValidations.validate_occurrence()
-        |> ServiceRequestsValidations.validate_authored_on()
-        |> ServiceRequestsValidations.validate_supporting_info(patient_id_hash)
-        |> ServiceRequestsValidations.validate_reason_reference(patient_id_hash)
-        |> ServiceRequestsValidations.validate_permitted_resources(patient_id_hash)
-        |> ServiceRequestsValidations.validate_requester_legal_entity(client_id)
-        |> ServiceRequestsValidations.validate_code()
-        |> generate_requisition_number(patient_id_hash, user_id)
+      changeset =
+        ServiceRequest.create_changeset(
+          %ServiceRequest{},
+          changes,
+          patient_id_hash,
+          user_id,
+          client_id
+        )
 
-      case service_request do
-        [_] = errors ->
+      case changeset do
+        %Changeset{valid?: false} ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
+            ValidationError.render("422.json", changeset),
             422
           )
 
-        %{} ->
-          case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
-            [] ->
-              if Mongo.find_one(
-                   ServiceRequest.metadata().collection,
-                   %{"_id" => Mongo.string_to_uuid(service_request._id)},
-                   projection: %{"_id" => true}
-                 ) do
-                {:error, "Service request with id '#{service_request._id}' already exists", 409}
-              else
-                resource_name = "#{service_request._id}/create"
-                files = [{'signed_content.txt', job.signed_data}]
-                {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
 
-                with :ok <-
-                       @media_storage.save(
-                         patient_id,
-                         compressed_content,
-                         Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
-                         resource_name
-                       ) do
-                  doc =
-                    %{service_request | signed_content_links: [resource_name]}
-                    |> Mongo.prepare_doc()
-                    |> Enum.into(%{}, fn {k, v} -> {to_string(k), v} end)
-                    |> Mongo.convert_to_uuid("_id")
-                    |> Mongo.convert_to_uuid("inserted_by")
-                    |> Mongo.convert_to_uuid("updated_by")
-                    |> Mongo.convert_to_uuid("code", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("requester_employee", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("requester_legal_entity", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("context", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("supporting_info", ~w(identifier value)a)
-                    |> Mongo.convert_to_uuid("permitted_resources", ~w(identifier value)a)
+          case ServiceRequests.get_by_id(id) do
+            {:ok, _} ->
+              {:error, "Service request with id '#{id}' already exists", 409}
 
-                  result =
-                    %Transaction{actor_id: user_id}
-                    |> Transaction.add_operation(@collection, :insert, doc, doc["_id"])
-                    |> Jobs.update(
-                      job._id,
-                      Job.status(:processed),
-                      %{
-                        "links" => [
-                          %{
-                            "entity" => "service_request",
-                            "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
-                          }
-                        ]
-                      },
-                      200
-                    )
-                    |> Transaction.flush()
+            _ ->
+              files = [{'signed_content.txt', job.signed_data}]
+              {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
-                  case result do
-                    :ok ->
-                      :ok
+              with :ok <-
+                     Drfo.validate(service_request.requester_employee.identifier.value,
+                       drfo: signer["drfo"],
+                       client_id: client_id,
+                       user_id: user_id
+                     ),
+                   :ok <-
+                     @media_storage.save(
+                       patient_id,
+                       compressed_content,
+                       Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
+                       resource_name
+                     ) do
+                result =
+                  %Transaction{actor_id: user_id}
+                  |> Transaction.add_operation(@collection, :insert, service_request, service_request._id)
+                  |> Jobs.update(
+                    job._id,
+                    Job.status(:processed),
+                    %{
+                      "links" => [
+                        %{
+                          "entity" => "service_request",
+                          "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                        }
+                      ]
+                    },
+                    200
+                  )
+                  |> Transaction.flush()
 
-                    {:error, reason} ->
-                      Jobs.produce_update_status(job._id, job.request_id, reason, 500)
-                  end
-                else
-                  error ->
-                    Logger.error("Failed to save signed content: #{inspect(error)}")
-                    Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+                case result do
+                  :ok ->
+                    :ok
+
+                  {:error, reason} ->
+                    Jobs.produce_update_status(job._id, job.request_id, reason, 500)
                 end
-              end
+              else
+                {:error, reason} ->
+                  Jobs.produce_update_status(job._id, job.request_id, reason, 409)
 
-            errors ->
-              Jobs.produce_update_status(
-                job._id,
-                job.request_id,
-                ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-                422
-              )
+                error ->
+                  Logger.error("Failed to save signed content: #{inspect(error)}")
+                  Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+              end
           end
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          ValidationError.render("422.json", %{schema: error}),
+          422
+        )
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)
@@ -207,118 +191,47 @@ defmodule Core.ServiceRequests.Consumer do
     now = DateTime.utc_now()
 
     with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
+         {:ok, _} <-
+           {DateTimeValidations.validate(service_request.expiration_date,
+              greater_than_or_equal_to: DateTime.utc_now(),
+              message: "Service request is expired"
+            ), :expiration_date},
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
-         {true, _} <- {is_nil(service_request.used_by_legal_entity), :already_used} do
-      service_request =
-        %{
-          service_request
-          | updated_by: user_id,
-            updated_at: now,
-            used_by_employee: create_reference(used_by_employee),
-            used_by_legal_entity: create_reference(used_by_legal_entity)
-        }
-        |> ServiceRequestsValidations.validate_used_by_employee(client_id)
-        |> ServiceRequestsValidations.validate_used_by_legal_entity(client_id)
-        |> ServiceRequestsValidations.validate_expiration_date()
-
-      case Vex.errors(service_request) do
-        [] ->
-          set =
-            Mongo.convert_to_uuid(
-              %{
-                "updated_by" => service_request.updated_by,
-                "updated_at" => now,
-                "used_by_employee" =>
-                  service_request
-                  |> Map.get(:used_by_employee)
-                  |> update_reference_uuid()
-                  |> Mongo.prepare_doc(),
-                "used_by_legal_entity" =>
-                  service_request
-                  |> Map.get(:used_by_legal_entity)
-                  |> update_reference_uuid()
-                  |> Mongo.prepare_doc()
-              },
-              "updated_by"
-            )
-
-          result =
-            %Transaction{actor_id: user_id}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{"$set" => set},
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
-          end
-
-        errors ->
+         {true, _} <- {is_nil(service_request.used_by_legal_entity), :already_used},
+         changeset <-
+           ServiceRequest.use_changeset(
+             service_request,
+             %{
+               "updated_by" => user_id,
+               "updated_at" => now,
+               "used_by_employee" => used_by_employee,
+               "used_by_legal_entity" => used_by_legal_entity
+             },
+             client_id
+           ) do
+      case changeset do
+        %Changeset{valid?: false} ->
           Jobs.produce_update_status(
             job._id,
             job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            409
+            ValidationError.render("422.json", changeset),
+            422
           )
-      end
-    else
-      nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
 
-      {_, :status} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
 
-      {_, :already_used} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request is already used", 409)
-    end
-  end
-
-  def consume_release_service_request(
-        %ServiceRequestReleaseJob{
-          patient_id: patient_id,
-          user_id: user_id,
-          service_request_id: id
-        } = job
-      ) do
-    now = DateTime.utc_now()
-
-    with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
-         {true, _} <- {service_request.status == ServiceRequest.status(:active), :status} do
-      changes = %{"used_by_employee" => nil, "used_by_legal_entity" => nil}
-
-      service_request =
-        %{service_request | updated_by: user_id, updated_at: now}
-        |> Map.merge(Enum.into(changes, %{}, fn {k, v} -> {String.to_atom(k), v} end))
-        |> ServiceRequestsValidations.validate_expiration_date()
-
-      case Vex.errors(service_request) do
-        [] ->
           set = %{
             "updated_by" => service_request.updated_by,
             "updated_at" => now,
-            "used_by_employee" => nil,
-            "used_by_legal_entity" => nil
+            "used_by_employee" =>
+              service_request
+              |> Map.get(:used_by_employee)
+              |> update_reference_uuid(),
+            "used_by_legal_entity" =>
+              service_request
+              |> Map.get(:used_by_legal_entity)
+              |> update_reference_uuid()
           }
 
           result =
@@ -352,21 +265,143 @@ defmodule Core.ServiceRequests.Consumer do
             {:error, reason} ->
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
-
-        errors ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            422
-          )
       end
     else
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request with id '#{id}' is not found",
+          404
+        )
 
       {_, :status} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Can't use inactive service request", 409)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Can't use inactive service request",
+          409
+        )
+
+      {{:error, message}, :expiration_date} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          message,
+          409
+        )
+
+      {_, :already_used} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request is already used",
+          409
+        )
+    end
+  end
+
+  def consume_release_service_request(
+        %ServiceRequestReleaseJob{
+          patient_id: patient_id,
+          user_id: user_id,
+          service_request_id: id
+        } = job
+      ) do
+    now = DateTime.utc_now()
+
+    with {:ok, %ServiceRequest{} = service_request} <- ServiceRequests.get_by_id(id),
+         {:ok, _} <-
+           {DateTimeValidations.validate(service_request.expiration_date,
+              greater_than_or_equal_to: DateTime.utc_now(),
+              message: "Service request is expired"
+            ), :expiration_date},
+         {@active, _} <- {service_request.status, :status},
+         changeset <-
+           ServiceRequest.release_changeset(
+             service_request,
+             %{
+               "updated_by" => user_id,
+               "updated_at" => now,
+               "used_by_employee" => nil,
+               "used_by_legal_entity" => nil
+             }
+           ) do
+      case changeset do
+        %Changeset{valid?: false} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", changeset),
+            422
+          )
+
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
+
+          set = %{
+            "updated_by" => user_id,
+            "updated_at" => now,
+            "used_by_employee" => service_request.used_by_employee,
+            "used_by_legal_entity" => service_request.used_by_legal_entity
+          }
+
+          result =
+            %Transaction{actor_id: user_id}
+            |> Transaction.add_operation(
+              @collection,
+              :update,
+              %{"_id" => service_request._id},
+              %{"$set" => set},
+              service_request._id
+            )
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "service_request",
+                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Transaction.flush()
+
+          case result do
+            :ok ->
+              :ok
+
+            {:error, reason} ->
+              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+          end
+      end
+    else
+      nil ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request with id '#{id}' is not found",
+          404
+        )
+
+      {{:error, message}, :expiration_date} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          message,
+          409
+        )
+
+      {status, :status} ->
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request in status #{status} cannot be released",
+          409
+        )
     end
   end
 
@@ -383,27 +418,43 @@ defmodule Core.ServiceRequests.Consumer do
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       service_request_id = content["id"]
+      resource_name = "#{service_request_id}/recall"
 
       with {:ok, service_request} <- ServiceRequests.get_by_id(service_request_id),
            {:status, @active} <- {:status, service_request.status},
            :ok <- compare_with_db(service_request, content) do
-        service_request =
-          %{
-            service_request
-            | updated_by: user_id,
-              updated_at: now,
-              status: ServiceRequest.status(:recalled),
-              status_reason: CodeableConcept.create(content["status_reason"])
-          }
-          |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
+        changeset =
+          ServiceRequest.recall_changeset(
+            service_request,
+            %{
+              "updated_by" => user_id,
+              "updated_at" => now,
+              "status" => ServiceRequest.status(:recalled),
+              "status_reason" => content["status_reason"]
+            }
+          )
 
-        case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
-          [] ->
-            resource_name = "#{service_request._id}/recall"
+        case changeset do
+          %Changeset{valid?: false} ->
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              ValidationError.render("422.json", changeset),
+              422
+            )
+
+          _ ->
+            service_request = Changeset.apply_changes(changeset)
             files = [{'signed_content.txt', job.signed_data}]
             {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
             with :ok <-
+                   Drfo.validate(service_request.requester_employee.identifier.value,
+                     drfo: signer["drfo"],
+                     client_id: client_id,
+                     user_id: user_id
+                   ),
+                 :ok <-
                    @media_storage.save(
                      patient_id,
                      compressed_content,
@@ -413,23 +464,22 @@ defmodule Core.ServiceRequests.Consumer do
               set = %{
                 "updated_by" => service_request.updated_by,
                 "updated_at" => service_request.updated_at,
-                "signed_content_links" => service_request.signed_content_links ++ [resource_name],
                 "status" => service_request.status,
-                "status_reason" => Mongo.prepare_doc(service_request.status_reason)
+                "status_reason" => service_request.status_reason
               }
 
-              id = to_string(service_request._id)
-
               status_history =
-                %{
+                StatusHistory.create(%{
                   "status" => service_request.status,
+                  "status_reason" => content["status_reason"],
                   "inserted_at" => service_request.updated_at,
                   "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
-                }
-                |> StatusHistory.create()
-                |> Map.put(:status_reason, service_request.status_reason)
+                })
 
-              push = Mongo.add_to_push(%{}, status_history, "status_history")
+              push =
+                %{}
+                |> Mongo.add_to_push(resource_name, "signed_content_links")
+                |> Mongo.add_to_push(status_history, "status_history")
 
               case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
@@ -466,7 +516,7 @@ defmodule Core.ServiceRequests.Consumer do
                     "links" => [
                       %{
                         "entity" => "service_request",
-                        "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                        "href" => "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
                       }
                     ]
                   },
@@ -476,25 +526,25 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
-                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:recalled))
+                  EventManager.new_event(
+                    service_request_id,
+                    user_id,
+                    ServiceRequest.status(:recalled)
+                  )
+
                   :ok
 
                 {:error, reason} ->
                   Jobs.produce_update_status(job._id, job.request_id, reason, 500)
               end
             else
+              {:error, reason} ->
+                Jobs.produce_update_status(job._id, job.request_id, reason, 409)
+
               error ->
                 Logger.error("Failed to save signed content: #{inspect(error)}")
                 Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
             end
-
-          errors ->
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-              422
-            )
         end
       else
         nil ->
@@ -518,7 +568,12 @@ defmodule Core.ServiceRequests.Consumer do
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          ValidationError.render("422.json", %{schema: error}),
+          422
+        )
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)
@@ -538,27 +593,44 @@ defmodule Core.ServiceRequests.Consumer do
          :ok <- JsonSchema.validate(:service_request_cancel_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
+      resource_name = "#{service_request_id}/cancel"
 
       with {:ok, service_request} <- ServiceRequests.get_by_id(content["id"]),
-           {:status, true, _} <- {:status, service_request.status in [@active, @completed], service_request.status},
+           {:status, true, _} <-
+             {:status, service_request.status in [@active, @completed], service_request.status},
            :ok <- compare_with_db(service_request, content) do
-        service_request =
-          %{
-            service_request
-            | updated_by: user_id,
-              updated_at: now,
-              status: ServiceRequest.status(:entered_in_error),
-              status_reason: CodeableConcept.create(content["status_reason"])
-          }
-          |> ServiceRequestsValidations.validate_signatures(signer, user_id, client_id)
+        changeset =
+          ServiceRequest.cancel_changeset(
+            service_request,
+            %{
+              "updated_by" => user_id,
+              "updated_at" => now,
+              "status" => ServiceRequest.status(:entered_in_error),
+              "status_reason" => content["status_reason"]
+            }
+          )
 
-        case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
-          [] ->
-            resource_name = "#{service_request._id}/cancel"
+        case changeset do
+          %Changeset{valid?: false} ->
+            Jobs.produce_update_status(
+              job._id,
+              job.request_id,
+              ValidationError.render("422.json", changeset),
+              422
+            )
+
+          _ ->
+            service_request = Changeset.apply_changes(changeset)
             files = [{'signed_content.txt', job.signed_data}]
             {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
             with :ok <-
+                   Drfo.validate(service_request.requester_employee.identifier.value,
+                     drfo: signer["drfo"],
+                     client_id: client_id,
+                     user_id: user_id
+                   ),
+                 :ok <-
                    @media_storage.save(
                      patient_id,
                      compressed_content,
@@ -568,23 +640,22 @@ defmodule Core.ServiceRequests.Consumer do
               set = %{
                 "updated_by" => service_request.updated_by,
                 "updated_at" => service_request.updated_at,
-                "signed_content_links" => service_request.signed_content_links ++ [resource_name],
                 "status" => service_request.status,
-                "status_reason" => Mongo.prepare_doc(service_request.status_reason)
+                "status_reason" => service_request.status_reason
               }
 
-              id = to_string(service_request._id)
-
               status_history =
-                %{
+                StatusHistory.create(%{
                   "status" => service_request.status,
+                  "status_reason" => content["status_reason"],
                   "inserted_at" => service_request.updated_at,
                   "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
-                }
-                |> StatusHistory.create()
-                |> Map.put(:status_reason, service_request.status_reason)
+                })
 
-              push = Mongo.add_to_push(%{}, status_history, "status_history")
+              push =
+                %{}
+                |> Mongo.add_to_push(resource_name, "signed_content_links")
+                |> Mongo.add_to_push(status_history, "status_history")
 
               case @worker.run("mpi", MPI.Rpc, :get_auth_method, [patient_id]) do
                 nil ->
@@ -593,7 +664,9 @@ defmodule Core.ServiceRequests.Consumer do
                 {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
                   @otp_verification_api.send_sms(
                     phone_number,
-                    EEx.eval_string(config()[:cancel_sms], assigns: [number: service_request.requisition]),
+                    EEx.eval_string(config()[:cancel_sms],
+                      assigns: [number: service_request.requisition]
+                    ),
                     "text",
                     []
                   )
@@ -621,7 +694,7 @@ defmodule Core.ServiceRequests.Consumer do
                     "links" => [
                       %{
                         "entity" => "service_request",
-                        "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                        "href" => "/api/patients/#{patient_id}/service_requests/#{service_request_id}"
                       }
                     ]
                   },
@@ -631,25 +704,25 @@ defmodule Core.ServiceRequests.Consumer do
 
               case result do
                 :ok ->
-                  EventManager.new_event(service_request_id, user_id, ServiceRequest.status(:entered_in_error))
+                  EventManager.new_event(
+                    service_request_id,
+                    user_id,
+                    ServiceRequest.status(:entered_in_error)
+                  )
+
                   :ok
 
                 {:error, reason} ->
                   Jobs.produce_update_status(job._id, job.request_id, reason, 500)
               end
             else
+              {:error, reason} ->
+                Jobs.produce_update_status(job._id, job.request_id, reason, 409)
+
               error ->
                 Logger.error("Failed to save signed content: #{inspect(error)}")
                 Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
             end
-
-          errors ->
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-              422
-            )
         end
       else
         {:status, false, status} ->
@@ -665,7 +738,12 @@ defmodule Core.ServiceRequests.Consumer do
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(job._id, job.request_id, ValidationError.render("422.json", %{schema: error}), 422)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          ValidationError.render("422.json", %{schema: error}),
+          422
+        )
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job._id, job.request_id, response, status_code)
@@ -678,19 +756,34 @@ defmodule Core.ServiceRequests.Consumer do
           user_id: user_id
         } = job
       ) do
-    with {:ok, %ServiceRequest{status: @active} = service_request} <- ServiceRequests.get_by_id(job.id) do
+    with {:ok, %ServiceRequest{status: @active} = service_request} <-
+           ServiceRequests.get_by_id(job.id) do
       now = DateTime.utc_now()
-      service_request = %{service_request | updated_by: user_id, updated_at: now, status: @completed}
 
-      case Vex.errors(%{service_request: service_request}, service_request: [reference: [path: "service_request"]]) do
-        [] ->
-          set =
-            %{
-              "updated_by" => service_request.updated_by,
-              "updated_at" => service_request.updated_at,
-              "status" => service_request.status
-            }
-            |> Mongo.convert_to_uuid("updated_by")
+      changeset =
+        ServiceRequest.close_changeset(service_request, %{
+          "updated_by" => user_id,
+          "updated_at" => now,
+          "status" => @completed
+        })
+
+      case changeset do
+        %Changeset{valid?: false} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", changeset),
+            422
+          )
+
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
+
+          set = %{
+            "updated_by" => service_request.updated_by,
+            "updated_at" => service_request.updated_at,
+            "status" => service_request.status
+          }
 
           status_history =
             StatusHistory.create(%{
@@ -701,8 +794,6 @@ defmodule Core.ServiceRequests.Consumer do
             })
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
-
-          id = to_string(service_request._id)
 
           result =
             %Transaction{actor_id: user_id}
@@ -723,7 +814,7 @@ defmodule Core.ServiceRequests.Consumer do
                 "links" => [
                   %{
                     "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                    "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
                   }
                 ]
               },
@@ -738,14 +829,6 @@ defmodule Core.ServiceRequests.Consumer do
             {:error, reason} ->
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
-
-        errors ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            422
-          )
       end
     else
       nil ->
@@ -783,46 +866,45 @@ defmodule Core.ServiceRequests.Consumer do
          {true, _} <- {service_request.status == ServiceRequest.status(:in_progress), :status},
          {true, _} <-
            {get_reference_value(service_request.used_by_legal_entity) == client_id, :used_by_another_legal_entity} do
-      service_request =
-        ServiceRequestsValidations.validate_completed_with(
+      changeset =
+        ServiceRequest.complete_changeset(
+          service_request,
           %{
-            service_request
-            | updated_by: user_id,
-              updated_at: now,
-              completed_with: Reference.create(completed_with),
-              status: ServiceRequest.status(:completed)
+            "updated_by" => user_id,
+            "updated_at" => now,
+            "status" => ServiceRequest.status(:completed),
+            "status_reason" => status_reason,
+            "completed_with" => completed_with
           },
           patient_id_hash
         )
 
-      case Vex.errors(service_request) do
-        [] ->
-          completed_with = %{
-            service_request.completed_with
-            | identifier: %{
-                service_request.completed_with.identifier
-                | value: Mongo.string_to_uuid(service_request.completed_with.identifier.value)
-              }
-          }
+      case changeset do
+        %Changeset{valid?: false} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", changeset),
+            422
+          )
 
-          set =
-            Mongo.convert_to_uuid(
-              %{
-                "status" => service_request.status,
-                "updated_by" => service_request.updated_by,
-                "updated_at" => now,
-                "completed_with" => Mongo.prepare_doc(completed_with),
-                "status_reason" => Mongo.prepare_doc(status_reason)
-              },
-              "updated_by"
-            )
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
+
+          set = %{
+            "status" => service_request.status,
+            "updated_by" => service_request.updated_by,
+            "updated_at" => now,
+            "completed_with" => completed_with,
+            "status_reason" => status_reason
+          }
 
           status_history =
             StatusHistory.create(%{
-              "status" => ServiceRequest.status(:completed),
-              "status_reason" => Mongo.prepare_doc(status_reason),
-              "inserted_at" => now,
-              "inserted_by" => Mongo.string_to_uuid(user_id)
+              "status" => service_request.status,
+              "status_reason" => status_reason,
+              "inserted_at" => service_request.updated_at,
+              "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
             })
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
@@ -861,24 +943,26 @@ defmodule Core.ServiceRequests.Consumer do
             {:error, reason} ->
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
-
-        errors ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            422
-          )
       end
     else
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request with id '#{id}' is not found",
+          404
+        )
 
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
 
       {_, :used_by_another_legal_entity} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request is used by another legal entity", 409)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request is used by another legal entity",
+          409
+        )
     end
   end
 
@@ -896,15 +980,39 @@ defmodule Core.ServiceRequests.Consumer do
          {true, _} <- {service_request.status == ServiceRequest.status(:active), :status},
          {true, _} <-
            {get_reference_value(service_request.used_by_legal_entity) == client_id, :used_by_another_legal_entity} do
-      case Vex.errors(service_request) do
-        [] ->
-          set = %{"updated_by" => user_id, "updated_at" => now, "status" => ServiceRequest.status(:in_progress)}
+      changeset =
+        ServiceRequest.process_changeset(
+          service_request,
+          %{
+            "updated_by" => user_id,
+            "updated_at" => now,
+            "status" => ServiceRequest.status(:in_progress)
+          }
+        )
+
+      case changeset do
+        %Changeset{valid?: false} ->
+          Jobs.produce_update_status(
+            job._id,
+            job.request_id,
+            ValidationError.render("422.json", changeset),
+            422
+          )
+
+        _ ->
+          service_request = Changeset.apply_changes(changeset)
+
+          set = %{
+            "updated_by" => service_request.updated_by,
+            "updated_at" => service_request.updated_at,
+            "status" => service_request.status
+          }
 
           status_history =
             StatusHistory.create(%{
-              "status" => ServiceRequest.status(:in_progress),
-              "inserted_at" => now,
-              "inserted_by" => Mongo.string_to_uuid(user_id)
+              "status" => service_request.status,
+              "inserted_at" => service_request.updated_at,
+              "inserted_by" => Mongo.string_to_uuid(service_request.updated_by)
             })
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
@@ -943,24 +1051,26 @@ defmodule Core.ServiceRequests.Consumer do
             {:error, reason} ->
               Jobs.produce_update_status(job._id, job.request_id, reason, 500)
           end
-
-        errors ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", %{schema: Mongo.vex_to_json(errors)}),
-            422
-          )
       end
     else
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request with id '#{id}' is not found", 404)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request with id '#{id}' is not found",
+          404
+        )
 
       {_, :status} ->
         Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
 
       {_, :used_by_another_legal_entity} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Service request is used by another legal entity", 409)
+        Jobs.produce_update_status(
+          job._id,
+          job.request_id,
+          "Service request is used by another legal entity",
+          409
+        )
     end
   end
 
@@ -998,38 +1108,13 @@ defmodule Core.ServiceRequests.Consumer do
   end
 
   defp validate_signed_data(signed_data) do
-    with {:ok, %{"content" => _, "signer" => _}} = validation_result <- Signature.validate(signed_data) do
+    with {:ok, %{"content" => _, "signer" => _}} = validation_result <-
+           Signature.validate(signed_data) do
       validation_result
     else
       {:error, error} -> {:error, error, 422}
     end
   end
-
-  defp generate_requisition_number(%ServiceRequest{} = service_request, patient_id_hash, user_id) do
-    encounter_id = service_request.context.identifier.value
-
-    with {_, {:ok, encounter}} <- {:encounter, Encounters.get_by_id(patient_id_hash, to_string(encounter_id))},
-         {:ok, number} <-
-           @worker.run("number_generator", NumberGenerator.Rpc, :number, [
-             "episode",
-             to_string(encounter.episode.identifier.value),
-             user_id
-           ]) do
-      %{service_request | requisition: Encryptor.encrypt(number)}
-    else
-      {:encounter, _} ->
-        [
-          {:error, "service_request.context.identifier.value", :encounter_reference,
-           "Encounter with such id is not found"}
-        ]
-
-      error ->
-        error
-    end
-  end
-
-  defp create_reference(nil), do: nil
-  defp create_reference(value), do: Reference.create(value)
 
   defp update_reference_uuid(nil), do: nil
 
@@ -1044,5 +1129,5 @@ defmodule Core.ServiceRequests.Consumer do
   end
 
   defp get_reference_value(nil), do: nil
-  defp get_reference_value(value), do: UUID.binary_to_string!(value.identifier.value.binary)
+  defp get_reference_value(value), do: to_string(value.identifier.value)
 end

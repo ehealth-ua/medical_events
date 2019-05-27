@@ -17,7 +17,7 @@ defmodule Core.ServiceRequests do
   alias Scrivener.Page
   require Logger
 
-  @collection ServiceRequest.metadata().collection
+  @collection ServiceRequest.collection()
 
   defp check_patient(%{"patient_id_hash" => patient_id_hash}) do
     with %{} = patient <- Patients.get_by_id(patient_id_hash), do: Validators.is_active(patient)
@@ -109,8 +109,11 @@ defmodule Core.ServiceRequests do
     @collection
     |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)})
     |> case do
-      %{} = service_request -> {:ok, ServiceRequest.create(service_request)}
-      _ -> nil
+      %{} = service_request ->
+        {:ok, ServiceRequest.create(service_request)}
+
+      _ ->
+        nil
     end
   end
 

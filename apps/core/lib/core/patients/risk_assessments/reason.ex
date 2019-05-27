@@ -1,25 +1,44 @@
 defmodule Core.Patients.RiskAssessments.Reason do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
   alias Core.Reference
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:type, presence: true)
-    field(:value, presence: true, reference: [path: "value"])
+    embeds_many(:reason_codes, CodeableConcept)
+    embeds_many(:reason_references, Reference)
   end
 
-  def create("reason_codes" = type, value) do
-    %__MODULE__{type: type, value: Enum.map(value, &CodeableConcept.create/1)}
+  def changeset(%__MODULE__{} = reason, params) do
+    reason
+    |> cast(params, [])
+    |> cast_embed(:reason_codes)
+    |> cast_embed(:reason_references)
   end
 
-  def create("reason_references" = type, value) do
-    %__MODULE__{type: type, value: Enum.map(value, &Reference.create/1)}
+  def encounter_package_changeset(
+        %__MODULE__{} = reason,
+        params,
+        patient_id_hash,
+        observations,
+        conditions,
+        diagnostic_reports
+      ) do
+    reason
+    |> cast(params, [])
+    |> cast_embed(:reason_codes)
+    |> cast_embed(
+      :reason_references,
+      with:
+        &Reference.reason_reference_changeset(&1, &2,
+          patient_id_hash: patient_id_hash,
+          observarvations: observations,
+          conditions: conditions,
+          diagnostic_reports: diagnostic_reports
+        )
+    )
   end
-end
-
-defimpl Vex.Blank, for: Core.Patients.RiskAssessments.Reason do
-  def blank?(%Core.Patients.RiskAssessments.Reason{}), do: false
-  def blank?(_), do: true
 end

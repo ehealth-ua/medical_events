@@ -1,7 +1,17 @@
 defmodule Core.Validators.DateTime do
   @moduledoc false
 
-  use Vex.Validator
+  import Core.ValidationError
+
+  def validate_change(field, %DateTime{} = value, options) do
+    case validate(value, options) do
+      :ok ->
+        []
+
+      {:error, message} ->
+        Keyword.put([], :"#{field}", message)
+    end
+  end
 
   def validate(%DateTime{} = datetime, options) do
     with :ok <- validate_greater_than(datetime, options),
@@ -13,10 +23,6 @@ defmodule Core.Validators.DateTime do
   end
 
   def validate(_, _), do: :ok
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
-  end
 
   defp validate_greater_than(datetime, options) do
     greater_than = Keyword.get(options, :greater_than)

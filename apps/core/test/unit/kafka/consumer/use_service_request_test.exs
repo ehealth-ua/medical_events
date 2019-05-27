@@ -109,7 +109,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                 %{
                   "description" => "Employee #{employee_id} doesn't belong to your legal entity",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -118,7 +118,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
           "type" => "validation_failed"
         },
-        409
+        422
       )
 
       assert :ok =
@@ -171,7 +171,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                 %{
                   "description" => "You can assign service request only to your legal entity",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -180,7 +180,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
             "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
           "type" => "validation_failed"
         },
-        409
+        422
       )
 
       assert :ok =
@@ -267,11 +267,6 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
 
       %BSON.Binary{binary: id} = service_request._id
       employee_id = UUID.uuid4()
-
-      expect(WorkerMock, :run, fn _, _, :employee_by_id, _ ->
-        %{employee_type: "DOCTOR", status: "APPROVED", legal_entity_id: client_id}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
       insert(:patient, _id: patient_id_hash)
@@ -294,20 +289,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
                  "$set" => %{
                    "status" => ^status,
                    "status_code" => 409,
-                   "response" => %{
-                     "invalid" => [
-                       %{
-                         "entry" => "$.expiration_date",
-                         "entry_type" => "json_data_property",
-                         "rules" => [
-                           %{
-                             "params" => [],
-                             "rule" => "invalid"
-                           }
-                         ]
-                       }
-                     ]
-                   }
+                   "response" => "Service request is expired"
                  }
                } = set_bson
 

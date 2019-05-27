@@ -1,25 +1,21 @@
 defmodule Core.Patients.RiskAssessments.When do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.Period
   alias Core.Range
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:type, presence: true)
-    field(:value, presence: true, reference: [path: "value"])
+    embeds_one(:when_period, Period)
+    embeds_one(:when_range, Range)
   end
 
-  def create("when_period" = type, value) do
-    %__MODULE__{type: type, value: Period.create(value)}
+  def changeset(%__MODULE__{} = value, params) do
+    value
+    |> cast(params, [])
+    |> cast_embed(:when_period)
+    |> cast_embed(:when_range)
   end
-
-  def create("when_range" = type, value) do
-    %__MODULE__{type: type, value: Range.create(value)}
-  end
-end
-
-defimpl Vex.Blank, for: Core.Patients.RiskAssessments.When do
-  def blank?(%Core.Patients.RiskAssessments.When{}), do: false
-  def blank?(_), do: true
 end

@@ -6,11 +6,12 @@ defmodule Api.Web.ApprovalController do
   alias Api.Web.JobView
   alias Core.Approval
   alias Core.Approvals
+  alias Core.Approvals.Producer
 
   action_fallback(Api.Web.FallbackController)
 
   def create(conn, params) do
-    with {:ok, job} <- Approvals.produce_create_approval(params, conn.private[:user_id], conn.private[:client_id]) do
+    with {:ok, job} <- Producer.produce_create_approval(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -25,7 +26,7 @@ defmodule Api.Web.ApprovalController do
   end
 
   def resend(conn, params) do
-    with {:ok, job} <- Approvals.produce_resend_approval(params, conn.private[:user_id], conn.private[:client_id]) do
+    with {:ok, job} <- Producer.produce_resend_approval(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)

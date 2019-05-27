@@ -1,28 +1,23 @@
 defmodule Core.Patients.Immunizations.Explanation do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
+  alias Core.Validators.DictionaryReference
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:type, presence: true)
-
-    field(:value,
-      presence: true,
-      dictionary_reference: [path: "value", referenced_field: "system", field: "code"]
-    )
+    embeds_many(:reasons, CodeableConcept)
+    embeds_many(:reasons_not_given, CodeableConcept)
   end
 
-  def create(%{"reasons" => reasons}) do
-    %__MODULE__{type: "reasons", value: Enum.map(reasons, &CodeableConcept.create/1)}
+  def changeset(%__MODULE__{} = explanation, params) do
+    explanation
+    |> cast(params, [])
+    |> cast_embed(:reasons)
+    |> cast_embed(:reasons_not_given)
+    |> validate_change(:reasons, &DictionaryReference.validate_change/2)
+    |> validate_change(:reasons_not_given, &DictionaryReference.validate_change/2)
   end
-
-  def create(%{"reasons_not_given" => reasons_not_given}) do
-    %__MODULE__{type: "reasons_not_given", value: Enum.map(reasons_not_given, &CodeableConcept.create/1)}
-  end
-end
-
-defimpl Vex.Blank, for: Core.Patients.Immunizations.Explanation do
-  def blank?(%Core.Patients.Immunizations.Explanation{}), do: false
-  def blank?(_), do: true
 end

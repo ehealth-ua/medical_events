@@ -1,30 +1,34 @@
 defmodule Core.StatusHistory do
   @moduledoc false
 
-  use Core.Schema
-
+  use Ecto.Schema
   alias Core.CodeableConcept
+  alias Core.Ecto.UUID, as: U
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:status, presence: true)
-    field(:status_reason)
-    field(:inserted_at, presence: true)
-    field(:inserted_by, presence: true, uuid: true)
+    field(:status, :string)
+    field(:inserted_by, U)
+
+    embeds_one(:status_reason, CodeableConcept)
+
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
+  @fields_required ~w(status inserted_by inserted_at)a
+  @fields_optional ~w()a
+
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"status_reason", nil} ->
-          {:status_reason, nil}
+    %__MODULE__{}
+    |> changeset(data)
+    |> apply_changes()
+  end
 
-        {"status_reason", v} ->
-          {:status_reason, CodeableConcept.create(v)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
-    )
+  def changeset(%__MODULE__{} = reference, params) do
+    reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:status_reason)
   end
 end

@@ -1,29 +1,30 @@
 defmodule Core.Patients.RiskAssessments.ExtendedReference do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.Reference
+  import Ecto.Changeset
 
+  @fields_required ~w()a
+  @fields_optional ~w(text)a
+
+  @primary_key false
   embedded_schema do
-    field(:text)
-    field(:references, reference: [path: "references"])
+    field(:text, :string)
+    embeds_many(:references, Reference)
   end
 
-  def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"references", v} ->
-          {:references, Enum.map(v, &Reference.create/1)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
-    )
+  def changeset(%__MODULE__{} = extended_reference, params) do
+    extended_reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:references)
   end
-end
 
-defimpl Vex.Blank, for: Core.Patients.RiskAssessments.ExtendedReference do
-  def blank?(%Core.Patients.RiskAssessments.ExtendedReference{}), do: false
-  def blank?(_), do: true
+  def basis_changeset(%__MODULE__{} = extended_reference, params, options) do
+    extended_reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:references, with: &Reference.reason_reference_changeset(&1, &2, options))
+  end
 end

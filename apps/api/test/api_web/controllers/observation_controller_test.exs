@@ -13,11 +13,8 @@ defmodule Api.Web.ObservationControllerTest do
     test "success", %{conn: conn} do
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
-
       insert(:patient, _id: patient_id_hash)
-
-      observation =
-        insert(:observation, patient_id: patient_id_hash, value: %Value{type: "period", value: build(:period)})
+      observation = insert(:observation, patient_id: patient_id_hash, value: %Value{value_period: build(:period)})
 
       response_data =
         conn
@@ -50,7 +47,7 @@ defmodule Api.Web.ObservationControllerTest do
       observation =
         insert(:observation,
           patient_id: patient_id_hash,
-          value: %Value{type: "period", value: build(:period)},
+          value: %Value{value_period: build(:period)},
           encounter_context: encounter
         )
 
@@ -93,7 +90,7 @@ defmodule Api.Web.ObservationControllerTest do
       observation =
         insert(:observation,
           patient_id: patient_id_hash,
-          value: %Value{type: "period", value: build(:period)},
+          value: %Value{value_period: build(:period)},
           encounter_context: encounter
         )
 

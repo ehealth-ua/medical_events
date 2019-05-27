@@ -9,7 +9,7 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanup do
 
   require Logger
 
-  @collection Job.metadata().collection
+  @collection Job.collection()
 
   def run do
     Logger.info("Job cleanup process started")

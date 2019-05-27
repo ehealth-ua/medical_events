@@ -7,7 +7,7 @@ defmodule Core.Migrations.ServiceRequestsIndexes do
   def change do
     {:ok, _} =
       Mongo.command(
-        createIndexes: ServiceRequest.metadata().collection,
+        createIndexes: ServiceRequest.collection(),
         indexes: [
           %{
             key: %{

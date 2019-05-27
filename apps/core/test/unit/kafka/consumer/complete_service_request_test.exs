@@ -204,7 +204,7 @@ defmodule Core.Kafka.Consumer.CompleteServiceRequestTest do
                 %{
                   "description" => "Encounter with such id is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

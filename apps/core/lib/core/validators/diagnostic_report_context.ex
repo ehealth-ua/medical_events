@@ -1,9 +1,9 @@
 defmodule Core.Validators.DiagnosticReportContext do
   @moduledoc false
 
-  use Vex.Validator
   alias Core.DiagnosticReport
   alias Core.Patients.DiagnosticReports
+  import Core.ValidationError
 
   @status_entered_in_error DiagnosticReport.status(:entered_in_error)
 
@@ -33,9 +33,5 @@ defmodule Core.Validators.DiagnosticReportContext do
       _ ->
         :ok
     end
-  end
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
   end
 end

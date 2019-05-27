@@ -207,7 +207,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 %{
                   "description" => "Visit with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1151,13 +1151,12 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                  |> to_string()
 
         assert observation_id2 ==
-                 patient_data["$set"]["immunizations.#{db_immunization_id}.reactions"]
-                 |> Enum.at(1)
+                 patient_data["$push"]["immunizations.#{db_immunization_id}.reactions"]["$each"]
+                 |> Enum.at(0)
                  |> get_in(~w(detail identifier value))
                  |> to_string()
 
-        assert 2 == length(patient_data["$set"]["immunizations.#{db_immunization_id}.reactions"])
-        assert patient_data["$set"]["immunizations.#{immunization_id}.reactions"]
+        assert 1 == length(patient_data["$push"]["immunizations.#{db_immunization_id}.reactions"]["$each"])
         assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 
         set_bson = set |> Base.decode64!() |> BSON.decode()
@@ -1611,7 +1610,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 %{
                   "description" => "Managing_organization does not correspond to user's legal_entity",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -3075,7 +3074,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 %{
                   "description" => "Service request is used by another legal_entity",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -3224,7 +3223,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
                 %{
                   "description" => "Incorect service request type",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

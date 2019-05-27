@@ -7,7 +7,7 @@ defmodule Core.Migrations.JobsCleanupIndexes do
   def change do
     {:ok, _} =
       Mongo.command(
-        createIndexes: Job.metadata().collection,
+        createIndexes: Job.collection(),
         indexes: [
           %{
             key: %{

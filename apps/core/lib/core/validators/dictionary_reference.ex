@@ -3,10 +3,37 @@ defmodule Core.Validators.DictionaryReference do
   Validate dictionary value based on referenced field value
   """
 
-  use Vex.Validator
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Dictionaries
+  alias Ecto.Changeset
+  import Core.ValidationError
+
+  def validate_change(field, value, options \\ [referenced_field: "system", field: "code"]) do
+    do_validate_change(field, value, options)
+  end
+
+  defp do_validate_change(field, value, options)
+       when is_atom(field) and is_list(value) do
+    value
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {v, k}, acc ->
+      case validate(Changeset.apply_changes(v), options) do
+        :ok ->
+          acc
+
+        [{:error, _, _, message}] ->
+          Keyword.put(acc, :"#{field}[#{k}]", message)
+      end
+    end)
+  end
+
+  defp do_validate_change(field, value, options) do
+    case validate(Changeset.apply_changes(value), options) do
+      :ok -> []
+      [{:error, _, _, message}] -> Keyword.new([{field, message}])
+    end
+  end
 
   def validate(%Coding{} = value, options) do
     field = String.to_atom(Keyword.get(options, :field))
@@ -68,8 +95,4 @@ defmodule Core.Validators.DictionaryReference do
   def validate(%{__struct__: _}, _), do: :ok
 
   def validate(nil, _), do: :ok
-
-  def error(options, error_message) do
-    {:error, message(options, error_message)}
-  end
 end

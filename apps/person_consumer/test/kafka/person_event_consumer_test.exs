@@ -62,7 +62,7 @@ defmodule PersonConsumer.Kafka.PersonEventConsumerTest do
       id = UUID.uuid4()
       id_hash = Patients.get_pk_hash(id)
       assert :ok == PersonEventConsumer.consume(%{"id" => id, "status" => "invalid"})
-      refute Mongo.find_one(Patient.metadata().collection, %{"_id" => id_hash})
+      refute Mongo.find_one(Patient.collection(), %{"_id" => id_hash})
     end
   end
 end

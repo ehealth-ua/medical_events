@@ -1,13 +1,28 @@
 defmodule Core.Number do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  alias Core.Ecto.UUID, as: U
+  import Ecto.Changeset
 
-  @primary_key :_id
-  schema :numbers do
-    field(:_id, presence: true, mongo_uuid: true)
-    field(:number, presence: true)
-    field(:entity_type, presence: true)
-    field(:inserted_by, presence: true, mongo_uuid: true)
+  def collection, do: "numbers"
+
+  @fields_required ~w(_id number entity_type inserted_by inserted_at)a
+  @fields_optional ~w()a
+
+  @primary_key false
+  schema "numbers" do
+    field(:_id, U)
+    field(:number, :string)
+    field(:entity_type, :string)
+    field(:inserted_by, U)
+
+    timestamps(type: :utc_datetime_usec, updated_at: false)
+  end
+
+  def changeset(%__MODULE__{} = number, params) do
+    number
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
   end
 end

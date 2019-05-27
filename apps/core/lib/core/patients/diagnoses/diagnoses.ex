@@ -8,7 +8,7 @@ defmodule Core.Diagnoses do
   alias Scrivener.Page
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def list_active_diagnoses(params) do
     paging_params = Map.take(params, ~w(page page_size))

@@ -7,7 +7,7 @@ defmodule Core.Migrations.CreateSchemaMigrations do
   def change do
     {:ok, _} =
       Mongo.command(
-        createIndexes: SchemaMigration.metadata().collection,
+        createIndexes: SchemaMigration.collection(),
         indexes: [
           %{
             key: %{

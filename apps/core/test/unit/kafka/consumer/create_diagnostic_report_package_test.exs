@@ -1382,7 +1382,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 %{
                   "description" => "Must be filled when service category is diagnostic_procedure or imaging",
                   "params" => [],
-                  "rule" => "required"
+                  "rule" => nil
                 }
               ]
             }
@@ -1992,7 +1992,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 %{
                   "description" => "Observations are mandatory when service category = laboratory",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -2378,7 +2378,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 %{
                   "description" => "Service request category should be equal to service category",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -2768,7 +2768,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 %{
                   "description" => "Service referenced in diagnostic report should belong to service group",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -3153,7 +3153,7 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
                 %{
                   "description" => "Should reference the same service that is referenced in diagnostic report",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

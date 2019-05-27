@@ -8,12 +8,11 @@ defmodule Core.Patients.Immunizations do
   alias Core.Patient
   alias Core.Patients.Encounters
   alias Core.Search
-  alias Core.Source
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def get_by_id(patient_id_hash, id) do
     with %{"immunizations" => %{^id => immunization}} <-
@@ -142,33 +141,6 @@ defmodule Core.Patients.Immunizations do
       put_in(search_params, path, %{operator => value})
     else
       update_in(search_params, path, &Map.merge(&1, %{operator => value}))
-    end
-  end
-
-  def fill_up_immunization_performer(%Immunization{source: %Source{type: "report_origin"}} = immunization) do
-    immunization
-  end
-
-  def fill_up_immunization_performer(%Immunization{source: %Source{value: value}} = immunization) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{value.identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      %{
-        immunization
-        | source: %{
-            immunization.source
-            | value: %{
-                value
-                | display_value: "#{first_name} #{second_name} #{last_name}"
-              }
-          }
-      }
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for immunization")
-        immunization
     end
   end
 

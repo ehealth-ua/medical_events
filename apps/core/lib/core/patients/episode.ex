@@ -1,14 +1,20 @@
 defmodule Core.Episode do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
   alias Core.Coding
-  alias Core.DatePeriod
   alias Core.DiagnosesHistory
   alias Core.Diagnosis
+  alias Core.Ecto.UUID, as: U
+  alias Core.Period
   alias Core.Reference
   alias Core.StatusHistory
+  alias Core.Validators.DictionaryReference
+  import Ecto.Changeset
+
+  @fields_required ~w(id name status inserted_at updated_at inserted_by updated_by)a
+  @fields_optional ~w(closing_summary explanatory_letter)a
 
   @status_active "active"
   @status_closed "closed"
@@ -18,75 +24,111 @@ defmodule Core.Episode do
   def status(:closed), do: @status_closed
   def status(:cancelled), do: @status_cancelled
 
+  @primary_key false
   embedded_schema do
-    field(:id, presence: true, mongo_uuid: true)
-    field(:name)
-    field(:status)
-    field(:status_reason, dictionary_reference: [path: "status_reason", referenced_field: "system", field: "code"])
-    field(:closing_summary)
-    field(:explanatory_letter)
-    field(:status_history)
-    field(:current_diagnoses)
-    field(:type, presence: true, dictionary_reference: [referenced_field: "system", field: "code"])
-    field(:diagnoses_history)
-    field(:managing_organization, presence: true, reference: [path: "managing_organization"])
-    field(:period, presence: true, reference: [path: "period"])
-    field(:care_manager, presence: true, reference: [path: "care_manager"])
-    field(:referral_requests, reference: [path: "referral_requests"])
+    field(:id, U)
+    field(:name, :string)
+    field(:status, :string)
+    field(:closing_summary, :string)
+    field(:explanatory_letter, :string)
+    field(:inserted_by, U)
+    field(:updated_by, U)
 
-    timestamps()
-    changed_by()
+    embeds_one(:status_reason, CodeableConcept)
+    embeds_one(:period, Period, on_replace: :update)
+    embeds_one(:managing_organization, Reference)
+    embeds_one(:care_manager, Reference, on_replace: :update)
+    embeds_many(:diagnoses_history, DiagnosesHistory)
+    embeds_many(:status_history, StatusHistory)
+    embeds_one(:type, Coding)
+    embeds_many(:current_diagnoses, Diagnosis)
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"type", v} ->
-          {:type, Coding.create(v)}
+    %__MODULE__{}
+    |> changeset(data)
+    |> apply_changes()
+  end
 
-        {"managing_organization", v} ->
-          {:managing_organization, Reference.create(v)}
+  def changeset(%__MODULE__{} = episode, params) do
+    episode
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:period)
+    |> cast_embed(:managing_organization)
+    |> cast_embed(:care_manager)
+    |> cast_embed(:status_reason)
+    |> cast_embed(:status_history)
+    |> cast_embed(:type)
+    |> cast_embed(:current_diagnoses)
+  end
 
-        {"period", v} ->
-          {:period, DatePeriod.create(v)}
-
-        {"care_manager", v} ->
-          {:care_manager, Reference.create(v)}
-
-        {"status_reason", nil} ->
-          {:status_reason, nil}
-
-        {"status_reason", v} ->
-          {:status_reason, CodeableConcept.create(v)}
-
-        {"status_history", nil} ->
-          {:status_history, nil}
-
-        {"status_history", v} ->
-          {:status_history, Enum.map(v, &StatusHistory.create/1)}
-
-        {"diagnoses_history", nil} ->
-          {:diagnoses_history, nil}
-
-        {"diagnoses_history", v} ->
-          {:diagnoses_history, Enum.map(v, &DiagnosesHistory.create/1)}
-
-        {"current_diagnoses", nil} ->
-          {:current_diagnoses, nil}
-
-        {"current_diagnoses", v} ->
-          {:current_diagnoses, Enum.map(v, &Diagnosis.create/1)}
-
-        {"referral_requests", nil} ->
-          {:referral_requests, nil}
-
-        {"referral_requests", v} ->
-          {:referral_requests, Enum.map(v, &Reference.create/1)}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
+  def create_changeset(%__MODULE__{} = episode, params, client_id) do
+    episode
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:period, required: true)
+    |> cast_embed(:managing_organization, required: true, with: &Reference.legal_entity_changeset(&1, &2, client_id))
+    |> cast_embed(:care_manager,
+      required: true,
+      with:
+        &Reference.employee_changeset(&1, &2,
+          type: "DOCTOR",
+          status: "APPROVED",
+          legal_entity_id: client_id,
+          messages: [
+            type: "Employee submitted as a care_manager is not a doctor",
+            status: "Doctor submitted as a care_manager is not active",
+            legal_entity_id: "Employee #{get_in(&2, ~w(identifier value))} doesn't belong to your legal entity"
+          ]
+        )
     )
+    |> cast_embed(:status_reason)
+    |> cast_embed(:status_history, required: true)
+    |> cast_embed(:type, required: true)
+    |> cast_embed(:current_diagnoses)
+    |> validate_required(@fields_required)
+    |> validate_change(:status_reason, &DictionaryReference.validate_change/2)
+    |> validate_change(:type, &DictionaryReference.validate_change/2)
+  end
+
+  def update_changeset(%__MODULE__{} = episode, params, client_id) do
+    episode
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:managing_organization, required: true, with: &Reference.legal_entity_changeset(&1, &2, client_id))
+    |> cast_embed(:care_manager,
+      required: true,
+      with:
+        &Reference.employee_changeset(&1, &2,
+          type: "DOCTOR",
+          status: "APPROVED",
+          legal_entity_id: client_id,
+          messages: [
+            type: "Employee submitted as a care_manager is not a doctor",
+            status: "Doctor submitted as a care_manager is not active",
+            legal_entity_id: "Employee #{get_in(&2, ~w(identifier value))} doesn't belong to your legal entity"
+          ]
+        )
+    )
+    |> validate_required(@fields_required)
+  end
+
+  def close_changeset(%__MODULE__{} = episode, params) do
+    episode
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:period, required: true)
+    |> validate_required(@fields_required)
+  end
+
+  def cancel_changeset(%__MODULE__{} = episode, params) do
+    episode
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+  end
+
+  def cancel_package_changeset(%__MODULE__{} = episode, params, client_id) do
+    episode
+    |> cast(params, [])
+    |> cast_embed(:managing_organization, with: &Reference.legal_entity_changeset(&1, &2, client_id))
   end
 end

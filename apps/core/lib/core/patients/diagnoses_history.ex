@@ -1,36 +1,35 @@
 defmodule Core.DiagnosesHistory do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.Diagnosis
   alias Core.Reference
+  import Ecto.Changeset
 
+  @fields_required ~w(date is_active)a
+  @fields_optional ~w()a
+
+  @primary_key false
   embedded_schema do
-    field(:date, presence: true)
-    field(:evidence, presence: true, reference: [path: "evidence"])
-    field(:diagnoses, presence: true, reference: [path: "diagnoses"])
-    field(:is_active, strict_presence: true)
+    field(:date, :utc_datetime_usec)
+    field(:is_active, :boolean)
+
+    embeds_one(:evidence, Reference)
+    embeds_many(:diagnoses, Diagnosis)
   end
 
-  def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"evidence", v} ->
-          {:evidence, Reference.create(v)}
+  def changeset(%__MODULE__{} = reference, params) do
+    reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:evidence)
+    |> cast_embed(:diagnoses)
+  end
 
-        {"date", v} ->
-          {:date, create_datetime(v)}
-
-        {"diagnoses", v} ->
-          {:diagnoses, Enum.map(v, &Diagnosis.create/1)}
-
-        {"is_active", v} ->
-          {:is_active, v}
-
-        {k, v} ->
-          {String.to_atom(k), v}
-      end)
-    )
+  def create_changeset(%__MODULE__{} = reference, params) do
+    reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:evidence, required: true)
+    |> cast_embed(:diagnoses, required: true)
   end
 end

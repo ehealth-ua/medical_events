@@ -11,7 +11,7 @@ defmodule MedicalEventsScheduler.Jobs.ApprovalsCleanupTest do
   alias Core.Approval
   alias MedicalEventsScheduler.Jobs.ApprovalsCleanup
 
-  @collection Approval.metadata().collection
+  @collection Approval.collection()
 
   setup :verify_on_exit!
 

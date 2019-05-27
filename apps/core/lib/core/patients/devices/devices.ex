@@ -8,12 +8,11 @@ defmodule Core.Patients.Devices do
   alias Core.Patient
   alias Core.Patients.Encounters
   alias Core.Search
-  alias Core.Source
   alias Core.Validators.JsonSchema
   alias Scrivener.Page
   require Logger
 
-  @collection Patient.metadata().collection
+  @collection Patient.collection()
 
   def get_by_id(patient_id_hash, id) do
     with %{"devices" => %{^id => device}} <-
@@ -133,30 +132,5 @@ defmodule Core.Patients.Devices do
       %{"$replaceRoot" => %{"newRoot" => "$devices.v"}}
     ])
     |> Enum.map(&Device.create/1)
-  end
-
-  def fill_up_device_asserter(%Device{source: %Source{type: "report_origin"}} = device), do: device
-
-  def fill_up_device_asserter(%Device{source: %Source{value: value}} = device) do
-    with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{value.identifier.value}") do
-      first_name = employee.party.first_name
-      second_name = employee.party.second_name
-      last_name = employee.party.last_name
-
-      %{
-        device
-        | source: %{
-            device.source
-            | value: %{
-                value
-                | display_value: "#{first_name} #{second_name} #{last_name}"
-              }
-          }
-      }
-    else
-      _ ->
-        Logger.warn("Failed to fill up employee value for device")
-        device
-    end
   end
 end

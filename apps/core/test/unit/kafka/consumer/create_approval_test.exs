@@ -89,7 +89,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
           assert to_string(episode_id) in granted_resources_ids
         end)
 
-        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
+        assert to_string(get_in(response_data, ~w(granted_to identifier value))) == employee_id
         refute get_in(response_data, ~w(reason identifier value))
 
         status = Job.status(:processed)
@@ -212,8 +212,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
           assert to_string(resource_id) in granted_resources_ids
         end)
 
-        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
-        assert get_in(response_data, ~w(reason identifier value)) == service_request_id
+        assert to_string(get_in(response_data, ~w(granted_to identifier value))) == employee_id
+        assert to_string(get_in(response_data, ~w(reason identifier value))) == service_request_id
 
         status = Job.status(:processed)
 
@@ -275,10 +275,8 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         )
 
       diagnostic_report_id = patient.diagnostic_reports |> Map.keys() |> hd()
-
       offline_auth_rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([employee_id])
-
       job = insert(:job)
 
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
@@ -312,7 +310,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
           assert to_string(episode_id) in granted_resources_ids
         end)
 
-        assert get_in(response_data, ~w(granted_to identifier value)) == employee_id
+        assert to_string(get_in(response_data, ~w(granted_to identifier value))) == employee_id
         refute get_in(response_data, ~w(reason identifier value))
 
         status = Job.status(:processed)
@@ -494,8 +492,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                          "entry_type" => "json_data_property",
                          "rules" => [
                            %{
-                             "description" =>
-                               "Service request expiration date must be a datetime greater than or equal" <> _,
+                             "description" => "Service request is expired",
                              "params" => [],
                              "rule" => "invalid"
                            }
@@ -622,7 +619,6 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
 
       rpc_expectations(client_id)
       expect_employees_by_user_id_client_id([UUID.uuid4()])
-
       job = insert(:job)
 
       expect_job_update(
@@ -631,24 +627,24 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.granted_resources.[1].identifier.value",
+              "entry" => "$.granted_resources[1].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Episode with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             },
             %{
-              "entry" => "$.granted_resources.[2].identifier.value",
+              "entry" => "$.granted_resources[2].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Diagnostic report with such id is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             },
@@ -659,7 +655,7 @@ defmodule Core.Kafka.Consumer.CreateApprovalTest do
                 %{
                   "description" => "Employee does not related to user",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

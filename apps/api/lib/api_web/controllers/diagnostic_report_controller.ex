@@ -5,6 +5,7 @@ defmodule Api.Web.DiagnosticReportController do
 
   alias Api.Web.JobView
   alias Core.Patients.DiagnosticReports
+  alias Core.Patients.DiagnosticReports.Producer
   alias Scrivener.Page
 
   action_fallback(Api.Web.FallbackController)
@@ -23,7 +24,7 @@ defmodule Api.Web.DiagnosticReportController do
 
   def create(conn, params) do
     with {:ok, job} <-
-           DiagnosticReports.produce_create_package(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_create_package(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)
@@ -33,7 +34,7 @@ defmodule Api.Web.DiagnosticReportController do
 
   def cancel(conn, params) do
     with {:ok, job} <-
-           DiagnosticReports.produce_cancel_package(params, conn.private[:user_id], conn.private[:client_id]) do
+           Producer.produce_cancel_package(params, conn.private[:user_id], conn.private[:client_id]) do
       conn
       |> put_status(202)
       |> put_view(JobView)

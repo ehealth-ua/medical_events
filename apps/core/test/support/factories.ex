@@ -184,8 +184,8 @@ defmodule Core.Factories do
       source:
         build(
           :source,
-          type: "asserter",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
+          performer: nil,
+          asserter: reference_coding(system: "eHealth/resources", code: "employee")
         ),
       inserted_at: now,
       updated_at: now,
@@ -233,8 +233,8 @@ defmodule Core.Factories do
       source:
         build(
           :source,
-          type: "asserter",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
+          performer: nil,
+          asserter: reference_coding(system: "eHealth/resources", code: "employee")
         ),
       type: codeable_concept_coding(system: "eHealth/device_types", code: "default_device_type"),
       lot_number: "lot number",
@@ -267,8 +267,8 @@ defmodule Core.Factories do
       source:
         build(
           :source,
-          type: "asserter",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
+          performer: nil,
+          asserter: reference_coding(system: "eHealth/resources", code: "employee")
         ),
       note: "note",
       dosage: "dosage",
@@ -291,19 +291,17 @@ defmodule Core.Factories do
       category: [codeable_concept_coding(system: "eHealth/diagnostic_report_categories", code: "LAB")],
       code: reference_coding(system: "eHealth/resources", code: "service"),
       encounter: reference_coding(system: "eHealth/resources", code: "encounter"),
-      effective: %EffectiveAt{type: "effective_date_time", value: now},
+      effective: %EffectiveAt{effective_date_time: now},
       issued: now,
       primary_source: true,
       source:
         build(
           :source,
-          type: "performer",
-          value: %Executor{type: "reference", value: reference_coding(system: "eHealth/resources", code: "employee")}
+          performer: %Executor{reference: reference_coding(system: "eHealth/resources", code: "employee")}
         ),
       recorded_by: reference_coding(system: "eHealth/resources", code: "employee"),
       results_interpreter: %Executor{
-        type: "reference",
-        value: reference_coding(system: "eHealth/resources", code: "employee")
+        reference: reference_coding(system: "eHealth/resources", code: "employee")
       },
       managing_organization: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       conclusion: "conclusion",
@@ -320,8 +318,7 @@ defmodule Core.Factories do
 
   def reason_factory do
     %Reason{
-      type: "reason_codes",
-      value: [
+      reason_codes: [
         codeable_concept_coding(system: "eHealth/risk_assessment_reasons", code: "default_risk_assessment_reason")
       ]
     }
@@ -351,17 +348,11 @@ defmodule Core.Factories do
   end
 
   def probability_factory do
-    %Probability{
-      type: "probability_decimal",
-      value: 15.1
-    }
+    %Probability{probability_decimal: 15.1}
   end
 
   def when_factory do
-    %When{
-      type: "when_period",
-      value: build(:period)
-    }
+    %When{when_period: build(:period)}
   end
 
   def immunization_factory do
@@ -383,8 +374,7 @@ defmodule Core.Factories do
       source:
         build(
           :source,
-          type: "performer",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
+          performer: reference_coding(system: "eHealth/resources", code: "employee")
         ),
       manufacturer: "VacinePro Manufacturer",
       lot_number: "AAJN11K",
@@ -401,8 +391,8 @@ defmodule Core.Factories do
 
   def explanation_factory do
     %Explanation{
-      type: "reasons",
-      value: [codeable_concept_coding(system: "eHealth/reason_explanations", code: "429060002")]
+      reasons: [codeable_concept_coding(system: "eHealth/reason_explanations", code: "429060002")],
+      reasons_not_given: nil
     }
   end
 
@@ -426,10 +416,12 @@ defmodule Core.Factories do
   end
 
   def job_factory do
+    hash = Base.url_encode64(:crypto.hash(:md5, to_string(DateTime.to_unix(DateTime.utc_now()))), padding: false)
+
     %Job{
       _id: Mongo.generate_id(),
-      hash: :crypto.hash(:md5, to_string(DateTime.to_unix(DateTime.utc_now()))),
-      eta: NaiveDateTime.utc_now() |> NaiveDateTime.to_iso8601(),
+      hash: hash,
+      eta: DateTime.utc_now(),
       status_code: 200,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
@@ -452,14 +444,13 @@ defmodule Core.Factories do
       based_on: [reference_coding(system: "eHealth/resources", code: "service_request")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       diagnostic_report: reference_coding(system: "eHealth/resources", code: "diagnostic_report"),
-      effective_at: %EffectiveAt{type: "effective_date_time", value: now},
+      effective_at: %EffectiveAt{effective_date_time: now},
       issued: now,
       primary_source: true,
       source:
         build(
           :source,
-          type: "performer",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
+          performer: reference_coding(system: "eHealth/resources", code: "employee")
         ),
       interpretation: codeable_concept_coding(system: "eHealth/observation_interpretations"),
       method: codeable_concept_coding(system: "eHealth/observation_methods"),
@@ -516,7 +507,7 @@ defmodule Core.Factories do
   end
 
   def source_factory do
-    %Source{type: "performer", value: build(:reference)}
+    %Source{performer: build(:reference)}
   end
 
   def reference_range_factory do
@@ -584,7 +575,7 @@ defmodule Core.Factories do
 
   def episode_factory do
     id = UUID.uuid4()
-    date = to_string(Date.utc_today())
+    date = DateTime.utc_now()
     diagnoses_history = build_list(1, :diagnoses_history)
 
     %Episode{
@@ -601,7 +592,6 @@ defmodule Core.Factories do
       managing_organization: reference_coding(code: "legal_entity"),
       period: build(:period, start: date, end: date),
       care_manager: reference_coding(code: "employee"),
-      referral_requests: [reference_coding(system: "eHealth/resources", code: "service_request")],
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
       inserted_by: Mongo.string_to_uuid(id),
@@ -628,7 +618,7 @@ defmodule Core.Factories do
   end
 
   def value_factory do
-    %Value{type: "string", value: "some value"}
+    %Value{value_string: "some value"}
   end
 
   def codeable_concept_factory do
@@ -698,12 +688,7 @@ defmodule Core.Factories do
       updated_by: Mongo.string_to_uuid(user_id),
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now(),
-      source:
-        build(
-          :source,
-          type: "asserter",
-          value: reference_coding(system: "eHealth/resources", code: "employee")
-        ),
+      source: build(:source, performer: nil, asserter: reference_coding(system: "eHealth/resources", code: "employee")),
       primary_source: true,
       context_episode_id: Mongo.string_to_uuid(UUID.uuid4())
     }
@@ -757,7 +742,7 @@ defmodule Core.Factories do
       code: reference_coding(system: "eHealth/resources", code: "service"),
       category: codeable_concept_coding(system: "eHealth/SNOMED/service_request_categories", code: "counselling"),
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
-      occurrence: %Occurrence{type: "date_time", value: DateTime.to_iso8601(DateTime.utc_now())},
+      occurrence: %Occurrence{date_time: DateTime.to_iso8601(DateTime.utc_now())},
       requester_employee: reference_coding(system: "eHealth/resources", code: "employee"),
       requester_legal_entity: reference_coding(system: "eHealth/resources", code: "legal_entity"),
       authored_on: DateTime.to_iso8601(DateTime.utc_now()),

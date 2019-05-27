@@ -1,17 +1,47 @@
 defmodule Core.Patients.DiagnosticReports.Package do
   @moduledoc false
 
+  alias Core.DiagnosticReport
   alias Core.Job
   alias Core.Jobs
   alias Core.Mongo
   alias Core.Mongo.Transaction
   alias Core.Observation
-  alias Core.Observations
-  alias Core.Patients.DiagnosticReports
+  alias Core.Validators.UniqueIds
+  use Ecto.Schema
+  import Ecto.Changeset
   require Logger
 
   @collection "patients"
-  @observations_collection Observation.metadata().collection
+  @observations_collection Observation.collection()
+
+  @primary_key false
+  embedded_schema do
+    embeds_one(:diagnostic_report, DiagnosticReport)
+    embeds_many(:observations, Observation)
+  end
+
+  def diagnostic_report_changeset(%__MODULE__{} = package, params, client_id, observations) do
+    package
+    |> cast(params, [])
+    |> cast_embed(:diagnostic_report,
+      with: &DiagnosticReport.diagnostic_report_package_changeset(&1, &2, client_id, observations)
+    )
+  end
+
+  def observations_changeset(
+        %__MODULE__{} = package,
+        params,
+        diagnostic_report_id,
+        client_id
+      ) do
+    package
+    |> cast(params, [])
+    |> cast_embed(:observations,
+      with: &Observation.diagnostic_report_package_changeset(&1, &2, diagnostic_report_id, client_id)
+    )
+    |> validate_change(:observations, &UniqueIds.validate/2)
+  end
 
   def save(job, data) do
     %{
@@ -28,27 +58,13 @@ defmodule Core.Patients.DiagnosticReports.Package do
 
     diagnostic_report =
       diagnostic_report
-      |> DiagnosticReports.fill_up_diagnostic_report_performer()
-      |> DiagnosticReports.fill_up_diagnostic_report_recorded_by()
-      |> DiagnosticReports.fill_up_diagnostic_report_results_interpreter()
-      |> DiagnosticReports.fill_up_diagnostic_report_managing_organization()
-      |> DiagnosticReports.fill_up_diagnostic_report_origin_episode(patient_id_hash)
+      |> DiagnosticReport.fill_up_performer()
+      |> DiagnosticReport.fill_up_recorded_by()
+      |> DiagnosticReport.fill_up_results_interpreter()
+      |> DiagnosticReport.fill_up_managing_organization()
+      |> DiagnosticReport.fill_up_origin_episode(patient_id_hash)
 
-    set =
-      set
-      |> Mongo.add_to_set(
-        diagnostic_report,
-        "diagnostic_reports.#{diagnostic_report.id}"
-      )
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.id")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.inserted_by")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.updated_by")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.encounter.identifier.value")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.source.value.value.identifier.value")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.based_on.identifier.value")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.results_interpreter.value.identifier.value")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.managing_organization.identifier.value")
-      |> Mongo.convert_to_uuid("diagnostic_reports.#{diagnostic_report.id}.recorded_by.identifier.value")
+    set = Mongo.add_to_set(set, diagnostic_report, "diagnostic_reports.#{diagnostic_report.id}")
 
     links = [
       %{
@@ -56,8 +72,6 @@ defmodule Core.Patients.DiagnosticReports.Package do
         "href" => "/api/patients/#{patient_id}/diagnostic_reports/#{diagnostic_report.id}"
       }
     ]
-
-    observations = Enum.map(observations, &Observations.create/1)
 
     links =
       Enum.reduce(observations, links, fn observation, acc ->
@@ -87,7 +101,8 @@ defmodule Core.Patients.DiagnosticReports.Package do
 
   def insert_observations(transaction, observations) do
     Enum.reduce(observations || [], transaction, fn observation, acc ->
-      Transaction.add_operation(acc, @observations_collection, :insert, Mongo.prepare_doc(observation), observation._id)
+      observation = Observation.fill_up_performer(observation)
+      Transaction.add_operation(acc, @observations_collection, :insert, observation, observation._id)
     end)
   end
 end

@@ -1,26 +1,46 @@
 defmodule Core.Diagnosis do
   @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
   alias Core.CodeableConcept
   alias Core.Reference
+  import Ecto.Changeset
 
+  @primary_key false
   embedded_schema do
-    field(:condition, presence: true, reference: [path: "condition"])
-    field(:role, presence: true, reference: [path: "role"])
-    field(:rank)
-    field(:code, dictionary_reference: [path: "code", referenced_field: "system", field: "code"])
+    field(:rank, :integer)
+
+    embeds_one(:condition, Reference)
+    embeds_one(:role, CodeableConcept)
+    embeds_one(:code, CodeableConcept)
   end
 
+  @fields_required ~w()a
+  @fields_optional ~w(rank)a
+
   def create(data) do
-    struct(
-      __MODULE__,
-      Enum.map(data, fn
-        {"condition", v} -> {:condition, Reference.create(v)}
-        {"role", v} -> {:role, CodeableConcept.create(v)}
-        {"code", v} -> {:code, CodeableConcept.create(v)}
-        {k, v} -> {String.to_atom(k), v}
-      end)
+    %__MODULE__{}
+    |> changeset(data)
+    |> apply_changes()
+  end
+
+  def changeset(%__MODULE__{} = reference, params) do
+    reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> cast_embed(:condition)
+    |> cast_embed(:role)
+    |> cast_embed(:code)
+  end
+
+  def encounter_changeset(%__MODULE__{} = reference, params, patient_id_hash, conditions) do
+    reference
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> cast_embed(:condition,
+      required: true,
+      with: &Reference.diagnosis_condition_changeset(&1, &2, conditions: conditions, patient_id_hash: patient_id_hash)
     )
+    |> cast_embed(:role, required: true)
+    |> cast_embed(:code)
   end
 end

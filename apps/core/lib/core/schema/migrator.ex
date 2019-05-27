@@ -3,13 +3,13 @@ defmodule Core.Schema.Migrator do
 
   alias Core.Mongo
   alias Core.Schema.SchemaMigration
+  alias Ecto.Changeset
 
   def migrate do
     migrations_dir = Application.app_dir(:core, "priv/migrations")
 
     existing_migrations =
-      SchemaMigration.metadata().collection
-      |> to_string()
+      SchemaMigration.collection()
       |> Mongo.find(%{}, projection: [_id: false, version: true])
       |> Enum.into([], fn %{"version" => version} -> version end)
 
@@ -28,11 +28,15 @@ defmodule Core.Schema.Migrator do
         IO.puts("Migrating #{module}")
         apply(module, :change, [])
 
-        {:ok, _} =
-          Mongo.insert_one(%SchemaMigration{
+        schema_migration =
+          %SchemaMigration{}
+          |> SchemaMigration.changeset(%{
             version: migration_name,
             inserted_at: DateTime.utc_now()
           })
+          |> Changeset.apply_changes()
+
+        {:ok, _} = Mongo.insert_one(schema_migration)
       end
     end)
   end

@@ -378,25 +378,8 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{
-          "invalid" => [
-            %{
-              "entry" => "$.service_request.requester_employee.identifier.value",
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "Signer DRFO doesn't match with requester tax_id",
-                  "params" => [],
-                  "rule" => "invalid"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        422
+        "Signer DRFO doesn't match with requester tax_id",
+        409
       )
 
       assert :ok =
@@ -427,9 +410,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
-        _, _, :tax_id_by_employee_id, _ -> "1111111111"
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "laboratory_procedure"}}
         _, _, :number, _ -> {:ok, UUID.uuid4()}
       end)
@@ -487,13 +468,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.permitted_resources",
+              "entry" => "$.permitted_resources",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Permitted resources are not allowed for laboratory category of service request",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -658,13 +639,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ ->
           {:ok, %{category: "counselling"}}
 
@@ -739,46 +714,46 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.permitted_resources.[0].identifier.value",
+              "entry" => "$.permitted_resources[0].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Episode with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             },
             %{
-              "entry" => "$.service_request.permitted_resources.[1].identifier.value",
+              "entry" => "$.permitted_resources[1].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Diagnostic report with such id is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             },
             %{
-              "entry" => "$.service_request.supporting_info.[0].identifier.value",
+              "entry" => "$.supporting_info[0].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Episode with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             },
             %{
-              "entry" => "$.service_request.supporting_info.[1].identifier.value",
+              "entry" => "$.supporting_info[1].identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Diagnostic report with such id is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -818,13 +793,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ ->
           nil
 
@@ -838,13 +807,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Service with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -945,13 +914,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ ->
           {:ok, %{is_active: false}}
 
@@ -965,13 +928,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Service should be active",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1072,13 +1035,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ ->
           {:ok, %{request_allowed: false}}
 
@@ -1092,13 +1049,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Request is not allowed for the service",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1199,13 +1156,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_group_by_id, _ ->
           nil
 
@@ -1219,13 +1170,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Service group with such ID is not found",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1326,13 +1277,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_group_by_id, _ ->
           {:ok, %{is_active: false}}
 
@@ -1346,13 +1291,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Service group should be active",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1453,13 +1398,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_group_by_id, _ ->
           {:ok, %{request_allowed: false}}
 
@@ -1473,13 +1412,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Request is not allowed for the service group",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }
@@ -1580,13 +1519,7 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
 
       authored_on = DateTime.to_iso8601(DateTime.utc_now())
 
-      expect(WorkerMock, :run, 4, fn
-        _, _, :employees_by_user_id_client_id, _ ->
-          {:ok, [employee_id]}
-
-        _, _, :tax_id_by_employee_id, _ ->
-          "1111111111"
-
+      expect(WorkerMock, :run, 2, fn
         _, _, :service_by_id, _ ->
           {:ok, %{category: "111"}}
 
@@ -1600,13 +1533,13 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
         %{
           "invalid" => [
             %{
-              "entry" => "$.service_request.code.identifier.value",
+              "entry" => "$.code.identifier.value",
               "entry_type" => "json_data_property",
               "rules" => [
                 %{
                   "description" => "Category mismatch",
                   "params" => [],
-                  "rule" => "invalid"
+                  "rule" => nil
                 }
               ]
             }

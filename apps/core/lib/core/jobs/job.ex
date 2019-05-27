@@ -1,10 +1,8 @@
 defmodule Core.Job do
-  @moduledoc """
-  Request is stored in capped collection, so document size can't change on update.
-  That means all fields on update should have the same size
-  """
+  @moduledoc false
 
-  use Core.Schema
+  use Ecto.Schema
+  import Ecto.Changeset
 
   @response_length 10_000
 
@@ -12,6 +10,8 @@ defmodule Core.Job do
   @status_processed 1
   @status_failed 2
   @status_failed_with_error 3
+
+  def collection, do: "jobs"
 
   def status_to_string(@status_pending), do: "pending"
   def status_to_string(@status_processed), do: "processed"
@@ -25,16 +25,26 @@ defmodule Core.Job do
 
   def response_length, do: @response_length
 
-  @primary_key :_id
-  schema :jobs do
-    field(:_id)
-    field(:hash, presence: true)
-    field(:eta, presence: true)
-    field(:status, presence: true, inclusion: [@status_pending, @status_processed, @status_failed])
-    field(:status_code, presence: true, inclusion: [200, 202, 404, 422])
+  @fields_required ~w(_id hash eta status status_code inserted_at updated_at)a
+  @fields_optional ~w(response)a
+
+  @primary_key {:_id, :binary_id, autogenerate: false}
+  schema "jobs" do
+    field(:hash, :string)
+    field(:eta, :utc_datetime)
+    field(:status, :string)
+    field(:status_code, :integer)
     field(:response)
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
+  end
+
+  def changeset(%__MODULE__{} = job, params) do
+    job
+    |> cast(params, @fields_required ++ @fields_optional)
+    |> validate_required(@fields_required)
+    |> validate_inclusion(:status, [@status_pending, @status_processed, @status_failed])
+    |> validate_inclusion(:status_code, [200, 202, 404, 422])
   end
 
   @doc """
