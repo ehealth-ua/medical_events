@@ -22,6 +22,7 @@ defmodule Core.Kafka.Consumer do
   alias Core.Jobs.ServiceRequestRecallJob
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
+  alias Core.Mongo.Transaction
   alias Core.Patients
   alias Core.Patients.DiagnosticReports.Consumer, as: DiagnosticReportConsumer
   alias Core.Patients.Episodes.Consumer, as: EpisodesConsumer
@@ -108,7 +109,7 @@ defmodule Core.Kafka.Consumer do
 
   defp do_consume(module, fun, %{_id: id} = kafka_job) do
     case Jobs.get_by_id(id) do
-      {:ok, _} ->
+      {:ok, job} ->
         :ets.new(:message_cache, [:set, :protected, :named_table])
 
         try do
@@ -116,7 +117,11 @@ defmodule Core.Kafka.Consumer do
         rescue
           error ->
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
-            :ok = Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
+
+            :ok =
+              %Transaction{patient_id: job.patient_id_hash}
+              |> Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
+              |> Transaction.flush()
         end
 
         :ets.delete(:message_cache)

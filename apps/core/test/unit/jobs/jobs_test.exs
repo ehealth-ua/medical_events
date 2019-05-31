@@ -6,6 +6,7 @@ defmodule Core.JobsTest do
   alias Core.Jobs
   alias Core.Jobs.EpisodeCreateJob
   alias Core.Mongo
+  alias Core.Mongo.Transaction
   import Mox
 
   describe "create job" do
@@ -24,7 +25,7 @@ defmodule Core.JobsTest do
         :ok
       end)
 
-      assert {:ok, job, _} = Jobs.create(user_id, EpisodeCreateJob, data)
+      assert {:ok, job, _} = Jobs.create(user_id, UUID.uuid4(), EpisodeCreateJob, data)
     end
 
     test "job exists" do
@@ -33,7 +34,7 @@ defmodule Core.JobsTest do
       job = insert(:job, hash: hash)
       user_id = UUID.uuid4()
       job_id = to_string(job._id)
-      assert {:job_exists, ^job_id} = Jobs.create(user_id, EpisodeCreateJob, data)
+      assert {:job_exists, ^job_id} = Jobs.create(user_id, UUID.uuid4(), EpisodeCreateJob, data)
     end
 
     test "success update job with response as map" do
@@ -105,7 +106,10 @@ defmodule Core.JobsTest do
         :ok
       end)
 
-      assert :ok = Jobs.update(job_id, Job.status(:processed), %{"response_data" => response_data}, 200)
+      assert :ok =
+               %Transaction{}
+               |> Jobs.update(job_id, Job.status(:processed), %{"response_data" => response_data}, 200)
+               |> Transaction.flush()
     end
 
     test "success update job with response as string" do
@@ -139,7 +143,10 @@ defmodule Core.JobsTest do
         :ok
       end)
 
-      assert :ok = Jobs.update(job_id, Job.status(:processed), response, 200)
+      assert :ok =
+               %Transaction{}
+               |> Jobs.update(job_id, Job.status(:processed), response, 200)
+               |> Transaction.flush()
     end
   end
 end

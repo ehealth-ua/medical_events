@@ -37,6 +37,7 @@ defmodule Core.Approvals.Producer do
          {:ok, job, approval_create_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ApprovalCreateJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -60,6 +61,7 @@ defmodule Core.Approvals.Producer do
          {:ok, job, approval_resend_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ApprovalResendJob,
              Map.merge(params, %{"user_id" => user_id, "client_id" => client_id})
            ),

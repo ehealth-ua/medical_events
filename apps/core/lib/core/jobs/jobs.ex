@@ -9,12 +9,12 @@ defmodule Core.Jobs do
 
   @collection Job.collection()
 
-  def produce_update_status(id, request_id, response, 200) do
-    do_produce_update_status(id, request_id, cut_response(response), Job.status(:processed), 200)
+  def produce_update_status(id, patient_id, response, 200) do
+    do_produce_update_status(id, patient_id, cut_response(response), Job.status(:processed), 200)
   end
 
-  def produce_update_status(id, request_id, response, status_code) do
-    do_produce_update_status(id, request_id, cut_response(response), Job.status(:failed), status_code)
+  def produce_update_status(id, patient_id, response, status_code) do
+    do_produce_update_status(id, patient_id, cut_response(response), Job.status(:failed), status_code)
   end
 
   def cut_response(%{invalid: errors} = response) do
@@ -63,8 +63,10 @@ defmodule Core.Jobs do
 
   defp cut_params(error), do: error
 
-  defp do_produce_update_status(id, _request_id, response, status, status_code) do
-    update(id, status, response, status_code)
+  defp do_produce_update_status(id, patient_id, response, status, status_code) do
+    %Transaction{patient_id: patient_id}
+    |> update(id, status, response, status_code)
+    |> Transaction.flush()
   end
 
   def get_by_id(id) when is_binary(id) do
@@ -75,22 +77,6 @@ defmodule Core.Jobs do
     end
   rescue
     _ in FunctionClauseError -> nil
-  end
-
-  def update(id, status, response, status_code) when is_binary(id) do
-    set_data = %{
-      "status" => status,
-      "status_code" => status_code,
-      "updated_at" => DateTime.utc_now(),
-      "response" => response
-    }
-
-    id = ObjectId.decode!(id)
-
-    :ok =
-      %Transaction{}
-      |> Transaction.add_operation("jobs", :update, %{"_id" => id}, %{"$set" => set_data}, id)
-      |> Transaction.flush()
   end
 
   def update(%Transaction{} = transaction, id, status, response, status_code) when is_binary(id) do
@@ -106,7 +92,7 @@ defmodule Core.Jobs do
     Transaction.add_operation(transaction, "jobs", :update, %{"_id" => id}, %{"$set" => set_data}, id)
   end
 
-  def create(actor_id, module, data) do
+  def create(actor_id, patient_id, module, data) do
     hash = :md5 |> :crypto.hash(:erlang.term_to_binary(data)) |> Base.url_encode64(padding: false)
 
     case Mongo.find_one(@collection, %{"hash" => hash, "status" => Job.status(:pending)}, projection: [_id: true]) do
@@ -132,7 +118,7 @@ defmodule Core.Jobs do
           |> Map.put(:request_id, Logger.metadata()[:request_id])
 
         result =
-          %Transaction{actor_id: actor_id}
+          %Transaction{actor_id: actor_id, patient_id: patient_id}
           |> Transaction.add_operation("jobs", :insert, job, job._id)
           |> Transaction.flush()
 

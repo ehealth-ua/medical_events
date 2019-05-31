@@ -37,7 +37,7 @@ defmodule Api.Web.JobControllerTest do
         :ok
       end)
 
-      {:ok, job, _} = Jobs.create(user_id, PackageCreateJob, data)
+      {:ok, job, _} = Jobs.create(user_id, patient_id_hash, PackageCreateJob, data)
       insert(:job, _id: job._id, status: job.status, response: job.response)
 
       response =

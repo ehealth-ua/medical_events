@@ -20,6 +20,7 @@ defmodule Core.Patients.Episodes.Producer do
          {:ok, job, episode_create_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              EpisodeCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -40,6 +41,7 @@ defmodule Core.Patients.Episodes.Producer do
          {:ok, job, episode_update_job} <-
            Jobs.create(
              conn_params["user_id"],
+             patient_id_hash,
              EpisodeUpdateJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),
@@ -60,6 +62,7 @@ defmodule Core.Patients.Episodes.Producer do
          {:ok, job, episode_close_job} <-
            Jobs.create(
              conn_params["user_id"],
+             patient_id_hash,
              EpisodeCloseJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),
@@ -80,6 +83,7 @@ defmodule Core.Patients.Episodes.Producer do
          {:ok, job, episode_cancel_job} <-
            Jobs.create(
              conn_params["user_id"],
+             patient_id_hash,
              EpisodeCancelJob,
              url_params |> Map.merge(conn_params) |> Map.put("request_params", request_params)
            ),

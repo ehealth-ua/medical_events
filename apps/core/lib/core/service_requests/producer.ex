@@ -25,6 +25,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_create_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -39,6 +40,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_use_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestUseJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -56,6 +58,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_release_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestReleaseJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -77,6 +80,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_recall_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestRecallJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -98,6 +102,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_cancel_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestCancelJob,
              Map.merge(params, %{
                "user_id" => user_id,
@@ -116,6 +121,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_complete_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestCompleteJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
@@ -133,6 +139,7 @@ defmodule Core.ServiceRequests.Producer do
          {:ok, job, service_request_process_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              ServiceRequestProcessJob,
              params
              |> Map.put("patient_id", Encryptor.decrypt(patient_id_hash))
