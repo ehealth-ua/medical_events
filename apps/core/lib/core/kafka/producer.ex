@@ -13,7 +13,7 @@ defmodule Core.Kafka.Producer do
 
   def publish_medical_event(request) do
     key = get_key(request.patient_id)
-    Logger.info("Publishing kafka event to topic: #{@medical_events_topic}, key: #{key}")
+    Logger.info("Publishing kafka event to topic: #{@medical_events_topic}")
     Kaffe.Producer.produce_sync(@medical_events_topic, key, :erlang.term_to_binary(request))
   end
 
