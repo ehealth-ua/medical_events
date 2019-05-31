@@ -347,7 +347,7 @@ defmodule Core.Patients.Package do
           ]
       end)
 
-    %Transaction{actor_id: job.user_id}
+    %Transaction{actor_id: job.user_id, patient_id: patient_id_hash}
     |> Transaction.add_operation(
       @collection,
       :update,

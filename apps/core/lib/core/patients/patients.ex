@@ -113,6 +113,7 @@ defmodule Core.Patients do
          {:ok, job, package_create_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              PackageCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -130,7 +131,7 @@ defmodule Core.Patients do
         |> Map.put("user_id", user_id)
         |> Map.put("client_id", client_id)
 
-      with {:ok, job, package_cancel_job} <- Jobs.create(user_id, PackageCancelJob, job_data),
+      with {:ok, job, package_cancel_job} <- Jobs.create(user_id, patient_id_hash, PackageCancelJob, job_data),
            :ok <- @kafka_producer.publish_medical_event(package_cancel_job) do
         {:ok, job}
       end

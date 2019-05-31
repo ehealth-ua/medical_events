@@ -6,7 +6,7 @@ defmodule Core.Mongo.Transaction do
   @worker Application.get_env(:core, :rpc_worker)
 
   @derive Jason.Encoder
-  defstruct operations: [], actor_id: ""
+  defstruct operations: [], actor_id: "", patient_id: ""
 
   def add_operation(%__MODULE__{} = transaction, collection, :insert, value, id) do
     value_bson =

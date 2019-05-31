@@ -92,7 +92,7 @@ defmodule Core.Approvals.Consumer do
             _ ->
               with :ok <- initialize_otp_verification(auth_method) do
                 result =
-                  %Transaction{actor_id: user_id}
+                  %Transaction{actor_id: user_id, patient_id: patient_id_hash}
                   |> Transaction.add_operation(@collection, :insert, approval, approval._id)
                   |> Jobs.update(
                     job._id,

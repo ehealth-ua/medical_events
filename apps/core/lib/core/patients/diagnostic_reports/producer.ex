@@ -21,6 +21,7 @@ defmodule Core.Patients.DiagnosticReports.Producer do
          {:ok, job, diagnostic_report_package_create_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              DiagnosticReportPackageCreateJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),
@@ -40,6 +41,7 @@ defmodule Core.Patients.DiagnosticReports.Producer do
          {:ok, job, diagnostic_report_package_cancel_job} <-
            Jobs.create(
              user_id,
+             patient_id_hash,
              DiagnosticReportPackageCancelJob,
              params |> Map.put("user_id", user_id) |> Map.put("client_id", client_id)
            ),

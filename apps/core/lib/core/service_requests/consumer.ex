@@ -130,7 +130,7 @@ defmodule Core.ServiceRequests.Consumer do
                        resource_name
                      ) do
                 result =
-                  %Transaction{actor_id: user_id}
+                  %Transaction{actor_id: user_id, patient_id: patient_id_hash}
                   |> Transaction.add_operation(@collection, :insert, service_request, service_request._id)
                   |> Jobs.update(
                     job._id,
@@ -235,7 +235,7 @@ defmodule Core.ServiceRequests.Consumer do
           }
 
           result =
-            %Transaction{actor_id: user_id}
+            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
             |> Transaction.add_operation(
               @collection,
               :update,
@@ -347,7 +347,7 @@ defmodule Core.ServiceRequests.Consumer do
           }
 
           result =
-            %Transaction{actor_id: user_id}
+            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
             |> Transaction.add_operation(
               @collection,
               :update,
@@ -498,7 +498,7 @@ defmodule Core.ServiceRequests.Consumer do
               end
 
               result =
-                %Transaction{actor_id: user_id}
+                %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
                 |> Transaction.add_operation(
                   @collection,
                   :update,
@@ -676,7 +676,7 @@ defmodule Core.ServiceRequests.Consumer do
               end
 
               result =
-                %Transaction{actor_id: user_id}
+                %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
                 |> Transaction.add_operation(
                   @collection,
                   :update,
@@ -796,7 +796,7 @@ defmodule Core.ServiceRequests.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
           result =
-            %Transaction{actor_id: user_id}
+            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
             |> Transaction.add_operation(
               @collection,
               :update,
@@ -910,7 +910,7 @@ defmodule Core.ServiceRequests.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
           result =
-            %Transaction{actor_id: user_id}
+            %Transaction{actor_id: user_id, patient_id: patient_id_hash}
             |> Transaction.add_operation(
               @collection,
               :update,
@@ -1018,7 +1018,7 @@ defmodule Core.ServiceRequests.Consumer do
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
           result =
-            %Transaction{actor_id: user_id}
+            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
             |> Transaction.add_operation(
               @collection,
               :update,

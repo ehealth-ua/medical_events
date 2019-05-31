@@ -98,7 +98,7 @@ defmodule Core.Patients.Encounters.Cancel do
              update_data
            ) do
       result =
-        %Transaction{actor_id: user_id}
+        %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
         |> Transaction.add_operation(
           @patients_collection,
           :update,
