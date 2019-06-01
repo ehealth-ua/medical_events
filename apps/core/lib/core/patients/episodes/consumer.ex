@@ -53,12 +53,7 @@ defmodule Core.Patients.Episodes.Consumer do
       %Changeset{valid?: true} = changeset ->
         case Episodes.get_by_id(patient_id_hash, Changeset.get_change(changeset, :id)) do
           {:ok, _} ->
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              "Episode with such id already exists",
-              422
-            )
+            Jobs.produce_update_status(job, "Episode with such id already exists", 422)
 
           _ ->
             episode =
@@ -72,12 +67,7 @@ defmodule Core.Patients.Episodes.Consumer do
         end
 
       changeset ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", changeset),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
     end
   end
 
@@ -144,28 +134,18 @@ defmodule Core.Patients.Episodes.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
 
         changeset ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Episode in status #{status} can not be updated",
-          422
-        )
+        Jobs.produce_update_status(job, "Episode in status #{status} can not be updated", 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job, "Failed to get episode", 404)
     end
   end
 
@@ -240,36 +220,21 @@ defmodule Core.Patients.Episodes.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
 
         changeset ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
       {_, :managing_organization} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Managing_organization does not correspond to user's legal_entity",
-          409
-        )
+        Jobs.produce_update_status(job, "Managing_organization does not correspond to user's legal_entity", 409)
 
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Episode in status #{status} can not be closed",
-          422
-        )
+        Jobs.produce_update_status(job, "Episode in status #{status} can not be closed", 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job, "Failed to get episode", 404)
     end
   end
 
@@ -364,39 +329,24 @@ defmodule Core.Patients.Episodes.Consumer do
                 :ok
 
               {:error, reason} ->
-                Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+                Jobs.produce_update_status(job, reason, 500)
             end
           else
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              "Episode can not be canceled while it has not canceled encounters",
-              409
-            )
+            Jobs.produce_update_status(job, "Episode can not be canceled while it has not canceled encounters", 409)
           end
 
         changeset ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
       {_, :managing_organization} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Managing_organization does not correspond to user's legal_entity",
-          409
-        )
+        Jobs.produce_update_status(job, "Managing_organization does not correspond to user's legal_entity", 409)
 
       {:error, message} ->
-        Jobs.produce_update_status(job._id, job.request_id, message, 422)
+        Jobs.produce_update_status(job, message, 422)
 
       nil ->
-        Jobs.produce_update_status(job._id, job.request_id, "Failed to get episode", 404)
+        Jobs.produce_update_status(job, "Failed to get episode", 404)
     end
   end
 
@@ -424,7 +374,7 @@ defmodule Core.Patients.Episodes.Consumer do
         :ok
 
       {:error, reason} ->
-        Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+        Jobs.produce_update_status(job, reason, 500)
     end
   end
 

@@ -157,27 +157,22 @@ defmodule Core.Patients do
       :ok
     else
       {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job._id, job.request_id, error, 422)
+        Jobs.produce_update_status(job, error, 422)
 
       {:patient, _} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Patient not found", 404)
+        Jobs.produce_update_status(job, "Patient not found", 404)
 
       {:episode, _} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Encounter's episode not found", 404)
+        Jobs.produce_update_status(job, "Encounter's episode not found", 404)
 
       {:encounter, _} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Encounter not found", 404)
+        Jobs.produce_update_status(job, "Encounter not found", 404)
 
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
     end
   end
 
@@ -254,48 +249,33 @@ defmodule Core.Patients do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
         else
           error ->
             Logger.error("Failed to save signed content: #{inspect(error)}")
 
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              "Failed to save signed content",
-              500
-            )
+            Jobs.produce_update_status(job, "Failed to save signed content", 500)
         end
       else
         {:error, error, status_code} ->
-          Jobs.produce_update_status(job._id, job.request_id, error, status_code)
+          Jobs.produce_update_status(job, error, status_code)
 
         %Changeset{valid?: false} = changeset ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
       {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job._id, job.request_id, error, 422)
+        Jobs.produce_update_status(job, error, 422)
 
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {:error, {:bad_request, error}} ->
-        Jobs.produce_update_status(job._id, job.request_id, error, 422)
+        Jobs.produce_update_status(job, error, 422)
 
       {_, response, status} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status)
+        Jobs.produce_update_status(job, response, status)
     end
   end
 
