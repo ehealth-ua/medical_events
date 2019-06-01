@@ -98,12 +98,7 @@ defmodule Core.ServiceRequests.Consumer do
 
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -152,29 +147,24 @@ defmodule Core.ServiceRequests.Consumer do
                     :ok
 
                   {:error, reason} ->
-                    Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+                    Jobs.produce_update_status(job, reason, 500)
                 end
               else
                 {:error, reason} ->
-                  Jobs.produce_update_status(job._id, job.request_id, reason, 409)
+                  Jobs.produce_update_status(job, reason, 409)
 
                 error ->
                   Logger.error("Failed to save signed content: #{inspect(error)}")
-                  Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+                  Jobs.produce_update_status(job, "Failed to save signed content", 500)
               end
           end
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
     end
   end
 
@@ -211,12 +201,7 @@ defmodule Core.ServiceRequests.Consumer do
            ) do
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -263,41 +248,21 @@ defmodule Core.ServiceRequests.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
       end
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request with id '#{id}' is not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Service request with id '#{id}' is not found", 404)
 
       {_, :status} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Can't use inactive service request",
-          409
-        )
+        Jobs.produce_update_status(job, "Can't use inactive service request", 409)
 
       {{:error, message}, :expiration_date} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          message,
-          409
-        )
+        Jobs.produce_update_status(job, message, 409)
 
       {_, :already_used} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request is already used",
-          409
-        )
+        Jobs.produce_update_status(job, "Service request is already used", 409)
     end
   end
 
@@ -329,12 +294,7 @@ defmodule Core.ServiceRequests.Consumer do
            ) do
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -375,33 +335,18 @@ defmodule Core.ServiceRequests.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
       end
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request with id '#{id}' is not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Service request with id '#{id}' is not found", 404)
 
       {{:error, message}, :expiration_date} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          message,
-          409
-        )
+        Jobs.produce_update_status(job, message, 409)
 
       {status, :status} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request in status #{status} cannot be released",
-          409
-        )
+        Jobs.produce_update_status(job, "Service request in status #{status} cannot be released", 409)
     end
   end
 
@@ -436,12 +381,7 @@ defmodule Core.ServiceRequests.Consumer do
 
         case changeset do
           %Changeset{valid?: false} ->
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              ValidationError.render("422.json", changeset),
-              422
-            )
+            Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
           _ ->
             service_request = Changeset.apply_changes(changeset)
@@ -535,48 +475,33 @@ defmodule Core.ServiceRequests.Consumer do
                   :ok
 
                 {:error, reason} ->
-                  Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+                  Jobs.produce_update_status(job, reason, 500)
               end
             else
               {:error, reason} ->
-                Jobs.produce_update_status(job._id, job.request_id, reason, 409)
+                Jobs.produce_update_status(job, reason, 409)
 
               error ->
                 Logger.error("Failed to save signed content: #{inspect(error)}")
-                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+                Jobs.produce_update_status(job, "Failed to save signed content", 500)
             end
         end
       else
         nil ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            "Service request with id '#{service_request_id}' is not found",
-            404
-          )
+          Jobs.produce_update_status(job, "Service request with id '#{service_request_id}' is not found", 404)
 
         {:status, status} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            "Service request in status #{status} cannot be recalled",
-            409
-          )
+          Jobs.produce_update_status(job, "Service request in status #{status} cannot be recalled", 409)
 
         {:error, message, status_code} ->
-          Jobs.produce_update_status(job._id, job.request_id, message, status_code)
+          Jobs.produce_update_status(job, message, status_code)
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
     end
   end
 
@@ -612,12 +537,7 @@ defmodule Core.ServiceRequests.Consumer do
 
         case changeset do
           %Changeset{valid?: false} ->
-            Jobs.produce_update_status(
-              job._id,
-              job.request_id,
-              ValidationError.render("422.json", changeset),
-              422
-            )
+            Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
           _ ->
             service_request = Changeset.apply_changes(changeset)
@@ -713,40 +633,30 @@ defmodule Core.ServiceRequests.Consumer do
                   :ok
 
                 {:error, reason} ->
-                  Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+                  Jobs.produce_update_status(job, reason, 500)
               end
             else
               {:error, reason} ->
-                Jobs.produce_update_status(job._id, job.request_id, reason, 409)
+                Jobs.produce_update_status(job, reason, 409)
 
               error ->
                 Logger.error("Failed to save signed content: #{inspect(error)}")
-                Jobs.produce_update_status(job._id, job.request_id, "Failed to save signed content", 500)
+                Jobs.produce_update_status(job, "Failed to save signed content", 500)
             end
         end
       else
         {:status, false, status} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            "Service request in status #{status} cannot be cancelled",
-            409
-          )
+          Jobs.produce_update_status(job, "Service request in status #{status} cannot be cancelled", 409)
 
         {:error, message, status_code} ->
-          Jobs.produce_update_status(job._id, job.request_id, message, status_code)
+          Jobs.produce_update_status(job, message, status_code)
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
     end
   end
 
@@ -769,12 +679,7 @@ defmodule Core.ServiceRequests.Consumer do
 
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -827,25 +732,15 @@ defmodule Core.ServiceRequests.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
       end
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request #{job.id} was not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Service request #{job.id} was not found", 404)
 
       {:ok, %ServiceRequest{status: status}} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request with status #{status} can't be closed",
-          409
-        )
+        Jobs.produce_update_status(job, "Service request with status #{status} can't be closed", 409)
     end
   end
 
@@ -881,12 +776,7 @@ defmodule Core.ServiceRequests.Consumer do
 
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -941,28 +831,18 @@ defmodule Core.ServiceRequests.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
       end
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request with id '#{id}' is not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Service request with id '#{id}' is not found", 404)
 
       {_, :status} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
+        Jobs.produce_update_status(job, "Invalid service request status", 409)
 
       {_, :used_by_another_legal_entity} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request is used by another legal entity",
-          409
-        )
+        Jobs.produce_update_status(job, "Service request is used by another legal entity", 409)
     end
   end
 
@@ -992,12 +872,7 @@ defmodule Core.ServiceRequests.Consumer do
 
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
@@ -1049,28 +924,18 @@ defmodule Core.ServiceRequests.Consumer do
               :ok
 
             {:error, reason} ->
-              Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+              Jobs.produce_update_status(job, reason, 500)
           end
       end
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request with id '#{id}' is not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Service request with id '#{id}' is not found", 404)
 
       {_, :status} ->
-        Jobs.produce_update_status(job._id, job.request_id, "Invalid service request status", 409)
+        Jobs.produce_update_status(job, "Invalid service request status", 409)
 
       {_, :used_by_another_legal_entity} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Service request is used by another legal entity",
-          409
-        )
+        Jobs.produce_update_status(job, "Service request is used by another legal entity", 409)
     end
   end
 

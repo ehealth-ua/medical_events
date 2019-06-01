@@ -9,12 +9,12 @@ defmodule Core.Jobs do
 
   @collection Job.collection()
 
-  def produce_update_status(id, patient_id, response, 200) do
-    do_produce_update_status(id, patient_id, cut_response(response), Job.status(:processed), 200)
+  def produce_update_status(job, response, 200) do
+    do_produce_update_status(job, cut_response(response), Job.status(:processed), 200)
   end
 
-  def produce_update_status(id, patient_id, response, status_code) do
-    do_produce_update_status(id, patient_id, cut_response(response), Job.status(:failed), status_code)
+  def produce_update_status(job, response, status_code) do
+    do_produce_update_status(job, cut_response(response), Job.status(:failed), status_code)
   end
 
   def cut_response(%{invalid: errors} = response) do
@@ -63,9 +63,9 @@ defmodule Core.Jobs do
 
   defp cut_params(error), do: error
 
-  defp do_produce_update_status(id, patient_id, response, status, status_code) do
-    %Transaction{patient_id: patient_id}
-    |> update(id, status, response, status_code)
+  defp do_produce_update_status(job, response, status, status_code) do
+    %Transaction{patient_id: Map.get(job, :patient_id_hash)}
+    |> update(job._id, status, response, status_code)
     |> Transaction.flush()
   end
 

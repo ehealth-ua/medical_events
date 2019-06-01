@@ -75,12 +75,7 @@ defmodule Core.Approvals.Consumer do
 
       case changeset do
         %Changeset{valid?: false} ->
-          Jobs.produce_update_status(
-            job._id,
-            job.request_id,
-            ValidationError.render("422.json", changeset),
-            422
-          )
+          Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
 
         _ ->
           approval = Changeset.apply_changes(changeset)
@@ -107,32 +102,22 @@ defmodule Core.Approvals.Consumer do
                     :ok
 
                   {:error, reason} ->
-                    Jobs.produce_update_status(job._id, job.request_id, reason, 500)
+                    Jobs.produce_update_status(job, reason, 500)
                 end
               else
                 error ->
                   Logger.error("Failed to initialize otp verification: #{inspect(error)}")
 
-                  Jobs.produce_update_status(
-                    job._id,
-                    job.request_id,
-                    "Failed to initialize otp verification",
-                    500
-                  )
+                  Jobs.produce_update_status(job, "Failed to initialize otp verification", 500)
               end
           end
       end
     else
       {:error, error} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          ValidationError.render("422.json", %{schema: error}),
-          422
-        )
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
     end
   end
 
@@ -145,36 +130,21 @@ defmodule Core.Approvals.Consumer do
     with {:ok, %Approval{status: @status_new}} <- Approvals.get_by_id(id),
          {:ok, auth_method} <- Approvals.get_person_auth_method(patient_id),
          :ok <- initialize_otp_verification(auth_method) do
-      Jobs.produce_update_status(job._id, job.request_id, %{"response_data" => ""}, 200)
+      Jobs.produce_update_status(job, %{"response_data" => ""}, 200)
     else
       nil ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Approval with id '#{id}' is not found",
-          404
-        )
+        Jobs.produce_update_status(job, "Approval with id '#{id}' is not found", 404)
 
       {:ok, %Approval{status: status}} ->
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Approval in status #{status} can not be resent",
-          409
-        )
+        Jobs.produce_update_status(job, "Approval in status #{status} can not be resent", 409)
 
       {_, response, status_code} ->
-        Jobs.produce_update_status(job._id, job.request_id, response, status_code)
+        Jobs.produce_update_status(job, response, status_code)
 
       error ->
         Logger.error("Failed to initialize otp verification: #{inspect(error)}")
 
-        Jobs.produce_update_status(
-          job._id,
-          job.request_id,
-          "Failed to initialize otp verification",
-          500
-        )
+        Jobs.produce_update_status(job, "Failed to initialize otp verification", 500)
     end
   end
 
