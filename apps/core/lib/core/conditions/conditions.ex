@@ -12,9 +12,9 @@ defmodule Core.Conditions do
 
   @condition_collection Condition.collection()
 
-  def get_by_id(patient_id_hash, id) do
+  def get_by_id(patient_id_hash, id, opts \\ []) do
     @condition_collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id_hash})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id), "patient_id" => patient_id_hash}, opts)
     |> case do
       %{} = condition -> {:ok, Condition.create(condition)}
       _ -> nil

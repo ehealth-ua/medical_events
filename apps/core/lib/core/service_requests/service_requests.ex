@@ -20,7 +20,9 @@ defmodule Core.ServiceRequests do
   @collection ServiceRequest.collection()
 
   defp check_patient(%{"patient_id_hash" => patient_id_hash}) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash), do: Validators.is_active(patient)
+    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]) do
+      Validators.is_active(patient)
+    end
   end
 
   defp check_patient(_), do: :ok
@@ -105,9 +107,9 @@ defmodule Core.ServiceRequests do
     end
   end
 
-  def get_by_id(id) do
+  def get_by_id(id, opts \\ []) do
     @collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)}, opts)
     |> case do
       %{} = service_request ->
         {:ok, ServiceRequest.create(service_request)}

@@ -102,12 +102,12 @@ defmodule Core.Patients do
     Encryptor.encrypt(value)
   end
 
-  def get_by_id(id) do
-    Mongo.find_one(@collection, %{"_id" => id})
+  def get_by_id(id, opts \\ []) do
+    Mongo.find_one(@collection, %{"_id" => id}, opts)
   end
 
   def produce_create_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- get_by_id(patient_id_hash),
+    with %{} = patient <- get_by_id(patient_id_hash, projection: [status: true]),
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:package_create, Map.take(params, ["signed_data", "visit"])),
          {:ok, job, package_create_job} <-

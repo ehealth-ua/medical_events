@@ -22,9 +22,10 @@ defmodule Core.Approvals do
       ) do
     code = Map.get(params, "code")
 
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
          :ok <- Validators.is_active(patient),
-         {:ok, %Approval{status: @status_new} = approval} <- get_by_id(id),
+         {:ok, %Approval{status: @status_new} = approval} <-
+           get_by_id(id, projection: [status: true, patient_id: true]),
          :ok <- validate_patient(approval, patient_id_hash),
          {:ok, auth_method} <- get_person_auth_method(patient_id),
          :ok <- verify_auth(auth_method, code) do
@@ -43,9 +44,9 @@ defmodule Core.Approvals do
     end
   end
 
-  def get_by_id(id) do
+  def get_by_id(id, opts \\ []) do
     @collection
-    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)})
+    |> Mongo.find_one(%{"_id" => Mongo.string_to_uuid(id)}, opts)
     |> case do
       %{} = approval -> {:ok, Approval.create(approval)}
       _ -> nil

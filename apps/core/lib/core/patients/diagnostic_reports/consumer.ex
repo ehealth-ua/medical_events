@@ -145,7 +145,7 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
          diagnostic_report_id <- content["diagnostic_report"]["id"],
          :ok <- validate_signatures(signer, employee_id, user_id, job.client_id),
-         {_, _} <- {:patient, Patients.get_by_id(patient_id_hash)},
+         {_, %{}} <- {:patient, Patients.get_by_id(patient_id_hash, projection: [_id: true])},
          {_, {:ok, %DiagnosticReport{} = diagnostic_report}} <-
            {:diagnostic_report, DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report_id)},
          :ok <- CancelDiagnosticReport.validate(content, diagnostic_report, patient_id_hash),

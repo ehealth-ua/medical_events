@@ -80,7 +80,7 @@ defmodule Core.Approvals.Consumer do
         _ ->
           approval = Changeset.apply_changes(changeset)
 
-          case Approvals.get_by_id(approval._id) do
+          case Approvals.get_by_id(approval._id, projection: [_id: true]) do
             {:ok, _} ->
               {:error, "Approval with id '#{approval._id}' already exists", 409}
 
@@ -127,7 +127,7 @@ defmodule Core.Approvals.Consumer do
           id: id
         } = job
       ) do
-    with {:ok, %Approval{status: @status_new}} <- Approvals.get_by_id(id),
+    with {:ok, %Approval{status: @status_new}} <- Approvals.get_by_id(id, projection: [status: true]),
          {:ok, auth_method} <- Approvals.get_person_auth_method(patient_id),
          :ok <- initialize_otp_verification(auth_method) do
       Jobs.produce_update_status(job, %{"response_data" => ""}, 200)
@@ -152,7 +152,9 @@ defmodule Core.Approvals.Consumer do
 
   defp get_granted_resources(nil, %{"identifier" => %{"value" => service_request_id}}) do
     with {:ok, %ServiceRequest{status: @service_request_status_active} = service_request} <-
-           ServiceRequests.get_by_id(service_request_id),
+           ServiceRequests.get_by_id(service_request_id,
+             projection: [status: true, permitted_resources: true, expiration_date: true]
+           ),
          {:ok, _} <-
            {DateTimeValidations.validate(service_request.expiration_date,
               greater_than_or_equal_to: DateTime.utc_now(),

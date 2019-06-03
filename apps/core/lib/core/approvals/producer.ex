@@ -29,7 +29,7 @@ defmodule Core.Approvals.Producer do
         user_id,
         client_id
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
          :ok <- Validators.is_active(patient),
          :ok <- JsonSchema.validate(:approval_create, Map.take(params, @create_request_params)),
          :ok <-
@@ -55,9 +55,9 @@ defmodule Core.Approvals.Producer do
         user_id,
         client_id
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash),
+    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
          :ok <- Validators.is_active(patient),
-         {:ok, %Approval{}} <- Approvals.get_by_id(id),
+         {:ok, %Approval{}} <- Approvals.get_by_id(id, projection: [_id: true]),
          {:ok, job, approval_resend_job} <-
            Jobs.create(
              user_id,
