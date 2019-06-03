@@ -119,7 +119,7 @@ defmodule Core.Kafka.Consumer do
             Logger.warn(inspect(error) <> ". Job: " <> inspect(kafka_job) <> "Stacktrace: " <> inspect(__STACKTRACE__))
 
             :ok =
-              %Transaction{patient_id: job.patient_id_hash}
+              %Transaction{patient_id: kafka_job.patient_id_hash}
               |> Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
               |> Transaction.flush()
         end

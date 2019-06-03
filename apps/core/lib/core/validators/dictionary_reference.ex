@@ -31,6 +31,7 @@ defmodule Core.Validators.DictionaryReference do
   defp do_validate_change(field, value, options) do
     case validate(Changeset.apply_changes(value), options) do
       :ok -> []
+      {:error, message} -> Keyword.new([{field, message}])
       [{:error, _, _, message}] -> Keyword.new([{field, message}])
     end
   end
