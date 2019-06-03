@@ -11,16 +11,16 @@ defmodule Core.ServiceRequests.Producer do
   alias Core.Jobs.ServiceRequestReleaseJob
   alias Core.Jobs.ServiceRequestUseJob
   alias Core.Patients
-  alias Core.Patients.Validators
   alias Core.ServiceRequest
   alias Core.ServiceRequests
   alias Core.Validators.JsonSchema
+  alias Core.Validators.Patient, as: PatientValidator
 
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_create_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:service_request_create, Map.take(params, ~w(signed_data))),
          {:ok, job, service_request_create_job} <-
            Jobs.create(
@@ -72,9 +72,9 @@ defmodule Core.ServiceRequests.Producer do
   end
 
   def produce_recall_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
          service_request_id <- params["service_request_id"],
-         :ok <- Validators.is_active(patient),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:service_request_recall, Map.take(params, ~w(signed_data))),
          {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
          {:ok, job, service_request_recall_job} <-
@@ -94,8 +94,8 @@ defmodule Core.ServiceRequests.Producer do
   end
 
   def produce_cancel_service_request(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:service_request_cancel, Map.take(params, ~w(signed_data))),
          service_request_id <- params["service_request_id"],
          {:ok, %ServiceRequest{}} <- ServiceRequests.get_by_id(service_request_id),
