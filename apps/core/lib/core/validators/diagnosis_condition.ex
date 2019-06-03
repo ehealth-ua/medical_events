@@ -13,7 +13,7 @@ defmodule Core.Validators.DiagnosisCondition do
       add_to_cache(ets_key, %{"code" => matched_condition.code})
       :ok
     else
-      case Conditions.get_by_id(patient_id_hash, value) do
+      case Conditions.get_by_id(patient_id_hash, value, projection: [code: true]) do
         nil ->
           {:error, Keyword.get(options, :message, "Condition with such id is not found")}
 

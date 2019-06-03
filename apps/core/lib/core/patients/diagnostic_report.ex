@@ -413,7 +413,7 @@ defmodule Core.DiagnosticReport do
       _ ->
         origin_episode =
           with {:ok, %ServiceRequest{context: context}} <-
-                 ServiceRequests.get_by_id(based_on.identifier.value),
+                 ServiceRequests.get_by_id(based_on.identifier.value, projection: [context: true]),
                {:ok, %Encounter{episode: episode}} <-
                  Encounters.get_by_id(patient_id_hash, to_string(context.identifier.value)) do
             episode
