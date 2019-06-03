@@ -8,14 +8,14 @@ defmodule Core.Patients.Episodes.Producer do
   alias Core.Jobs.EpisodeUpdateJob
   alias Core.Patients
   alias Core.Patients.Episodes
-  alias Core.Patients.Validators
   alias Core.Validators.JsonSchema
+  alias Core.Validators.Patient, as: PatientValidator
 
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
   def produce_create_episode(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:episode_create, Map.drop(params, ~w(patient_id patient_id_hash))),
          {:ok, job, episode_create_job} <-
            Jobs.create(
@@ -34,8 +34,8 @@ defmodule Core.Patients.Episodes.Producer do
         request_params,
         conn_params
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          {:ok, _} <- Episodes.get_by_id(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_update, request_params),
          {:ok, job, episode_update_job} <-
@@ -55,8 +55,8 @@ defmodule Core.Patients.Episodes.Producer do
         request_params,
         conn_params
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          {:ok, _} <- Episodes.get_by_id(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_close, request_params),
          {:ok, job, episode_close_job} <-
@@ -76,8 +76,8 @@ defmodule Core.Patients.Episodes.Producer do
         request_params,
         conn_params
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          {:ok, _} <- Episodes.get_by_id(patient_id_hash, id),
          :ok <- JsonSchema.validate(:episode_cancel, request_params),
          {:ok, job, episode_cancel_job} <-

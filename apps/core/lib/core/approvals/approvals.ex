@@ -4,9 +4,9 @@ defmodule Core.Approvals do
   alias Core.Approval
   alias Core.Mongo
   alias Core.Patients
-  alias Core.Patients.Validators
   alias Core.ValidationError
   alias Core.Validators.Error
+  alias Core.Validators.Patient, as: PatientValidator
   require Logger
 
   @collection Approval.collection()
@@ -22,8 +22,8 @@ defmodule Core.Approvals do
       ) do
     code = Map.get(params, "code")
 
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          {:ok, %Approval{status: @status_new} = approval} <-
            get_by_id(id, projection: [status: true, patient_id: true]),
          :ok <- validate_patient(approval, patient_id_hash),

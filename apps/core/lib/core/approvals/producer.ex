@@ -7,9 +7,9 @@ defmodule Core.Approvals.Producer do
   alias Core.Jobs.ApprovalCreateJob
   alias Core.Jobs.ApprovalResendJob
   alias Core.Patients
-  alias Core.Patients.Validators
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
+  alias Core.Validators.Patient, as: PatientValidator
 
   @create_request_params ~w(
     resources
@@ -29,8 +29,8 @@ defmodule Core.Approvals.Producer do
         user_id,
         client_id
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:approval_create, Map.take(params, @create_request_params)),
          :ok <-
            OneOf.validate(Map.take(params, @create_request_params), @one_of_create_request_params),
@@ -55,8 +55,8 @@ defmodule Core.Approvals.Producer do
         user_id,
         client_id
       ) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          {:ok, %Approval{}} <- Approvals.get_by_id(id, projection: [_id: true]),
          {:ok, job, approval_resend_job} <-
            Jobs.create(

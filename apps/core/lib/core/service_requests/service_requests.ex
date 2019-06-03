@@ -10,18 +10,18 @@ defmodule Core.ServiceRequests do
   alias Core.Patients
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
-  alias Core.Patients.Validators
   alias Core.Search
   alias Core.ServiceRequest
   alias Core.Validators.JsonSchema
+  alias Core.Validators.Patient, as: PatientValidator
   alias Scrivener.Page
   require Logger
 
   @collection ServiceRequest.collection()
 
   defp check_patient(%{"patient_id_hash" => patient_id_hash}) do
-    with %{} = patient <- Patients.get_by_id(patient_id_hash, projection: [status: true]) do
-      Validators.is_active(patient)
+    with %{"status" => patient_status} <- Patients.get_by_id(patient_id_hash, projection: [status: true]) do
+      PatientValidator.is_active(patient_status)
     end
   end
 

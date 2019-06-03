@@ -26,9 +26,9 @@ defmodule Core.Patients do
   alias Core.Patients.MedicationStatements
   alias Core.Patients.Package
   alias Core.Patients.RiskAssessments
-  alias Core.Patients.Validators
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
+  alias Core.Validators.Patient, as: PatientValidator
   alias Core.Validators.Signature
   alias Core.Visit
   alias Ecto.Changeset
@@ -107,8 +107,8 @@ defmodule Core.Patients do
   end
 
   def produce_create_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
-    with %{} = patient <- get_by_id(patient_id_hash, projection: [status: true]),
-         :ok <- Validators.is_active(patient),
+    with %{"status" => patient_status} <- get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:package_create, Map.take(params, ["signed_data", "visit"])),
          {:ok, job, package_create_job} <-
            Jobs.create(
@@ -124,8 +124,8 @@ defmodule Core.Patients do
 
   def produce_cancel_package(%{"patient_id_hash" => patient_id_hash} = params, user_id, client_id) do
     with :ok <- JsonSchema.validate(:package_cancel, Map.take(params, ["signed_data"])),
-         %{} = patient <- get_by_id(patient_id_hash),
-         :ok <- Validators.is_active(patient) do
+         %{"status" => patient_status} <- get_by_id(patient_id_hash, projection: [status: true]),
+         :ok <- PatientValidator.is_active(patient_status) do
       job_data =
         params
         |> Map.put("user_id", user_id)
