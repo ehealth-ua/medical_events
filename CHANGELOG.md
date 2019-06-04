@@ -5,6 +5,33 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [3.0.0](https://github.com/edenlabllc/medical_events/compare/2.2.0...3.0.0) (2019-6-4)
+### Breaking Changes:
+
+* Ecto changesets (#421)
+
+
+
+### Features:
+
+* you can now configure rpc worker timeout (#466)
+
+* processed jobs are now not processed again (#465)
+
+* add patient id to transaction (#457)
+
+* save patients via ergonode (#452)
+
+### Bug Fixes:
+
+* job save (#463)
+
+* audit log patient id (#458)
+
+* removed patient_id from kafka producer logs (#455)
+
+* libcluster config (#453)
+
 ## [2.2.0](https://github.com/edenlabllc/medical_events/compare/2.1.1...2.2.0) (2019-5-21)
 
 
