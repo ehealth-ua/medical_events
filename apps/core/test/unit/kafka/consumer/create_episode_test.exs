@@ -165,5 +165,29 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
                  ]
                })
     end
+
+    test "does not process job that was already processed" do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+
+      patient = insert(:patient, _id: patient_id_hash)
+      episode_id = patient.episodes |> Map.keys() |> hd
+
+      job = insert(:job, status: Job.status(:processed))
+      user_id = UUID.uuid4()
+      client_id = UUID.uuid4()
+
+      expect(WorkerMock, :run, 0, fn _, _, :transaction, _ -> :ok end)
+
+      assert :ok =
+               Consumer.consume(%EpisodeCreateJob{
+                 _id: to_string(job._id),
+                 patient_id: patient_id,
+                 patient_id_hash: patient_id_hash,
+                 id: episode_id,
+                 user_id: user_id,
+                 client_id: client_id
+               })
+    end
   end
 end
