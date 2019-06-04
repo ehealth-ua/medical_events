@@ -30,6 +30,9 @@ defmodule Core.Kafka.Consumer do
 
   require Logger
 
+  @status_failed_with_error Job.status(:failed_with_error)
+  @status_pending Job.status(:pending)
+
   def consume(%PackageCreateJob{} = package_create_job) do
     do_consume(Patients, :consume_create_package, package_create_job)
   end
@@ -109,7 +112,7 @@ defmodule Core.Kafka.Consumer do
 
   defp do_consume(module, fun, %{_id: id} = kafka_job) do
     case Jobs.get_by_id(id) do
-      {:ok, job} ->
+      {:ok, %Job{status: @status_pending}} ->
         :ets.new(:message_cache, [:set, :protected, :named_table])
 
         try do
@@ -120,11 +123,15 @@ defmodule Core.Kafka.Consumer do
 
             :ok =
               %Transaction{patient_id: kafka_job.patient_id_hash}
-              |> Jobs.update(id, Job.status(:failed_with_error), inspect(error), 500)
+              |> Jobs.update(id, @status_failed_with_error, inspect(error), 500)
               |> Transaction.flush()
         end
 
         :ets.delete(:message_cache)
+        :ok
+
+      {:ok, %Job{}} ->
+        Logger.warn("Job with id = #{id} is already processed. Skipping.")
         :ok
 
       _ ->
