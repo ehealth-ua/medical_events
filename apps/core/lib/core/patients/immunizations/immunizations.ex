@@ -16,10 +16,14 @@ defmodule Core.Patients.Immunizations do
 
   def get_by_id(patient_id_hash, id) do
     with %{"immunizations" => %{^id => immunization}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "immunizations.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "immunizations.#{id}" => %{"$exists" => true}
+             },
+             projection: ["immunizations.#{id}": true]
+           ) do
       {:ok, Immunization.create(immunization)}
     else
       _ ->
@@ -60,7 +64,8 @@ defmodule Core.Patients.Immunizations do
   def get_by_ids(_patient_id_hash, []), do: {:ok, []}
 
   def get_by_ids(patient_id_hash, ids) do
-    with %{"immunizations" => immunizations} <- Mongo.find_one(@collection, %{"_id" => patient_id_hash}) do
+    with %{"immunizations" => immunizations} <-
+           Mongo.find_one(@collection, %{"_id" => patient_id_hash}, projection: [immunizations: true]) do
       immunizations = Enum.into(immunizations, %{})
 
       immunizations =

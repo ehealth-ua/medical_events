@@ -16,10 +16,14 @@ defmodule Core.Patients.AllergyIntolerances do
 
   def get_by_id(patient_id_hash, id) do
     with %{"allergy_intolerances" => %{^id => allergy_intolerance}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "allergy_intolerances.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "allergy_intolerances.#{id}" => %{"$exists" => true}
+             },
+             projection: ["allergy_intolerances.#{id}": true]
+           ) do
       {:ok, AllergyIntolerance.create(allergy_intolerance)}
     else
       _ ->

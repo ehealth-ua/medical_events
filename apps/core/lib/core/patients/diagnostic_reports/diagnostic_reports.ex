@@ -16,10 +16,14 @@ defmodule Core.Patients.DiagnosticReports do
 
   def get_by_id(patient_id_hash, id) do
     with %{"diagnostic_reports" => %{^id => diagnostic_report}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "diagnostic_reports.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "diagnostic_reports.#{id}" => %{"$exists" => true}
+             },
+             projection: ["diagnostic_reports.#{id}": true]
+           ) do
       {:ok, DiagnosticReport.create(diagnostic_report)}
     else
       _ ->
