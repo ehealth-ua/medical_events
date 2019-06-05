@@ -9,11 +9,15 @@ defmodule PersonConsumer.Kafka.PersonEventConsumer do
   @status_active Patient.status(:active)
   @status_inactive Patient.status(:inactive)
 
-  def handle_message(%{offset: offset, value: value}) do
-    value = :erlang.binary_to_term(value)
-    Logger.debug(fn -> "message: " <> inspect(value) end)
-    Logger.info(fn -> "offset: #{offset}" end)
-    :ok = consume(value)
+  def handle_messages(messages) do
+    for %{offset: offset, value: value} <- messages do
+      value = :erlang.binary_to_term(value)
+      Logger.debug(fn -> "message: " <> inspect(value) end)
+      Logger.info(fn -> "offset: #{offset}" end)
+      :ok = consume(value)
+    end
+
+    :ok
   end
 
   def consume(%{"id" => person_id, "status" => status, "updated_by" => updated_by})

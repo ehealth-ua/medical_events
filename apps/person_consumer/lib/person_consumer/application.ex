@@ -8,8 +8,9 @@ defmodule PersonConsumer.Application do
 
     children = [
       %{
-        id: Kaffe.Consumer,
-        start: {Kaffe.Consumer, :start_link, []}
+        id: Kaffe.GroupMemberSupervisor,
+        start: {Kaffe.GroupMemberSupervisor, :start_link, []},
+        type: :supervisor
       }
     ]
 
