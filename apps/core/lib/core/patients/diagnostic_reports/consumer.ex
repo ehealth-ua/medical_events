@@ -12,6 +12,8 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   alias Core.Patients.DiagnosticReports.Cancel, as: CancelDiagnosticReport
   alias Core.Patients.DiagnosticReports.Package
   alias Core.Patients.Encounters.Validations, as: EncounterValidations
+  alias Core.ValidationError, as: CoreValidationError
+  alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
@@ -291,13 +293,20 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
     case EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id) do
       :ok -> :ok
       {:error, error} -> {:ok, error, 409}
+      error -> error
     end
   end
 
   defp validate_diagnostic_report(patient_id_hash, diagnostic_report) do
     case DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report.id) do
       {:ok, _} ->
-        {:error, "Diagnostic report with id '#{diagnostic_report.id}' already exists", 409}
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "Diagnostic report with id '#{diagnostic_report.id}' already exists",
+            path: "$.diagnostic_report.id"
+          })
+
+        {:error, ValidationError.render("422.json", %{schema: error}), 422}
 
       _ ->
         {:ok, diagnostic_report}
@@ -305,13 +314,21 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   end
 
   defp validate_observations(observations) do
-    Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
+    observations
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, observations}, fn {observation, i}, acc ->
       if Mongo.find_one(
            Observation.collection(),
            %{"_id" => Mongo.string_to_uuid(observation._id)},
            projection: %{"_id" => true}
          ) do
-        {:halt, {:error, "Observation with id '#{observation._id}' already exists", 409}}
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "Observation with id '#{observation._id}' already exists",
+            path: "$.observations.#{i}.id"
+          })
+
+        {:halt, {:error, ValidationError.render("422.json", %{schema: error}), 422}}
       else
         {:cont, acc}
       end

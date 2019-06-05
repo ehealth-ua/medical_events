@@ -38,11 +38,3 @@ defimpl Core.Validators.Error, for: Core.ValidationError do
      ]}
   end
 end
-
-defimpl Core.Validators.Error, for: BitString do
-  def dump(reason), do: {:error, {:"422", reason}}
-end
-
-defimpl Core.Validators.Error, for: Atom do
-  def dump(_reason), do: :error
-end

@@ -408,7 +408,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.reject(fn {_, statuses} -> statuses == [] end)
     |> Enum.reduce_while(:ok, fn {key, statuses}, _acc ->
       case @entered_in_error in statuses do
-        true -> {:halt, {:ok, %{"error" => "Invalid transition for #{key} - already entered_in_error"}, 409}}
+        true -> {:halt, {:ok, "Invalid transition for #{key} - already entered_in_error", 409}}
         _ -> {:cont, :ok}
       end
     end)

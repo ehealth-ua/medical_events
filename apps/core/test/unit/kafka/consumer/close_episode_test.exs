@@ -24,7 +24,7 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
 
-      expect_job_update(job._id, Job.status(:failed), "Episode in status closed can not be closed", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode in status closed can not be closed", 409)
 
       assert :ok =
                Consumer.consume(%EpisodeCloseJob{
@@ -129,7 +129,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
         assert %{"_id" => job._id} == filter |> Base.decode64!() |> BSON.decode()
 
         set_bson = set |> Base.decode64!() |> BSON.decode()
-
         status = Job.status(:processed)
 
         response = %{

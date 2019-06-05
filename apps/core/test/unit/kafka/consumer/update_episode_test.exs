@@ -25,7 +25,7 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
       client_id = UUID.uuid4()
       job = insert(:job)
       user_id = UUID.uuid4()
-      expect_job_update(job._id, Job.status(:failed), "Episode in status closed can not be updated", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode in status closed can not be updated", 409)
 
       assert :ok =
                Consumer.consume(%EpisodeUpdateJob{

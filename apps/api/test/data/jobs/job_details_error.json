@@ -9,12 +9,23 @@
   },
   "type": "object",
   "properties": {
-    "errors": {
-      "type": [
-        "array",
-        "string"
+    "error": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "invalid": {
+          "type": "array"
+        }
+      },
+      "required": [
+        "message"
       ],
-      "description": "error message or list of errors"
+      "additionalProperties": false
     },
     "eta": {
       "type": "string",
@@ -41,7 +52,7 @@
   },
   "required": [
     "eta",
-    "errors",
+    "error",
     "status",
     "status_code"
   ],

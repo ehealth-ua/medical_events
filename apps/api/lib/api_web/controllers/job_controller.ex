@@ -24,15 +24,27 @@ defmodule Api.Web.JobController do
     end
   end
 
-  defp map_http_response_code(%Job{status: @job_status_processed, response: %{"response_data" => _}}),
-    do: {200, "details.json"}
+  defp map_http_response_code(%Job{
+         status: @job_status_processed,
+         response: %{"response_data" => _}
+       }),
+       do: {200, "details.json"}
 
   defp map_http_response_code(%Job{status: @job_status_processed}), do: {303, "details.json"}
   defp map_http_response_code(%Job{status: @job_status_pending}), do: {200, "details.json"}
 
-  defp map_http_response_code(%Job{status: status})
+  defp map_http_response_code(%Job{status: status, status_code: status_code})
        when status in [@job_status_failed, @job_status_failed_with_error] do
-    {200, "details_error.json"}
+    case status_code do
+      409 ->
+        {200, "conflict_error.json"}
+
+      500 ->
+        {200, "internal_error.json"}
+
+      _ ->
+        {200, "details_error.json"}
+    end
   end
 
   defp map_http_response_code(%Job{status_code: code}),

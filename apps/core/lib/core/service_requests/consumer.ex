@@ -20,8 +20,10 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.ServiceRequests.EventManager
   alias Core.ServiceRequestView
   alias Core.StatusHistory
+  alias Core.ValidationError, as: CoreValidationError
   alias Core.Validators.DateTime, as: DateTimeValidations
   alias Core.Validators.Drfo
+  alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Signature
@@ -56,7 +58,6 @@ defmodule Core.ServiceRequests.Consumer do
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       expiration_days = config()[:service_request_expiration_days]
-
       expiration_erl_date = now |> DateTime.to_date() |> Date.add(expiration_days) |> Date.to_erl()
 
       expiration_date =
@@ -102,66 +103,62 @@ defmodule Core.ServiceRequests.Consumer do
 
         _ ->
           service_request = Changeset.apply_changes(changeset)
+          files = [{'signed_content.txt', job.signed_data}]
+          {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
 
-          case ServiceRequests.get_by_id(id) do
-            {:ok, _} ->
-              {:error, "Service request with id '#{id}' already exists", 409}
-
-            _ ->
-              files = [{'signed_content.txt', job.signed_data}]
-              {:ok, {_, compressed_content}} = :zip.create("signed_content.zip", files, [:memory])
-
-              with :ok <-
-                     Drfo.validate(service_request.requester_employee.identifier.value,
-                       drfo: signer["drfo"],
-                       client_id: client_id,
-                       user_id: user_id
-                     ),
-                   :ok <-
-                     @media_storage.save(
-                       patient_id,
-                       compressed_content,
-                       Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
-                       resource_name
-                     ) do
-                result =
-                  %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-                  |> Transaction.add_operation(@collection, :insert, service_request, service_request._id)
-                  |> Jobs.update(
-                    job._id,
-                    Job.status(:processed),
+          with :ok <-
+                 Drfo.validate(service_request.requester_employee.identifier.value,
+                   drfo: signer["drfo"],
+                   client_id: client_id,
+                   user_id: user_id
+                 ),
+               :ok <-
+                 @media_storage.save(
+                   patient_id,
+                   compressed_content,
+                   Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
+                   resource_name
+                 ) do
+            result =
+              %Transaction{actor_id: user_id, patient_id: patient_id_hash}
+              |> Transaction.add_operation(@collection, :insert, service_request, service_request._id)
+              |> Jobs.update(
+                job._id,
+                Job.status(:processed),
+                %{
+                  "links" => [
                     %{
-                      "links" => [
-                        %{
-                          "entity" => "service_request",
-                          "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                        }
-                      ]
-                    },
-                    200
-                  )
-                  |> Transaction.flush()
+                      "entity" => "service_request",
+                      "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                    }
+                  ]
+                },
+                200
+              )
+              |> Transaction.flush()
 
-                case result do
-                  :ok ->
-                    :ok
+            case result do
+              :ok ->
+                :ok
 
-                  {:error, reason} ->
-                    Jobs.produce_update_status(job, reason, 500)
-                end
-              else
-                {:error, reason} ->
-                  Jobs.produce_update_status(job, reason, 409)
+              {:error, reason} ->
+                Jobs.produce_update_status(job, reason, 500)
+            end
+          else
+            {:error, reason} ->
+              Jobs.produce_update_status(job, reason, 409)
 
-                error ->
-                  Logger.error("Failed to save signed content: #{inspect(error)}")
-                  Jobs.produce_update_status(job, "Failed to save signed content", 500)
-              end
+            error ->
+              Logger.error("Failed to save signed content: #{inspect(error)}")
+              Jobs.produce_update_status(job, "Failed to save signed content", 500)
           end
       end
     else
       {:error, error} ->
         Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {:error, reason, status_code} ->
+        Jobs.produce_update_status(job, reason, status_code)
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job, response, status_code)
@@ -952,7 +949,13 @@ defmodule Core.ServiceRequests.Consumer do
     content = Map.drop(content, excluded_fields)
 
     if content != db_content do
-      {:error, "Signed content doesn't match with previously created service request", 422}
+      {:error, error} =
+        Error.dump(%CoreValidationError{
+          description: "Signed content doesn't match with previously created service request",
+          path: "$.signed_data"
+        })
+
+      {:error, ValidationError.render("422.json", %{schema: error}), 422}
     else
       :ok
     end

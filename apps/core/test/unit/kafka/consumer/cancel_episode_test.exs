@@ -23,7 +23,7 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
-      expect_job_update(job._id, Job.status(:failed), "Episode in status entered_in_error can not be canceled", 422)
+      expect_job_update(job._id, Job.status(:failed), "Episode in status entered_in_error can not be canceled", 409)
 
       assert :ok =
                Consumer.consume(%EpisodeCancelJob{

@@ -20,7 +20,25 @@ defmodule Api.Web.JobView do
   def render("details_error.json", %{job: job}) do
     %{
       eta: DateView.render_datetime(job.eta),
-      errors: job.response,
+      error: job.response,
+      status: Job.status_to_string(job.status),
+      status_code: job.status_code
+    }
+  end
+
+  def render("conflict_error.json", %{job: job}) do
+    %{
+      eta: DateView.render_datetime(job.eta),
+      error: %{type: :request_conflict, message: job.response},
+      status: Job.status_to_string(job.status),
+      status_code: job.status_code
+    }
+  end
+
+  def render("internal_error.json", %{job: job}) do
+    %{
+      eta: DateView.render_datetime(job.eta),
+      error: %{type: :internal_error, message: job.response},
       status: Job.status_to_string(job.status),
       status_code: job.status_code
     }

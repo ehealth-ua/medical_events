@@ -43,7 +43,7 @@ defmodule Core.Patients.Encounters.ValidationsTest do
     user_id = UUID.uuid4()
     expect_employee_users(UUID.uuid4(), user_id)
 
-    assert {:error, "Does not match the signer drfo"} =
+    assert {:error, "Does not match the signer drfo", 409} =
              EncounterValidation.validate_signatures(%{"drfo" => UUID.uuid4()}, UUID.uuid4(), user_id, UUID.uuid4())
   end
 

@@ -26,7 +26,27 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
       expect_doctor(client_id)
-      expect_job_update(job._id, Job.status(:failed), "Episode with such id already exists", 422)
+
+      response = %{
+        "invalid" => [
+          %{
+            "entry" => "$.id",
+            "entry_type" => "json_data_property",
+            "rules" => [
+              %{
+                "description" => "Episode with such id already exists",
+                "params" => [],
+                "rule" => "invalid"
+              }
+            ]
+          }
+        ],
+        "message" =>
+          "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+        "type" => "validation_failed"
+      }
+
+      expect_job_update(job._id, Job.status(:failed), response, 422)
 
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
