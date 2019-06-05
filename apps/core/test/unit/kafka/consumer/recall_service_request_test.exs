@@ -341,12 +341,27 @@ defmodule Core.Kafka.Consumer.RecallServiceRequestTest do
         }
         |> Map.merge(ReferenceView.render_occurrence(service_request.occurrence))
 
-      expect_job_update(
-        job._id,
-        Job.status(:failed),
-        "Signed content doesn't match with previously created service request",
-        422
-      )
+      error =
+        error = %{
+          "invalid" => [
+            %{
+              "entry" => "$.signed_data",
+              "entry_type" => "json_data_property",
+              "rules" => [
+                %{
+                  "description" => "Signed content doesn't match with previously created service request",
+                  "params" => [],
+                  "rule" => "invalid"
+                }
+              ]
+            }
+          ],
+          "message" =>
+            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
+          "type" => "validation_failed"
+        }
+
+      expect_job_update(job._id, Job.status(:failed), error, 422)
 
       assert :ok =
                Consumer.consume(%ServiceRequestRecallJob{

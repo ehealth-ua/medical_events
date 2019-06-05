@@ -147,7 +147,7 @@ defmodule Api.Web.JobControllerTest do
           :job,
           status: Job.status(:failed),
           status_code: 422,
-          response: [%{"type" => "invalid"}]
+          response: %{"type" => "invalid", "message" => ""}
         )
 
       response =
@@ -160,7 +160,7 @@ defmodule Api.Web.JobControllerTest do
       assert Job.status_to_string(job.status) == response["status"]
       assert 422 == response["status_code"]
       assert Map.has_key?(response, "eta")
-      assert Map.has_key?(response, "errors")
+      assert Map.has_key?(response, "error")
     end
 
     test "status: failed", %{conn: conn} do
@@ -169,7 +169,7 @@ defmodule Api.Web.JobControllerTest do
           :job,
           status: Job.status(:failed),
           status_code: 404,
-          response: "Can't get request by id bd33b561-2616-4268-898d-4fc4e07e3481"
+          response: %{"message" => "Can't get request by id bd33b561-2616-4268-898d-4fc4e07e3481"}
         )
 
       response =
@@ -182,7 +182,7 @@ defmodule Api.Web.JobControllerTest do
       assert Job.status_to_string(job.status) == response["status"]
       assert 404 == response["status_code"]
       assert Map.has_key?(response, "eta")
-      assert Map.has_key?(response, "errors")
+      assert Map.has_key?(response, "error")
     end
 
     test "not found", %{conn: conn} do

@@ -15,6 +15,8 @@ defmodule Core.Patients.Episodes.Consumer do
   alias Core.Patients.Encounters
   alias Core.Patients.Episodes
   alias Core.StatusHistory
+  alias Core.ValidationError, as: CoreValidationError
+  alias Core.Validators.Error
   alias Ecto.Changeset
   alias EView.Views.ValidationError
   require Logger
@@ -53,7 +55,13 @@ defmodule Core.Patients.Episodes.Consumer do
       %Changeset{valid?: true} = changeset ->
         case Episodes.get_by_id(patient_id_hash, Changeset.get_change(changeset, :id)) do
           {:ok, _} ->
-            Jobs.produce_update_status(job, "Episode with such id already exists", 422)
+            {:error, error} =
+              Error.dump(%CoreValidationError{
+                description: "Episode with such id already exists",
+                path: "$.id"
+              })
+
+            Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
           _ ->
             episode =
@@ -142,7 +150,7 @@ defmodule Core.Patients.Episodes.Consumer do
       end
     else
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job, "Episode in status #{status} can not be updated", 422)
+        Jobs.produce_update_status(job, "Episode in status #{status} can not be updated", 409)
 
       nil ->
         Jobs.produce_update_status(job, "Failed to get episode", 404)
@@ -152,9 +160,11 @@ defmodule Core.Patients.Episodes.Consumer do
   def consume_close_episode(%EpisodeCloseJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
     now = DateTime.utc_now()
     status = Episode.status(:active)
+    period_end = job.request_params["period"]["end"]
 
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id),
-         {true, _} <- {episode.managing_organization.identifier.value == job.client_id, :managing_organization} do
+         {_, true} <- {:managing_organization, episode.managing_organization.identifier.value == job.client_id},
+         {_, true} <- {:period_end, DateTime.to_date(episode.period.start) <= Date.from_iso8601!(period_end)} do
       changes =
         job.request_params
         |> Map.take(~w(closing_summary status_reason))
@@ -162,7 +172,7 @@ defmodule Core.Patients.Episodes.Consumer do
           "status" => Episode.status(:closed),
           "updated_by" => job.user_id,
           "updated_at" => now,
-          "period" => prepare_period(%{"end" => job.request_params["period"]["end"]})
+          "period" => prepare_period(%{"end" => period_end})
         })
 
       case Episode.close_changeset(episode, changes) do
@@ -227,11 +237,20 @@ defmodule Core.Patients.Episodes.Consumer do
           Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
-      {_, :managing_organization} ->
+      {:period_end, _} ->
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "End date must be greater or equal than start date",
+            path: "$.period.end"
+          })
+
+        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
+
+      {:managing_organization, _} ->
         Jobs.produce_update_status(job, "Managing_organization does not correspond to user's legal_entity", 409)
 
       {:ok, %Episode{status: status}} ->
-        Jobs.produce_update_status(job, "Episode in status #{status} can not be closed", 422)
+        Jobs.produce_update_status(job, "Episode in status #{status} can not be closed", 409)
 
       nil ->
         Jobs.produce_update_status(job, "Failed to get episode", 404)
@@ -343,7 +362,7 @@ defmodule Core.Patients.Episodes.Consumer do
         Jobs.produce_update_status(job, "Managing_organization does not correspond to user's legal_entity", 409)
 
       {:error, message} ->
-        Jobs.produce_update_status(job, message, 422)
+        Jobs.produce_update_status(job, message, 409)
 
       nil ->
         Jobs.produce_update_status(job, "Failed to get episode", 404)

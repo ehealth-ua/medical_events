@@ -1,6 +1,9 @@
 defmodule Core.Validators.Signature do
   @moduledoc false
 
+  alias Core.ValidationError
+  alias Core.Validators.Error
+
   def validate(%{"content" => content, "signatures" => signatures}, required_signatures \\ 1)
       when is_list(signatures) do
     if Enum.count(signatures) == required_signatures do
@@ -9,8 +12,11 @@ defmodule Core.Validators.Signature do
     else
       signer_message = if required_signatures == 1, do: "signer", else: "signers"
 
-      {:error,
-       "document must be signed by #{required_signatures} #{signer_message} but contains #{Enum.count(signatures)} signatures"}
+      Error.dump(%ValidationError{
+        description:
+          "document must be signed by #{required_signatures} #{signer_message} but contains #{Enum.count(signatures)} signatures",
+        path: "$.signed_data"
+      })
     end
   end
 
@@ -20,11 +26,11 @@ defmodule Core.Validators.Signature do
     if tax_id == drfo || translit(tax_id) == translit(drfo) do
       :ok
     else
-      {:error, "Does not match the signer drfo"}
+      {:error, "Does not match the signer drfo", 409}
     end
   end
 
-  def validate_drfo(_, _), do: {:error, "Does not match the signer drfo"}
+  def validate_drfo(_, _), do: {:error, "Does not match the signer drfo", 409}
 
   defp translit(string) do
     string

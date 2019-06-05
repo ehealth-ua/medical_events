@@ -80,36 +80,29 @@ defmodule Core.Approvals.Consumer do
         _ ->
           approval = Changeset.apply_changes(changeset)
 
-          case Approvals.get_by_id(approval._id, projection: [_id: true]) do
-            {:ok, _} ->
-              {:error, "Approval with id '#{approval._id}' already exists", 409}
+          with :ok <- initialize_otp_verification(auth_method) do
+            result =
+              %Transaction{actor_id: user_id, patient_id: patient_id_hash}
+              |> Transaction.add_operation(@collection, :insert, approval, approval._id)
+              |> Jobs.update(
+                job._id,
+                Job.status(:processed),
+                %{"response_data" => ApprovalsRenderer.render(approval)},
+                200
+              )
+              |> Transaction.flush()
 
-            _ ->
-              with :ok <- initialize_otp_verification(auth_method) do
-                result =
-                  %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-                  |> Transaction.add_operation(@collection, :insert, approval, approval._id)
-                  |> Jobs.update(
-                    job._id,
-                    Job.status(:processed),
-                    %{"response_data" => ApprovalsRenderer.render(approval)},
-                    200
-                  )
-                  |> Transaction.flush()
+            case result do
+              :ok ->
+                :ok
 
-                case result do
-                  :ok ->
-                    :ok
-
-                  {:error, reason} ->
-                    Jobs.produce_update_status(job, reason, 500)
-                end
-              else
-                error ->
-                  Logger.error("Failed to initialize otp verification: #{inspect(error)}")
-
-                  Jobs.produce_update_status(job, "Failed to initialize otp verification", 500)
-              end
+              {:error, reason} ->
+                Jobs.produce_update_status(job, reason, 500)
+            end
+          else
+            error ->
+              Logger.error("Failed to initialize otp verification: #{inspect(error)}")
+              Jobs.produce_update_status(job, "Failed to initialize otp verification", 500)
           end
       end
     else
@@ -143,7 +136,6 @@ defmodule Core.Approvals.Consumer do
 
       error ->
         Logger.error("Failed to initialize otp verification: #{inspect(error)}")
-
         Jobs.produce_update_status(job, "Failed to initialize otp verification", 500)
     end
   end

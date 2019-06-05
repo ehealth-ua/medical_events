@@ -26,6 +26,8 @@ defmodule Core.Patients do
   alias Core.Patients.MedicationStatements
   alias Core.Patients.Package
   alias Core.Patients.RiskAssessments
+  alias Core.ValidationError, as: CoreValidationError
+  alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Patient, as: PatientValidator
@@ -313,7 +315,13 @@ defmodule Core.Patients do
 
         case result do
           [%{"_id" => _}] ->
-            {:error, "Visit with such id already exists", 409}
+            {:error, error} =
+              Error.dump(%CoreValidationError{
+                description: "Visit with such id already exists",
+                path: "$.visit.id"
+              })
+
+            {:error, error, 422}
 
           _ ->
             {:ok, visit}
@@ -384,7 +392,13 @@ defmodule Core.Patients do
 
         case Encounters.get_by_id(patient_id_hash, encounter.id) do
           {:ok, _} ->
-            {:error, "Encounter with such id already exists", 409}
+            {:error, error} =
+              Error.dump(%CoreValidationError{
+                description: "Encounter with such id already exists",
+                path: "$.encounter.id"
+              })
+
+            {:error, error, 422}
 
           _ ->
             {:ok, encounter, Changeset.apply_changes(diagnoses_history)}
@@ -835,13 +849,21 @@ defmodule Core.Patients do
   defp create_diagnostic_reports(_, _), do: {:ok, []}
 
   defp validate_conditions(conditions) do
-    Enum.reduce_while(conditions, {:ok, conditions}, fn condition, acc ->
+    conditions
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, conditions}, fn {condition, i}, acc ->
       if Mongo.find_one(
            Condition.collection(),
            %{"_id" => Mongo.string_to_uuid(condition._id)},
            projection: %{"_id" => true}
          ) do
-        {:halt, {:error, "Condition with id '#{condition._id}' already exists", 409}}
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "Condition with id '#{condition._id}' already exists",
+            path: "$.conditions.#{i}.id"
+          })
+
+        {:halt, {:error, error, 422}}
       else
         {:cont, acc}
       end
@@ -849,13 +871,21 @@ defmodule Core.Patients do
   end
 
   defp validate_observations(observations) do
-    Enum.reduce_while(observations, {:ok, observations}, fn observation, acc ->
+    observations
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, observations}, fn {observation, i}, acc ->
       if Mongo.find_one(
            Observation.collection(),
            %{"_id" => Mongo.string_to_uuid(observation._id)},
            projection: %{"_id" => true}
          ) do
-        {:halt, {:error, "Observation with id '#{observation._id}' already exists", 409}}
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "Observation with id '#{observation._id}' already exists",
+            path: "$.observations.#{i}.id"
+          })
+
+        {:halt, {:error, error, 422}}
       else
         {:cont, acc}
       end
@@ -863,10 +893,18 @@ defmodule Core.Patients do
   end
 
   defp validate_immunizations(patient_id_hash, immunizations) do
-    Enum.reduce_while(immunizations, {:ok, immunizations}, fn immunization, acc ->
+    immunizations
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, immunizations}, fn {immunization, i}, acc ->
       case Immunizations.get_by_id(patient_id_hash, immunization.id) do
         {:ok, _} ->
-          {:halt, {:error, "Immunization with id '#{immunization.id}' already exists", 409}}
+          {:error, error} =
+            Error.dump(%CoreValidationError{
+              description: "Immunization with id '#{immunization.id}' already exists",
+              path: "$.immunizations.#{i}.id"
+            })
+
+          {:halt, {:error, error, 422}}
 
         _ ->
           {:cont, acc}
@@ -875,10 +913,18 @@ defmodule Core.Patients do
   end
 
   defp validate_allergy_intolerances(patient_id_hash, allergy_intolerances) do
-    Enum.reduce_while(allergy_intolerances, {:ok, allergy_intolerances}, fn allergy_intolerance, acc ->
+    allergy_intolerances
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, allergy_intolerances}, fn {allergy_intolerance, i}, acc ->
       case AllergyIntolerances.get_by_id(patient_id_hash, allergy_intolerance.id) do
         {:ok, _} ->
-          {:halt, {:error, "Allergy intolerance with id '#{allergy_intolerance.id}' already exists", 409}}
+          {:error, error} =
+            Error.dump(%CoreValidationError{
+              description: "Allergy intolerance with id '#{allergy_intolerance.id}' already exists",
+              path: "$.allergy_intolerances.#{i}.id"
+            })
+
+          {:halt, {:error, error, 422}}
 
         _ ->
           {:cont, acc}
@@ -887,10 +933,18 @@ defmodule Core.Patients do
   end
 
   defp validate_risk_assessments(patient_id_hash, risk_assessments) do
-    Enum.reduce_while(risk_assessments, {:ok, risk_assessments}, fn risk_assessment, acc ->
+    risk_assessments
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, risk_assessments}, fn {risk_assessment, i}, acc ->
       case RiskAssessments.get_by_id(patient_id_hash, risk_assessment.id) do
         {:ok, _} ->
-          {:halt, {:error, "Risk assessment with id '#{risk_assessment.id}' already exists", 409}}
+          {:error, error} =
+            Error.dump(%CoreValidationError{
+              description: "Risk assessment with id '#{risk_assessment.id}' already exists",
+              path: "$.risk_assessments.#{i}.id"
+            })
+
+          {:halt, {:error, error, 422}}
 
         _ ->
           {:cont, acc}
@@ -899,10 +953,18 @@ defmodule Core.Patients do
   end
 
   defp validate_devices(patient_id_hash, devices) do
-    Enum.reduce_while(devices, {:ok, devices}, fn device, acc ->
+    devices
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, devices}, fn {device, i}, acc ->
       case Devices.get_by_id(patient_id_hash, device.id) do
         {:ok, _} ->
-          {:halt, {:error, "Device with id '#{device.id}' already exists", 409}}
+          {:error, error} =
+            Error.dump(%CoreValidationError{
+              description: "Device with id '#{device.id}' already exists",
+              path: "$.devices.#{i}.id"
+            })
+
+          {:halt, {:error, error, 422}}
 
         _ ->
           {:cont, acc}
@@ -911,13 +973,20 @@ defmodule Core.Patients do
   end
 
   defp validate_medication_statements(patient_id_hash, medication_statements) do
-    Enum.reduce_while(
-      medication_statements,
+    medication_statements
+    |> Enum.with_index()
+    |> Enum.reduce_while(
       {:ok, medication_statements},
-      fn medication_statement, acc ->
+      fn {medication_statement, i}, acc ->
         case MedicationStatements.get_by_id(patient_id_hash, medication_statement.id) do
           {:ok, _} ->
-            {:halt, {:error, "Medication statement with id '#{medication_statement.id}' already exists", 409}}
+            {:error, error} =
+              Error.dump(%CoreValidationError{
+                description: "Medication statement with id '#{medication_statement.id}' already exists",
+                path: "$.medication_statements.#{i}.id"
+              })
+
+            {:halt, {:error, error, 422}}
 
           _ ->
             {:cont, acc}
@@ -927,10 +996,18 @@ defmodule Core.Patients do
   end
 
   defp validate_diagnostic_reports(patient_id_hash, diagnostic_reports) do
-    Enum.reduce_while(diagnostic_reports, {:ok, diagnostic_reports}, fn diagnostic_report, acc ->
+    diagnostic_reports
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, diagnostic_reports}, fn {diagnostic_report, i}, acc ->
       case DiagnosticReports.get_by_id(patient_id_hash, diagnostic_report.id) do
         {:ok, _} ->
-          {:halt, {:error, "Diagnostic report with id '#{diagnostic_report.id}' already exists", 409}}
+          {:error, error} =
+            Error.dump(%CoreValidationError{
+              description: "Diagnostic report with id '#{diagnostic_report.id}' already exists",
+              path: "$.diagnostic_reports.#{i}.id"
+            })
+
+          {:halt, {:error, error, 422}}
 
         _ ->
           {:cont, acc}
@@ -944,7 +1021,14 @@ defmodule Core.Patients do
     else
       {:error, %{"error" => _} = error} ->
         Logger.info(inspect(error))
-        {:error, "Invalid signed content", 422}
+
+        {:error, error} =
+          Error.dump(%CoreValidationError{
+            description: "Invalid signed content",
+            path: "$.signed_data"
+          })
+
+        {:error, error, 422}
 
       error ->
         Logger.error(inspect(error))
@@ -965,6 +1049,7 @@ defmodule Core.Patients do
     case EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id) do
       :ok -> :ok
       {:error, error} -> {:ok, error, 409}
+      error -> error
     end
   end
 end

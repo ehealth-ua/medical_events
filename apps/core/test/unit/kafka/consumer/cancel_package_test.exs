@@ -752,7 +752,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                })
     end
 
-    test "faild when entity has alraady entered_in_error status", %{test_data: {episode, encounter, _}} do
+    test "failed when entity has already entered_in_error status", %{test_data: {episode, encounter, _}} do
       stub(IlMock, :get_legal_entity, fn id, _ ->
         {:ok,
          %{
@@ -800,7 +800,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{"error" => "Invalid transition for encounter - already entered_in_error"},
+        "Invalid transition for encounter - already entered_in_error",
         409
       )
 
