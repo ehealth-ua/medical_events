@@ -16,10 +16,14 @@ defmodule Core.Patients.RiskAssessments do
 
   def get_by_id(patient_id_hash, id) do
     with %{"risk_assessments" => %{^id => risk_assessment}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "risk_assessments.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "risk_assessments.#{id}" => %{"$exists" => true}
+             },
+             projection: ["risk_assessments.#{id}": true]
+           ) do
       {:ok, RiskAssessment.create(risk_assessment)}
     else
       _ ->

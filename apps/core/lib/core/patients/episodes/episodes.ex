@@ -14,10 +14,14 @@ defmodule Core.Patients.Episodes do
 
   def get_by_id(patient_id_hash, id) do
     with %{"episodes" => %{^id => episode}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "episodes.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "episodes.#{id}" => %{"$exists" => true}
+             },
+             projection: ["episodes.#{id}": true]
+           ) do
       {:ok, Episode.create(episode)}
     else
       _ ->

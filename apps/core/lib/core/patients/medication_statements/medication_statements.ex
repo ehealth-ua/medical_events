@@ -16,10 +16,14 @@ defmodule Core.Patients.MedicationStatements do
 
   def get_by_id(patient_id_hash, id) do
     with %{"medication_statements" => %{^id => medication_statement}} <-
-           Mongo.find_one(@collection, %{
-             "_id" => patient_id_hash,
-             "medication_statements.#{id}" => %{"$exists" => true}
-           }) do
+           Mongo.find_one(
+             @collection,
+             %{
+               "_id" => patient_id_hash,
+               "medication_statements.#{id}" => %{"$exists" => true}
+             },
+             projection: ["medication_statements.#{id}": true]
+           ) do
       {:ok, MedicationStatement.create(medication_statement)}
     else
       _ ->
