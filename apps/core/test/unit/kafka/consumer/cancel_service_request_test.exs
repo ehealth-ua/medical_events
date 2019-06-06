@@ -22,40 +22,6 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
   setup :verify_on_exit!
 
   describe "consume cancel service_request event" do
-    test "empty content" do
-      job = insert(:job)
-      user_id = prepare_signature_expectations()
-
-      response = %{
-        "invalid" => [
-          %{
-            "entry" => "$",
-            "entry_type" => "json_data_property",
-            "rules" => [
-              %{
-                "description" => "type mismatch. Expected Object but got String",
-                "params" => ["object"],
-                "rule" => "cast"
-              }
-            ]
-          }
-        ],
-        "message" =>
-          "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-        "type" => "validation_failed"
-      }
-
-      expect_job_update(job._id, Job.status(:failed), response, 422)
-
-      assert :ok =
-               Consumer.consume(%ServiceRequestCancelJob{
-                 _id: to_string(job._id),
-                 signed_data: Base.encode64(""),
-                 user_id: user_id,
-                 client_id: UUID.uuid4()
-               })
-    end
-
     test "empty map" do
       job = insert(:job)
       user_id = prepare_signature_expectations()
@@ -382,13 +348,13 @@ defmodule Core.Kafka.Consumer.CancelServiceRequestTest do
       insert(:patient, _id: patient_id_hash)
       employee_id = to_string(service_request.requester_employee.identifier.value)
 
-      expect_otp_verification_send_sms()
-
       expect(WorkerMock, :run, 3, fn
         _, _, :employees_by_user_id_client_id, _ -> {:ok, [employee_id]}
         _, _, :tax_id_by_employee_id, _ -> "1111111111"
         _, _, :get_auth_method, _ -> {:ok, %{"type" => "OTP", "phone_number" => "+380639999999"}}
       end)
+
+      expect_otp_verification_send_sms()
 
       status = ServiceRequest.status(:entered_in_error)
 

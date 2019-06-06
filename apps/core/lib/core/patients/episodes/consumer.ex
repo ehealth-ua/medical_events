@@ -164,7 +164,8 @@ defmodule Core.Patients.Episodes.Consumer do
 
     with {:ok, %Episode{status: ^status} = episode} <- Episodes.get_by_id(patient_id_hash, id),
          {_, true} <- {:managing_organization, episode.managing_organization.identifier.value == job.client_id},
-         {_, true} <- {:period_end, DateTime.to_date(episode.period.start) <= Date.from_iso8601!(period_end)} do
+         {_, true} <-
+           {:period_end, Date.compare(DateTime.to_date(episode.period.start), Date.from_iso8601!(period_end)) != :gt} do
       changes =
         job.request_params
         |> Map.take(~w(closing_summary status_reason))
@@ -257,7 +258,13 @@ defmodule Core.Patients.Episodes.Consumer do
     end
   end
 
-  def consume_cancel_episode(%EpisodeCancelJob{patient_id: patient_id, patient_id_hash: patient_id_hash, id: id} = job) do
+  def consume_cancel_episode(
+        %EpisodeCancelJob{
+          patient_id: patient_id,
+          patient_id_hash: patient_id_hash,
+          id: id
+        } = job
+      ) do
     now = DateTime.utc_now()
 
     with {:ok, %Episode{} = episode} <- Episodes.get_by_id(patient_id_hash, id),

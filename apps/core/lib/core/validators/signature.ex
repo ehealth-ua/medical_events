@@ -4,7 +4,7 @@ defmodule Core.Validators.Signature do
   alias Core.ValidationError
   alias Core.Validators.Error
 
-  def validate(%{"content" => content, "signatures" => signatures}, required_signatures \\ 1)
+  def validate(%{content: content, signatures: signatures}, required_signatures \\ 1)
       when is_list(signatures) do
     if Enum.count(signatures) == required_signatures do
       # return the last signature (they are in reverse order)
@@ -39,8 +39,13 @@ defmodule Core.Validators.Signature do
   end
 
   defp get_last_signer(content, %{"is_valid" => true, "signer" => signer}) do
-    {:ok, %{"content" => content, "signer" => signer}}
+    {:ok, %{content: content, signer: signer}}
   end
 
-  defp get_last_signer(_, %{"is_valid" => false, "validation_error_message" => error}), do: {:error, error}
+  defp get_last_signer(_, %{"is_valid" => false, "validation_error_message" => error}) do
+    Error.dump(%ValidationError{
+      description: error,
+      path: "$.signed_data"
+    })
+  end
 end

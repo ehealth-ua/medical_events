@@ -49,17 +49,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
 
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -93,17 +82,6 @@ defmodule Core.Kafka.Consumer.CloseEpisodeTest do
 
     test "episode was closed" do
       stub(KafkaMock, :publish_medical_event, fn _event -> :ok end)
-
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
 
       job = insert(:job)
       user_id = UUID.uuid4()

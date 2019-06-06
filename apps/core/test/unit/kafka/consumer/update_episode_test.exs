@@ -81,17 +81,6 @@ defmodule Core.Kafka.Consumer.UpdateEpisodeTest do
 
       expect_doctor(client_id)
 
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
 

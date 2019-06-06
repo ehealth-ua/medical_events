@@ -5,6 +5,7 @@ defmodule Core.Patients do
 
   alias Core.Condition
   alias Core.DiagnosesHistory
+  alias Core.DigitalSignature
   alias Core.Encounter
   alias Core.Encryptor
   alias Core.Episode
@@ -31,7 +32,6 @@ defmodule Core.Patients do
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
   alias Core.Validators.Patient, as: PatientValidator
-  alias Core.Validators.Signature
   alias Core.Visit
   alias Ecto.Changeset
   alias EView.Views.ValidationError
@@ -39,7 +39,6 @@ defmodule Core.Patients do
   require Logger
 
   @collection Patient.collection()
-  @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
   @kafka_producer Application.get_env(:core, :kafka)[:producer]
 
@@ -133,7 +132,8 @@ defmodule Core.Patients do
         |> Map.put("user_id", user_id)
         |> Map.put("client_id", client_id)
 
-      with {:ok, job, package_cancel_job} <- Jobs.create(user_id, patient_id_hash, PackageCancelJob, job_data),
+      with {:ok, job, package_cancel_job} <-
+             Jobs.create(user_id, patient_id_hash, PackageCancelJob, job_data),
            :ok <- @kafka_producer.publish_medical_event(package_cancel_job) do
         {:ok, job}
       end
@@ -141,8 +141,7 @@ defmodule Core.Patients do
   end
 
   def consume_cancel_package(%PackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:package_cancel_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
@@ -158,9 +157,6 @@ defmodule Core.Patients do
          :ok <- CancelEncounter.save(patient, content, episode, encounter_id, job) do
       :ok
     else
-      {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job, error, 422)
-
       {:patient, _} ->
         Jobs.produce_update_status(job, "Patient not found", 404)
 
@@ -191,8 +187,7 @@ defmodule Core.Patients do
         :package_create_signed_content
       end
 
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(schema, content),
          :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
@@ -201,7 +196,8 @@ defmodule Core.Patients do
            {:ok, diagnostic_reports} <- create_diagnostic_reports(job, content),
            {:ok, observations} <- create_observations(job, content, diagnostic_reports),
            {:ok, conditions} <- create_conditions(job, content, observations),
-           {:ok, encounter, diagnoses_history} <- create_encounter(job, content, conditions, visit),
+           {:ok, encounter, diagnoses_history} <-
+             create_encounter(job, content, conditions, visit),
            {:ok, immunizations, immunization_updates} <-
              create_immunizations(job, content, observations),
            {:ok, allergy_intolerances} <- create_allergy_intolerances(job, content),
@@ -254,9 +250,7 @@ defmodule Core.Patients do
               Jobs.produce_update_status(job, reason, 500)
           end
         else
-          error ->
-            Logger.error("Failed to save signed content: #{inspect(error)}")
-
+          _ ->
             Jobs.produce_update_status(job, "Failed to save signed content", 500)
         end
       else
@@ -267,9 +261,6 @@ defmodule Core.Patients do
           Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
       end
     else
-      {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job, error, 422)
-
       {:error, error} ->
         Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
@@ -1013,36 +1004,6 @@ defmodule Core.Patients do
           {:cont, acc}
       end
     end)
-  end
-
-  defp decode_signed_data(signed_data) do
-    with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
-      {:ok, data}
-    else
-      {:error, %{"error" => _} = error} ->
-        Logger.info(inspect(error))
-
-        {:error, error} =
-          Error.dump(%CoreValidationError{
-            description: "Invalid signed content",
-            path: "$.signed_data"
-          })
-
-        {:error, error, 422}
-
-      error ->
-        Logger.error(inspect(error))
-        {:ok, "Failed to decode signed content", 500}
-    end
-  end
-
-  defp validate_signed_data(signed_data) do
-    with {:ok, %{"content" => _, "signer" => _}} = validation_result <-
-           Signature.validate(signed_data) do
-      validation_result
-    else
-      {:error, error} -> {:error, error, 422}
-    end
   end
 
   defp validate_signatures(signer, employee_id, user_id, client_id) do

@@ -47,19 +47,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
 
     test "success", %{test_data: {episode, encounter, context}} do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
-
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       client_id = UUID.uuid4()
+
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -71,7 +60,13 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           }
       }
 
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
       job = insert(:job)
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
@@ -233,7 +228,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           }
       }
 
-      user_id = prepare_signature_expectations(false)
+      user_id = UUID.uuid4()
+      expect_signature("1111111111")
 
       job = insert(:job)
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
@@ -680,17 +676,6 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "failed when no entities with entered_in_error status", %{test_data: {episode, encounter, context}} do
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       client_id = UUID.uuid4()
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
@@ -703,7 +688,14 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
           }
       }
 
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       job = insert(:job)
 
       encounter_id = UUID.binary_to_string!(encounter.id.binary)
@@ -737,7 +729,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{"error" => ~s(At least one entity should have status "entered_in_error")},
+        ~s(At least one entity should have status "entered_in_error"),
         409
       )
 
@@ -753,19 +745,14 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "failed when entity has already entered_in_error status", %{test_data: {episode, encounter, _}} do
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
-      user_id = prepare_signature_expectations()
       client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
@@ -816,18 +803,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "failed when episode managing organization invalid", %{test_data: {episode, encounter, context}} do
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
-      user_id = prepare_signature_expectations()
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
       encounter = %{encounter | status: @entered_in_error}
@@ -907,26 +884,21 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
                  user_id: user_id,
-                 client_id: UUID.uuid4(),
+                 client_id: client_id,
                  signed_data: signed_data
                })
     end
 
     test "fail on signed content", %{test_data: {episode, encounter, context}} do
-      user_id = prepare_signature_expectations()
-
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       managing_organization = episode.managing_organization
       identifier = managing_organization.identifier
 
@@ -965,10 +937,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{
-          "error" =>
-            "Submitted signed content does not correspond to previously created content: immunizations.0.lot_number"
-        },
+        "Submitted signed content does not correspond to previously created content: immunizations.0.lot_number",
         409
       )
 
@@ -984,20 +953,14 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "fail on validate diagnoses" do
-      user_id = prepare_signature_expectations()
-
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
       episode =
         build(:episode, managing_organization: reference_coding(Mongo.string_to_uuid(client_id), code: "legal_entity"))
@@ -1055,7 +1018,7 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
       expect_job_update(
         job._id,
         Job.status(:failed),
-        %{"error" => "The condition can not be canceled while encounter is not canceled"},
+        "The condition can not be canceled while encounter is not canceled",
         409
       )
 
@@ -1075,19 +1038,15 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     test "diagnosis deactivated" do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
-      user_id = prepare_signature_expectations()
       client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       job = insert(:job)
 
       encounter_id = UUID.uuid4()
@@ -1189,7 +1148,8 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
     end
 
     test "episode not found" do
-      user_id = prepare_signature_expectations()
+      client_id = UUID.uuid4()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
       encounter = build(:encounter)
@@ -1238,27 +1198,17 @@ defmodule Core.Kafka.Consumer.CancelPackageTest do
                  patient_id: patient_id,
                  patient_id_hash: patient_id_hash,
                  user_id: user_id,
-                 client_id: UUID.uuid4(),
+                 client_id: client_id,
                  signed_data: signed_content
                })
     end
   end
 
-  defp prepare_signature_expectations(expect_employee_users \\ true)
-
-  defp prepare_signature_expectations(true) do
+  defp prepare_signature_expectations(client_id) do
     user_id = UUID.uuid4()
     drfo = "1111111111"
     expect_signature(drfo)
-    expect_employee_users(drfo, user_id)
-
-    user_id
-  end
-
-  defp prepare_signature_expectations(false) do
-    user_id = UUID.uuid4()
-    drfo = "1111111111"
-    expect_signature(drfo)
+    expect_employee_users(drfo, client_id, user_id)
 
     user_id
   end

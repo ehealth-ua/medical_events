@@ -1,24 +1,24 @@
 defmodule Core.Expectations.DigitalSignatureExpectation do
   @moduledoc false
 
-  import Core.Microservices
   import Mox
 
   def expect_signature(drfo) do
-    expect(DigitalSignatureMock, :decode, fn content, _headers ->
-      {:ok, decoded_content} = decode_response(Base.decode64!(content))
+    expect(WorkerMock, :run, fn "ds_api", API.Rpc, :decode_signed_content, [content] ->
+      decoded_content =
+        content
+        |> Base.decode64!()
+        |> Jason.decode!()
 
       {:ok,
        %{
-         "data" => %{
-           "content" => decoded_content,
-           "signatures" => [
-             %{
-               "is_valid" => true,
-               "signer" => %{"drfo" => drfo}
-             }
-           ]
-         }
+         content: decoded_content,
+         signatures: [
+           %{
+             "is_valid" => true,
+             "signer" => %{"drfo" => drfo}
+           }
+         ]
        }}
     end)
   end

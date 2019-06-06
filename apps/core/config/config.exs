@@ -4,10 +4,7 @@ use Mix.Config
 
 config :core,
   microservices: [
-    il: Core.Microservices.Il,
-    digital_signature: Core.Microservices.DigitalSignature,
-    media_storage: Core.Microservices.MediaStorage,
-    otp_verification: Core.Microservices.OTPVerification
+    media_storage: Core.Microservices.MediaStorage
   ],
   cache: [
     validators: Core.Validators.Cache
@@ -82,16 +79,7 @@ config :core,
     ]
   ]
 
-config :core, Core.Microservices.Il,
-  endpoint: {:system, "IL_ENDPOINT", "http://api-svc.il"},
-  hackney_options: [
-    connect_timeout: 30_000,
-    recv_timeout: 30_000,
-    timeout: 30_000
-  ]
-
 config :core, Core.Microservices.MediaStorage,
-  endpoint: {:system, "MEDIA_STORAGE_ENDPOINT", "http://api-svc.ael"},
   encounter_bucket: {:system, "MEDIA_STORAGE_ENCOUNTER_BUCKET", "encounters-dev"},
   service_request_bucket: {:system, "MEDIA_STORAGE_SERVICE_REQUEST_BUCKET", "service-requests-dev"},
   diagnostic_report_bucket: {:system, "MEDIA_STORAGE_DIAGNOSTIC_REPORT_BUCKET", "diagnostic-reports-dev"},
@@ -102,22 +90,7 @@ config :core, Core.Microservices.MediaStorage,
     timeout: {:system, :integer, "MEDIA_STORAGE_REQUEST_TIMEOUT", 30_000}
   ]
 
-config :core, Core.Microservices.DigitalSignature,
-  enabled: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true},
-  endpoint: {:system, "DIGITAL_SIGNATURE_ENDPOINT", "http://api-svc.digital-signature"},
-  hackney_options: [
-    connect_timeout: 30_000,
-    recv_timeout: 30_000,
-    timeout: 30_000
-  ]
-
-config :core, Core.Microservices.OTPVerification,
-  endpoint: {:system, "OTP_VERIFICATION_ENDPOINT", "http://api-svc.verification"},
-  hackney_options: [
-    connect_timeout: 30_000,
-    recv_timeout: 30_000,
-    timeout: 30_000
-  ]
+config :core, Core.DigitalSignature, enabled: {:system, :boolean, "DIGITAL_SIGNATURE_ENABLED", true}
 
 config :core, Core.Encryptor,
   keyphrase: {:system, :string, "PERSON_PK_KEYPHRASE"},

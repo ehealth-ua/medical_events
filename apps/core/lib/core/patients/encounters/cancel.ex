@@ -115,6 +115,9 @@ defmodule Core.Patients.Encounters.Cancel do
         :ok -> :ok
         {:error, reason} -> {:error, reason, 500}
       end
+    else
+      _ ->
+        Jobs.produce_update_status(job, "Failed to save signed content", 500)
     end
   end
 
@@ -386,7 +389,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Enum.any?(&(&1 == @entered_in_error))
     |> case do
       true -> :ok
-      _ -> {:ok, %{"error" => ~s(At least one entity should have status "entered_in_error")}, 409}
+      _ -> {:ok, ~s(At least one entity should have status "entered_in_error"), 409}
     end
   end
 
@@ -467,10 +470,7 @@ defmodule Core.Patients.Encounters.Cancel do
         :ok
 
       [{error_path, _} | _] ->
-        {:ok,
-         %{
-           "error" => "Submitted signed content does not correspond to previously created content: #{error_path}"
-         }, 409}
+        {:ok, "Submitted signed content does not correspond to previously created content: #{error_path}", 409}
     end
   end
 
@@ -498,7 +498,7 @@ defmodule Core.Patients.Encounters.Cancel do
     |> Kernel.!=(0)
     |> case do
       true ->
-        {:ok, %{"error" => "The condition can not be canceled while encounter is not canceled"}, 409}
+        {:ok, "The condition can not be canceled while encounter is not canceled", 409}
 
       _ ->
         :ok

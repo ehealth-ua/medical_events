@@ -7,11 +7,7 @@ config :logger, level: :warn
 
 config :core,
   microservices: [
-    il: IlMock,
-    digital_signature: DigitalSignatureMock,
-    media_storage: MediaStorageMock,
-    mpi: MPIMock,
-    otp_verification: OTPVerificationMock
+    media_storage: MediaStorageMock
   ],
   cache: [
     validators: Core.Validators.CacheTest

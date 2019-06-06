@@ -7,6 +7,8 @@ defmodule Api.Web.SummaryControllerTest do
   import Core.DateTime
   import Mox
 
+  setup :verify_on_exit!
+
   describe "list episodes" do
     test "successful search", %{conn: conn} do
       patient_id = UUID.uuid4()
@@ -53,10 +55,6 @@ defmodule Api.Web.SummaryControllerTest do
     end
 
     test "successful search with search parameters: period", %{conn: conn} do
-      expect(IlMock, :get_dictionaries, fn _, _ ->
-        {:ok, %{"data" => %{}}}
-      end)
-
       week_ago = create_datetime(Date.add(Date.utc_today(), -7))
       next_week = create_datetime(Date.add(Date.utc_today(), 7))
       tomorrow = create_datetime(Date.add(Date.utc_today(), +1))

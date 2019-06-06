@@ -20,44 +20,6 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
   setup :verify_on_exit!
 
   describe "consume create package event" do
-    test "empty content" do
-      job = insert(:job)
-      user_id = UUID.uuid4()
-      expect_signature(@drfo)
-
-      expect_job_update(
-        job._id,
-        Job.status(:failed),
-        %{
-          "invalid" => [
-            %{
-              "entry" => "$",
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "type mismatch. Expected Object but got String",
-                  "params" => ["object"],
-                  "rule" => "cast"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        422
-      )
-
-      assert :ok =
-               Consumer.consume(%DiagnosticReportPackageCreateJob{
-                 _id: to_string(job._id),
-                 signed_data: Base.encode64(""),
-                 user_id: user_id,
-                 client_id: UUID.uuid4()
-               })
-    end
-
     test "empty map" do
       job = insert(:job)
       user_id = UUID.uuid4()
@@ -101,25 +63,20 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "category"}}
       end)
 
-      expect_doctor(client_id)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -1025,25 +982,20 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "diagnostic_procedure"}}
       end)
 
-      expect_doctor(client_id)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -1409,25 +1361,20 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "diagnostic_procedure"}}
       end)
 
-      expect_doctor(client_id)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -1780,24 +1727,21 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "laboratory"}}
       end)
 
-      expect_doctor(client_id, 2)
+      expect_doctor(client_id)
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -2019,25 +1963,20 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "category"}}
       end)
 
-      expect_doctor(client_id)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -2405,28 +2344,23 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "counselling"}}
       end)
 
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_belongs_to_group?, _ -> false
-      end)
-
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
       end)
 
       patient_id = UUID.uuid4()
@@ -2795,25 +2729,20 @@ defmodule Core.Kafka.Consumer.CreateDiagnoisticReportPackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
       expect_doctor(client_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "counselling"}}
       end)
 
-      expect_doctor(client_id)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
 
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)

@@ -2,6 +2,7 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   @moduledoc false
 
   alias Core.DiagnosticReport
+  alias Core.DigitalSignature
   alias Core.Jobs
   alias Core.Jobs.DiagnosticReportPackageCancelJob
   alias Core.Jobs.DiagnosticReportPackageCreateJob
@@ -16,13 +17,11 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
-  alias Core.Validators.Signature
   alias Ecto.Changeset
   alias EView.Views.ValidationError
   require Logger
 
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
-  @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
 
   @one_of_request_params %{
     "$.observations" => [
@@ -71,8 +70,7 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
           user_id: user_id
         } = job
       ) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:diagnostic_report_package_create_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <-
@@ -110,9 +108,7 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
               Jobs.produce_update_status(job, reason, 500)
           end
         else
-          error ->
-            Logger.error("Failed to save signed content: #{inspect(error)}")
-
+          _ ->
             Jobs.produce_update_status(job, "Failed to save signed content", 500)
         end
       else
@@ -123,9 +119,6 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
           Jobs.produce_update_status(job, error, status_code)
       end
     else
-      {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job, error, 422)
-
       {:error, error} ->
         Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
@@ -140,8 +133,7 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   def consume_cancel_package(
         %DiagnosticReportPackageCancelJob{patient_id_hash: patient_id_hash, user_id: user_id} = job
       ) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:diagnostic_report_package_cancel_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params),
          employee_id <- get_in(content, ["encounter", "performer", "identifier", "value"]),
@@ -154,9 +146,6 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
          :ok <- CancelDiagnosticReport.save(content, diagnostic_report_id, job) do
       :ok
     else
-      {:error, %{"error" => error, "meta" => _}} ->
-        Jobs.produce_update_status(job, error, 422)
-
       {:patient, _} ->
         Jobs.produce_update_status(job, "Patient not found", 404)
 
@@ -265,29 +254,6 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
   end
 
   defp create_observations(_, _), do: {:ok, []}
-
-  defp decode_signed_data(signed_data) do
-    with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
-      {:ok, data}
-    else
-      {:error, %{"error" => _} = error} ->
-        Logger.info(inspect(error))
-        {:error, "Invalid signed content", 422}
-
-      error ->
-        Logger.error(inspect(error))
-        {:ok, "Failed to decode signed content", 500}
-    end
-  end
-
-  defp validate_signed_data(signed_data) do
-    with {:ok, %{"content" => _, "signer" => _}} = validation_result <-
-           Signature.validate(signed_data) do
-      validation_result
-    else
-      {:error, error} -> {:error, error, 422}
-    end
-  end
 
   defp validate_signatures(signer, employee_id, user_id, client_id) do
     case EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id) do

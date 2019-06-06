@@ -21,7 +21,8 @@ defmodule Core.Approvals.Consumer do
 
   @status_new Approval.status(:new)
   @service_request_status_active ServiceRequest.status(:active)
-  @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
+
+  @rpc_worker Application.get_env(:core, :rpc_worker)
 
   def consume_create_approval(
         %ApprovalCreateJob{
@@ -198,7 +199,7 @@ defmodule Core.Approvals.Consumer do
   defp hide_number(auth_method), do: auth_method
 
   defp initialize_otp_verification(%{"type" => "OTP", "phone_number" => phone_number}) do
-    case @otp_verification_api.initialize(phone_number, []) do
+    case @rpc_worker.run("otp_verification_api", OtpVerification.Rpc, :initialize, [phone_number]) do
       {:ok, _} -> :ok
       err -> err
     end
