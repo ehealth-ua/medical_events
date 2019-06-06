@@ -32,14 +32,28 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanupTest do
       updated_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second)
     )
 
-    job_deleted =
+    job_deleted_processed =
       insert(:job,
         status: Job.status(:processed),
         inserted_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second),
         updated_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second)
       )
 
-    deleted_list = [job_deleted]
+    job_deleted_failed =
+      insert(:job,
+        status: Job.status(:failed),
+        inserted_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second),
+        updated_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second)
+      )
+
+    job_deleted_failed_with_error =
+      insert(:job,
+        status: Job.status(:failed_with_error),
+        inserted_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second),
+        updated_at: DateTime.add(now, -1 * (job_deletion_days + 1) * 60 * 60 * 24, :second)
+      )
+
+    deleted_list = [job_deleted_processed, job_deleted_failed, job_deleted_failed_with_error]
 
     Enum.each(deleted_list, fn job ->
       expect(WorkerMock, :run, fn _, _, :transaction, args ->
