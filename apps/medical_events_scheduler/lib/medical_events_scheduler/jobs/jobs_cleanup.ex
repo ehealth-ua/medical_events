@@ -18,7 +18,7 @@ defmodule MedicalEventsScheduler.Jobs.JobsCleanup do
       @collection
       |> Mongo.find(
         %{
-          "status" => Job.status(:processed),
+          "status" => %{"$ne" => Job.status(:pending)},
           "updated_at" => %{
             "$lt" =>
               DateTime.add(
