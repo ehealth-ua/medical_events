@@ -22,8 +22,7 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
       expect(MediaStorageMock, :save, fn _, _, _, _ -> :ok end)
 
       client_id = UUID.uuid4()
-
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
 
@@ -122,8 +121,7 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
 
     test "failed when no entities with entered_in_error status" do
       client_id = UUID.uuid4()
-
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
 
@@ -182,8 +180,7 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
 
     test "faild when entity has alraady entered_in_error status" do
       client_id = UUID.uuid4()
-
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
 
@@ -228,8 +225,7 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
 
     test "fail on signed content" do
       client_id = UUID.uuid4()
-
-      user_id = prepare_signature_expectations()
+      user_id = prepare_signature_expectations(client_id)
 
       job = insert(:job)
 
@@ -291,21 +287,11 @@ defmodule Core.Kafka.Consumer.CancelDiagnosticReportPackageTest do
     end
   end
 
-  defp prepare_signature_expectations(expect_employee_users \\ true)
-
-  defp prepare_signature_expectations(true) do
+  defp prepare_signature_expectations(client_id) do
     user_id = UUID.uuid4()
     drfo = "1111111111"
     expect_signature(drfo)
-    expect_employee_users(drfo, user_id)
-
-    user_id
-  end
-
-  defp prepare_signature_expectations(false) do
-    user_id = UUID.uuid4()
-    drfo = "1111111111"
-    expect_signature(drfo)
+    expect_employee_users(drfo, client_id, user_id)
 
     user_id
   end

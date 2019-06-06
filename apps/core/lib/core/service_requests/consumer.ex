@@ -3,6 +3,7 @@ defmodule Core.ServiceRequests.Consumer do
 
   use Confex, otp_app: :core
 
+  alias Core.DigitalSignature
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ServiceRequestCancelJob
@@ -26,16 +27,13 @@ defmodule Core.ServiceRequests.Consumer do
   alias Core.Validators.Error
   alias Core.Validators.JsonSchema
   alias Core.Validators.OneOf
-  alias Core.Validators.Signature
   alias Ecto.Changeset
   alias EView.Views.ValidationError
   require Logger
 
   @worker Application.get_env(:core, :rpc_worker)
-  @digital_signature Application.get_env(:core, :microservices)[:digital_signature]
   @collection ServiceRequest.collection()
   @media_storage Application.get_env(:core, :microservices)[:media_storage]
-  @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
 
   @active ServiceRequest.status(:active)
   @completed ServiceRequest.status(:completed)
@@ -52,12 +50,12 @@ defmodule Core.ServiceRequests.Consumer do
           client_id: client_id
         } = job
       ) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:service_request_create_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
       expiration_days = config()[:service_request_expiration_days]
+
       expiration_erl_date = now |> DateTime.to_date() |> Date.add(expiration_days) |> Date.to_erl()
 
       expiration_date =
@@ -121,7 +119,12 @@ defmodule Core.ServiceRequests.Consumer do
                  ) do
             result =
               %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-              |> Transaction.add_operation(@collection, :insert, service_request, service_request._id)
+              |> Transaction.add_operation(
+                @collection,
+                :insert,
+                service_request,
+                service_request._id
+              )
               |> Jobs.update(
                 job._id,
                 Job.status(:processed),
@@ -148,8 +151,7 @@ defmodule Core.ServiceRequests.Consumer do
             {:error, reason} ->
               Jobs.produce_update_status(job, reason, 409)
 
-            error ->
-              Logger.error("Failed to save signed content: #{inspect(error)}")
+            _ ->
               Jobs.produce_update_status(job, "Failed to save signed content", 500)
           end
       end
@@ -343,7 +345,11 @@ defmodule Core.ServiceRequests.Consumer do
         Jobs.produce_update_status(job, message, 409)
 
       {status, :status} ->
-        Jobs.produce_update_status(job, "Service request in status #{status} cannot be released", 409)
+        Jobs.produce_update_status(
+          job,
+          "Service request in status #{status} cannot be released",
+          409
+        )
     end
   end
 
@@ -354,8 +360,7 @@ defmodule Core.ServiceRequests.Consumer do
           client_id: client_id
         } = job
       ) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:service_request_recall_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
@@ -423,12 +428,13 @@ defmodule Core.ServiceRequests.Consumer do
                   Logger.error("Person #{patient_id} not found")
 
                 {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
-                  @otp_verification_api.send_sms(
+                  @worker.run("otp_verification_api", OtpVerification.Rpc, :send_sms, [
                     phone_number,
-                    EEx.eval_string(config()[:recall_sms], assigns: [number: service_request.requisition]),
-                    "text",
-                    []
-                  )
+                    EEx.eval_string(config()[:recall_sms],
+                      assigns: [number: service_request.requisition]
+                    ),
+                    "text"
+                  ])
 
                 _ ->
                   :ok
@@ -478,17 +484,24 @@ defmodule Core.ServiceRequests.Consumer do
               {:error, reason} ->
                 Jobs.produce_update_status(job, reason, 409)
 
-              error ->
-                Logger.error("Failed to save signed content: #{inspect(error)}")
+              _ ->
                 Jobs.produce_update_status(job, "Failed to save signed content", 500)
             end
         end
       else
         nil ->
-          Jobs.produce_update_status(job, "Service request with id '#{service_request_id}' is not found", 404)
+          Jobs.produce_update_status(
+            job,
+            "Service request with id '#{service_request_id}' is not found",
+            404
+          )
 
         {:status, status} ->
-          Jobs.produce_update_status(job, "Service request in status #{status} cannot be recalled", 409)
+          Jobs.produce_update_status(
+            job,
+            "Service request in status #{status} cannot be recalled",
+            409
+          )
 
         {:error, message, status_code} ->
           Jobs.produce_update_status(job, message, status_code)
@@ -510,8 +523,7 @@ defmodule Core.ServiceRequests.Consumer do
           service_request_id: service_request_id
         } = job
       ) do
-    with {:ok, data} <- decode_signed_data(job.signed_data),
-         {:ok, %{"content" => content, "signer" => signer}} <- validate_signed_data(data),
+    with {:ok, %{content: content, signer: signer}} <- DigitalSignature.decode_and_validate(job.signed_data),
          :ok <- JsonSchema.validate(:service_request_cancel_signed_content, content),
          :ok <- OneOf.validate(content, @one_of_request_params) do
       now = DateTime.utc_now()
@@ -579,14 +591,13 @@ defmodule Core.ServiceRequests.Consumer do
                   Logger.error("Person #{patient_id} not found")
 
                 {:ok, %{"type" => "OTP", "phone_number" => phone_number}} ->
-                  @otp_verification_api.send_sms(
+                  @worker.run("otp_verification_api", OtpVerification.Rpc, :send_sms, [
                     phone_number,
                     EEx.eval_string(config()[:cancel_sms],
                       assigns: [number: service_request.requisition]
                     ),
-                    "text",
-                    []
-                  )
+                    "text"
+                  ])
 
                 _ ->
                   :ok
@@ -636,14 +647,17 @@ defmodule Core.ServiceRequests.Consumer do
               {:error, reason} ->
                 Jobs.produce_update_status(job, reason, 409)
 
-              error ->
-                Logger.error("Failed to save signed content: #{inspect(error)}")
+              _ ->
                 Jobs.produce_update_status(job, "Failed to save signed content", 500)
             end
         end
       else
         {:status, false, status} ->
-          Jobs.produce_update_status(job, "Service request in status #{status} cannot be cancelled", 409)
+          Jobs.produce_update_status(
+            job,
+            "Service request in status #{status} cannot be cancelled",
+            409
+          )
 
         {:error, message, status_code} ->
           Jobs.produce_update_status(job, message, status_code)
@@ -737,7 +751,11 @@ defmodule Core.ServiceRequests.Consumer do
         Jobs.produce_update_status(job, "Service request #{job.id} was not found", 404)
 
       {:ok, %ServiceRequest{status: status}} ->
-        Jobs.produce_update_status(job, "Service request with status #{status} can't be closed", 409)
+        Jobs.produce_update_status(
+          job,
+          "Service request with status #{status} can't be closed",
+          409
+        )
     end
   end
 
@@ -958,29 +976,6 @@ defmodule Core.ServiceRequests.Consumer do
       {:error, ValidationError.render("422.json", %{schema: error}), 422}
     else
       :ok
-    end
-  end
-
-  defp decode_signed_data(signed_data) do
-    with {:ok, %{"data" => data}} <- @digital_signature.decode(signed_data, []) do
-      {:ok, data}
-    else
-      {:error, %{"error" => _} = error} ->
-        Logger.info(inspect(error))
-        {:error, "Invalid signed content", 422}
-
-      error ->
-        Logger.error(inspect(error))
-        {:ok, "Failed to decode signed content", 500}
-    end
-  end
-
-  defp validate_signed_data(signed_data) do
-    with {:ok, %{"content" => _, "signer" => _}} = validation_result <-
-           Signature.validate(signed_data) do
-      validation_result
-    else
-      {:error, error} -> {:error, error, 422}
     end
   end
 

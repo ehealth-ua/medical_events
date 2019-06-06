@@ -11,10 +11,9 @@ defmodule Core.Approvals do
 
   @collection Approval.collection()
 
-  @worker Application.get_env(:core, :rpc_worker)
+  @rpc_worker Application.get_env(:core, :rpc_worker)
   @status_new Approval.status(:new)
   @status_active Approval.status(:active)
-  @otp_verification_api Application.get_env(:core, :microservices)[:otp_verification]
 
   def verify(
         %{"patient_id_hash" => patient_id_hash, "patient_id" => patient_id, "id" => id} = params,
@@ -70,7 +69,7 @@ defmodule Core.Approvals do
   end
 
   def get_person_auth_method(person_id) do
-    case @worker.run("mpi", MPI.Rpc, :get_auth_method, [person_id]) do
+    case @rpc_worker.run("mpi", MPI.Rpc, :get_auth_method, [person_id]) do
       nil ->
         {:error, "Person is not found", 404}
 
@@ -83,7 +82,7 @@ defmodule Core.Approvals do
   end
 
   defp verify_auth(%{"type" => "OTP", "phone_number" => phone_number}, code) do
-    case @otp_verification_api.complete(phone_number, %{code: code}, []) do
+    case @rpc_worker.run("otp_verification_api", OtpVerification.Rpc, :complete, [phone_number, code]) do
       {:ok, _} ->
         :ok
 

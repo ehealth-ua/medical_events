@@ -3,6 +3,18 @@ defmodule Core.Expectations.IlExpectations do
 
   import Mox
 
+  def expect_legal_entity(response, n \\ 1) do
+    expect(WorkerMock, :run, n, fn _, _, :legal_entity_by_id, _ ->
+      {:ok, response}
+    end)
+  end
+
+  def expect_division(response, n \\ 1) do
+    expect(WorkerMock, :run, n, fn _, _, :division_by_id, _ ->
+      {:ok, response}
+    end)
+  end
+
   def expect_doctor(client_id, n \\ 1) do
     expect(WorkerMock, :run, n, fn
       _, _, :employee_by_id, [id] ->
@@ -26,23 +38,16 @@ defmodule Core.Expectations.IlExpectations do
     end)
   end
 
-  def expect_employee_users(tax_id, user_id, n \\ 1) do
-    expect(IlMock, :get_employee_users, n, fn employee_id, headers ->
-      client_id =
-        headers[:"x-consumer-metadata"]
-        |> Jason.decode!()
-        |> Map.get("client_id")
-
+  def expect_employee_users(tax_id, client_id, user_id, n \\ 1) do
+    expect(WorkerMock, :run, n, fn _, _, :employee_by_id_users_short, [employee_id] ->
       {:ok,
        %{
-         "data" => %{
-           "id" => employee_id,
-           "legal_entity_id" => client_id,
-           "party" => %{
-             "id" => UUID.uuid4(),
-             "tax_id" => tax_id,
-             "users" => [%{"user_id" => user_id}]
-           }
+         id: employee_id,
+         legal_entity_id: client_id,
+         party: %{
+           id: UUID.uuid4(),
+           tax_id: tax_id,
+           users: [%{user_id: user_id}]
          }
        }}
     end)

@@ -25,6 +25,13 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       expect_doctor(client_id)
 
       response = %{
@@ -47,17 +54,6 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       }
 
       expect_job_update(job._id, Job.status(:failed), response, 422)
-
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
 
       assert :ok =
                Consumer.consume(%EpisodeCreateJob{
@@ -93,19 +89,14 @@ defmodule Core.Kafka.Consumer.CreateEpisodeTest do
       insert(:patient, _id: patient_id_hash)
       episode_id = UUID.uuid4()
       client_id = UUID.uuid4()
+
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
+
       expect_doctor(client_id)
-
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
 

@@ -43,17 +43,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
     end
 
     test "failed when episode's managing organization is invalid" do
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -89,17 +78,6 @@ defmodule Core.Kafka.Consumer.CancelEpisodeTest do
     end
 
     test "episode was canceled" do
-      stub(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
-
       job = insert(:job)
       user_id = UUID.uuid4()
       client_id = UUID.uuid4()

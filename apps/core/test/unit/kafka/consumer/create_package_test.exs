@@ -21,45 +21,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
   setup :verify_on_exit!
 
   describe "consume create package event" do
-    test "empty content" do
-      job = insert(:job)
-      user_id = UUID.uuid4()
-      expect_signature(@drfo)
-
-      expect_job_update(
-        job._id,
-        Job.status(:failed),
-        %{
-          "invalid" => [
-            %{
-              "entry" => "$",
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "type mismatch. Expected Object but got String",
-                  "params" => ["object"],
-                  "rule" => "cast"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        422
-      )
-
-      assert :ok =
-               Consumer.consume(%PackageCreateJob{
-                 _id: to_string(job._id),
-                 visit: %{"id" => UUID.uuid4(), "period" => %{}},
-                 signed_data: Base.encode64(""),
-                 user_id: user_id,
-                 client_id: UUID.uuid4()
-               })
-    end
-
     test "empty map" do
       job = insert(:job)
       user_id = UUID.uuid4()
@@ -101,19 +62,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "visit not found" do
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
-
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
-
       encounter_id = UUID.uuid4()
 
       patient_id = UUID.uuid4()
@@ -141,7 +89,16 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
+
+      expect_division(%{
+        id: UUID.uuid4(),
+        status: "ACTIVE",
+        legal_entity_id: client_id
+      })
+
+      expect_doctor(client_id)
+
       episode_id = patient.episodes |> Map.keys() |> hd
 
       signed_content = %{
@@ -235,35 +192,27 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       client_id = UUID.uuid4()
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
 
       expect(WorkerMock, :run, fn
         _, _, :service_by_id, _ -> {:ok, %{category: "category"}}
       end)
 
-      expect_doctor(client_id, 2)
+      expect_doctor(client_id)
 
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
+      expect_legal_entity(%{
+        id: client_id,
+        status: "ACTIVE",
+        public_name: "LegalEntity 1"
+      })
 
-      expect(IlMock, :get_legal_entity, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "public_name" => "LegalEntity 1"
-           }
-         }}
-      end)
+      expect_doctor(client_id)
+
+      expect_division(%{
+        id: UUID.uuid4(),
+        status: "ACTIVE",
+        legal_entity_id: client_id
+      })
 
       encounter_id = UUID.uuid4()
 
@@ -1246,21 +1195,7 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "failed when encounter reference episode doesnt match episode managing organization" do
       client_id = UUID.uuid4()
-      expect_doctor(client_id)
-
-      expect(IlMock, :get_division, fn id, _ ->
-        {:ok,
-         %{
-           "data" => %{
-             "id" => id,
-             "status" => "ACTIVE",
-             "legal_entity_id" => client_id
-           }
-         }}
-      end)
-
       encounter_id = UUID.uuid4()
-
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
 
@@ -1270,7 +1205,15 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
       job = insert(:job)
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
+      expect_doctor(client_id)
+
+      expect_division(%{
+        id: UUID.uuid4(),
+        status: "ACTIVE",
+        legal_entity_id: client_id
+      })
+
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
       observation_id = UUID.uuid4()
@@ -2963,8 +2906,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "fail on invalid incoming_referral's used_by_legal_entity" do
       client_id = UUID.uuid4()
-      expect_doctor(client_id, 2)
-
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -2994,7 +2935,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
+      expect_doctor(client_id, 2)
 
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()
@@ -3106,8 +3048,6 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
     test "fail on invalid incoming_referral's category" do
       client_id = UUID.uuid4()
-      expect_doctor(client_id, 2)
-
       encounter_id = UUID.uuid4()
       patient_id = UUID.uuid4()
       patient_id_hash = Patients.get_pk_hash(patient_id)
@@ -3137,7 +3077,8 @@ defmodule Core.Kafka.Consumer.CreatePackageTest do
 
       user_id = UUID.uuid4()
       expect_signature(@drfo)
-      expect_employee_users(@drfo, user_id)
+      expect_employee_users(@drfo, client_id, user_id)
+      expect_doctor(client_id, 2)
 
       visit_id = UUID.uuid4()
       episode_id = patient.episodes |> Map.keys() |> hd()

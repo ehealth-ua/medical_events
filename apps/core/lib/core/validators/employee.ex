@@ -1,7 +1,6 @@
 defmodule Core.Validators.Employee do
   @moduledoc false
 
-  alias Core.Rpc
   import Core.ValidationError
 
   @worker Application.get_env(:core, :rpc_worker)
@@ -37,7 +36,7 @@ defmodule Core.Validators.Employee do
   def get_data(ets_key, employee_id) do
     case :ets.lookup(:message_cache, ets_key) do
       [{^ets_key, employee}] -> employee
-      _ -> @worker.run("ehealth", Rpc, :employee_by_id, [to_string(employee_id)])
+      _ -> @worker.run("ehealth", EHealth.Rpc, :employee_by_id, [to_string(employee_id)])
     end
   end
 end

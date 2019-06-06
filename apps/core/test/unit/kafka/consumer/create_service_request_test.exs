@@ -16,43 +16,6 @@ defmodule Core.Kafka.Consumer.CreateServiceRequestTest do
   setup :verify_on_exit!
 
   describe "consume create service_request event" do
-    test "empty content" do
-      job = insert(:job)
-      user_id = prepare_signature_expectations()
-
-      expect_job_update(
-        job._id,
-        Job.status(:failed),
-        %{
-          "invalid" => [
-            %{
-              "entry" => "$",
-              "entry_type" => "json_data_property",
-              "rules" => [
-                %{
-                  "description" => "type mismatch. Expected Object but got String",
-                  "params" => ["object"],
-                  "rule" => "cast"
-                }
-              ]
-            }
-          ],
-          "message" =>
-            "Validation failed. You can find validators description at our API Manifest: http://docs.apimanifest.apiary.io/#introduction/interacting-with-api/errors.",
-          "type" => "validation_failed"
-        },
-        422
-      )
-
-      assert :ok =
-               Consumer.consume(%ServiceRequestCreateJob{
-                 _id: to_string(job._id),
-                 signed_data: Base.encode64(""),
-                 user_id: user_id,
-                 client_id: UUID.uuid4()
-               })
-    end
-
     test "empty map" do
       job = insert(:job)
       user_id = prepare_signature_expectations()
