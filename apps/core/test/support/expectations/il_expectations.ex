@@ -18,17 +18,18 @@ defmodule Core.Expectations.IlExpectations do
   def expect_doctor(client_id, n \\ 1) do
     expect(WorkerMock, :run, n, fn
       _, _, :employee_by_id, [id] ->
-        %{
-          id: id,
-          status: "APPROVED",
-          employee_type: "DOCTOR",
-          legal_entity_id: client_id,
-          party: %{
-            first_name: "foo",
-            second_name: "bar",
-            last_name: "baz"
-          }
-        }
+        {:ok,
+         %{
+           id: id,
+           status: "APPROVED",
+           employee_type: "DOCTOR",
+           legal_entity_id: client_id,
+           party: %{
+             first_name: "foo",
+             second_name: "bar",
+             last_name: "baz"
+           }
+         }}
     end)
   end
 

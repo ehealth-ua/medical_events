@@ -89,7 +89,7 @@ defmodule Core.Kafka.Consumer.UseServiceRequestTest do
       employee_id = UUID.uuid4()
 
       expect(WorkerMock, :run, fn _, _, :employee_by_id, _ ->
-        %{employee_type: "DOCTOR", status: "APPROVED", legal_entity_id: UUID.uuid4()}
+        {:ok, %{employee_type: "DOCTOR", status: "APPROVED", legal_entity_id: UUID.uuid4()}}
       end)
 
       patient_id = UUID.uuid4()
