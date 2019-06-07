@@ -385,7 +385,7 @@ defmodule Core.DiagnosticReport do
         display_value =
           with [{_, legal_entity}] <-
                  :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
-            Map.get(legal_entity, "public_name")
+            Map.get(legal_entity, :public_name)
           else
             _ ->
               Logger.warn("Failed to fill up legal_entity value for diagnostic report")
