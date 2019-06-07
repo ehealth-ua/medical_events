@@ -1,8 +1,9 @@
 defmodule Core.Validators.OneOf do
   @moduledoc false
 
-  alias Core.ValidationError
+  alias Core.ValidationError, as: CoreValidationError
   alias Core.Validators.Error
+  alias EView.Views.ValidationError
 
   def validate(data, one_of_params, opts \\ [])
 
@@ -27,9 +28,19 @@ defmodule Core.Validators.OneOf do
       end)
 
     case errors do
-      :argument_error -> raise(ArgumentError, message: "Inavalid parameters for oneOf validation function")
-      [] -> :ok
-      errors -> Error.dump(errors)
+      :argument_error ->
+        raise(ArgumentError, message: "Inavalid parameters for oneOf validation function")
+
+      [] ->
+        :ok
+
+      errors ->
+        if Keyword.get(opts, :render_error, true) do
+          {:error, errors} = Error.dump(errors)
+          {:error, ValidationError.render("422.json", %{schema: errors}), 422}
+        else
+          Error.dump(errors)
+        end
     end
   end
 
@@ -203,7 +214,7 @@ defmodule Core.Validators.OneOf do
   defp build_error(%{error_path: error_path} = state) do
     {:validation_error,
      [
-       %ValidationError{
+       %CoreValidationError{
          description: "At least one of the parameters must be present",
          path: Enum.join(error_path, "."),
          params: paths(state),
@@ -215,7 +226,7 @@ defmodule Core.Validators.OneOf do
   defp build_error(keys, %{error_path: error_path} = state) do
     {:validation_error,
      Enum.map(keys, fn key ->
-       %ValidationError{
+       %CoreValidationError{
          description: "Only one of the parameters must be present",
          path: error_path |> add_path(key, nil) |> Enum.join("."),
          params: paths(state),

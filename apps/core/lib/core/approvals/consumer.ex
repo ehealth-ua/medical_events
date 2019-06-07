@@ -82,24 +82,15 @@ defmodule Core.Approvals.Consumer do
           approval = Changeset.apply_changes(changeset)
 
           with :ok <- initialize_otp_verification(auth_method) do
-            result =
-              %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-              |> Transaction.add_operation(@collection, :insert, approval, approval._id)
-              |> Jobs.update(
-                job._id,
-                Job.status(:processed),
-                %{"response_data" => ApprovalsRenderer.render(approval)},
-                200
-              )
-              |> Transaction.flush()
-
-            case result do
-              :ok ->
-                :ok
-
-              {:error, reason} ->
-                Jobs.produce_update_status(job, reason, 500)
-            end
+            %Transaction{actor_id: user_id, patient_id: patient_id_hash}
+            |> Transaction.add_operation(@collection, :insert, approval, approval._id)
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{"response_data" => ApprovalsRenderer.render(approval)},
+              200
+            )
+            |> Jobs.complete(job)
           else
             error ->
               Logger.error("Failed to initialize otp verification: #{inspect(error)}")
@@ -107,9 +98,6 @@ defmodule Core.Approvals.Consumer do
           end
       end
     else
-      {:error, error} ->
-        Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
-
       {_, response, status_code} ->
         Jobs.produce_update_status(job, response, status_code)
     end
@@ -182,10 +170,13 @@ defmodule Core.Approvals.Consumer do
         {:error, "Service request is not found", 409}
 
       {{:error, message}, :expiration_date} ->
-        Error.dump(%Core.ValidationError{
-          description: message,
-          path: "$.service_request"
-        })
+        {:error, error} =
+          Error.dump(%Core.ValidationError{
+            description: message,
+            path: "$.service_request"
+          })
+
+        {:error, ValidationError.render("422.json", %{schema: error}), 422}
     end
   end
 

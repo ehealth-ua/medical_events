@@ -96,7 +96,7 @@ defmodule Core.Patients.DiagnosticReports.Package do
     )
     |> insert_observations(observations)
     |> Jobs.update(job._id, Job.status(:processed), %{"links" => links}, 200)
-    |> Transaction.flush()
+    |> Jobs.complete(job)
   end
 
   def insert_observations(transaction, observations) do

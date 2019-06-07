@@ -224,7 +224,7 @@ defmodule Core.Encounter do
     end
   end
 
-  def fill_up_diagnoses_codes(%__MODULE__{diagnoses: diagnoses} = encounter) do
+  def fill_up_diagnoses_codes(%{diagnoses: diagnoses} = entity) do
     diagnoses =
       Enum.map(diagnoses, fn diagnosis ->
         with [{_, condition}] <-
@@ -233,6 +233,6 @@ defmodule Core.Encounter do
         end
       end)
 
-    %{encounter | diagnoses: diagnoses}
+    %{entity | diagnoses: diagnoses}
   end
 end

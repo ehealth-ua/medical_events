@@ -33,7 +33,7 @@ defmodule Core.Approvals.Producer do
          :ok <- PatientValidator.is_active(patient_status),
          :ok <- JsonSchema.validate(:approval_create, Map.take(params, @create_request_params)),
          :ok <-
-           OneOf.validate(Map.take(params, @create_request_params), @one_of_create_request_params),
+           OneOf.validate(Map.take(params, @create_request_params), @one_of_create_request_params, render_error: false),
          {:ok, job, approval_create_job} <-
            Jobs.create(
              user_id,

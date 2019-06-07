@@ -47,23 +47,17 @@ defmodule Core.Patients.DiagnosticReports.Cancel do
 
     with :ok <- save_signed_content(patient_id, diagnostic_report_id, job.signed_data),
          set <- update_patient(user_id, package_data) do
-      result =
-        %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
-        |> Transaction.add_operation(
-          @patients_collection,
-          :update,
-          %{"_id" => job.patient_id_hash},
-          %{"$set" => set},
-          job.patient_id_hash
-        )
-        |> update_observations(observations_ids, user_id)
-        |> Jobs.update(job._id, Job.status(:processed), %{}, 200)
-        |> Transaction.flush()
-
-      case result do
-        :ok -> :ok
-        {:error, reason} -> {:error, reason, 500}
-      end
+      %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
+      |> Transaction.add_operation(
+        @patients_collection,
+        :update,
+        %{"_id" => job.patient_id_hash},
+        %{"$set" => set},
+        job.patient_id_hash
+      )
+      |> update_observations(observations_ids, user_id)
+      |> Jobs.update(job._id, Job.status(:processed), %{}, 200)
+      |> Jobs.complete(job)
     end
   end
 

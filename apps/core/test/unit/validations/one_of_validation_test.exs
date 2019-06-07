@@ -41,7 +41,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_3", "$.level_2.level_2_4"],
                    rule: "oneOf"
                  }, "$.level_2.level_2_4"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -55,7 +55,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_3", "$[0][0].level_2[0][0].level_2_4"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0].level_2_4"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
 
       # one_of_params is list
       one_of_params = %{
@@ -87,7 +87,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_3", "$.level_2.level_2_4"],
                    rule: "oneOf"
                  }, "$.level_2.level_2_4"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -111,7 +111,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_3", "$[0][0].level_2[0][0].level_2_4"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0].level_2_4"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
     end
 
     test "invalid request params: none of the oneOf parameters are sent" do
@@ -125,7 +125,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_5", "$.level_2.level_2_6"],
                    rule: "oneOf"
                  }, "$.level_2"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -134,7 +134,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_5", "$[0][0].level_2[0][0].level_2_6"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0]"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
 
       # one_of_params is list
       one_of_params = %{
@@ -156,7 +156,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_7", "$.level_2.level_2_8"],
                    rule: "oneOf"
                  }, "$.level_2"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -170,7 +170,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_7", "$[0][0].level_2[0][0].level_2_8"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0]"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
     end
   end
 
@@ -224,7 +224,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_3", "$.level_2.level_2_4"],
                    rule: "oneOf"
                  }, "$.level_2.level_2_4"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -238,7 +238,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_3", "$[0][0].level_2[0][0].level_2_4"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0].level_2_4"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
 
       # one_of_params is list
       one_of_params = %{
@@ -267,7 +267,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$.level_2.level_2_3", "$.level_2.level_2_4"],
                    rule: "oneOf"
                  }, "$.level_2.level_2_4"}
-              ]} == OneOf.validate(get_params(), one_of_params)
+              ]} == OneOf.validate(get_params(), one_of_params, render_error: false)
 
       assert {:error,
               [
@@ -291,7 +291,7 @@ defmodule Core.OneOfValidationTest do
                    params: ["$[0][0].level_2[0][0].level_2_3", "$[0][0].level_2[0][0].level_2_4"],
                    rule: "oneOf"
                  }, "$[0][0].level_2[0][0].level_2_4"}
-              ]} == OneOf.validate(get_nested_params(), one_of_params)
+              ]} == OneOf.validate(get_nested_params(), one_of_params, render_error: false)
     end
   end
 

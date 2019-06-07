@@ -361,7 +361,7 @@ defmodule Core.Patients.Package do
     |> insert_conditions(conditions)
     |> insert_observations(observations)
     |> Jobs.update(job._id, Job.status(:processed), %{"links" => links}, 200)
-    |> Transaction.flush()
+    |> Jobs.complete(job)
   end
 
   def insert_conditions(transaction, conditions) do

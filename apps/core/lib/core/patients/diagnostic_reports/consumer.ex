@@ -91,22 +91,13 @@ defmodule Core.Patients.DiagnosticReports.Consumer do
                ) do
           diagnostic_report = %{diagnostic_report | signed_content_links: [resource_name]}
 
-          result =
-            Package.save(
-              job,
-              %{
-                "diagnostic_report" => diagnostic_report,
-                "observations" => observations
-              }
-            )
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          Package.save(
+            job,
+            %{
+              "diagnostic_report" => diagnostic_report,
+              "observations" => observations
+            }
+          )
         else
           _ ->
             Jobs.produce_update_status(job, "Failed to save signed content", 500)
