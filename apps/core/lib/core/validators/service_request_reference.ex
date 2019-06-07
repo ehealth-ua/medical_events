@@ -59,7 +59,7 @@ defmodule Core.Validators.ServiceRequestReference do
       nil ->
         error(options, "Service request must be related to the same legal entity")
 
-      %{} = employee ->
+      {:ok, employee} ->
         :ets.insert(:message_cache, {ets_key, employee})
 
         if employee.legal_entity_id == client_id do

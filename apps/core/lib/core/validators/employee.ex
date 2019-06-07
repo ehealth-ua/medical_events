@@ -12,7 +12,7 @@ defmodule Core.Validators.Employee do
       nil ->
         error(options, "Employee with such ID is not found")
 
-      %{} = employee ->
+      {:ok, employee} ->
         :ets.insert(:message_cache, {ets_key, employee})
 
         with :ok <- validate_field(:type, employee.employee_type, options),
@@ -35,7 +35,7 @@ defmodule Core.Validators.Employee do
 
   def get_data(ets_key, employee_id) do
     case :ets.lookup(:message_cache, ets_key) do
-      [{^ets_key, employee}] -> employee
+      [{^ets_key, employee}] -> {:ok, employee}
       _ -> @worker.run("ehealth", EHealth.Rpc, :employee_by_id, [to_string(employee_id)])
     end
   end

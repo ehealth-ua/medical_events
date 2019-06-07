@@ -9,7 +9,7 @@ defmodule Core.Dictionaries do
       {:ok, nil} ->
         params = [%{"is_active" => true}]
 
-        with {:ok, dictionaries} <- @rpc_worker.run("ehealth", EHealth.Rpc, :get_dictionaries, [params]) do
+        with {:ok, dictionaries} <- @rpc_worker.run("ehealth", EHealth.Rpc, :get_dictionaries, params) do
           @validator_cache.set_dictionaries(dictionaries)
           {:ok, dictionaries}
         end

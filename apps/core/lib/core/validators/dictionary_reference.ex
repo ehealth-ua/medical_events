@@ -43,7 +43,7 @@ defmodule Core.Validators.DictionaryReference do
     referenced_field = Map.get(value, referenced_field)
 
     with {:ok, dictionaries} <- Dictionaries.get_dictionaries(),
-         %{"values" => values} <- Enum.find(dictionaries, fn %{"name" => name} -> name == referenced_field end),
+         %{values: values} <- Enum.find(dictionaries, fn %{name: name} -> name == referenced_field end),
          true <- Map.has_key?(values, field) do
       :ok
     else
