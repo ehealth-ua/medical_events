@@ -34,7 +34,7 @@ defmodule Core.Episode do
     field(:inserted_by, U)
     field(:updated_by, U)
 
-    embeds_one(:status_reason, CodeableConcept)
+    embeds_one(:status_reason, CodeableConcept, on_replace: :delete)
     embeds_one(:period, Period, on_replace: :update)
     embeds_one(:managing_organization, Reference)
     embeds_one(:care_manager, Reference, on_replace: :update)
@@ -118,6 +118,7 @@ defmodule Core.Episode do
     episode
     |> cast(params, @fields_required ++ @fields_optional)
     |> cast_embed(:period, required: true)
+    |> cast_embed(:status_reason)
     |> validate_required(@fields_required)
   end
 
@@ -125,6 +126,7 @@ defmodule Core.Episode do
     episode
     |> cast(params, @fields_required ++ @fields_optional)
     |> validate_required(@fields_required)
+    |> cast_embed(:status_reason)
   end
 
   def cancel_package_changeset(%__MODULE__{} = episode, params, client_id) do

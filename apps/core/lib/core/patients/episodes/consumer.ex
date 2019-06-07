@@ -414,7 +414,7 @@ defmodule Core.Patients.Episodes.Consumer do
         episode
         | managing_organization: %{
             managing_organization
-            | display_value: Map.get(legal_entity, "public_name")
+            | display_value: Map.get(legal_entity, :public_name)
           }
       }
     else
