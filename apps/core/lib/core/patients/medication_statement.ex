@@ -3,6 +3,7 @@ defmodule Core.MedicationStatement do
 
   use Ecto.Schema
 
+  alias Core.CacheHelper
   alias Core.CodeableConcept
   alias Core.Ecto.UUID, as: U
   alias Core.Reference
@@ -104,7 +105,7 @@ defmodule Core.MedicationStatement do
     case source do
       %Source{asserter: asserter} ->
         display_value =
-          with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{asserter.identifier.value}") do
+          with [{_, employee}] <- :ets.lookup(CacheHelper.get_cache_key(), "employee_#{asserter.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name

@@ -1,6 +1,8 @@
 defmodule Core.Validators.DiagnosesCode do
   @moduledoc false
 
+  alias Core.CacheHelper
+
   def validate(diagnoses, options) when is_list(diagnoses) do
     code = Keyword.get(options, :code)
 
@@ -14,7 +16,7 @@ defmodule Core.Validators.DiagnosesCode do
       Enum.any?(diagnoses, fn diagnosis ->
         ets_key = "condition_#{diagnosis.condition.identifier.value}"
 
-        with [{_, condition}] <- :ets.lookup(:message_cache, ets_key) do
+        with [{_, condition}] <- :ets.lookup(CacheHelper.get_cache_key(), ets_key) do
           condition["code"].coding |> hd |> Map.get(:system) == required_system
         end
       end)

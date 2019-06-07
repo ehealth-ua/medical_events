@@ -3,6 +3,7 @@ defmodule Core.Encounter do
 
   use Ecto.Schema
 
+  alias Core.CacheHelper
   alias Core.CodeableConcept
   alias Core.Coding
   alias Core.Diagnosis
@@ -205,7 +206,7 @@ defmodule Core.Encounter do
     case performer do
       %Reference{} ->
         display_value =
-          with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{performer.identifier.value}") do
+          with [{_, employee}] <- :ets.lookup(CacheHelper.get_cache_key(), "employee_#{performer.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name
@@ -228,7 +229,7 @@ defmodule Core.Encounter do
     diagnoses =
       Enum.map(diagnoses, fn diagnosis ->
         with [{_, condition}] <-
-               :ets.lookup(:message_cache, "condition_#{diagnosis.condition.identifier.value}") do
+               :ets.lookup(CacheHelper.get_cache_key(), "condition_#{diagnosis.condition.identifier.value}") do
           %{diagnosis | code: Map.get(condition, "code")}
         end
       end)

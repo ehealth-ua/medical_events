@@ -2,6 +2,7 @@ defmodule Core.Kafka.Consumer do
   @moduledoc false
 
   alias Core.Approvals.Consumer, as: ApprovalsConsumer
+  alias Core.CacheHelper
   alias Core.Job
   alias Core.Jobs
   alias Core.Jobs.ApprovalCreateJob
@@ -113,7 +114,7 @@ defmodule Core.Kafka.Consumer do
   defp do_consume(module, fun, %{_id: id} = kafka_job) do
     case Jobs.get_by_id(id) do
       {:ok, %Job{status: @status_pending}} ->
-        :ets.new(:message_cache, [:set, :protected, :named_table])
+        :ets.new(CacheHelper.get_cache_key(), [:set, :protected, :named_table])
 
         try do
           :ok = apply(module, fun, [kafka_job])
@@ -127,7 +128,7 @@ defmodule Core.Kafka.Consumer do
               |> Transaction.flush()
         end
 
-        :ets.delete(:message_cache)
+        :ets.delete(CacheHelper.get_cache_key())
         :ok
 
       {:ok, %Job{}} ->

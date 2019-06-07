@@ -1,6 +1,7 @@
 defmodule Core.Validators.ServiceRequestReference do
   @moduledoc false
 
+  alias Core.CacheHelper
   alias Core.ServiceRequest
   alias Core.ServiceRequests
   alias Core.Services
@@ -60,7 +61,7 @@ defmodule Core.Validators.ServiceRequestReference do
         error(options, "Service request must be related to the same legal entity")
 
       {:ok, employee} ->
-        :ets.insert(:message_cache, {ets_key, employee})
+        :ets.insert(CacheHelper.get_cache_key(), {ets_key, employee})
 
         if employee.legal_entity_id == client_id do
           :ok
