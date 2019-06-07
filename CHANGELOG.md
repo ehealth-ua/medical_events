@@ -5,6 +5,31 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [3.1.0](https://github.com/edenlabllc/medical_events/compare/3.0.0...3.1.0) (2019-6-7)
+
+
+
+
+### Features:
+
+* you can now configure consumer batch size (#478)
+
+* rpc ehealth (#476)
+
+* jobs cleanup job improved (#473)
+
+### Bug Fixes:
+
+* episode issues (#481)
+
+* render episode (#480)
+
+* errors refactor (#479)
+
+* errors (#477)
+
+* errors (#472)
+
 ## [3.0.0](https://github.com/edenlabllc/medical_events/compare/2.2.0...3.0.0) (2019-6-4)
 ### Breaking Changes:
 
