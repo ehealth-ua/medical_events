@@ -62,6 +62,7 @@ defmodule Core.Episode do
     |> cast_embed(:status_history)
     |> cast_embed(:type)
     |> cast_embed(:current_diagnoses)
+    |> cast_embed(:diagnoses_history)
   end
 
   def create_changeset(%__MODULE__{} = episode, params, client_id) do
