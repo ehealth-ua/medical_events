@@ -36,7 +36,7 @@ defmodule Core.Patients.Encounters.ValidationsTest do
     client_id = UUID.uuid4()
     expect_employee_users(drfo, client_id, UUID.uuid4())
 
-    assert {:error, "Employee is not performer of encounter"} ==
+    assert {:error, "Employee is not performer of encounter", 409} ==
              EncounterValidation.validate_signatures(%{"drfo" => drfo}, UUID.uuid4(), UUID.uuid4(), client_id)
   end
 
@@ -58,7 +58,7 @@ defmodule Core.Patients.Encounters.ValidationsTest do
 
     expect_employee_users(drfo, invalid_legal_entity_id, user_id)
 
-    assert {:error, "Performer does not belong to current legal entity"} ==
+    assert {:error, "Performer does not belong to current legal entity", 409} ==
              EncounterValidation.validate_signatures(%{"drfo" => drfo}, employee_id, user_id, client_id)
   end
 end

@@ -109,12 +109,7 @@ defmodule Core.Patients.Encounters.Cancel do
         |> update_conditions(conditions_ids, user_id)
         |> update_observations(observations_ids, user_id)
         |> Jobs.update(job._id, Job.status(:processed), %{}, 200)
-        |> Transaction.flush()
-
-      case result do
-        :ok -> :ok
-        {:error, reason} -> {:error, reason, 500}
-      end
+        |> Jobs.complete(job)
     else
       _ ->
         Jobs.produce_update_status(job, "Failed to save signed content", 500)

@@ -133,6 +133,16 @@ defmodule Core.Jobs do
     end
   end
 
+  def complete(%Transaction{} = transaction, job) do
+    case Transaction.flush(transaction) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        produce_update_status(job, reason, 500)
+    end
+  end
+
   # ToDo: count real eta based on kafka performance testing. Temporary hardcoded to 10 minutes.
   defp count_eta do
     DateTime.add(DateTime.utc_now(), 60_000)

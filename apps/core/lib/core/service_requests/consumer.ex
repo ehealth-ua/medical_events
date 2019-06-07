@@ -117,36 +117,27 @@ defmodule Core.ServiceRequests.Consumer do
                    Confex.fetch_env!(:core, Core.Microservices.MediaStorage)[:service_request_bucket],
                    resource_name
                  ) do
-            result =
-              %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-              |> Transaction.add_operation(
-                @collection,
-                :insert,
-                service_request,
-                service_request._id
-              )
-              |> Jobs.update(
-                job._id,
-                Job.status(:processed),
-                %{
-                  "links" => [
-                    %{
-                      "entity" => "service_request",
-                      "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                    }
-                  ]
-                },
-                200
-              )
-              |> Transaction.flush()
-
-            case result do
-              :ok ->
-                :ok
-
-              {:error, reason} ->
-                Jobs.produce_update_status(job, reason, 500)
-            end
+            %Transaction{actor_id: user_id, patient_id: patient_id_hash}
+            |> Transaction.add_operation(
+              @collection,
+              :insert,
+              service_request,
+              service_request._id
+            )
+            |> Jobs.update(
+              job._id,
+              Job.status(:processed),
+              %{
+                "links" => [
+                  %{
+                    "entity" => "service_request",
+                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                  }
+                ]
+              },
+              200
+            )
+            |> Jobs.complete(job)
           else
             {:error, reason} ->
               Jobs.produce_update_status(job, reason, 409)
@@ -158,9 +149,6 @@ defmodule Core.ServiceRequests.Consumer do
     else
       {:error, error} ->
         Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
-
-      {:error, reason, status_code} ->
-        Jobs.produce_update_status(job, reason, status_code)
 
       {_, response, status_code} ->
         Jobs.produce_update_status(job, response, status_code)
@@ -218,37 +206,28 @@ defmodule Core.ServiceRequests.Consumer do
               |> update_reference_uuid()
           }
 
-          result =
-            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{"$set" => set},
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
+          |> Transaction.add_operation(
+            @collection,
+            :update,
+            %{"_id" => service_request._id},
+            %{"$set" => set},
+            service_request._id
+          )
+          |> Jobs.update(
+            job._id,
+            Job.status(:processed),
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                }
+              ]
+            },
+            200
+          )
+          |> Jobs.complete(job)
       end
     else
       nil ->
@@ -305,37 +284,28 @@ defmodule Core.ServiceRequests.Consumer do
             "used_by_legal_entity" => service_request.used_by_legal_entity
           }
 
-          result =
-            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{"$set" => set},
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
+          |> Transaction.add_operation(
+            @collection,
+            :update,
+            %{"_id" => service_request._id},
+            %{"$set" => set},
+            service_request._id
+          )
+          |> Jobs.update(
+            job._id,
+            Job.status(:processed),
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                }
+              ]
+            },
+            200
+          )
+          |> Jobs.complete(job)
       end
     else
       nil ->
@@ -711,40 +681,31 @@ defmodule Core.ServiceRequests.Consumer do
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
-          result =
-            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{
-                "$set" => set,
-                "$push" => push
-              },
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
+          |> Transaction.add_operation(
+            @collection,
+            :update,
+            %{"_id" => service_request._id},
+            %{
+              "$set" => set,
+              "$push" => push
+            },
+            service_request._id
+          )
+          |> Jobs.update(
+            job._id,
+            Job.status(:processed),
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{service_request._id}"
+                }
+              ]
+            },
+            200
+          )
+          |> Jobs.complete(job)
       end
     else
       nil ->
@@ -814,40 +775,31 @@ defmodule Core.ServiceRequests.Consumer do
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
-          result =
-            %Transaction{actor_id: user_id, patient_id: patient_id_hash}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{
-                "$set" => set,
-                "$push" => push
-              },
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          %Transaction{actor_id: user_id, patient_id: patient_id_hash}
+          |> Transaction.add_operation(
+            @collection,
+            :update,
+            %{"_id" => service_request._id},
+            %{
+              "$set" => set,
+              "$push" => push
+            },
+            service_request._id
+          )
+          |> Jobs.update(
+            job._id,
+            Job.status(:processed),
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                }
+              ]
+            },
+            200
+          )
+          |> Jobs.complete(job)
       end
     else
       nil ->
@@ -907,40 +859,31 @@ defmodule Core.ServiceRequests.Consumer do
 
           push = Mongo.add_to_push(%{}, status_history, "status_history")
 
-          result =
-            %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
-            |> Transaction.add_operation(
-              @collection,
-              :update,
-              %{"_id" => service_request._id},
-              %{
-                "$set" => set,
-                "$push" => push
-              },
-              service_request._id
-            )
-            |> Jobs.update(
-              job._id,
-              Job.status(:processed),
-              %{
-                "links" => [
-                  %{
-                    "entity" => "service_request",
-                    "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
-                  }
-                ]
-              },
-              200
-            )
-            |> Transaction.flush()
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          %Transaction{actor_id: user_id, patient_id: job.patient_id_hash}
+          |> Transaction.add_operation(
+            @collection,
+            :update,
+            %{"_id" => service_request._id},
+            %{
+              "$set" => set,
+              "$push" => push
+            },
+            service_request._id
+          )
+          |> Jobs.update(
+            job._id,
+            Job.status(:processed),
+            %{
+              "links" => [
+                %{
+                  "entity" => "service_request",
+                  "href" => "/api/patients/#{patient_id}/service_requests/#{id}"
+                }
+              ]
+            },
+            200
+          )
+          |> Jobs.complete(job)
       end
     else
       nil ->

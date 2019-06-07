@@ -174,12 +174,7 @@ defmodule Core.Patients do
     end
   end
 
-  def consume_create_package(
-        %PackageCreateJob{
-          patient_id: patient_id,
-          user_id: user_id
-        } = job
-      ) do
+  def consume_create_package(%PackageCreateJob{patient_id: patient_id, user_id: user_id} = job) do
     schema =
       if Confex.fetch_env!(:core, :encounter_package)[:use_encounter_package_short_schema] do
         :package_create_signed_content_short
@@ -223,50 +218,42 @@ defmodule Core.Patients do
                ) do
           encounter = %{encounter | signed_content_links: [resource_name]}
 
-          result =
-            Package.save(
-              job,
-              %{
-                "visit" => visit,
-                "encounter" => encounter,
-                "diagnoses_history" => diagnoses_history,
-                "immunizations" => immunizations,
-                "immunization_updates" => immunization_updates,
-                "allergy_intolerances" => allergy_intolerances,
-                "risk_assessments" => risk_assessments,
-                "devices" => devices,
-                "medication_statements" => medication_statements,
-                "diagnostic_reports" => diagnostic_reports,
-                "observations" => observations,
-                "conditions" => conditions
-              }
-            )
-
-          case result do
-            :ok ->
-              :ok
-
-            {:error, reason} ->
-              Jobs.produce_update_status(job, reason, 500)
-          end
+          Package.save(
+            job,
+            %{
+              "visit" => visit,
+              "encounter" => encounter,
+              "diagnoses_history" => diagnoses_history,
+              "immunizations" => immunizations,
+              "immunization_updates" => immunization_updates,
+              "allergy_intolerances" => allergy_intolerances,
+              "risk_assessments" => risk_assessments,
+              "devices" => devices,
+              "medication_statements" => medication_statements,
+              "diagnostic_reports" => diagnostic_reports,
+              "observations" => observations,
+              "conditions" => conditions
+            }
+          )
         else
           _ ->
             Jobs.produce_update_status(job, "Failed to save signed content", 500)
         end
       else
-        {:error, error, status_code} ->
-          Jobs.produce_update_status(job, error, status_code)
-
+        # Invalid changeset
         %Changeset{valid?: false} = changeset ->
           Jobs.produce_update_status(job, ValidationError.render("422.json", changeset), 422)
+
+        # All other errors
+        {_, error, status_code} ->
+          Jobs.produce_update_status(job, error, status_code)
       end
     else
+      # Json schema error
       {:error, error} ->
         Jobs.produce_update_status(job, ValidationError.render("422.json", %{schema: error}), 422)
 
-      {:error, {:bad_request, error}} ->
-        Jobs.produce_update_status(job, error, 422)
-
+      # All other errors
       {_, response, status} ->
         Jobs.produce_update_status(job, response, status)
     end
@@ -392,7 +379,7 @@ defmodule Core.Patients do
             {:error, error, 422}
 
           _ ->
-            {:ok, encounter, Changeset.apply_changes(diagnoses_history)}
+            {:ok, encounter, diagnoses_history |> Changeset.apply_changes() |> Encounter.fill_up_diagnoses_codes()}
         end
     end
   end
@@ -615,7 +602,7 @@ defmodule Core.Patients do
   defp get_db_immunizations(patient_id_hash, ids) do
     case Immunizations.get_by_ids(patient_id_hash, ids) do
       {:ok, immunizations} -> {:ok, immunizations}
-      {:error, message} -> {:error, %{"error" => message}, 404}
+      {:error, message} -> {:error, message, 404}
     end
   end
 
@@ -1007,10 +994,6 @@ defmodule Core.Patients do
   end
 
   defp validate_signatures(signer, employee_id, user_id, client_id) do
-    case EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id) do
-      :ok -> :ok
-      {:error, error} -> {:ok, error, 409}
-      error -> error
-    end
+    EncounterValidations.validate_signatures(signer, employee_id, user_id, client_id)
   end
 end
