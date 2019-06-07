@@ -3,6 +3,7 @@ defmodule Core.DiagnosticReport do
 
   use Ecto.Schema
 
+  alias Core.CacheHelper
   alias Core.CodeableConcept
   alias Core.DiagnosticReports.Source
   alias Core.Ecto.UUID, as: U
@@ -289,7 +290,7 @@ defmodule Core.DiagnosticReport do
       %{reference: reference} when not is_nil(reference) ->
         display_value =
           with [{_, employee}] <-
-                 :ets.lookup(:message_cache, "employee_#{reference.identifier.value}") do
+                 :ets.lookup(CacheHelper.get_cache_key(), "employee_#{reference.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name
@@ -327,7 +328,7 @@ defmodule Core.DiagnosticReport do
       %Reference{} ->
         display_value =
           with [{_, employee}] <-
-                 :ets.lookup(:message_cache, "employee_#{recorded_by.identifier.value}") do
+                 :ets.lookup(CacheHelper.get_cache_key(), "employee_#{recorded_by.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name
@@ -354,7 +355,7 @@ defmodule Core.DiagnosticReport do
       %Executor{reference: reference} ->
         display_value =
           with [{_, employee}] <-
-                 :ets.lookup(:message_cache, "employee_#{reference.identifier.value}") do
+                 :ets.lookup(CacheHelper.get_cache_key(), "employee_#{reference.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name
@@ -384,7 +385,7 @@ defmodule Core.DiagnosticReport do
       %Reference{} ->
         display_value =
           with [{_, legal_entity}] <-
-                 :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
+                 :ets.lookup(CacheHelper.get_cache_key(), "legal_entity_#{managing_organization.identifier.value}") do
             Map.get(legal_entity, :public_name)
           else
             _ ->

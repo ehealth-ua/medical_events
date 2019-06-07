@@ -1,6 +1,7 @@
 defmodule Core.Validators.DiagnosisCondition do
   @moduledoc false
 
+  alias Core.CacheHelper
   alias Core.Conditions
 
   def validate(value, options) do
@@ -25,6 +26,6 @@ defmodule Core.Validators.DiagnosisCondition do
   end
 
   defp add_to_cache(ets_key, condition) do
-    :ets.insert(:message_cache, {ets_key, condition})
+    :ets.insert(CacheHelper.get_cache_key(), {ets_key, condition})
   end
 end

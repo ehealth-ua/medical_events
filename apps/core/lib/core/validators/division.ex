@@ -1,6 +1,8 @@
 defmodule Core.Validators.Division do
   @moduledoc false
 
+  alias Core.CacheHelper
+  alias Core.Headers
   import Core.ValidationError
 
   @rpc_worker Application.get_env(:core, :rpc_worker)
@@ -29,7 +31,7 @@ defmodule Core.Validators.Division do
   end
 
   defp get_data(ets_key, division_id) do
-    case :ets.lookup(:message_cache, ets_key) do
+    case :ets.lookup(CacheHelper.get_cache_key(), ets_key) do
       [{^ets_key, division}] -> {:ok, division}
       _ -> @rpc_worker.run("ehealth", EHealth.Rpc, :division_by_id, [division_id])
     end

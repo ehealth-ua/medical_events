@@ -1,6 +1,8 @@
 defmodule Core.Validators.Employee do
   @moduledoc false
 
+  alias Core.CacheHelper
+  alias Core.Rpc
   import Core.ValidationError
 
   @worker Application.get_env(:core, :rpc_worker)
@@ -13,7 +15,7 @@ defmodule Core.Validators.Employee do
         error(options, "Employee with such ID is not found")
 
       {:ok, employee} ->
-        :ets.insert(:message_cache, {ets_key, employee})
+        :ets.insert(CacheHelper.get_cache_key(), {ets_key, employee})
 
         with :ok <- validate_field(:type, employee.employee_type, options),
              :ok <- validate_field(:status, employee.status, options),
@@ -34,7 +36,7 @@ defmodule Core.Validators.Employee do
   end
 
   def get_data(ets_key, employee_id) do
-    case :ets.lookup(:message_cache, ets_key) do
+    case :ets.lookup(CacheHelper.get_cache_key(), ets_key) do
       [{^ets_key, employee}] -> {:ok, employee}
       _ -> @worker.run("ehealth", EHealth.Rpc, :employee_by_id, [to_string(employee_id)])
     end

@@ -1,6 +1,7 @@
 defmodule Core.Patients.Episodes.Consumer do
   @moduledoc false
 
+  alias Core.CacheHelper
   alias Core.Encounter
   alias Core.Episode
   alias Core.Job
@@ -388,7 +389,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
   defp fill_up_episode_care_manager(%Episode{care_manager: care_manager} = episode) do
     with [{_, employee}] <-
-           :ets.lookup(:message_cache, "employee_#{care_manager.identifier.value}") do
+           :ets.lookup(CacheHelper.get_cache_key(), "employee_#{care_manager.identifier.value}") do
       first_name = employee.party.first_name
       second_name = employee.party.second_name
       last_name = employee.party.last_name
@@ -409,7 +410,7 @@ defmodule Core.Patients.Episodes.Consumer do
 
   defp fill_up_episode_managing_organization(%Episode{managing_organization: managing_organization} = episode) do
     with [{_, legal_entity}] <-
-           :ets.lookup(:message_cache, "legal_entity_#{managing_organization.identifier.value}") do
+           :ets.lookup(CacheHelper.get_cache_key(), "legal_entity_#{managing_organization.identifier.value}") do
       %{
         episode
         | managing_organization: %{

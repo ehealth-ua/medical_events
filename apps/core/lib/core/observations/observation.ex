@@ -3,6 +3,7 @@ defmodule Core.Observation do
 
   use Ecto.Schema
 
+  alias Core.CacheHelper
   alias Core.CodeableConcept
   alias Core.Ecto.UUID, as: U
   alias Core.EffectiveAt
@@ -229,7 +230,7 @@ defmodule Core.Observation do
     case source do
       %Source{performer: performer} = source when not is_nil(performer) ->
         display_value =
-          with [{_, employee}] <- :ets.lookup(:message_cache, "employee_#{performer.identifier.value}") do
+          with [{_, employee}] <- :ets.lookup(CacheHelper.get_cache_key(), "employee_#{performer.identifier.value}") do
             first_name = employee.party.first_name
             second_name = employee.party.second_name
             last_name = employee.party.last_name

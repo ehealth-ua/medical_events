@@ -1,6 +1,8 @@
 defmodule Core.Validators.LegalEntity do
   @moduledoc false
 
+  alias Core.CacheHelper
+  alias Core.Headers
   import Core.ValidationError
 
   @rpc_worker Application.get_env(:core, :rpc_worker)
@@ -10,7 +12,7 @@ defmodule Core.Validators.LegalEntity do
 
     case get_data(ets_key, legal_entity_id) do
       {:ok, legal_entity} ->
-        :ets.insert(:message_cache, {ets_key, legal_entity})
+        :ets.insert(CacheHelper.get_cache_key(), {ets_key, legal_entity})
 
         if Map.get(legal_entity, :status) == Keyword.get(options, :status) do
           :ok
@@ -24,7 +26,7 @@ defmodule Core.Validators.LegalEntity do
   end
 
   defp get_data(ets_key, legal_entity_id) do
-    case :ets.lookup(:message_cache, ets_key) do
+    case :ets.lookup(CacheHelper.get_cache_key(), ets_key) do
       [{^ets_key, legal_entity}] -> {:ok, legal_entity}
       _ -> @rpc_worker.run("ehealth", EHealth.Rpc, :legal_entity_by_id, [legal_entity_id])
     end
