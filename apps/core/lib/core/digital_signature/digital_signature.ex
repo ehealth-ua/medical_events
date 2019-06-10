@@ -51,9 +51,9 @@ defmodule Core.DigitalSignature do
   defp data_is_valid_resp(data) do
     signatures = [
       %{
-        "is_valid" => true,
-        "signer" => %{},
-        "validation_error_message" => ""
+        is_valid: true,
+        signer: %{},
+        validation_error_message: ""
       }
     ]
 

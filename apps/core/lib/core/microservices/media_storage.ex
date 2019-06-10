@@ -27,7 +27,7 @@ defmodule Core.Microservices.MediaStorage do
   def create_signed_url(action, bucket, resource_name, resource_id) do
     sign_url_data = generate_sign_url_data(action, bucket, resource_name, resource_id)
 
-    with {:ok, secret} <- @rpc_worker.run("ael_api", Ael.Rpc, :signed_url, [sign_url_data, []]) do
+    with {:ok, secret} <- @rpc_worker.run(config()[:object_storage], Ael.Rpc, :signed_url, [sign_url_data, []]) do
       {:ok, secret}
     else
       error ->

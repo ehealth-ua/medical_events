@@ -38,11 +38,11 @@ defmodule Core.Validators.Signature do
     |> String.upcase()
   end
 
-  defp get_last_signer(content, %{"is_valid" => true, "signer" => signer}) do
+  defp get_last_signer(content, %{is_valid: true, signer: signer}) do
     {:ok, %{content: content, signer: signer}}
   end
 
-  defp get_last_signer(_, %{"is_valid" => false, "validation_error_message" => error}) do
+  defp get_last_signer(_, %{is_valid: false, validation_error_message: error}) do
     Error.dump(%ValidationError{
       description: error,
       path: "$.signed_data"

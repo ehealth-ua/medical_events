@@ -106,7 +106,7 @@ defmodule Core.ServiceRequests.Consumer do
 
           with :ok <-
                  Drfo.validate(service_request.requester_employee.identifier.value,
-                   drfo: signer["drfo"],
+                   drfo: signer.drfo,
                    client_id: client_id,
                    user_id: user_id
                  ),
@@ -362,7 +362,7 @@ defmodule Core.ServiceRequests.Consumer do
 
             with :ok <-
                    Drfo.validate(service_request.requester_employee.identifier.value,
-                     drfo: signer["drfo"],
+                     drfo: signer.drfo,
                      client_id: client_id,
                      user_id: user_id
                    ),
@@ -525,7 +525,7 @@ defmodule Core.ServiceRequests.Consumer do
 
             with :ok <-
                    Drfo.validate(service_request.requester_employee.identifier.value,
-                     drfo: signer["drfo"],
+                     drfo: signer.drfo,
                      client_id: client_id,
                      user_id: user_id
                    ),

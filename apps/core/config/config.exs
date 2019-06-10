@@ -76,10 +76,21 @@ config :core,
         kubernetes_namespace: "ops",
         polling_interval: 10_000
       ]
+    ],
+    k8s_ael_ceph: [
+      strategy: Elixir.Cluster.Strategy.Kubernetes,
+      config: [
+        mode: :dns,
+        kubernetes_node_basename: {:system, "OBJECT_STORAGE", "ael_api"},
+        kubernetes_selector: "app=api",
+        kubernetes_namespace: "ael",
+        polling_interval: 10_000
+      ]
     ]
   ]
 
 config :core, Core.Microservices.MediaStorage,
+  object_storage: {:system, "OBJECT_STORAGE", "ael_api"},
   encounter_bucket: {:system, "MEDIA_STORAGE_ENCOUNTER_BUCKET", "encounters-dev"},
   service_request_bucket: {:system, "MEDIA_STORAGE_SERVICE_REQUEST_BUCKET", "service-requests-dev"},
   diagnostic_report_bucket: {:system, "MEDIA_STORAGE_DIAGNOSTIC_REPORT_BUCKET", "diagnostic-reports-dev"},

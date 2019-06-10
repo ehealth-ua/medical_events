@@ -15,8 +15,8 @@ defmodule Core.Expectations.DigitalSignatureExpectation do
          content: decoded_content,
          signatures: [
            %{
-             "is_valid" => true,
-             "signer" => %{"drfo" => drfo}
+             is_valid: true,
+             signer: %{drfo: drfo}
            }
          ]
        }}
