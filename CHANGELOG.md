@@ -5,6 +5,15 @@ See [Conventional Commits](Https://conventionalcommits.org) for commit guideline
 
 <!-- changelog -->
 
+## [3.1.1](https://github.com/edenlabllc/medical_events/compare/3.1.0...3.1.1) (2019-6-10)
+
+
+
+
+### Bug Fixes:
+
+* ds and ael ceph (#484)
+
 ## [3.1.0](https://github.com/edenlabllc/medical_events/compare/3.0.0...3.1.0) (2019-6-7)
 
 
