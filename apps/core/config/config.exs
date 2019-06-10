@@ -83,7 +83,7 @@ config :core,
         mode: :dns,
         kubernetes_node_basename: {:system, "OBJECT_STORAGE", "ael_api"},
         kubernetes_selector: "app=api",
-        kubernetes_namespace: "ael",
+        kubernetes_namespace: {:system, "OBJECT_STORAGE_NAMESPACE", "ael"},
         polling_interval: 10_000
       ]
     ]
