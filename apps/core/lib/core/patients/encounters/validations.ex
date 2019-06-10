@@ -15,7 +15,7 @@ defmodule Core.Patients.Encounters.Validations do
     end
   end
 
-  defp do_validate_signatures(%{"drfo" => drfo}, employee_id, user_id, client_id)
+  defp do_validate_signatures(%{drfo: drfo}, employee_id, user_id, client_id)
        when drfo != nil do
     employee_users_data = @rpc_worker.run("ehealth", EHealth.Rpc, :employee_by_id_users_short, [employee_id])
 
