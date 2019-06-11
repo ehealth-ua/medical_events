@@ -440,7 +440,7 @@ defmodule Core.Factories do
       categories: [codeable_concept_coding(system: "eHealth/observation_categories", code: "1")],
       code: codeable_concept_coding(system: "eHealth/LOINC/observation_codes", code: "8310-5"),
       comment: "some comment",
-      patient_id: Patients.get_pk_hash(UUID.uuid4()),
+      patient_id: attrs[:patient_id] || UUID.uuid4() |> Patients.get_pk_hash(),
       based_on: [reference_coding(system: "eHealth/resources", code: "service_request")],
       context: reference_coding(system: "eHealth/resources", code: "encounter"),
       diagnostic_report: reference_coding(system: "eHealth/resources", code: "diagnostic_report"),

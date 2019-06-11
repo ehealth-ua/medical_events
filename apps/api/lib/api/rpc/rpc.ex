@@ -6,6 +6,7 @@ defmodule Api.Rpc do
   alias Api.Web.ApprovalView
   alias Api.Web.DiagnosticReportView
   alias Api.Web.EpisodeView
+  alias Api.Web.ObservationView
   alias Api.Web.ServiceRequestView
   alias Core.Approval
   alias Core.Approvals
@@ -104,6 +105,19 @@ defmodule Api.Rpc do
           status_reason: codeable_concept(),
           type: coding(),
           updated_at: DateTime
+        }
+
+  @type observation() :: %{
+          based_on: reference_(),
+          method: reference_(),
+          categories: reference_(),
+          context: reference_(),
+          diagnostic_report: reference_(),
+          interpretation: reference_(),
+          code: reference_(),
+          body_site: reference_(),
+          reference_ranges: reference_(),
+          components: reference_()
         }
 
   @type service_request() :: %{
@@ -706,6 +720,267 @@ defmodule Api.Rpc do
          {:ok, encounter} <- Encounters.get_by_id(patient_id_hash, to_string(observation.context.identifier.value)),
          {:ok, episode} <- Episodes.get_by_id(patient_id_hash, to_string(encounter.episode.identifier.value)) do
       {:ok, EpisodeView.render("show.json", %{episode: episode})}
+    end
+  end
+
+  @doc """
+  Get observation by patient id, observation id
+
+  ## Examples
+
+      iex> Api.Rpc.observation_by_id(
+        "26e673e1-1d68-413e-b96c-407b45d9f572",
+        "d221d7f1-81cb-44d3-b6d4-8d7e42f97ff9"
+      )
+      {:ok,
+   %{
+     based_on: [
+       %{
+         display_value: nil,
+         identifier: %{
+           type: %{
+             coding: [%{code: "service_request", system: "eHealth/resources"}],
+             text: "code text"
+           },
+           value: "30ea535b-99e3-40a9-94b7-fa451e9f26a2"
+         }
+       }
+     ],
+     body_site: %{
+       coding: [%{code: "1", system: "eHealth/body_sites"}],
+       text: "code text"
+     },
+     categories: [
+       %{
+         coding: [%{code: "1", system: "eHealth/observation_categories"}],
+         text: "code text"
+       }
+     ],
+     code: %{
+       coding: [%{code: "8310-5", system: "eHealth/LOINC/observation_codes"}],
+       text: "code text"
+     },
+     comment: "some comment",
+     components: [
+       %{
+         code: %{
+           coding: [%{code: "1", system: "eHealth/LOINC/observation_codes"}],
+           text: "code text"
+         },
+         interpretation: %{
+           coding: [%{code: "1", system: "eHealth/observation_interpretations"}],
+           text: "code text"
+         },
+         reference_ranges: [
+           %{
+             age: %{
+               high: %{
+                 code: "mg",
+                 comparator: "<",
+                 system: "eHealth/ucum/units",
+                 unit: "years",
+                 value: 55.0
+               },
+               low: %{
+                 code: "mg",
+                 comparator: ">",
+                 system: "eHealth/ucum/units",
+                 unit: "years",
+                 value: 10.0
+               }
+             },
+             applies_to: [
+               %{
+                 coding: [
+                   %{code: "1", system: "eHealth/reference_range_applications"}
+                 ],
+                 text: "code text"
+               }
+             ],
+             high: %{
+               code: "mg",
+               comparator: "<",
+               system: "eHealth/ucum/units",
+               unit: "mg",
+               value: 92.0
+             },
+             low: %{
+               code: "mg",
+               comparator: "<",
+               system: "eHealth/ucum/units",
+               unit: "mg",
+               value: 99.0
+             },
+             text: "some text",
+             type: %{
+               coding: [%{code: "1", system: "eHealth/reference_range_types"}],
+               text: "code text"
+             }
+           }
+         ],
+         value_string: "some value"
+       },
+       %{
+         code: %{
+           coding: [%{code: "1", system: "eHealth/LOINC/observation_codes"}],
+           text: "code text"
+         },
+         interpretation: %{
+           coding: [%{code: "1", system: "eHealth/observation_interpretations"}],
+           text: "code text"
+         },
+         reference_ranges: [
+           %{
+             age: %{
+               high: %{
+                 code: "mg",
+                 comparator: "<",
+                 system: "eHealth/ucum/units",
+                 unit: "years",
+                 value: 55.0
+               },
+               low: %{
+                 code: "mg",
+                 comparator: ">",
+                 system: "eHealth/ucum/units",
+                 unit: "years",
+                 value: 10.0
+               }
+             },
+             applies_to: [
+               %{
+                 coding: [
+                   %{code: "1", system: "eHealth/reference_range_applications"}
+                 ],
+                 text: "code text"
+               }
+             ],
+             high: %{
+               code: "mg",
+               comparator: "<",
+               system: "eHealth/ucum/units",
+               unit: "mg",
+               value: 92.0
+             },
+             low: %{
+               code: "mg",
+               comparator: "<",
+               system: "eHealth/ucum/units",
+               unit: "mg",
+               value: 99.0
+             },
+             text: "some text",
+             type: %{
+               coding: [%{code: "1", system: "eHealth/reference_range_types"}],
+               text: "code text"
+             }
+           }
+         ],
+         value_string: "some value"
+       }
+     ],
+     context: %{
+       display_value: nil,
+       identifier: %{
+         type: %{
+           coding: [%{code: "encounter", system: "eHealth/resources"}],
+           text: "code text"
+         },
+         value: "24b62b6f-15cf-45b2-88c4-a7e668941014"
+       }
+     },
+     diagnostic_report: %{
+       display_value: nil,
+       identifier: %{
+         type: %{
+           coding: [%{code: "diagnostic_report", system: "eHealth/resources"}],
+           text: "code text"
+         },
+         value: "1b5ed727-be32-4a00-87b6-7456b41fd3f7"
+       }
+     },
+     effective_date_time: "2019-06-11T13:23:33Z",
+     id: "c43d88cd-b712-48ef-b77f-e97d13e72b7f",
+     inserted_at: #DateTime<2019-06-11 13:23:33.156000Z>,
+     interpretation: %{
+       coding: [%{code: "1", system: "eHealth/observation_interpretations"}],
+       text: "code text"
+     },
+     issued: #DateTime<2019-06-11 13:23:33Z>,
+     method: %{
+       coding: [%{code: "1", system: "eHealth/observation_methods"}],
+       text: "code text"
+     },
+     performer: %{
+       display_value: nil,
+       identifier: %{
+         type: %{
+           coding: [%{code: "employee", system: "eHealth/resources"}],
+           text: "code text"
+         },
+         value: "e506ad3a-aa96-425f-8df6-e24839750c00"
+       }
+     },
+     primary_source: true,
+     reference_ranges: [
+       %{
+         age: %{
+           high: %{
+             code: "mg",
+             comparator: "<",
+             system: "eHealth/ucum/units",
+             unit: "years",
+             value: 82.0
+           },
+           low: %{
+             code: "mg",
+             comparator: ">",
+             system: "eHealth/ucum/units",
+             unit: "years",
+             value: 92.0
+           }
+         },
+         applies_to: [
+           %{
+             coding: [
+               %{code: "1", system: "eHealth/reference_range_applications"}
+             ],
+             text: "code text"
+           }
+         ],
+         high: %{
+           code: "mg",
+           comparator: "<",
+           system: "eHealth/ucum/units",
+           unit: "mg",
+           value: 75.0
+         },
+         low: %{
+           code: "mg",
+           comparator: "<",
+           system: "eHealth/ucum/units",
+           unit: "mg",
+           value: 29.0
+         },
+         text: "some text",
+         type: %{
+           coding: [%{code: "1", system: "eHealth/reference_range_types"}],
+           text: "code text"
+         }
+       }
+     ],
+     status: "valid",
+     updated_at: #DateTime<2019-06-11 13:23:33.156000Z>,
+     value_string: "some value"
+   }}  
+  """
+
+  @spec observation_by_id(patient_id :: binary(), observation_id :: binary()) :: nil | {:ok, observation}
+  def observation_by_id(patient_id, observation_id) do
+    patient_id_hash = Patients.get_pk_hash(patient_id)
+
+    with {:ok, observation} <- Observations.get_by_id(patient_id_hash, observation_id) do
+      {:ok, ObservationView.render("show.json", %{observation: observation})}
     end
   end
 

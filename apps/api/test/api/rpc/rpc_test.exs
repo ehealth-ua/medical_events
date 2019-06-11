@@ -56,6 +56,20 @@ defmodule Api.Rpc.RpcTest do
     end
   end
 
+  describe "observation_by_id/2" do
+    test "observation not found" do
+      refute Rpc.observation_by_id(UUID.uuid4(), UUID.uuid4())
+    end
+
+    test "successfully get observation" do
+      patient_id = UUID.uuid4()
+      patient_id_hash = Patients.get_pk_hash(patient_id)
+      observation = insert(:observation, patient_id: patient_id_hash)
+
+      assert Rpc.observation_by_id(patient_id, to_string(observation._id))
+    end
+  end
+
   describe "service_request_by_id/2" do
     test "service_request not found" do
       refute Rpc.service_request_by_id(UUID.uuid4(), UUID.uuid4())
