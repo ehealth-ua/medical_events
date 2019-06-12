@@ -11,6 +11,9 @@
       "type": "string",
       "format": "date",
       "description": "End date of episode"
+    },
+    "status": {
+      "type": "string"
     }
   },
   "additionalProperties": false

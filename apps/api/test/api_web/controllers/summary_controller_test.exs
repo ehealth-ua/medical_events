@@ -26,6 +26,13 @@ defmodule Api.Web.SummaryControllerTest do
       end)
 
       assert %{"page_number" => 1, "total_entries" => 2, "total_pages" => 1} = resp["paging"]
+
+      resp =
+        conn
+        |> get(summary_path(conn, :list_episodes, patient_id), %{status: "invalid"})
+        |> json_response(200)
+
+      assert [] == resp["data"]
     end
 
     test "invalid search parameters", %{conn: conn} do
