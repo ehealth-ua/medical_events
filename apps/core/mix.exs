@@ -42,7 +42,7 @@ defmodule Core.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:kube_rpc, "~> 0.2.1"},
+      {:kube_rpc, "~> 0.3.0"},
       {:confex, "~> 3.4"},
       {:ehealth_logger, git: "https://github.com/edenlabllc/ehealth_logger.git"},
       {:elixir_uuid, "~> 1.2"},
@@ -57,7 +57,8 @@ defmodule Core.MixProject do
       {:redix, "~> 0.7.1"},
       {:scrivener, "~> 2.5"},
       {:translit, "~> 0.1.0"},
-      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"},
+      {:libcluster, "~> 3.0",
+       git: "https://github.com/AlexKovalevych/libcluster.git", branch: "fix_kubernetes_strategy"},
       {:ecto, "~> 3.1"},
       {:mox, "~> 0.4.0", only: :test},
       {:ex_machina, "~> 2.3", only: :test}

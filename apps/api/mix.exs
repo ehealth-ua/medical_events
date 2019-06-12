@@ -47,7 +47,8 @@ defmodule Api.Mixfile do
       {:confex, "~> 3.3"},
       {:scrivener, "~> 2.5"},
       {:eview, "~> 0.15.0"},
-      {:libcluster, "~> 3.0", git: "https://github.com/AlexKovalevych/libcluster.git", branch: "kube_namespaces"}
+      {:libcluster, "~> 3.0",
+       git: "https://github.com/AlexKovalevych/libcluster.git", branch: "fix_kubernetes_strategy"}
     ]
   end
 
