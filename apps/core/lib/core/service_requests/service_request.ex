@@ -263,11 +263,11 @@ defmodule Core.ServiceRequest do
            {:encounter, Encounters.get_by_id(patient_id_hash, to_string(encounter_id))},
          {:ok, number} <-
            @worker.run("number_generator", NumberGenerator.Rpc, :number, [
-             "episode",
-             to_string(encounter.episode.identifier.value),
+             "encounter",
+             to_string(encounter.identifier.value),
              user_id
            ]) do
-      put_change(changeset, :requisition, Encryptor.encrypt(number))
+      put_change(changeset, :requisition, number)
     else
       _ -> add_error(changeset, :requisition, "Failed to generate requisition number")
     end
